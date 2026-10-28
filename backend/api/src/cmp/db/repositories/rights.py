@@ -18,9 +18,10 @@ from typing import Any
 
 from psycopg.types.json import Jsonb
 
-from cmp.core.offices import OFFICE_ID_NAMED
+from cmp.core.offices import OFFICE_ID, OFFICE_ID_NAMED
 from cmp.core.pagination import PageRequest, build_page
 from cmp.core.permissions import Role
+from cmp.db.pool import across_offices
 from cmp.db.sql import Conn, Row, fetch_all, fetch_one, fetch_val, keyset_clause
 from cmp.infrastructure.dkms import seal, unseal_value
 from cmp.infrastructure.dkms.blind import index_of, ngrams_of, search_ngrams
@@ -47,6 +48,11 @@ _SELECT = """
   r.response_text, r.response_file_ref, r.response_file_hash, r.responded_at,
   r.download_expires_at, r.closed_at, r.created_at, r.updated_at,
   r.subject_user_id,
+  -- The office that answers it, or none: the shared intake (ADR 0032, 0055).
+  (SELECT o.office_code FROM office o WHERE o.office_id = r.office_id) AS office_code,
+  r.claimed_at, r.transferred_at, r.transfer_reason,
+  (SELECT o.office_code FROM office o WHERE o.office_id = r.transferred_from_office_id)
+    AS transferred_from,
   r.consent_id, c.consent_uuid, c.affirmative_action_at AS consent_at,
   (c.is_withdrawal AND NOT EXISTS (
      SELECT 1 FROM consent_purpose_grant wg WHERE wg.consent_id = c.consent_id AND wg.granted))
@@ -111,16 +117,18 @@ _FROM = """
 def scope_predicate(role: Role | str, user_id: int) -> tuple[str, list[Any]]:
     """Which requests this caller may see, as SQL.
 
-    The DPO: all. The administrator: only grievances about the DPO, where they
-    stand in as the independent reviewer. Anyone else: none - and "none" is a
-    predicate that selects nothing, not a check after the fact.
+    Each office's officer - the DPO, the Legal PoC - its office's requests and
+    the shared intake, which both see until one claims it (ADR 0032, 0055).
+    The administrator: only grievances about an office, where they stand in as
+    the independent reviewer. Anyone else: none - and "none" is a predicate
+    that selects nothing, not a check after the fact.
     """
     try:
         r = Role(role)
     except ValueError:
         return "FALSE", []
-    if r is Role.DPO:
-        return "TRUE", []
+    if r in (Role.DPO, Role.LEGAL):
+        return "(r.office_id IS NULL OR cmp_office_visible(r.office_id))", []
     if r is Role.ADMIN:
         return "r.about_dpo", []
     return "FALSE", []
@@ -784,6 +792,7 @@ async def holders_overdue(conn: Conn, *, limit: int = 25) -> list[Row]:
            JOIN rights_request r ON r.request_id = h.request_id
            LEFT JOIN auth_user s ON s.id = r.subject_user_id
            WHERE r.status <> 'closed'
+             AND (r.office_id IS NULL OR cmp_office_visible(r.office_id))
              AND h.ticket_status IN ('issued', 'escalated')
              AND h.due_at IS NOT NULL AND h.due_at < now()
            ORDER BY h.due_at, h.holder_id
@@ -819,6 +828,7 @@ async def holders_awaiting_office(conn: Conn, *, limit: int = 25) -> list[Row]:
            JOIN rights_request r ON r.request_id = h.request_id
            LEFT JOIN auth_user s ON s.id = r.subject_user_id
            WHERE r.status <> 'closed'
+             AND (r.office_id IS NULL OR cmp_office_visible(r.office_id))
              AND EXISTS (SELECT 1 FROM rights_ticket_message m
                           WHERE m.holder_id = h.holder_id AND m.author_side = 'holder'
                             AND m.created_at > coalesce(h.office_read_at, 'epoch'::timestamptz))
@@ -830,13 +840,15 @@ async def holders_awaiting_office(conn: Conn, *, limit: int = 25) -> list[Row]:
 
 async def count_awaiting_office(conn: Conn) -> int:
     """How many open tickets carry something from the team the office has
-    not read - the number on the office's bell."""
+    not read - the number on the office's bell: its own requests' and the
+    shared intake's."""
     row = await fetch_one(
         conn,
         """SELECT count(*) AS n
            FROM rights_request_holder h
            JOIN rights_request r ON r.request_id = h.request_id
            WHERE r.status <> 'closed'
+             AND (r.office_id IS NULL OR cmp_office_visible(r.office_id))
              AND EXISTS (SELECT 1 FROM rights_ticket_message m
                           WHERE m.holder_id = h.holder_id AND m.author_side = 'holder'
                             AND m.created_at > coalesce(h.office_read_at, 'epoch'::timestamptz))""",
@@ -1394,6 +1406,7 @@ async def retained_items_past_floor(conn: Conn, today: date) -> list[Row]:
 
 # ----------------------------------------------------------------- dashboard
 async def counts(conn: Conn) -> Row:
+    """The office's figures: its own requests and the shared intake's."""
     row = await fetch_one(
         conn,
         """SELECT
@@ -1410,8 +1423,11 @@ async def counts(conn: Conn) -> Row:
              -- The DPO's own share of those: the ones nobody has yet escalated
              -- to the administrator. Once escalated, the DPO is locked out.
              count(*) FILTER (WHERE status <> 'closed' AND about_dpo AND escalated_at IS NULL)
-               AS grievances_to_escalate
-           FROM rights_request""",
+               AS grievances_to_escalate,
+             count(*) FILTER (WHERE office_id IS NULL AND status <> 'closed')
+               AS requests_in_intake
+           FROM rights_request
+          WHERE office_id IS NULL OR cmp_office_visible(office_id)""",
     )
     return row or {}
 
@@ -1696,3 +1712,66 @@ async def remove_holder(conn: Conn, holder_id: int) -> bool:
         (holder_id,),
     )
     return bool(cur.rowcount)
+
+
+# -------------------------------------------------------------- office
+async def standing_offices(conn: Conn, subject_user_id: int) -> list[str]:
+    """The offices whose notices she holds a current artefact on (ADR 0032):
+    where a request of hers belongs. A withdrawal counts - the office still
+    holds what was collected before it."""
+    rows = await fetch_all(
+        conn,
+        """SELECT DISTINCT o.office_code
+             FROM v_current_consent v
+             JOIN notice n ON n.notice_id = v.notice_id
+             JOIN office o ON o.office_id = n.office_id
+            WHERE v.auth_user_id = %s
+            ORDER BY 1""",
+        (subject_user_id,),
+    )
+    return [str(r["office_code"]) for r in rows]
+
+
+async def office_of_consent(conn: Conn, consent_id: int) -> str | None:
+    row = await fetch_one(
+        conn,
+        """SELECT o.office_code FROM consent_artefact ca
+             JOIN notice n ON n.notice_id = ca.notice_id
+             JOIN office o ON o.office_id = n.office_id
+            WHERE ca.consent_id = %s""",
+        (consent_id,),
+    )
+    return str(row["office_code"]) if row else None
+
+
+async def claim(conn: Conn, request_id: int, *, office: str, claimed_by: int) -> bool:
+    """Out of the shared intake, into an office's queue: the trigger requires
+    who and when in the same statement. False when another office took it
+    first - the row is no longer in the intake."""
+    cur = await conn.execute(
+        f"""UPDATE rights_request
+               SET office_id = {OFFICE_ID}, claimed_at = now(), claimed_by = %s
+             WHERE request_id = %s AND office_id IS NULL""",
+        (office, claimed_by, request_id),
+    )
+    return cur.rowcount == 1
+
+
+async def transfer(
+    conn: Conn, request_id: int, *, to_office: str, transferred_by: int, reason: str
+) -> None:
+    """To the other office, with who, when and why, in one statement; the
+    clock is not touched. Across both offices for this one statement: the
+    caller's office could not write a row into the other (open point F-12)."""
+    sealed = await seal("rights_request", {"transfer_reason": reason})
+    async with across_offices(conn):
+        await conn.execute(
+            f"""UPDATE rights_request
+               SET transferred_from_office_id = office_id,
+                   office_id = {OFFICE_ID},
+                   transferred_at = clock_timestamp(),
+                   transferred_by = %s,
+                   transfer_reason = %s
+             WHERE request_id = %s""",
+            (to_office, transferred_by, sealed["transfer_reason"], request_id),
+        )

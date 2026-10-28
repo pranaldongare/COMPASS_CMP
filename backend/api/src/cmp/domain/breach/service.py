@@ -143,9 +143,11 @@ async def record(
     actor_id: int,
     logged: dict[str, str | None] | None = None,
     cyber_attack: str | None = None,
+    office: str = offices.RND,
 ) -> Row:
-    """Log an incident. Nothing about it is known yet but that it was noticed,
-    and whether it is a personal data breach is for validation to say.
+    """Log an incident, into the register of the office that logs it. Nothing
+    about it is known yet but that it was noticed, and whether it is a
+    personal data breach is for validation to say.
 
     `logged` is what else the office can say at once (0047) - where it
     started, how it was found, what it touched, how much, whose data, which
@@ -204,8 +206,7 @@ async def record(
         recorded_by=actor_id,
         logged=told,
         cyber_attack=cyber_attack or None,
-        # The DPO office's register until breaches are logged by office.
-        office=offices.RND,
+        office=office,
     )
     await repo.add_status_history(
         conn,

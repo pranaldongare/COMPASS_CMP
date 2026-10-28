@@ -18,6 +18,7 @@ import type {
   NomineeOf,
   PublicRequestReceipt,
   PublicVerifyResult,
+  RequestOffice,
   RightsRequestType,
   RightsTriggerEvent,
   Uuid,
@@ -128,6 +129,14 @@ export interface MyRequestInput {
   request_type: RightsRequestType;
   request_text: string;
   about_dpo?: boolean;
+  /** Which office, when she holds consents with both (0055); `both` makes
+   *  one request to each. Left out, the server works it out. */
+  office?: "rnd" | "hr" | "both" | null;
+}
+
+/** The offices her requests can go to. Two, and the form asks which. */
+export function getMyRequestOffices(): Promise<{ offices: RequestOffice[] }> {
+  return apiGet<{ offices: RequestOffice[] }>("/me/requests/offices");
 }
 
 export function makeRequest(body: MyRequestInput): Promise<MyRequest> {

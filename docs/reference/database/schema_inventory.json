@@ -1,6 +1,6 @@
 {
-  "commit": "4337bea92b67322900c268e570bcf0532de29935",
-  "migration_head": "0054",
+  "commit": "cc0d2f6955e641250ee9348d36048e846343e903",
+  "migration_head": "0055",
   "migrations": [
     {
       "revision": "0001",
@@ -217,6 +217,10 @@
     {
       "revision": "0054",
       "source": "backend/api/migrations/versions/0054_link_audience_and_person_types.py"
+    },
+    {
+      "revision": "0055",
+      "source": "backend/api/migrations/versions/0055_rights_and_breaches_by_office.py"
     }
   ],
   "postgres_version": "16.15",
@@ -3941,7 +3945,7 @@
     {
       "table_name": "hr_category",
       "name": "default_person_type",
-      "position": 13,
+      "position": 14,
       "type": "person_type",
       "not_null": false,
       "default_value": null,
@@ -4189,6 +4193,15 @@
       "not_null": false,
       "default_value": null,
       "comment": null
+    },
+    {
+      "table_name": "legal_hold",
+      "name": "office_id",
+      "position": 11,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": "The office whose hold it is: the asset's project's, or the placing officer's for a person"
     },
     {
       "table_name": "message_copy",
@@ -6691,6 +6704,60 @@
       "not_null": false,
       "default_value": null,
       "comment": "The office that answers the request; NULL while it is in the shared intake"
+    },
+    {
+      "table_name": "rights_request",
+      "name": "claimed_at",
+      "position": 68,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": "When an office took the request from the shared intake"
+    },
+    {
+      "table_name": "rights_request",
+      "name": "claimed_by",
+      "position": 69,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "rights_request",
+      "name": "transferred_from_office_id",
+      "position": 70,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "rights_request",
+      "name": "transferred_at",
+      "position": 71,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "rights_request",
+      "name": "transferred_by",
+      "position": 72,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "rights_request",
+      "name": "transfer_reason",
+      "position": 73,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Why the last transfer moved the request to this office; sealed, FREE_TEXT"
     },
     {
       "table_name": "rights_request_attachment",
@@ -11906,6 +11973,23 @@
     },
     {
       "table_name": "legal_hold",
+      "name": "legal_hold_office_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (office_id) REFERENCES office(office_id)",
+      "columns": [
+        "office_id"
+      ],
+      "referenced_table": "office",
+      "referenced_columns": [
+        "office_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "legal_hold",
       "name": "legal_hold_pkey",
       "kind": "p",
       "definition": "PRIMARY KEY (hold_id)",
@@ -14030,6 +14114,39 @@
     },
     {
       "table_name": "rights_request",
+      "name": "rights_request_claimed",
+      "kind": "c",
+      "definition": "CHECK (((claimed_at IS NULL) = (claimed_by IS NULL)))",
+      "columns": [
+        "claimed_at",
+        "claimed_by"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_request",
+      "name": "rights_request_claimed_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (claimed_by) REFERENCES auth_user(id)",
+      "columns": [
+        "claimed_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_request",
       "name": "rights_request_classified_by_fkey",
       "kind": "f",
       "definition": "FOREIGN KEY (classified_by) REFERENCES auth_user(id)",
@@ -14236,6 +14353,58 @@
       "referenced_table": "auth_user",
       "referenced_columns": [
         "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_request",
+      "name": "rights_request_transfer_whole",
+      "kind": "c",
+      "definition": "CHECK ((((transferred_from_office_id IS NULL) = (transferred_at IS NULL)) AND ((transferred_at IS NULL) = (transferred_by IS NULL)) AND ((transferred_at IS NULL) = (transfer_reason IS NULL))))",
+      "columns": [
+        "transferred_from_office_id",
+        "transferred_at",
+        "transferred_by",
+        "transfer_reason"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_request",
+      "name": "rights_request_transferred_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (transferred_by) REFERENCES auth_user(id)",
+      "columns": [
+        "transferred_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_request",
+      "name": "rights_request_transferred_from_office_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (transferred_from_office_id) REFERENCES office(office_id)",
+      "columns": [
+        "transferred_from_office_id"
+      ],
+      "referenced_table": "office",
+      "referenced_columns": [
+        "office_id"
       ],
       "delete_action": "a",
       "update_action": "a",
@@ -16041,6 +16210,11 @@
     },
     {
       "table_name": "legal_hold",
+      "name": "idx_legal_hold_office",
+      "definition": "CREATE INDEX idx_legal_hold_office ON public.legal_hold USING btree (office_id)"
+    },
+    {
+      "table_name": "legal_hold",
       "name": "idx_legal_hold_subject",
       "definition": "CREATE INDEX idx_legal_hold_subject ON public.legal_hold USING btree (subject_user_id) WHERE (released_at IS NULL)"
     },
@@ -16870,7 +17044,8 @@
       "values": [
         "export_line",
         "asset_consent",
-        "manual"
+        "manual",
+        "activity_processor"
       ]
     },
     {
@@ -17218,6 +17393,11 @@
     },
     {
       "table_name": "legal_hold",
+      "name": "trg_legal_hold_office_fixed",
+      "definition": "CREATE TRIGGER trg_legal_hold_office_fixed BEFORE UPDATE OF office_id ON public.legal_hold FOR EACH ROW EXECUTE FUNCTION cmp_office_is_fixed()"
+    },
+    {
+      "table_name": "legal_hold",
       "name": "trg_legal_hold_release_only",
       "definition": "CREATE TRIGGER trg_legal_hold_release_only BEFORE DELETE OR UPDATE ON public.legal_hold FOR EACH ROW EXECUTE FUNCTION cmp_legal_hold_release_only()"
     },
@@ -17330,6 +17510,11 @@
       "table_name": "rights_item_execution",
       "name": "trg_item_execution_append_only",
       "definition": "CREATE TRIGGER trg_item_execution_append_only BEFORE DELETE OR UPDATE ON public.rights_item_execution FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
+      "table_name": "rights_request",
+      "name": "trg_rights_request_office_moves",
+      "definition": "CREATE TRIGGER trg_rights_request_office_moves BEFORE UPDATE OF office_id ON public.rights_request FOR EACH ROW EXECUTE FUNCTION cmp_rights_request_office_moves()"
     },
     {
       "table_name": "rights_request_attachment",
@@ -17679,6 +17864,9 @@
       "name": "cmp_restricted_country_lift_only"
     },
     {
+      "name": "cmp_rights_request_office_moves"
+    },
+    {
       "name": "cmp_site_owner_changed"
     },
     {
@@ -17707,10 +17895,10 @@
     "application_tables": 66,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 799,
-    "foreign_keys": 195,
+    "table_columns": 806,
+    "foreign_keys": 199,
     "enums": 39,
-    "triggers": 70,
-    "checks": 110
+    "triggers": 72,
+    "checks": 112
   }
 }

@@ -252,6 +252,7 @@ export function makeRequestRow(overrides: Partial<RightsRequestRow> = {}): Right
     acknowledged_at: RECEIVED,
     verification_status: "verified",
     about_dpo: false,
+    office: "rnd",
     linked_reference: null,
     consent_uuid: null,
     consent_project: null,
@@ -269,6 +270,10 @@ export function makeRequestDetail(overrides: Partial<RightsRequestDetail> = {}):
   return {
     ...makeRequestRow(),
     request_text: "What do you hold about me, and who has it?",
+    transferred_from: null,
+    transferred_at: null,
+    transfer_reason: null,
+    claimed_at: null,
     subject_email: "meera.iyer@example.com",
     subject_mobile: null,
     verification_method: "session",

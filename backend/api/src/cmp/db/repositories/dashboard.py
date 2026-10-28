@@ -426,12 +426,14 @@ async def trends(conn: Conn, role: Role, user_id: int) -> dict[str, list[int]]:
                 "requests_open": await _daily(
                     conn,
                     f"SELECT received_at::date AS day FROM rights_request"
-                    f" WHERE request_type <> 'grievance' AND received_at >= {_SINCE}",
+                    f" WHERE request_type <> 'grievance' AND received_at >= {_SINCE}"
+                    " AND (office_id IS NULL OR cmp_office_visible(office_id))",
                     p,
                 ),
                 "open_breaches": await _daily(
                     conn,
-                    f"SELECT detected_at::date AS day FROM breach WHERE detected_at >= {_SINCE}",
+                    f"SELECT detected_at::date AS day FROM breach WHERE detected_at >= {_SINCE}"
+                    " AND cmp_office_visible(office_id)",
                     p,
                 ),
                 "total_consents": await _daily(

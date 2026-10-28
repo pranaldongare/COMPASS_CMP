@@ -35,7 +35,8 @@ _BREACH = """
   b.cyber_attack,
   pr.processor_uuid AS location_processor_uuid, pr.legal_name AS location_processor_name,
   ds.source_uuid AS location_source_uuid, ds.name AS location_source_name,
-  rb.full_name AS recorded_by_name
+  rb.full_name AS recorded_by_name,
+  (SELECT o.office_code FROM office o WHERE o.office_id = b.office_id) AS office_code
   FROM breach b
   LEFT JOIN breach_recording rec ON rec.breach_id = b.breach_id
   LEFT JOIN auth_user rbb        ON rbb.id = rec.recorded_by
@@ -139,7 +140,13 @@ async def record_as_breach(
 
 
 async def by_uuid(conn: Conn, breach_uuid: str) -> Row | None:
-    return await fetch_one(conn, f"SELECT {_BREACH} WHERE b.breach_uuid = %s", (breach_uuid,))
+    """A breach by its UUID, if it is the session's office's (ADR 0032): the
+    other office's is not there, as a wrong UUID is not."""
+    return await fetch_one(
+        conn,
+        f"SELECT {_BREACH} WHERE b.breach_uuid = %s AND cmp_office_visible(b.office_id)",
+        (breach_uuid,),
+    )
 
 
 async def by_breach_id(conn: Conn, breach_id: int) -> Row | None:
@@ -161,7 +168,7 @@ async def lock(conn: Conn, breach_id: int) -> Row:
 
 
 async def list_breaches(conn: Conn, *, status: str | None) -> list[Row]:
-    where = "WHERE b.status = %s" if status else ""
+    where = "WHERE cmp_office_visible(b.office_id)" + (" AND b.status = %s" if status else "")
     params: tuple[Any, ...] = (status,) if status else ()
     return await fetch_all(
         conn,

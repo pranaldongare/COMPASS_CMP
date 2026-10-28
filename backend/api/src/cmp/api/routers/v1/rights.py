@@ -13,7 +13,7 @@ anything about a request; it parses, calls, and shapes the answer.
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, Query, Request, Response, UploadFile, status
@@ -28,10 +28,12 @@ from cmp.api.dependencies import (
     RightsWriter,
     reject_unknown_filters,
 )
+from cmp.core import offices
 from cmp.core.errors import NotFound
 from cmp.core.pagination import PageRequest
+from cmp.core.permissions import OFFICE_TITLES
 from cmp.core.security import file_hash
-from cmp.db.pool import connection, transaction
+from cmp.db.pool import across_offices, connection, transaction
 from cmp.db.repositories import audit as audit_repo
 from cmp.db.repositories import entities as entity_repo
 from cmp.db.repositories import rights as repo
@@ -83,6 +85,9 @@ class RequestRow(Out):
     acknowledged_at: datetime | None
     verification_status: str
     about_dpo: bool
+    #: The office whose queue it is in (`rnd`, `hr`), or null: the shared
+    #: intake, both offices' until one claims it (0055).
+    office: str | None = None
     linked_reference: str | None
     #: Set when the request is confined to one consent.
     consent_uuid: UUID | None = None
@@ -439,6 +444,11 @@ class AttachmentOut(Out):
 
 
 class RequestDetail(RequestOut):
+    #: Where it came from, when it was transferred, and why (sealed).
+    transferred_from: str | None = None
+    transferred_at: datetime | None = None
+    transfer_reason: str | None = None
+    claimed_at: datetime | None = None
     holders: list[HolderOut]
     items: list[ItemOut]
     transitions: list[dict[str, Any]]
@@ -497,6 +507,8 @@ class SubjectRequestOut(Out):
     response_files: list[ResponseFileOut] = Field(default_factory=list)
     #: The documents she sent with it.
     attachments: list[AttachmentOut] = Field(default_factory=list)
+    #: Made with it, to the other office, when she asked both (0055).
+    also: list[SubjectRequestOut] = Field(default_factory=list)
 
 
 class NominationOut(Out):
@@ -548,7 +560,8 @@ class NomineeOfOut(Out):
 
 # ------------------------------------------------------------------- inputs
 class LogRequest(Schema):
-    """A request that arrived by email, logged by the DPO. Same record as the others."""
+    """A request that arrived by email, logged by an office's officer. Same
+    record as the others, in the logging officer's office."""
 
     request_type: str
     contact: Contact
@@ -636,6 +649,34 @@ class SubjectRequestIn(Schema):
     request_type: str
     request_text: LongText
     about_dpo: bool = False
+    #: Which office it is for, when she holds consents with both (0055):
+    #: `rnd`, `hr`, or `both` - one request to each, the same D0. Left out,
+    #: the office is worked out from her consents.
+    office: Literal["rnd", "hr", "both"] | None = None
+
+
+class OfficeChoiceOut(Out):
+    code: str
+    title: str
+
+
+class MyOfficesOut(Out):
+    #: The offices whose notices she holds a current consent on. Two, and
+    #: the form asks which, or both.
+    offices: list[OfficeChoiceOut]
+
+
+class TransferIn(Schema):
+    office: Literal["rnd", "hr"]
+    reason: ReasonText
+
+
+class TransferOut(Out):
+    """What the sender may still see of a request it moved: no more."""
+
+    request_uuid: UUID
+    reference: str
+    office: str
 
 
 class DisputeIn(Schema):
@@ -652,7 +693,7 @@ class NominationIn(Schema):
 
 # ------------------------------------------------------------------ helpers
 def _with_clock(row: dict[str, Any]) -> dict[str, Any]:
-    return {**row, "clock": service.clock_of(row)}
+    return {**row, "office": row.get("office_code"), "clock": service.clock_of(row)}
 
 
 async def _linked(conn: Any, row: dict[str, Any], principal: Any) -> dict[str, Any] | None:
@@ -804,6 +845,9 @@ async def log_request(body: LogRequest, principal: RightsWriter) -> dict[str, An
             subject_user_id=subject_id,
             actor_id=principal.user_id,
             about_dpo=body.about_dpo,
+            # The logging officer's office; the administrator's routes by her
+            # consents, as a request from outside would.
+            office=principal.office,
         )
         return _with_clock(row)
 
@@ -861,6 +905,51 @@ async def _load(conn: Any, request_uuid: UUID, principal: Any) -> dict[str, Any]
     return await service.require(
         conn, str(request_uuid), role=principal.role, user_id=principal.user_id
     )
+
+
+# ------------------------------------------------------- staff: the office
+@router.post(
+    "/{request_uuid}/claim",
+    response_model=RequestOut,
+    summary="Take a request out of the shared intake into my office's queue",
+)
+async def claim(request_uuid: UUID, principal: RightsWriter) -> dict[str, Any]:
+    async with transaction() as conn:
+        row = await _load(conn, request_uuid, principal)
+        return _with_clock(
+            await service.claim(
+                conn,
+                row,
+                role=principal.role,
+                office=principal.office,
+                actor_id=principal.user_id,
+            )
+        )
+
+
+@router.post(
+    "/{request_uuid}/transfer",
+    response_model=TransferOut,
+    summary="Transfer a request to the other office, with the reason",
+)
+async def transfer(request_uuid: UUID, body: TransferIn, principal: RightsWriter) -> dict[str, Any]:
+    """D0 and the due date do not move. The request leaves this office's
+    queue; what is returned is all it still sees of it."""
+    async with transaction() as conn:
+        row = await _load(conn, request_uuid, principal)
+        moved = await service.transfer(
+            conn,
+            row,
+            role=principal.role,
+            to_office=body.office,
+            reason=body.reason,
+            actor_id=principal.user_id,
+        )
+        return {
+            "request_uuid": moved["request_uuid"],
+            "reference": moved["reference"],
+            "office": moved["office_code"],
+        }
 
 
 # --------------------------------------------------------- staff: the path
@@ -1756,6 +1845,17 @@ def _file(payload: bytes, filename: str, recorded: str) -> Response:
 
 
 # ---------------------------------------------------------- the principal
+@subject_router.get(
+    "/requests/offices",
+    response_model=MyOfficesOut,
+    summary="The offices my requests can go to",
+)
+async def my_offices(principal: RequireDataSubject) -> dict[str, Any]:
+    async with connection() as conn:
+        codes = await service.offices_of(conn, principal.user_id)
+    return {"offices": [{"code": c, "title": OFFICE_TITLES[c]} for c in codes]}
+
+
 @subject_router.get("/requests", response_model=list[SubjectRequestOut], summary="My requests")
 async def my_requests(principal: RequireDataSubject) -> list[dict[str, Any]]:
     async with connection() as conn:
@@ -1771,27 +1871,35 @@ async def my_requests(principal: RequireDataSubject) -> list[dict[str, Any]]:
 )
 async def make_request(body: SubjectRequestIn, principal: RequireDataSubject) -> dict[str, Any]:
     """From the dashboard. The session is the verification, so the clock starts
-    and the acknowledgement goes out in the same moment."""
+    and the acknowledgement goes out in the same moment.
+
+    `office` `both` makes one request to each office, received together: the
+    first is returned, the second under `also`."""
     service.taken(body.request_type)
+    to: list[str | None] = list(offices.CODES) if body.office == "both" else [body.office]
     async with transaction() as conn:
         me = await user_repo.by_id(conn, principal.user_id)
         if not me:
             raise NotFound("User")
-        row = await service.create(
-            conn,
-            request_type=body.request_type,
-            channel="portal",
-            request_text=body.request_text,
-            submitted_contact=str(me.get("email") or me.get("mobile") or ""),
-            submitted_name=str(me.get("full_name") or ""),
-            subject_user_id=principal.user_id,
-            actor_id=principal.user_id,
-            verification_method="session",
-            about_dpo=body.about_dpo,
-        )
+        rows = [
+            await service.create(
+                conn,
+                request_type=body.request_type,
+                channel="portal",
+                request_text=body.request_text,
+                submitted_contact=str(me.get("email") or me.get("mobile") or ""),
+                submitted_name=str(me.get("full_name") or ""),
+                subject_user_id=principal.user_id,
+                actor_id=principal.user_id,
+                verification_method="session",
+                about_dpo=body.about_dpo,
+                office=office,
+            )
+            for office in to
+        ]
     # New: nothing released and nothing attached yet - the documents follow,
     # one call each, to /me/requests/{uuid}/attachments.
-    return _subject_view(row)
+    return {**_subject_view(rows[0]), "also": [_subject_view(r) for r in rows[1:]]}
 
 
 async def _mine(conn: Any, request_uuid: UUID, user_id: int) -> dict[str, Any]:
@@ -2010,6 +2118,9 @@ async def revoke_nomination(nomination_uuid: UUID, principal: RequireDataSubject
 
 # ------------------------------------------------------ the respondent's side
 ticket_router = APIRouter(prefix="/tickets", tags=["tickets"])
+# A respondent answers the tickets addressed to them whichever office's request
+# it is (open point F-13): every route here is bounded by the holder's own
+# account, and reads across both offices within that.
 
 TicketReader = Annotated[Any, Depends(RequireResource("ticket"))]
 TicketWriter = Annotated[Any, Depends(RequireResource("ticket", write=True))]
@@ -2020,7 +2131,7 @@ async def my_tickets(principal: TicketReader) -> list[dict[str, Any]]:
     """The portal channel's inbox: the holders of a rights request that are one
     of our own teams answer here, not by email. Scope OWN - only what is
     addressed to this account, and only what the instruction says."""
-    async with connection() as conn:
+    async with connection() as conn, across_offices(conn):
         return await service.tickets_for(conn, principal.user_id)
 
 
@@ -2031,7 +2142,7 @@ async def my_tickets(principal: TicketReader) -> list[dict[str, Any]]:
 )
 async def my_ticket(holder_uuid: UUID, principal: TicketReader) -> dict[str, Any]:
     """Reading it marks the office's messages read."""
-    async with transaction() as conn:
+    async with transaction() as conn, across_offices(conn):
         return await service.ticket_detail_for(conn, principal.user_id, str(holder_uuid))
 
 
@@ -2048,7 +2159,7 @@ async def message_office(
 ) -> dict[str, Any]:
     """Kept on the thread, and every DPO is told."""
     evidence_ref, evidence_hash, evidence_name = await _attachment(evidence)
-    async with transaction() as conn:
+    async with transaction() as conn, across_offices(conn):
         return await service.post_holder_message(
             conn,
             user_id=principal.user_id,
@@ -2067,7 +2178,7 @@ async def message_office(
 async def my_message_attachment(
     holder_uuid: UUID, message_uuid: UUID, principal: TicketReader
 ) -> Response:
-    async with transaction() as conn:
+    async with transaction() as conn, across_offices(conn):
         holder = await repo.ticket_for_user(conn, principal.user_id, str(holder_uuid))
         if not holder:
             raise NotFound("Ticket")
@@ -2092,7 +2203,7 @@ async def return_my_ticket(
     evidence: Annotated[UploadFile | None, File(description="Optional evidence, max 25 MB")] = None,
 ) -> dict[str, Any]:
     evidence_ref, evidence_hash, evidence_name = await _attachment(evidence)
-    async with transaction() as conn:
+    async with transaction() as conn, across_offices(conn):
         return await service.return_own_ticket(
             conn,
             user_id=principal.user_id,

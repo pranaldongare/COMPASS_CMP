@@ -20,6 +20,7 @@ from pydantic import AwareDatetime, Field
 
 from cmp.api import uploads
 from cmp.api.dependencies import BreachReader, BreachWriter
+from cmp.core import offices
 from cmp.db.pool import connection, transaction
 from cmp.db.repositories.breaches import LOGGED_TEXT
 from cmp.domain.breach import affected, board, lists, notices, service, tickets
@@ -368,6 +369,7 @@ async def record_breach(body: BreachIn, principal: BreachWriter) -> dict[str, An
             actor_id=principal.user_id,
             logged=body.model_dump(include=set(LOGGED_TEXT)),
             cyber_attack=body.cyber_attack,
+            office=principal.office or offices.RND,
         )
 
 

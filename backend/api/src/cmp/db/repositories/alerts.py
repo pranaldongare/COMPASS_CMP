@@ -10,7 +10,9 @@ async def rights_due_within(conn: Conn, days: int, *, limit: int = 50) -> list[R
     """Open requests overdue or due within `days`, soonest first."""
     return await fetch_all(
         conn,
-        """SELECT r.reference, r.request_type::text AS request_type, r.due_at
+        """SELECT r.reference, r.request_type::text AS request_type, r.due_at,
+                  (SELECT o.office_code FROM office o WHERE o.office_id = r.office_id)
+                    AS office_code
              FROM rights_request r
             WHERE r.status <> 'closed' AND r.due_at < now() + make_interval(days => %s)
             ORDER BY r.due_at LIMIT %s""",
@@ -22,7 +24,9 @@ async def open_breaches_with_dated_duties(conn: Conn) -> list[Row]:
     return await fetch_all(
         conn,
         """SELECT DISTINCT b.breach_id, b.breach_uuid::text AS breach_uuid,
-                  coalesce(rec.reference, b.reference) AS reference
+                  coalesce(rec.reference, b.reference) AS reference,
+                  (SELECT o.office_code FROM office o WHERE o.office_id = b.office_id)
+                    AS office_code
              FROM breach b
              JOIN breach_obligation o ON o.breach_id = b.breach_id AND o.due_at IS NOT NULL
              LEFT JOIN breach_recording rec ON rec.breach_id = b.breach_id

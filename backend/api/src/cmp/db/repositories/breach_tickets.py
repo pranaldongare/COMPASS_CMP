@@ -23,6 +23,7 @@ _COLUMNS = """
   t.ticket_id, t.ticket_uuid, t.breach_id, t.holder_user_id, t.parent_ticket_id,
   t.instruction, t.answer_by, t.created_at, t.office_read_at, t.holder_read_at,
   b.breach_uuid, b.status AS breach_status,
+  (SELECT o.office_code FROM office o WHERE o.office_id = b.office_id) AS office_code,
   coalesce(rec.reference, b.reference) AS breach_reference,
   hu.uuid AS holder_uuid, hu.full_name AS holder_name, hu.email AS holder_email,
   hu.role::text AS holder_role, hu.status::text AS holder_status,
@@ -265,8 +266,8 @@ async def kinds_on(conn: Conn, breach_ids: list[int]) -> list[Row]:
 
 
 async def on_open_breaches(conn: Conn) -> list[Row]:
-    """Every ticket on an open breach, with its events' kinds in order, for the
-    DPO's dashboard counts."""
+    """Every ticket on an open breach of the session's office, with its
+    events' kinds in order, for the officer's dashboard counts."""
     return await fetch_all(
         conn,
         """SELECT t.ticket_id, t.answer_by,
@@ -274,6 +275,7 @@ async def on_open_breaches(conn: Conn) -> list[Row]:
                            FILTER (WHERE e.event_id IS NOT NULL), '{}') AS kinds
              FROM breach_ticket t
              JOIN breach b ON b.breach_id = t.breach_id AND b.status = 'open'
+                          AND cmp_office_visible(b.office_id)
              LEFT JOIN breach_ticket_event e ON e.ticket_id = t.ticket_id
             GROUP BY t.ticket_id, t.answer_by""",
     )

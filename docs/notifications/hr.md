@@ -3,8 +3,9 @@
 [Notification strategy](README.md) · the design these junctions were built
 from. `hr_reconsent_request` and `hr_withdrawal_notice` are in
 `core/messages.py` and generated into [consent.md](consent.md) (increments
-4 and 6); `rights_transfer_received` follows with increment 7. Where this
-page and the generated one differ, the generated one is what is sent.
+4 and 6); `rights_transfer_received` into [rights.md](rights.md) (increment
+7). Where this page and the generated one differ, the generated one is what
+is sent.
 
 The HR track adds three junctions and widens two. Every one is email only
 unless stated, copyable by the office except where it carries a link, and
@@ -50,7 +51,8 @@ to by employee ID or principal ID.
 | Channels | email |
 | Subject | `Rights request {reference} transferred to your office` |
 | Body | the reference, the type, D0 and the due date (unchanged), who transferred it, the reason, the link |
-| Variables | `reference`, `request_type`, `received_at`, `due_at`, `from_office`, `reason`, `request_url` |
+| Variables | `reference`, `request_type`, `received_at`, `due_date`, `from_office`, `reason` (travels sealed, opened at delivery), `request_url` |
+| Sent by | `tasks/notifications/alerts.py::send_rights_transfer_received`, dispatched from `domain/rights/service.transfer` |
 
 ## Widened
 

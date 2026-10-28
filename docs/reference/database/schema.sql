@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict UWWmIBRwM0drgbgvrvEwhnPYr51wdj2HO5dYPWboN7hKI6UwC4wLwJQBYlj03ve
+\restrict X5VEo36Ib6u9H1eamh7dk33zYAxMWDaOr0jpHH3AUIdfklS9QhlfLrK0nfDa9k9
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -340,7 +340,8 @@ CREATE TYPE public.retention_basis AS ENUM (
 CREATE TYPE public.rights_holder_source AS ENUM (
     'export_line',
     'asset_consent',
-    'manual'
+    'manual',
+    'activity_processor'
 );
 
 
@@ -1268,6 +1269,39 @@ BEGIN
     RAISE EXCEPTION 'only the lifting of a restriction may be recorded' USING ERRCODE = 'restrict_violation';
   END IF;
   RETURN NEW;
+END;
+$$;
+
+
+--
+-- Name: cmp_rights_request_office_moves(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cmp_rights_request_office_moves() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF NEW.office_id IS NOT DISTINCT FROM OLD.office_id THEN
+    RETURN NEW;
+  END IF;
+  -- A claim: out of the shared intake, with who and when.
+  IF OLD.office_id IS NULL AND NEW.office_id IS NOT NULL
+     AND NEW.claimed_at IS NOT NULL AND NEW.claimed_by IS NOT NULL
+     AND OLD.claimed_at IS NULL THEN
+    RETURN NEW;
+  END IF;
+  -- A transfer: from one office to another, with a new stamp and its reason.
+  IF OLD.office_id IS NOT NULL AND NEW.office_id IS NOT NULL
+     AND NEW.transferred_from_office_id = OLD.office_id
+     AND NEW.transferred_at IS DISTINCT FROM OLD.transferred_at
+     AND NEW.transferred_at IS NOT NULL
+     AND NEW.transferred_by IS NOT NULL
+     AND NEW.transfer_reason IS NOT NULL THEN
+    RETURN NEW;
+  END IF;
+  RAISE EXCEPTION
+    USING MESSAGE = 'A rights request changes office only by a claim or a transfer',
+          ERRCODE = '42501';
 END;
 $$;
 
@@ -3492,9 +3526,12 @@ CREATE TABLE public.legal_hold (
     placed_at timestamp with time zone DEFAULT now() NOT NULL,
     released_by integer,
     released_at timestamp with time zone,
+    office_id integer NOT NULL,
     CONSTRAINT legal_hold_covers_one CHECK (((asset_id IS NULL) <> (subject_user_id IS NULL))),
     CONSTRAINT legal_hold_release_attributed CHECK (((released_at IS NULL) = (released_by IS NULL)))
 );
+
+ALTER TABLE ONLY public.legal_hold FORCE ROW LEVEL SECURITY;
 
 
 --
@@ -3502,6 +3539,13 @@ CREATE TABLE public.legal_hold (
 --
 
 COMMENT ON TABLE public.legal_hold IS 'Stops erasure of an asset, or of everything about a person, until released (S2-03)';
+
+
+--
+-- Name: COLUMN legal_hold.office_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.legal_hold.office_id IS 'The office whose hold it is: the asset''s project''s, or the placing officer''s for a person';
 
 
 --
@@ -4639,11 +4683,19 @@ CREATE TABLE public.rights_request (
     submitted_contact_hash text,
     submitted_name_ngrams text[],
     office_id integer,
+    claimed_at timestamp with time zone,
+    claimed_by integer,
+    transferred_from_office_id integer,
+    transferred_at timestamp with time zone,
+    transferred_by integer,
+    transfer_reason text,
     CONSTRAINT rights_closed_has_outcome CHECK (((status <> 'closed'::public.rights_request_status) OR (outcome IS NOT NULL))),
     CONSTRAINT rights_due_after_receipt CHECK ((due_at > received_at)),
     CONSTRAINT rights_nominee_has_nomination CHECK (((channel <> 'nominee'::public.rights_request_channel) OR (nomination_id IS NOT NULL))),
     CONSTRAINT rights_refusal_has_reason CHECK (((outcome <> 'refused'::public.rights_request_outcome) OR (refusal_reason IS NOT NULL))),
+    CONSTRAINT rights_request_claimed CHECK (((claimed_at IS NULL) = (claimed_by IS NULL))),
     CONSTRAINT rights_request_contact_indexed CHECK (((submitted_contact IS NULL) OR (submitted_contact_hash IS NOT NULL))),
+    CONSTRAINT rights_request_transfer_whole CHECK ((((transferred_from_office_id IS NULL) = (transferred_at IS NULL)) AND ((transferred_at IS NULL) = (transferred_by IS NULL)) AND ((transferred_at IS NULL) = (transfer_reason IS NULL)))),
     CONSTRAINT rights_verified_is_attributed CHECK (((verification_status <> 'verified'::public.rights_verification_status) OR ((verified_at IS NOT NULL) AND (verification_method IS NOT NULL))))
 );
 
@@ -4669,6 +4721,20 @@ COMMENT ON COLUMN public.rights_request.due_at IS 'Copied from the published res
 --
 
 COMMENT ON COLUMN public.rights_request.office_id IS 'The office that answers the request; NULL while it is in the shared intake';
+
+
+--
+-- Name: COLUMN rights_request.claimed_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.rights_request.claimed_at IS 'When an office took the request from the shared intake';
+
+
+--
+-- Name: COLUMN rights_request.transfer_reason; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.rights_request.transfer_reason IS 'Why the last transfer moved the request to this office; sealed, FREE_TEXT';
 
 
 --
@@ -7287,6 +7353,13 @@ CREATE INDEX idx_legal_hold_asset ON public.legal_hold USING btree (asset_id) WH
 
 
 --
+-- Name: idx_legal_hold_office; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_legal_hold_office ON public.legal_hold USING btree (office_id);
+
+
+--
 -- Name: idx_legal_hold_subject; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8008,6 +8081,13 @@ CREATE TRIGGER trg_item_execution_append_only BEFORE DELETE OR UPDATE ON public.
 
 
 --
+-- Name: legal_hold trg_legal_hold_office_fixed; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_legal_hold_office_fixed BEFORE UPDATE OF office_id ON public.legal_hold FOR EACH ROW EXECUTE FUNCTION public.cmp_office_is_fixed();
+
+
+--
 -- Name: legal_hold trg_legal_hold_release_only; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -8145,6 +8225,13 @@ CREATE TRIGGER trg_restricted_country_lift_only BEFORE DELETE OR UPDATE ON publi
 --
 
 CREATE TRIGGER trg_rights_request_attachment_append_only BEFORE DELETE OR UPDATE ON public.rights_request_attachment FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
+-- Name: rights_request trg_rights_request_office_moves; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_rights_request_office_moves BEFORE UPDATE OF office_id ON public.rights_request FOR EACH ROW EXECUTE FUNCTION public.cmp_rights_request_office_moves();
 
 
 --
@@ -9067,6 +9154,14 @@ ALTER TABLE ONLY public.legal_hold
 
 
 --
+-- Name: legal_hold legal_hold_office_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.legal_hold
+    ADD CONSTRAINT legal_hold_office_id_fkey FOREIGN KEY (office_id) REFERENCES public.office(office_id);
+
+
+--
 -- Name: legal_hold legal_hold_placed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9515,6 +9610,14 @@ ALTER TABLE ONLY public.rights_request_attachment
 
 
 --
+-- Name: rights_request rights_request_claimed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rights_request
+    ADD CONSTRAINT rights_request_claimed_by_fkey FOREIGN KEY (claimed_by) REFERENCES public.auth_user(id);
+
+
+--
 -- Name: rights_request rights_request_classified_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9664,6 +9767,22 @@ ALTER TABLE ONLY public.rights_request
 
 ALTER TABLE ONLY public.rights_request
     ADD CONSTRAINT rights_request_subject_user_id_fkey FOREIGN KEY (subject_user_id) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: rights_request rights_request_transferred_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rights_request
+    ADD CONSTRAINT rights_request_transferred_by_fkey FOREIGN KEY (transferred_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: rights_request rights_request_transferred_from_office_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rights_request
+    ADD CONSTRAINT rights_request_transferred_from_office_id_fkey FOREIGN KEY (transferred_from_office_id) REFERENCES public.office(office_id);
 
 
 --
@@ -9943,6 +10062,12 @@ ALTER TABLE public.hr_poc_category ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.import_batch ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: legal_hold; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.legal_hold ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: notice; Type: ROW SECURITY; Schema: public; Owner: -
@@ -10300,6 +10425,17 @@ CREATE POLICY office_isolation ON public.import_batch USING (((current_setting('
 
 
 --
+-- Name: legal_hold office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.legal_hold USING (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true)))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true))))));
+
+
+--
 -- Name: notice office_isolation; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -10641,5 +10777,5 @@ ALTER TABLE public.template_version_purpose ENABLE ROW LEVEL SECURITY;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict UWWmIBRwM0drgbgvrvEwhnPYr51wdj2HO5dYPWboN7hKI6UwC4wLwJQBYlj03ve
+\unrestrict X5VEo36Ib6u9H1eamh7dk33zYAxMWDaOr0jpHH3AUIdfklS9QhlfLrK0nfDa9k9
 

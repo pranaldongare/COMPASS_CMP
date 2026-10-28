@@ -110,6 +110,12 @@ export const recordEvent = (uuid: Uuid, body: { evidenced: boolean; note?: strin
 export const escalate = (uuid: Uuid) => apiPost<RightsRequest>(action(uuid, "escalate"), {});
 export const assignReviewer = (uuid: Uuid, reviewer_uuid: Uuid) =>
   apiPost<RightsRequest>(action(uuid, "reviewer"), { reviewer_uuid });
+/** Out of the shared intake into my office's queue (0055). */
+export const claimRequest = (uuid: Uuid) => apiPost<RightsRequest>(action(uuid, "claim"), {});
+/** To the other office, with the reason. What comes back is all this office
+ *  still sees of it. */
+export const transferRequest = (uuid: Uuid, body: { office: "rnd" | "hr"; reason: string }) =>
+  apiPost<{ request_uuid: Uuid; reference: string; office: string }>(action(uuid, "transfer"), body);
 export const transitionRequest = (uuid: Uuid, body: { to: string; reason?: string | null }) =>
   apiPost<RightsRequest>(action(uuid, "transition"), body);
 

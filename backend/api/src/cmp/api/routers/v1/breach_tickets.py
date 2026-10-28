@@ -22,7 +22,7 @@ from pydantic import Field
 from cmp.api import uploads
 from cmp.api.dependencies import BreachTicketReader, BreachTicketWriter
 from cmp.api.routers.v1.breaches import BreachTicketMessageOut, BreachTicketMoveOut
-from cmp.db.pool import connection, transaction
+from cmp.db.pool import across_offices, connection, transaction
 from cmp.domain.breach import tickets
 from cmp.schemas.common import Out, Schema
 
@@ -57,7 +57,7 @@ class MyBreachTicketDetailOut(Out):
 
 @router.get("", response_model=list[MyBreachTicketOut], summary="Breach tickets addressed to me")
 async def my_breach_tickets(principal: BreachTicketReader) -> list[dict[str, Any]]:
-    async with connection() as conn:
+    async with connection() as conn, across_offices(conn):
         return await tickets.mine(conn, user_id=principal.user_id)
 
 
@@ -68,7 +68,7 @@ async def my_breach_tickets(principal: BreachTicketReader) -> list[dict[str, Any
 )
 async def my_breach_ticket(ticket_uuid: UUID, principal: BreachTicketReader) -> dict[str, Any]:
     """Reading it marks the Privacy Office's messages read."""
-    async with transaction() as conn:
+    async with transaction() as conn, across_offices(conn):
         return await tickets.my_detail(
             conn, user_id=principal.user_id, ticket_uuid=str(ticket_uuid)
         )
@@ -86,7 +86,7 @@ async def message_office(
     evidence: Annotated[UploadFile | None, File(description="Optional file, max 25 MB")] = None,
 ) -> dict[str, Any]:
     stored = await uploads.stored(evidence, subdir="breach")
-    async with transaction() as conn:
+    async with transaction() as conn, across_offices(conn):
         return await tickets.holder_message(
             conn,
             user_id=principal.user_id,
@@ -103,7 +103,7 @@ async def message_office(
 async def my_ticket_file(
     ticket_uuid: UUID, message_uuid: UUID, principal: BreachTicketReader
 ) -> Response:
-    async with transaction() as conn:
+    async with transaction() as conn, across_offices(conn):
         payload, name, recorded = await tickets.holder_attachment(
             conn,
             user_id=principal.user_id,
@@ -131,7 +131,7 @@ async def add_colleague(
 ) -> dict[str, Any]:
     """The answer is your own ticket whatever happened to theirs, so it says
     nothing about whether an address has an account."""
-    async with transaction() as conn:
+    async with transaction() as conn, across_offices(conn):
         return await tickets.add_colleague(
             conn,
             user_id=principal.user_id,
@@ -157,7 +157,7 @@ async def return_my_breach_ticket(
     evidence: Annotated[UploadFile | None, File(description="Optional evidence, max 25 MB")] = None,
 ) -> dict[str, Any]:
     stored = await uploads.stored(evidence, subdir="breach")
-    async with transaction() as conn:
+    async with transaction() as conn, across_offices(conn):
         return await tickets.return_ticket(
             conn,
             user_id=principal.user_id,

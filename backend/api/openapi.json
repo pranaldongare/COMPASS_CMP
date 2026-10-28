@@ -3596,6 +3596,27 @@
         }
       }
     },
+    "/me/requests/offices": {
+      "get": {
+        "tags": [
+          "me"
+        ],
+        "summary": "The offices my requests can go to",
+        "operationId": "my_offices_me_requests_offices_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyOfficesOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/me/requests": {
       "get": {
         "tags": [
@@ -3625,7 +3646,7 @@
           "me"
         ],
         "summary": "Make a request, signed in",
-        "description": "From the dashboard. The session is the verification, so the clock starts\nand the acknowledgement goes out in the same moment.",
+        "description": "From the dashboard. The session is the verification, so the clock starts\nand the acknowledgement goes out in the same moment.\n\n`office` `both` makes one request to each office, received together: the\nfirst is returned, the second under `also`.",
         "operationId": "make_request_me_requests_post",
         "requestBody": {
           "content": {
@@ -13178,6 +13199,103 @@
                     "additionalProperties": true
                   },
                   "title": "Response Get Trail Requests  Request Uuid  Trail Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{request_uuid}/claim": {
+      "post": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "Take a request out of the shared intake into my office's queue",
+        "operationId": "claim_requests__request_uuid__claim_post",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{request_uuid}/transfer": {
+      "post": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "Transfer a request to the other office, with the reason",
+        "description": "D0 and the due date do not move. The request leaves this office's\nqueue; what is returned is all it still sees of it.",
+        "operationId": "transfer_requests__request_uuid__transfer_post",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransferOut"
                 }
               }
             }
@@ -29598,7 +29716,7 @@
           "request_text"
         ],
         "title": "LogRequest",
-        "description": "A request that arrived by email, logged by the DPO. Same record as the others."
+        "description": "A request that arrived by email, logged by an office's officer. Same\nrecord as the others, in the logging officer's office."
       },
       "LoginRequest": {
         "properties": {
@@ -30217,6 +30335,22 @@
         ],
         "title": "MyBreachTicketOut",
         "description": "Exactly what a holder is given (BD-13), and nothing else."
+      },
+      "MyOfficesOut": {
+        "properties": {
+          "offices": {
+            "items": {
+              "$ref": "#/components/schemas/OfficeChoiceOut"
+            },
+            "type": "array",
+            "title": "Offices"
+          }
+        },
+        "type": "object",
+        "required": [
+          "offices"
+        ],
+        "title": "MyOfficesOut"
       },
       "NominationActIn": {
         "properties": {
@@ -31262,6 +31396,24 @@
         "additionalProperties": false,
         "type": "object",
         "title": "NoticeUpdate"
+      },
+      "OfficeChoiceOut": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "title"
+        ],
+        "title": "OfficeChoiceOut"
       },
       "OfficeOut": {
         "properties": {
@@ -33906,6 +34058,17 @@
             "type": "boolean",
             "title": "About Dpo"
           },
+          "office": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Office"
+          },
           "linked_reference": {
             "anyOf": [
               {
@@ -34369,6 +34532,52 @@
             "type": "integer",
             "title": "Items Undecided"
           },
+          "transferred_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transferred From"
+          },
+          "transferred_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transferred At"
+          },
+          "transfer_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transfer Reason"
+          },
+          "claimed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claimed At"
+          },
           "holders": {
             "items": {
               "$ref": "#/components/schemas/HolderOut"
@@ -34622,6 +34831,17 @@
           "about_dpo": {
             "type": "boolean",
             "title": "About Dpo"
+          },
+          "office": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Office"
           },
           "linked_reference": {
             "anyOf": [
@@ -35259,6 +35479,17 @@
           "about_dpo": {
             "type": "boolean",
             "title": "About Dpo"
+          },
+          "office": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Office"
           },
           "linked_reference": {
             "anyOf": [
@@ -36343,6 +36574,22 @@
             "type": "boolean",
             "title": "About Dpo",
             "default": false
+          },
+          "office": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "rnd",
+                  "hr",
+                  "both"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Office"
           }
         },
         "additionalProperties": false,
@@ -36611,6 +36858,13 @@
             },
             "type": "array",
             "title": "Attachments"
+          },
+          "also": {
+            "items": {
+              "$ref": "#/components/schemas/SubjectRequestOut"
+            },
+            "type": "array",
+            "title": "Also"
           }
         },
         "type": "object",
@@ -37899,6 +38153,55 @@
         ],
         "title": "TicketOut",
         "description": "A ticket as its respondent sees it: what is asked, of whom, by when."
+      },
+      "TransferIn": {
+        "properties": {
+          "office": {
+            "type": "string",
+            "enum": [
+              "rnd",
+              "hr"
+            ],
+            "title": "Office"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "office",
+          "reason"
+        ],
+        "title": "TransferIn"
+      },
+      "TransferOut": {
+        "properties": {
+          "request_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Uuid"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "office": {
+            "type": "string",
+            "title": "Office"
+          }
+        },
+        "type": "object",
+        "required": [
+          "request_uuid",
+          "reference",
+          "office"
+        ],
+        "title": "TransferOut",
+        "description": "What the sender may still see of a request it moved: no more."
       },
       "TransitionIn": {
         "properties": {

@@ -117,6 +117,8 @@ ENCRYPTED_FIELDS: dict[str, dict[str, DataType]] = {
         "refusal_reason": DataType.FREE_TEXT,
         "remedy_text": DataType.FREE_TEXT,
         "response_text": DataType.FREE_TEXT,
+        # Why an office moved the request to the other (0055).
+        "transfer_reason": DataType.FREE_TEXT,
     },
     "rights_request_holder": {
         "responder_name": DataType.NAME,

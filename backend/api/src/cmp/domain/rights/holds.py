@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from cmp.core import offices
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
 from cmp.db.repositories import legal_holds as hold_repo
 from cmp.db.repositories import rights as rights_repo
@@ -33,7 +34,10 @@ async def place(
     subject_uuid: str | None,
     reason: str,
     actor_id: int,
+    office: str | None = None,
 ) -> Row:
+    """A hold on an asset is its project's office's; on a person, the placing
+    officer's office's (0055)."""
     if (asset_uuid is None) == (subject_uuid is None):
         raise ValidationFailed("A hold covers one asset or one person, not both and not neither")
     if not reason.strip():
@@ -41,9 +45,11 @@ async def place(
     asset_id: int | None = None
     subject_id: int | None = None
     if asset_uuid is not None:
-        asset_id = await hold_repo.asset_id_by_uuid(conn, asset_uuid)
-        if asset_id is None:
+        asset = await hold_repo.asset_by_uuid(conn, asset_uuid)
+        if asset is None:
             raise NotFound("Asset")
+        asset_id = int(asset["asset_id"])
+        office = str(asset["office_code"])
     else:
         person = await user_repo.by_uuid(conn, str(subject_uuid))
         if not person:
@@ -55,6 +61,7 @@ async def place(
         subject_user_id=subject_id,
         reason=reason.strip(),
         placed_by=actor_id,
+        office=office or offices.RND,
     )
     await audit.record(
         conn,

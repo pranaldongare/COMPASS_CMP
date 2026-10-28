@@ -273,6 +273,10 @@ class Event:
     RIGHTS_EVENT_EVIDENCED = "rights.event_evidenced"
     RIGHTS_ESCALATED = "rights.escalated"
     RIGHTS_REVIEWER_ASSIGNED = "rights.reviewer_assigned"
+    #: Out of the shared intake into an office's queue; to the other office,
+    #: with a reason (0055).
+    RIGHTS_CLAIMED = "rights.claimed"
+    RIGHTS_TRANSFERRED = "rights.transferred"
     RIGHTS_STATUS_CHANGED = "rights.status_changed"
     RIGHTS_HOLDERS_DERIVED = "rights.holders_derived"
     RIGHTS_HOLDER_ADDED = "rights.holder_added"
@@ -408,6 +412,9 @@ _OFFICE_ID_OF: Final[dict[str, str]] = {
     "export_log": "SELECT office_id FROM export_log WHERE export_id = %(id)s",
     "breach": "SELECT office_id FROM breach WHERE breach_id = %(id)s",
     "rights_request": "SELECT office_id FROM rights_request WHERE request_id = %(id)s",
+    # A hold names its office (0055): the asset's project's, or the placing
+    # officer's for a person.
+    "legal_hold": "SELECT office_id FROM legal_hold WHERE hold_id = %(id)s",
     "project_site": """SELECT p.office_id FROM project_site s JOIN project p USING (project_id)
                        WHERE s.site_id = %(id)s""",
     "project_approval": """SELECT p.office_id FROM project_approval a
@@ -425,12 +432,6 @@ _OFFICE_ID_OF: Final[dict[str, str]] = {
                         JOIN data_asset a USING (asset_id)
                         JOIN collection c USING (collection_id) JOIN project p USING (project_id)
                         WHERE ac.asset_consent_id = %(id)s""",
-    # A hold on an asset is that asset's office's; a hold on a person is no
-    # office's.
-    "legal_hold": """SELECT p.office_id FROM legal_hold h
-                     JOIN data_asset a USING (asset_id)
-                     JOIN collection c USING (collection_id) JOIN project p USING (project_id)
-                     WHERE h.hold_id = %(id)s""",
     "notice_purpose": """SELECT n.office_id FROM notice_purpose np JOIN notice n USING (notice_id)
                          WHERE np.notice_purpose_id = %(id)s""",
     "notice_language": """SELECT n.office_id FROM notice_language nl JOIN notice n USING (notice_id)

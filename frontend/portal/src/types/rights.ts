@@ -289,6 +289,14 @@ export interface MyRequest {
   response_files: ResponseFile[];
   /** The documents she sent with it. */
   attachments: RequestAttachment[];
+  /** Made with it, to the other office, when she asked both (0055). */
+  also?: MyRequest[];
+}
+
+/** An office her requests can go to: one whose notices she holds a consent on. */
+export interface RequestOffice {
+  code: "rnd" | "hr";
+  title: string;
 }
 
 export interface Nomination {

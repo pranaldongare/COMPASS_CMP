@@ -110,6 +110,10 @@ OFFICE_OF_ROLE: Final[dict[str, str]] = {
     Role.HR_USER.value: HR,
 }
 
+#: Each office's officer: who answers its rights requests and its breaches,
+#: and who is told when one arrives (ADR 0032, 0055).
+OFFICER_OF: Final[dict[str, str]] = {RND: Role.DPO.value, HR: Role.LEGAL.value}
+
 #: How a sentence names an office.
 OFFICE_TITLES: Final[dict[str, str]] = {RND: "DPO office", HR: "Legal office"}
 
@@ -366,12 +370,16 @@ MATRIX: dict[str, dict[Role, Grant]] = {
     "rights_request": {
         Role.DPO: Grant(Scope.ALL, write=True),
         Role.ADMIN: Grant(Scope.SCOPED, write=True),
+        # The Legal office's queue, as the DPO keeps the DPO office's: its own
+        # requests and the shared intake (ADR 0032, 0055).
+        Role.LEGAL: Grant(Scope.ALL, write=True),
     },
     # What stops an erasure until it is released (S2-03). The DPO's alone: a
     # hold is a legal judgement about evidence, and whoever may place one may
     # stop the platform honouring a data principal's request.
     "legal_hold": {
         Role.DPO: Grant(Scope.ALL, write=True),
+        Role.LEGAL: Grant(Scope.ALL, write=True),
     },
     # The breach register and its duties (S3-01). The DPO's alone, and hidden
     # from everyone else: the routes answer 404 to any other role, since that a
@@ -379,6 +387,8 @@ MATRIX: dict[str, dict[Role, Grant]] = {
     # `RequireResource(hidden=True)`).
     "breach": {
         Role.DPO: Grant(Scope.ALL, write=True),
+        # The Legal office's register: every power the DPO has on its own.
+        Role.LEGAL: Grant(Scope.ALL, write=True),
     },
     # The Government's s.16 restricted-country list (S2-04). The DPO keeps it,
     # because it decides what may leave the country; the administrator reads it,
@@ -594,6 +604,9 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
     # increments land.
     Role.LEGAL: (
         "dashboard",
+        # The Legal office's rights queue and breach register (0055).
+        "requests",
+        "breaches",
         "hr-activities",
         "hr-categories",
         "templates",

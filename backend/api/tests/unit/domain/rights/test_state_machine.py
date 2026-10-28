@@ -11,6 +11,7 @@ the complaint is about the DPO.
 from __future__ import annotations
 
 import itertools
+from dataclasses import replace
 
 import pytest
 
@@ -30,19 +31,24 @@ READY = RequestFacts(verified=True, classified=True)
 
 # The moves the generic transition route permits, per role. Closure is
 # deliberately absent: it is made by responding, which records the outcome.
+# Each office's officer moves its own requests alike: the DPO, the Legal PoC.
 LEGAL: set[tuple[S, S, Role]] = {
-    (S.RECEIVED, S.IN_PROGRESS, Role.DPO),
-    (S.IN_PROGRESS, S.AWAITING_HOLDERS, Role.DPO),
-    (S.IN_PROGRESS, S.COLLATING, Role.DPO),
-    (S.AWAITING_HOLDERS, S.COLLATING, Role.DPO),
-    (S.COLLATING, S.CLOSED, Role.DPO),
+    (current, target, officer)
+    for current, target in (
+        (S.RECEIVED, S.IN_PROGRESS),
+        (S.IN_PROGRESS, S.AWAITING_HOLDERS),
+        (S.IN_PROGRESS, S.COLLATING),
+        (S.AWAITING_HOLDERS, S.COLLATING),
+        (S.COLLATING, S.CLOSED),
+    )
+    for officer in (Role.DPO, Role.LEGAL)
 }
 
 
 class TestTheTable:
     @pytest.mark.parametrize(("current", "target", "role"), list(itertools.product(S, S, Role)))
     def test_every_combination_matches_the_table(self, current: S, target: S, role: Role) -> None:
-        """All 175 (from, to, role) triples, not just the five that are legal."""
+        """Every (from, to, role) triple, not just the ten that are legal."""
         facts = RequestFacts(
             verified=True,
             classified=True,
@@ -166,8 +172,18 @@ class TestHoldersAndTheClock:
 
 
 class TestWhoActs:
-    def test_the_dpo_owns_every_request(self) -> None:
-        assert actors_for(RequestFacts()) == frozenset({Role.DPO})
+    def test_the_office_s_officer_owns_every_request(self) -> None:
+        """The DPO, or the Legal PoC; the scoped lookup says whose (0055)."""
+        assert actors_for(RequestFacts()) == frozenset({Role.DPO, Role.LEGAL})
+
+    def test_work_waits_for_a_claim_out_of_the_shared_intake(self) -> None:
+        option = next(
+            o
+            for o in available(S.RECEIVED, Role.LEGAL, replace(READY, office_known=False))
+            if o["to"] == S.IN_PROGRESS
+        )
+        assert option["allowed"] is False
+        assert option["blocked_by"] == "Claim it for your office first"
 
     def test_the_administrator_only_where_the_complaint_is_about_the_dpo(self) -> None:
         """Accountability cannot review itself and be credible."""

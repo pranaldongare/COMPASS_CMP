@@ -59,6 +59,52 @@ downloads it from the request page; every download is on the trail, which
 never records a name. The public form takes none: nobody is known until the
 code is confirmed.
 
+## Which office answers
+
+A request belongs to the office whose notices the person holds a consent on
+(0055, [the HR track](hr-track.md#5-rights-requests-and-breaches-by-office)):
+the **DPO office** for the research projects' notices, the **Legal office**
+for her employer's HR activities. The service decides on receipt
+(`domain/rights/service.office_for`), from what is known then:
+
+| What is known | Office |
+|---|---|
+| a consent on the Legal office's notices only | `hr` - the Legal PoC's queue |
+| a consent on the DPO office's notices only | `rnd` - the DPO's queue |
+| consents with both | the portal asks her which, or **both**: one request to each, the same received date, each with its own reference |
+| nothing - the public form before its code, a stranger, a signed-in person with no consent | the **shared intake**: no office, in both queues until one claims it |
+| the request is confined to one consent | that consent's office |
+| a dispute of an earlier request, or its re-run | the earlier request's office |
+| logged by an officer (`staff_logged`) | the logging officer's office |
+
+A withdrawn consent still counts: the office holds what was collected before
+it. The portal reads her offices from `GET /me/requests/offices`.
+
+**Claim.** An officer takes a request out of the shared intake into their
+office's queue (`POST /requests/{uuid}/claim`); verifying who it is can come
+first, but work cannot start until it is claimed (*Claim it for your office
+first*). A claim is made once: the second office is told it is not there.
+Audited `rights.claimed`.
+
+**Transfer.** An office sends a request it holds to the other office with a
+reason (`POST /requests/{uuid}/transfer` `{office, reason}`): the office
+changes, the request records where it came from, when, by whom and why (the
+reason sealed), the move is audited `rights.transferred` (never the reason),
+and the receiving office's officers are emailed
+(`rights_transfer_received`). The received date, the due date and the
+checkpoints do not move; holders derived so far stay. The request leaves the
+sender's queue with the statement that moves it, and it can be sent back the
+same way. A request in the shared intake is claimed, not transferred.
+
+The database holds the rule: `rights_request.office_id` changes only by a
+claim (from none, with who and when) or a transfer (with a new stamp, who,
+why and where from) - `cmp_rights_request_office_moves()`, tested in
+`tests/integration/enforcement/test_rights_office_moves.py`.
+
+**Who is told.** A request's arrival, the daily list of what is due and a
+holder's message go to the officers of its office - the DPO for `rnd`, the
+Legal PoC for `hr` - and, while it is in the shared intake, to both.
+
 ## The clock
 
 The clock starts at receipt (D0), not at verification, and the due date is
@@ -111,7 +157,10 @@ shows it beside a disabled button.
 ## Holders and tickets
 
 A **holder** is a party that holds her data, found from the disclosure
-records and the assets (`export_line`, `asset_consent`) and confirmed by the
+records and the assets (`export_line`, `asset_consent`) - and, on the Legal
+office's requests, from the processors of the HR category of every activity
+she consented on (`activity_processor`, answered by the category's named
+respondent or the activity's HR PoC) - and confirmed by the
 DPO, who may add one by hand, and remove one found by mistake while nothing
 has been sent to it. Each confirmed holder gets one **ticket**: the
 instruction to return what it holds, addressed to a **respondent** of that
@@ -330,7 +379,8 @@ what comes next and does not unask the question they lawfully asked
 ## Grievances
 
 A grievance is linked to the request it disputes, where there is one. A
-grievance about the DPO's own handling is **escalated** to the administrator,
+grievance about the office's own handling - the DPO's, or the Legal
+office's; the column is still `about_dpo` - is **escalated** to the administrator,
 who assigns an independent reviewer; the reviewer, not the DPO, then acts on
 it. The administrator's scope on the rights register is exactly those
 escalations.
@@ -367,6 +417,8 @@ In the console today a request is found by name through the audit trail's
 | One live nomination per person | partial unique index on `nomination` |
 | A nominee needs a mobile | `trg_nominee_needs_mobile` |
 | A nominee reaches the request they raised, and no other | `request_as_nominee`, joined through `nomination.nominee_user_id` |
+| A request changes office only by a claim or a transfer | `cmp_rights_request_office_moves()` (0055) |
+| Each office's officer reads its own requests and the shared intake | `db/repositories/rights.py::scope_predicate`; `office_isolation` on `rights_request` |
 | A ticket is answered by the respondent it names | scope on `ticket` is `OWN` for every staff role and the temporary ticket holder; an outside holder only through its link (`holder_link.py`) |
 | A response file is hashed and time-boxed | `rights_response_file` |
 | Every action audited | the audit chain, same transaction |

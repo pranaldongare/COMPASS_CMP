@@ -17,7 +17,7 @@ from datetime import UTC, date, datetime, timedelta
 from typing import Any, Final
 
 from cmp.core.logging import get_logger
-from cmp.core.permissions import ROLE_TITLES
+from cmp.core.permissions import OFFICE_TITLES, ROLE_TITLES
 from cmp.db.redis import K_CACHE, get_redis
 from cmp.db.redis import key as rkey
 from cmp.db.repositories import alerts as repo
@@ -133,13 +133,20 @@ async def collector_assigned(conn: Conn, *, project: Row, dco_user_id: int | Non
 # -------------------------------------------------------------------- rights
 
 
+async def _officers(conn: Conn, office: str | None) -> list[str]:
+    """The officers of an office - the DPO's, the Legal PoC's - or of both,
+    for a request in the shared intake (ADR 0032, 0055)."""
+    return await user_repo.officer_emails(conn, office)
+
+
 async def rights_received(conn: Conn, request: Row) -> None:
-    """A request arrived from outside the office: every DPO. Never her words."""
+    """A request arrived from outside the office: every officer of its office,
+    or of both while it is in the shared intake. Never her words."""
     from cmp.tasks.notifications import alerts as tasks
 
     if request.get("channel") == "staff_logged":
         return
-    for email in await _role(conn, "dpo"):
+    for email in await _officers(conn, request.get("office_code")):
         _queue(
             tasks.send_rights_request_received,
             email,
@@ -147,6 +154,26 @@ async def rights_received(conn: Conn, request: Row) -> None:
             KINDS.get(str(request["request_type"]), str(request["request_type"])),
             CHANNELS.get(str(request["channel"]), str(request["channel"])),
             day(request.get("due_at")),
+            str(request["request_uuid"]),
+        )
+
+
+async def rights_transferred(conn: Conn, request: Row, *, from_office: str) -> None:
+    """Moved to another office: that office's officers, with the sender's
+    reason as the row holds it - sealed on the queue too, opened at delivery
+    (0055)."""
+    from cmp.tasks.notifications import alerts as tasks
+
+    for email in await _officers(conn, request.get("office_code")):
+        _queue(
+            tasks.send_rights_transfer_received,
+            email,
+            str(request["reference"]),
+            KINDS.get(str(request["request_type"]), str(request["request_type"])),
+            day(request.get("received_at")),
+            day(request.get("due_at")),
+            OFFICE_TITLES.get(from_office, from_office),
+            str(request["transfer_reason"]),
             str(request["request_uuid"]),
         )
 
@@ -166,13 +193,23 @@ async def grievance_about_dpo(conn: Conn, request: Row) -> None:
 
 async def rights_due(conn: Conn, *, now: datetime | None = None) -> int:
     """The daily list: open requests overdue or due within a week. Nothing
-    when there is nothing on it. Returns how many requests it listed."""
-    from cmp.tasks.notifications import alerts as tasks
-
+    when there is nothing on it, one per office. Returns how many requests it
+    listed."""
     rows = await repo.rights_due_within(conn, RIGHTS_DUE_WITHIN_DAYS)
     if not rows:
         return 0
     at = now or datetime.now(UTC)
+    # One list per office, of its own requests; the shared intake's go to both.
+    for office in ("rnd", "hr"):
+        mine = [r for r in rows if r.get("office_code") in (office, None)]
+        if mine:
+            await _digest(conn, office, mine, at)
+    return len(rows)
+
+
+async def _digest(conn: Conn, office: str, rows: list[Row], at: datetime) -> None:
+    from cmp.tasks.notifications import alerts as tasks
+
     lines = []
     for r in rows:
         days = (r["due_at"].date() - at.date()).days
@@ -184,9 +221,8 @@ async def rights_due(conn: Conn, *, now: datetime | None = None) -> int:
             else f"due in {days} day{'s' if days != 1 else ''}"
         )
         lines.append(f"  - {r['reference']} {r['request_type']}, due {day(r['due_at'])} - {state}")
-    for email in await _role(conn, "dpo"):
+    for email in await _officers(conn, office):
         _queue(tasks.send_rights_due_digest, email, len(rows), "\n".join(lines))
-    return len(rows)
 
 
 # -------------------------------------------------------------------- breach
@@ -194,7 +230,8 @@ async def rights_due(conn: Conn, *, now: datetime | None = None) -> int:
 
 async def breach_duties(conn: Conn, *, now: datetime | None = None) -> int:
     """Every dated duty of an open breach that is about to fall due, or has:
-    every DPO, once per duty per stage. Returns how many alerts it queued.
+    the officers of its office, once per duty per stage. Returns how many
+    alerts it queued.
 
     "About to" is the last sixth of the duty's window, at least five minutes:
     ten minutes of the board's thirty, an hour of CERT-In's six, twelve of the
@@ -208,7 +245,7 @@ async def breach_duties(conn: Conn, *, now: datetime | None = None) -> int:
     at = now or datetime.now(UTC)
     queued = 0
     redis = get_redis()
-    dpos: list[str] | None = None
+    officers: dict[str | None, list[str]] = {}
     for breach in await repo.open_breaches_with_dated_duties(conn):
         duties = await breach_service.duties_of(conn, int(breach["breach_id"]))
         for kind, (row, folded) in duties.items():
@@ -228,9 +265,10 @@ async def breach_duties(conn: Conn, *, now: datetime | None = None) -> int:
             marker = rkey(K_CACHE, "alert", "breach_duty", str(row["obligation_id"]), stage)
             if not await redis.set(marker, "1", nx=True, ex=30 * 24 * 3600):
                 continue
-            if dpos is None:
-                dpos = await _role(conn, "dpo")
-            for email in dpos:
+            office = breach.get("office_code")
+            if office not in officers:
+                officers[office] = await _officers(conn, office)
+            for email in officers[office]:
                 _queue(
                     tasks.send_breach_duty_due,
                     email,
@@ -250,7 +288,7 @@ async def breach_ticket_returned(
     from cmp.tasks.notifications import alerts as tasks
 
     words = {"done": "done", "partial": "partly done", "failed": "could not be done"}
-    for email in await _role(conn, "dpo"):
+    for email in await _officers(conn, breach.get("office_code") or "rnd"):
         _queue(
             tasks.send_breach_ticket_returned,
             email,

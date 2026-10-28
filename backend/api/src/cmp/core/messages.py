@@ -91,6 +91,7 @@ class Message(StrEnum):
     PROJECT_COLLECTOR_ASSIGNED = "project_collector_assigned"
     RIGHTS_REQUEST_RECEIVED = "rights_request_received"
     RIGHTS_DUE_DIGEST = "rights_due_digest"
+    RIGHTS_TRANSFER_RECEIVED = "rights_transfer_received"
     RIGHTS_GRIEVANCE_ABOUT_DPO = "rights_grievance_about_dpo"
     BREACH_DUTY_DUE = "breach_duty_due"
     BREACH_TICKET_RETURNED = "breach_ticket_returned"
@@ -1381,7 +1382,11 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "It is due by {due_date}.\\n\\n{request_url}" + _SIGN_OFF_EMAIL
         ),
         sms_body=None,
-        to="Every active Data Protection Officer, at their primary email.",
+        to=(
+            "Every active officer of the request's office - the Data Protection Officer, or "
+            "the Legal PoC - at their primary email; both offices', while it is in the shared "
+            "intake."
+        ),
     ),
     Junction(
         key=Message.RIGHTS_DUE_DIGEST,
@@ -1412,7 +1417,51 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "{requests_url}" + _SIGN_OFF_EMAIL
         ),
         sms_body=None,
-        to="Every active Data Protection Officer, at their primary email.",
+        to=(
+            "Every active officer of each office, listing that office's requests and the "
+            "shared intake's, at their primary email."
+        ),
+    ),
+    Junction(
+        key=Message.RIGHTS_TRANSFER_RECEIVED,
+        title="A rights request was transferred to your office",
+        description=(
+            "Sent to the officers of the office a rights request is transferred to (0055). "
+            "Its reference, kind, dates - unchanged by the move - who moved it and why."
+        ),
+        group="Rights",
+        channels=EMAIL_ONLY,
+        variables=(
+            REFERENCE,
+            Variable("request_type", "Access, erasure or a grievance.", "Erasure"),
+            Variable(
+                "received_at", "When it arrived: the clock still runs from here.", "2 October 2026"
+            ),
+            Variable("due_date", "When the response is due.", "1 November 2026"),
+            Variable("from_office", "The office that transferred it.", "DPO office"),
+            Variable(
+                "reason",
+                "Why, in the transferring officer's words.",
+                "Her consent is to a wellness activity.",
+            ),
+            Variable(
+                "request_url",
+                "The request in the console.",
+                "https://console.example.org/requests/0e1f",
+            ),
+            ORGANISATION,
+        ),
+        email_subject="Rights request {reference} transferred to your office",
+        email_body=(
+            "The {from_office} transferred {request_type} request {reference} to your office:"
+            "\n\n{reason}\n\nIt arrived on {received_at} and is due by {due_date}; the move "
+            "does not change either.\n\n{request_url}" + _SIGN_OFF_EMAIL
+        ),
+        sms_body=None,
+        to=(
+            "Every active officer of the receiving office - the Data Protection Officer, or the "
+            "Legal PoC - at their primary email."
+        ),
     ),
     Junction(
         key=Message.RIGHTS_GRIEVANCE_ABOUT_DPO,
@@ -1468,7 +1517,10 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "Record it once it is done:\\n{breach_url}" + _SIGN_OFF_EMAIL
         ),
         sms_body=None,
-        to="Every active Data Protection Officer, at their primary email.",
+        to=(
+            "Every active officer of the breach's office - the Data Protection Officer, or "
+            "the Legal PoC - at their primary email."
+        ),
     ),
     Junction(
         key=Message.BREACH_TICKET_RETURNED,
@@ -1497,7 +1549,10 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             + _SIGN_OFF_EMAIL
         ),
         sms_body=None,
-        to="Every active Data Protection Officer, at their primary email.",
+        to=(
+            "Every active officer of the breach's office - the Data Protection Officer, or "
+            "the Legal PoC - at their primary email."
+        ),
     ),
     Junction(
         key=Message.STAFF_ROLE_CHANGED,
@@ -1589,6 +1644,7 @@ COPYABLE: Final[frozenset[Message]] = frozenset(
         Message.PROJECT_COLLECTOR_ASSIGNED,
         Message.RIGHTS_REQUEST_RECEIVED,
         Message.RIGHTS_DUE_DIGEST,
+        Message.RIGHTS_TRANSFER_RECEIVED,
         Message.RIGHTS_GRIEVANCE_ABOUT_DPO,
         Message.BREACH_DUTY_DUE,
         Message.BREACH_TICKET_RETURNED,

@@ -1,4 +1,9 @@
-"""The breach register is the DPO's, and invisible to everyone else (S3-01).
+"""The breach register is the officers', and invisible to everyone else (S3-01).
+
+Each office's officer holds its own: the DPO the DPO office's, the Legal PoC
+the Legal office's (0055). Which office's breach a session reads is the
+office's on the session; `tests/integration/test_breach_by_office.py` proves
+that half.
 
 A 403 on `/breaches/{uuid}` would tell a caller walking uuids that the uuid is
 a breach - which is the fact the grant withholds. So the breach guards answer
@@ -21,15 +26,17 @@ from cmp.auth.identity.principal import Principal
 from cmp.core.errors import Forbidden, NotFound
 from cmp.core.permissions import Role
 
-OTHERS = [r for r in Role if r is not Role.DPO]
+OFFICERS = (Role.DPO, Role.LEGAL)
+OTHERS = [r for r in Role if r not in OFFICERS]
 
 
 def _principal(role: Role) -> Principal:
     return Principal(user_id=1, uuid=str(uuid4()), role=role, session=MagicMock())
 
 
-def test_only_the_dpo_holds_the_register() -> None:
-    assert can_read(resources.BREACH, Role.DPO) and can_write(resources.BREACH, Role.DPO)
+def test_only_the_officers_hold_the_register() -> None:
+    for officer in OFFICERS:
+        assert can_read(resources.BREACH, officer) and can_write(resources.BREACH, officer)
     for role in OTHERS:
         assert not can_read(resources.BREACH, role), role
 
@@ -42,11 +49,12 @@ async def test_every_other_role_is_told_it_is_not_there(role: Role, write: bool)
         await guard(_principal(role))
 
 
+@pytest.mark.parametrize("officer", OFFICERS)
 @pytest.mark.parametrize("write", [False, True])
-async def test_the_dpo_passes(write: bool) -> None:
+async def test_the_officers_pass(officer: Role, write: bool) -> None:
     guard = RequireResource(resources.BREACH, write=write, hidden=True)
-    principal: Any = await guard(_principal(Role.DPO))
-    assert principal.role is Role.DPO
+    principal: Any = await guard(_principal(officer))
+    assert principal.role is officer
 
 
 async def test_an_ordinary_resource_still_answers_403() -> None:
@@ -77,7 +85,7 @@ def test_a_data_principal_holds_none() -> None:
 @pytest.mark.parametrize("role", [r for r in OTHERS if r is not Role.DATA_SUBJECT])
 async def test_a_holder_is_still_told_the_register_is_not_there(role: Role) -> None:
     """Holding a ticket opens the ticket, not the breach: the managing routes are
-    `breach`, and they answer every holder but the DPO 404."""
+    `breach`, and they answer every holder but the officers 404."""
     assert can_read(resources.BREACH_TICKET, role)
     with pytest.raises(NotFound):
         await RequireResource(resources.BREACH, hidden=True)(_principal(role))

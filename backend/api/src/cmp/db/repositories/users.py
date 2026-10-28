@@ -640,6 +640,26 @@ async def staff_directory(conn: Conn) -> list[Row]:
     )
 
 
+async def officer_emails(conn: Conn, office: str | None) -> list[str]:
+    """Where to tell an office something: every active officer of it - the
+    DPO for `rnd`, the Legal PoC for `hr` - or of both, for `None` (a request
+    in the shared intake, ADR 0032)."""
+    from cmp.core.permissions import OFFICER_OF
+
+    pairs = [(code, role) for code, role in OFFICER_OF.items() if office in (None, code)]
+    if not pairs:
+        return []
+    clause = " OR ".join("(o.office_code = %s AND u.role = %s::user_role)" for _ in pairs)
+    rows = await fetch_all(
+        conn,
+        f"""SELECT u.email FROM auth_user u JOIN office o ON o.office_id = u.office_id
+             WHERE u.status = 'active' AND ({clause})
+             ORDER BY u.id""",
+        [v for pair in pairs for v in pair],
+    )
+    return [str(r["email"]) for r in rows if r.get("email")]
+
+
 async def active_emails_for_role(conn: Conn, role: str) -> list[str]:
     """Where to tell a role something: every active account holding it."""
     rows = await fetch_all(

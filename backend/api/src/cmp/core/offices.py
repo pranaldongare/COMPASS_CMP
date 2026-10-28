@@ -16,6 +16,8 @@ from typing import Final
 RND: Final = "rnd"
 #: The Legal office: the HR track's.
 HR: Final = "hr"
+#: Both, for a choice a caller makes between them.
+CODES: Final = (RND, HR)
 
 #: The office id for a code, inside a statement that writes one.
 OFFICE_ID: Final = "(SELECT office_id FROM office WHERE office_code = %s)"

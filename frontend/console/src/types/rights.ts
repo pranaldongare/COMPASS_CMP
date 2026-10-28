@@ -117,6 +117,9 @@ export interface RightsRequestRow {
   acknowledged_at: Timestamp | null;
   verification_status: RightsVerificationStatus;
   about_dpo: boolean;
+  /** The office whose queue it is in (`rnd`, `hr`), or null: the shared
+   *  intake, both offices' until one claims it (0055). */
+  office: string | null;
   linked_reference: string | null;
   /** Set when the request is confined to one consent. */
   consent_uuid: Uuid | null;
@@ -536,6 +539,12 @@ export interface RequestAttachment {
 }
 
 export interface RightsRequestDetail extends RightsRequest {
+  /** The last transfer: from which office, when, and why (sealed). */
+  transferred_from: string | null;
+  transferred_at: Timestamp | null;
+  transfer_reason: string | null;
+  /** When an office took it from the shared intake. */
+  claimed_at: Timestamp | null;
   holders: RightsHolder[];
   items: RightsScopeItem[];
   transitions: RightsTransitionOption[];

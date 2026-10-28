@@ -87,7 +87,7 @@ hash and no email is written
 rows from before that change stand as written, because the trail is
 hash-chained and cannot be rewritten.
 
-## 2. API endpoints that carry PII — 252 endpoints in 23 modules
+## 2. API endpoints that carry PII — 255 endpoints in 23 modules
 
 Every GET, POST, PUT, PATCH and DELETE whose request or response includes a
 personal field. *In* is what the caller sends (body, path and query); *out* is
@@ -112,7 +112,7 @@ these need no session; they are marked **public**.
 | GET | `/auth/sessions` | — | `ip_address`, `last_seen_at`, `mfa_verified`, `user_agent` |
 | GET | `/auth/sso/callback` **public** | `code` | — |
 
-### My own records (`/me`) — 23 endpoints
+### My own records (`/me`) — 24 endpoints
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
@@ -135,6 +135,7 @@ these need no session; they are marked **public**.
 | POST | `/me/person-type` | `person_type`, `reason` | — |
 | GET | `/me/requests` | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `content_type`, `download_available`, `download_expires_at`, `file_name`, `file_uuid`, `refusal_reason`, `remedy_text`, `request_text`, `response_files`, `response_text`, `size_bytes` |
 | POST | `/me/requests` | `request_text` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `content_type`, `download_available`, `download_expires_at`, `file_name`, `file_uuid`, `refusal_reason`, `remedy_text`, `request_text`, `response_files`, `response_text`, `size_bytes` |
+| GET | `/me/requests/offices` | — | `code` |
 | GET | `/me/requests/{request_uuid}` | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `content_type`, `download_available`, `download_expires_at`, `file_name`, `file_uuid`, `refusal_reason`, `remedy_text`, `request_text`, `response_files`, `response_text`, `size_bytes` |
 | POST | `/me/requests/{request_uuid}/attachments` | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `content_type`, `download_available`, `download_expires_at`, `file_name`, `file_uuid`, `refusal_reason`, `remedy_text`, `request_text`, `response_files`, `response_text`, `size_bytes` |
 | POST | `/me/requests/{request_uuid}/dispute` | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `content_type`, `download_available`, `download_expires_at`, `file_name`, `file_uuid`, `refusal_reason`, `remedy_text`, `request_text`, `response_files`, `response_text`, `size_bytes` |
@@ -167,7 +168,7 @@ these need no session; they are marked **public**.
 | POST | `/rights/requests` **public** | `contact`, `request_text` | — |
 | POST | `/rights/requests/verify` **public** | `code` | — |
 
-### Rights requests — Privacy Office (`/requests`) — 40 endpoints
+### Rights requests — Privacy Office (`/requests`) — 42 endpoints
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
@@ -175,6 +176,7 @@ these need no session; they are marked **public**.
 | POST | `/requests` | `contact`, `request_text`, `subject_uuid` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | GET | `/requests/{request_uuid}` | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `contact_log`, `content_type`, `decided_by_name`, `disposition`, `download_expires_at`, `evidence`, `file_name`, `file_uuid`, `instruction`, `nominee_contact`, `nominee_name`, `other_subjects`, `refusal_reason`, `remedy_text`, `request_text`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `response_file_hash`, `response_files`, `response_text`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `reviewer_name`, `reviewer_uuid`, `seen_at`, `sent_back_reason`, `size_bytes`, `subject_email`, `subject_mobile`, `subject_name`, `subject_role`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/acknowledge` | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+| POST | `/requests/{request_uuid}/claim` | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/classify` | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/decide` | `remedy_text`, `response_text` | — |
 | POST | `/requests/{request_uuid}/escalate` | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
@@ -205,6 +207,7 @@ these need no session; they are marked **public**.
 | POST | `/requests/{request_uuid}/scope/{item_uuid}/apply` | — | `decided_by_name`, `disposition`, `other_subjects`, `subject_role` |
 | POST | `/requests/{request_uuid}/scope/{item_uuid}/execute` | — | `decided_by_name`, `disposition`, `other_subjects`, `subject_role` |
 | POST | `/requests/{request_uuid}/tickets` | `instruction` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/transfer` | `reason` | — |
 | POST | `/requests/{request_uuid}/transition` | `reason` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/verification/code` | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/verification/confirm` | `code` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |

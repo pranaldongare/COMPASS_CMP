@@ -18,7 +18,7 @@ from cmp.api.routers.v1.breaches import BreachSummaryOut
 from cmp.core.context import current_context
 from cmp.core.errors import Forbidden, NotFound
 from cmp.core.permissions import Role
-from cmp.db.pool import connection, transaction
+from cmp.db.pool import across_offices, connection, transaction
 from cmp.db.repositories import audit as audit_repo
 from cmp.db.repositories import dashboard as dashboard_repo
 from cmp.db.repositories import entities as entity_repo
@@ -320,7 +320,8 @@ def _attention(
 async def _tickets_for_me(conn: Any, user_id: int) -> tuple[int, list[dict[str, Any]]]:
     """Open tickets addressed to this account: a holder on somebody's rights
     request that is one of our own teams, answered on the portal."""
-    rows = await rights_repo.tickets_for_user(conn, user_id, open_only=True)
+    async with across_offices(conn):
+        rows = await rights_repo.tickets_for_user(conn, user_id, open_only=True)
     items = [
         {
             "holder_uuid": str(r["holder_uuid"]),
@@ -342,7 +343,10 @@ async def _tickets_for_me(conn: Any, user_id: int) -> tuple[int, list[dict[str, 
     ]
     # Breach tickets addressed to me (S3-08): the reference and nothing else
     # about the breach (BD-13). Open ones only: issued, or returned and waiting.
-    for t in await breach_tickets.mine(conn, user_id=user_id):
+    # Mine whichever office's breach it is (open point F-13).
+    async with across_offices(conn):
+        held = await breach_tickets.mine(conn, user_id=user_id)
+    for t in held:
         if t["state"] not in ("issued", "returned"):
             continue
         answer_by = t["answer_by"]

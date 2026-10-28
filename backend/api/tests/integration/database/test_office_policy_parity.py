@@ -32,6 +32,9 @@ OWN = {
     "breach",
     "rights_request",
     "hr_category",
+    # 0055 (open point F-21): the asset's project's office, or the placing
+    # officer's for a hold on a person.
+    "legal_hold",
 }
 
 #: The children, policed through their parent.
@@ -85,9 +88,6 @@ CHILDREN = {
 NOT_POLICED = {
     # One person, both tracks: an account is nobody's office's.
     "auth_user": "registered_via_link_id names the link a sign-up came from; the account is hers",
-    # Scoped through its request or asset in the query; a hold on a person is
-    # no office's.
-    "legal_hold": "asset_id; a hold on a person belongs to no office",
     # A breach-only login is the account's, ended by the administrator.
     "breach_temporary_access": "the grant of a login, read by the account and the administrator",
     # The registry is shared (offices-and-tenancy.md): a source belongs to a

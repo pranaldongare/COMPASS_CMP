@@ -32,7 +32,7 @@ from cmp.core.enums import RightsTicketStatus as Ticket
 from cmp.core.enums import RightsTriggerEvent as TriggerEvent
 from cmp.core.errors import BadRequest, Conflict, Forbidden, NotFound, ValidationFailed
 from cmp.core.logging import get_logger
-from cmp.core.permissions import Role
+from cmp.core.permissions import OFFICE_TITLES, Role
 from cmp.core.security import new_token, token_fingerprint
 from cmp.db.redis import K_CACHE, get_redis
 from cmp.db.redis import key as rkey
@@ -78,6 +78,7 @@ def facts_of(row: Row) -> RequestFacts:
         nominee=row["channel"] == Channel.NOMINEE,
         event_evidenced=row["trigger_evidenced_at"] is not None,
         about_dpo=bool(row["about_dpo"]),
+        office_known=row.get("office_code") is not None,
         reviewer_assigned=row["reviewer_user_id"] is not None,
         holders_confirmed=int(row["holders_confirmed"] or 0),
         tickets_issued=int(row["tickets_issued"] or 0),
@@ -215,11 +216,16 @@ async def create(
     trigger_evidence_hash: str | None = None,
     about_dpo: bool = False,
     consent_id: int | None = None,
+    office: str | None = None,
 ) -> Row:
     """Make the record. Dashboard, notice link, email, nominee: all the same row.
 
     `consent_id` confines the request to one consent: what she asks about, and
     everything done in answer, is the data under that consent and no other.
+
+    `office` places it with an office (ADR 0032, 0055); left out, it is worked
+    out on receipt (`office_for`), and a request no office can be named for
+    goes to the shared intake, where both see it until one claims it.
 
     The clock starts here. `due_at` is computed from the published period and
     written to the row, so the deadline of this request is what it was told,
@@ -249,9 +255,14 @@ async def create(
         trigger_evidence_hash=trigger_evidence_hash,
         about_dpo=about_dpo,
         consent_id=consent_id,
-        # The DPO office answers every request until requests are routed by
-        # office; written, not left to the shared intake (ADR 0032).
-        office=offices.RND,
+        office=office
+        or await office_for(
+            conn,
+            channel=Channel(channel),
+            subject_user_id=subject_user_id,
+            consent_id=consent_id,
+            linked_request_id=linked_request_id,
+        ),
     )
     full = await reload(conn, row)
     await _record(
@@ -278,6 +289,99 @@ async def create(
     if full.get("about_dpo"):
         await alerts.grievance_about_dpo(conn, full)
     return full
+
+
+async def office_for(
+    conn: Conn,
+    *,
+    channel: Channel,
+    subject_user_id: int | None,
+    consent_id: int | None,
+    linked_request_id: int | None,
+) -> str | None:
+    """Which office a request belongs to, from what is known on receipt
+    (`hr-track.md` §5): the office of the consent it is confined to; the
+    office of the request it follows (a dispute, a re-run); the one office
+    whose notices she holds a current consent on. Nothing - the public form,
+    a stranger, standing in both offices - is the shared intake (None)."""
+    if consent_id is not None:
+        return await repo.office_of_consent(conn, consent_id)
+    if linked_request_id is not None:
+        linked = await repo.by_id(conn, linked_request_id)
+        if linked and linked.get("office_code"):
+            return str(linked["office_code"])
+    if channel == Channel.PUBLIC_FORM or subject_user_id is None:
+        return None
+    standing = await repo.standing_offices(conn, subject_user_id)
+    return standing[0] if len(standing) == 1 else None
+
+
+async def offices_of(conn: Conn, subject_user_id: int) -> list[str]:
+    """The offices her requests can go to: those whose notices she holds a
+    current consent on. Two, and the portal asks her which (or both)."""
+    return await repo.standing_offices(conn, subject_user_id)
+
+
+async def claim(
+    conn: Conn, row: Row, *, role: Role | str, office: str | None, actor_id: int
+) -> Row:
+    """Out of the shared intake, into the claiming officer's office's queue.
+    Once: a request an office holds is moved by transfer, never claimed."""
+    _may_act(row, role)
+    _open(row)
+    if not office:
+        raise Forbidden("Only an office's officer claims a request")
+    if row.get("office_code") is not None:
+        raise Conflict(
+            f"This request is already with the {OFFICE_TITLES[str(row['office_code'])]}",
+            code="already_claimed",
+        )
+    if not await repo.claim(conn, int(row["request_id"]), office=office, claimed_by=actor_id):
+        raise Conflict("Another office claimed it first", code="already_claimed")
+    row = await reload(conn, row)
+    await _record(
+        conn, row, Event.RIGHTS_CLAIMED, actor_user_id=actor_id, detail={"office": office}
+    )
+    return row
+
+
+async def transfer(
+    conn: Conn, row: Row, *, role: Role | str, to_office: str, reason: str, actor_id: int
+) -> Row:
+    """To the other office, with the reason (`hr-track.md` §5). D0, the due
+    date and the checkpoints do not move; holders derived so far stay. The
+    receiving office's officers are emailed. The request leaves the sender's
+    view with the statement that moves it."""
+    _may_act(row, role)
+    _open(row)
+    if to_office not in offices.CODES:
+        raise ValidationFailed("Choose rnd or hr", field="office")
+    to = to_office
+    current = row.get("office_code")
+    if current is None:
+        raise Conflict(
+            "A request in the shared intake is claimed, not transferred", code="unclaimed"
+        )
+    if to == current:
+        raise ValidationFailed("It is already this office's", field="office")
+    reason = (reason or "").strip()
+    if not reason:
+        raise ValidationFailed("Say why it belongs to the other office", field="reason")
+    await repo.transfer(
+        conn, int(row["request_id"]), to_office=to, transferred_by=actor_id, reason=reason
+    )
+    moved = await reload(conn, row)
+    await _record(
+        conn,
+        moved,
+        Event.RIGHTS_TRANSFERRED,
+        actor_user_id=actor_id,
+        detail={"from": current, "to": to},
+    )
+    from cmp.domain import alerts
+
+    await alerts.rights_transferred(conn, moved, from_office=str(current))
+    return moved
 
 
 async def acknowledge(conn: Conn, row: Row, *, actor_id: int | None) -> Row:
@@ -730,18 +834,20 @@ async def escalate(conn: Conn, row: Row, *, role: Role | str, actor_id: int) -> 
 async def assign_reviewer(
     conn: Conn, row: Row, *, reviewer_uuid: str, role: Role | str, actor_id: int
 ) -> Row:
-    """An administrator names the reviewer for a grievance about the DPO."""
+    """An administrator names the reviewer for a grievance about an office -
+    the DPO's or the Legal office's (0055 keeps `about_dpo` as the column)."""
     if Role(role) is not Role.ADMIN:
         raise Forbidden("Only an administrator assigns the independent reviewer")
     _open(row)
     if not row["about_dpo"]:
-        raise Conflict("This grievance is not about the DPO, so the DPO reviews it")
+        raise Conflict("This grievance is not about the office, so the office reviews it")
     reviewer = await user_repo.by_uuid(conn, reviewer_uuid)
     if not reviewer or reviewer["status"] != "active":
         raise NotFound("User")
-    if reviewer["role"] == Role.DPO.value:
+    if reviewer["role"] in (Role.DPO.value, Role.LEGAL.value):
         raise ValidationFailed(
-            "The reviewer of a complaint about the DPO cannot be the DPO", field="reviewer_uuid"
+            "The reviewer of a complaint about an office cannot be an office's officer",
+            field="reviewer_uuid",
         )
     if reviewer["role"] != Role.ADMIN.value:
         raise ValidationFailed(
@@ -1963,7 +2069,8 @@ async def _tell_holder(
 async def _tell_office(
     conn: Conn, row: Row, holder: Row, *, author_id: int | None, body: str
 ) -> None:
-    """The holder wrote; every active DPO hears, and the dashboard queues it."""
+    """The holder wrote; the officers of the request's office hear (both
+    offices', while it is in the shared intake), and the dashboard queues it."""
     author = await user_repo.by_id(conn, author_id) if author_id else None
     name = (
         str(await unseal_value("auth_user", "full_name", author["full_name"]))
@@ -1971,7 +2078,7 @@ async def _tell_office(
         else str(holder["label"])
     )
     where = _console_url(f"/requests/{row['request_uuid']}")
-    for to in await user_repo.active_emails_for_role(conn, Role.DPO.value):
+    for to in await user_repo.officer_emails(conn, row.get("office_code")):
         _dispatch(
             "send_ticket_message",
             to,

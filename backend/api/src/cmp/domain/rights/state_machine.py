@@ -68,8 +68,11 @@ class RequestFacts:
     #: A nominee acting: the death or incapacity is evidenced to our standard.
     nominee: bool = False
     event_evidenced: bool = False
-    #: A grievance that concerns the DPO's own handling.
+    #: A grievance that concerns the office's own handling - the DPO's, or the
+    #: Legal office's (0055 keeps the column's name).
     about_dpo: bool = False
+    #: In an office's queue, not the shared intake (ADR 0032, 0055).
+    office_known: bool = True
     reviewer_assigned: bool = False
     holders_confirmed: int = 0
     tickets_issued: int = 0
@@ -116,10 +119,13 @@ class Transition:
 def actors_for(f: RequestFacts) -> frozenset[Role]:
     """Who may act on a request with these facts.
 
-    The DPO always. The administrator only where the complaint is about the
-    DPO, because that is the one case in which the DPO must not be the judge.
+    The office's officer always - the DPO, or the Legal PoC; which office's
+    request it is, the scoped lookup has already settled. The administrator
+    only where the complaint is about the office, because that is the one case
+    in which the office must not be the judge.
     """
-    return frozenset({Role.DPO, Role.ADMIN}) if f.about_dpo else frozenset({Role.DPO})
+    officers = {Role.DPO, Role.LEGAL}
+    return frozenset({*officers, Role.ADMIN}) if f.about_dpo else frozenset(officers)
 
 
 def may_act(role: Role | str, f: RequestFacts) -> bool:
@@ -138,6 +144,7 @@ def _start(f: RequestFacts) -> Transition:
         ),
         Requirement(f.verified, "Identity is not verified"),
         Requirement(f.classified, "The request has not been classified as a rights request"),
+        Requirement(f.office_known, "Claim it for your office first"),
     ]
     if f.request_type == Kind.ERASURE:
         requirements.append(

@@ -8,6 +8,9 @@
  *
  * For an administrator the same page shows only grievances escalated away
  * from the DPO - the server scopes it, this page does not.
+ *
+ * Each office's officer sees its own office's requests and the shared
+ * intake's (0055); an intake row carries a Claim button.
  */
 "use client";
 
@@ -29,6 +32,7 @@ import { Button, Mono, Td, Tr, PersonCell } from "@/components/ui/primitives";
 import { REQUEST_TYPE_COPY, RequestStatusBadge, RequestTypeBadge } from "@/features/rights/components/copy";
 import { UnreadBadge } from "@/components/data-display/thread";
 import { LogRequestForm } from "@/features/rights/components/log-request-form";
+import { ClaimButton } from "@/features/rights/components/office-card";
 import { useRequests } from "@/features/rights/queries";
 import { cn, formatDate, formatDateTime } from "@/lib/format";
 import { useAuth } from "@/providers";
@@ -156,7 +160,12 @@ function RequestsPageView() {
                 <UnreadBadge count={r.threads_unread} />
               </span>
               {r.about_dpo && (
-                <p className="mt-0.5 text-2xs font-semibold uppercase tracking-wide text-warning-text">about the DPO</p>
+                <p className="mt-0.5 text-2xs font-semibold uppercase tracking-wide text-warning-text">about the office</p>
+              )}
+              {r.office === null && (
+                <p className="mt-0.5 flex items-center gap-2 text-2xs font-semibold uppercase tracking-wide text-accent-text">
+                  shared intake <ClaimButton request={r} />
+                </p>
               )}
               {r.consent_uuid && (
                 <p className="mt-0.5 text-2xs font-semibold uppercase tracking-wide text-accent-text" title={r.consent_project ?? undefined}>

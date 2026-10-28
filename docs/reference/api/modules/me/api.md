@@ -1,6 +1,6 @@
 # Me API
 
-Generated from `backend/api/openapi.json`. **29 operations.**
+Generated from `backend/api/openapi.json`. **30 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -23,18 +23,19 @@ For each operation the information is deliberately ordered as **API → Validati
 15. [`GET /me/breach-notices`](#15_get_me_breach_notices)
 16. [`GET /me/disclosures`](#16_get_me_disclosures)
 17. [`GET /me/notifications`](#17_get_me_notifications)
-18. [`GET /me/requests`](#18_get_me_requests)
-19. [`POST /me/requests`](#19_post_me_requests)
-20. [`GET /me/requests/{request_uuid}`](#20_get_me_requests_request_uuid)
-21. [`GET /me/requests/{request_uuid}/trail`](#21_get_me_requests_request_uuid_trail)
-22. [`GET /me/requests/{request_uuid}/download`](#22_get_me_requests_request_uuid_download)
-23. [`GET /me/requests/{request_uuid}/files/{file_uuid}`](#23_get_me_requests_request_uuid_files_file_uuid)
-24. [`POST /me/requests/{request_uuid}/attachments`](#24_post_me_requests_request_uuid_attachments)
-25. [`POST /me/requests/{request_uuid}/dispute`](#25_post_me_requests_request_uuid_dispute)
-26. [`GET /me/nominations`](#26_get_me_nominations)
-27. [`POST /me/nominations`](#27_post_me_nominations)
-28. [`GET /me/nominee-of`](#28_get_me_nominee_of)
-29. [`DELETE /me/nominations/{nomination_uuid}`](#29_delete_me_nominations_nomination_uuid)
+18. [`GET /me/requests/offices`](#18_get_me_requests_offices)
+19. [`GET /me/requests`](#19_get_me_requests)
+20. [`POST /me/requests`](#20_post_me_requests)
+21. [`GET /me/requests/{request_uuid}`](#21_get_me_requests_request_uuid)
+22. [`GET /me/requests/{request_uuid}/trail`](#22_get_me_requests_request_uuid_trail)
+23. [`GET /me/requests/{request_uuid}/download`](#23_get_me_requests_request_uuid_download)
+24. [`GET /me/requests/{request_uuid}/files/{file_uuid}`](#24_get_me_requests_request_uuid_files_file_uuid)
+25. [`POST /me/requests/{request_uuid}/attachments`](#25_post_me_requests_request_uuid_attachments)
+26. [`POST /me/requests/{request_uuid}/dispute`](#26_post_me_requests_request_uuid_dispute)
+27. [`GET /me/nominations`](#27_get_me_nominations)
+28. [`POST /me/nominations`](#28_post_me_nominations)
+29. [`GET /me/nominee-of`](#29_get_me_nominee_of)
+30. [`DELETE /me/nominations/{nomination_uuid}`](#30_delete_me_nominations_nomination_uuid)
 
 <a id="1_get_me"></a>
 ## 1. `GET /me` — Get Me
@@ -931,8 +932,43 @@ No request body.
 }
 ```
 
-<a id="18_get_me_requests"></a>
-## 18. `GET /me/requests` — My requests
+<a id="18_get_me_requests_offices"></a>
+## 18. `GET /me/requests/offices` — The offices my requests can go to
+
+### API
+
+- **Operation ID:** `my_offices_me_requests_offices_get`
+- **Access:** Authenticated caller acting on their own records.
+
+### Validation
+
+No path, query, header, or cookie parameters are declared for this operation.
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`MyOfficesOut`](#schema-myofficesout) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "offices": [
+    {
+      "code": "string",
+      "title": "string"
+    }
+  ]
+}
+```
+
+<a id="19_get_me_requests"></a>
+## 19. `GET /me/requests` — My requests
 
 ### API
 
@@ -1021,13 +1057,48 @@ No request body.
         "content_type": "…",
         "added_at": "…"
       }
+    ],
+    "also": [
+      {
+        "request_uuid": "…",
+        "reference": "…",
+        "request_type": "…",
+        "status": "…",
+        "outcome": "…",
+        "channel": "…",
+        "request_text": "…",
+        "received_at": "…",
+        "due_at": "…",
+        "acknowledged_at": "…",
+        "verification_status": "…",
+        "responded_at": "…",
+        "response_text": "…",
+        "refusal_reason": "…",
+        "remedy_text": "…",
+        "grievance_upheld": "…",
+        "download_available": "…",
+        "download_expires_at": "…",
+        "linked_reference": "…",
+        "linked_request_uuid": "…",
+        "consent_uuid": "…",
+        "consent_project": "…",
+        "consent_notice_code": "…",
+        "consent_notice_version": "…",
+        "consent_at": "…",
+        "consent_purposes": "…",
+        "closed_at": "…",
+        "clock": "…",
+        "response_files": "…",
+        "attachments": "…",
+        "also": "…"
+      }
     ]
   }
 ]
 ```
 
-<a id="19_post_me_requests"></a>
-## 19. `POST /me/requests` — Make a request, signed in
+<a id="20_post_me_requests"></a>
+## 20. `POST /me/requests` — Make a request, signed in
 
 ### API
 
@@ -1036,6 +1107,9 @@ No request body.
 
 From the dashboard. The session is the verification, so the clock starts
 and the acknowledgement goes out in the same moment.
+
+`office` `both` makes one request to each office, received together: the
+first is returned, the second under `also`.
 
 ### Validation
 
@@ -1052,7 +1126,8 @@ Request body required: **yes**.
 {
   "request_type": "string",
   "request_text": "string",
-  "about_dpo": false
+  "about_dpo": false,
+  "office": "rnd"
 }
 ```
 
@@ -1130,6 +1205,47 @@ Request body required: **yes**.
       "content_type": "string",
       "added_at": "2026-09-17T12:00:00Z"
     }
+  ],
+  "also": [
+    {
+      "request_uuid": "00000000-0000-4000-8000-000000000000",
+      "reference": "string",
+      "request_type": "string",
+      "status": "string",
+      "outcome": "…",
+      "channel": "string",
+      "request_text": "string",
+      "received_at": "2026-09-17T12:00:00Z",
+      "due_at": "2026-09-17T12:00:00Z",
+      "acknowledged_at": "…",
+      "verification_status": "string",
+      "responded_at": "…",
+      "response_text": "…",
+      "refusal_reason": "…",
+      "remedy_text": "…",
+      "grievance_upheld": "…",
+      "download_available": true,
+      "download_expires_at": "…",
+      "linked_reference": "…",
+      "linked_request_uuid": "…",
+      "consent_uuid": "…",
+      "consent_project": "…",
+      "consent_notice_code": "…",
+      "consent_notice_version": "…",
+      "consent_at": "…",
+      "consent_purposes": "…",
+      "closed_at": "…",
+      "clock": "…",
+      "response_files": [
+        "…"
+      ],
+      "attachments": [
+        "…"
+      ],
+      "also": [
+        "…"
+      ]
+    }
   ]
 }
 ```
@@ -1152,8 +1268,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="20_get_me_requests_request_uuid"></a>
-## 20. `GET /me/requests/{request_uuid}` — My Request
+<a id="21_get_me_requests_request_uuid"></a>
+## 21. `GET /me/requests/{request_uuid}` — My Request
 
 ### API
 
@@ -1244,6 +1360,47 @@ No request body.
       "content_type": "string",
       "added_at": "2026-09-17T12:00:00Z"
     }
+  ],
+  "also": [
+    {
+      "request_uuid": "00000000-0000-4000-8000-000000000000",
+      "reference": "string",
+      "request_type": "string",
+      "status": "string",
+      "outcome": "…",
+      "channel": "string",
+      "request_text": "string",
+      "received_at": "2026-09-17T12:00:00Z",
+      "due_at": "2026-09-17T12:00:00Z",
+      "acknowledged_at": "…",
+      "verification_status": "string",
+      "responded_at": "…",
+      "response_text": "…",
+      "refusal_reason": "…",
+      "remedy_text": "…",
+      "grievance_upheld": "…",
+      "download_available": true,
+      "download_expires_at": "…",
+      "linked_reference": "…",
+      "linked_request_uuid": "…",
+      "consent_uuid": "…",
+      "consent_project": "…",
+      "consent_notice_code": "…",
+      "consent_notice_version": "…",
+      "consent_at": "…",
+      "consent_purposes": "…",
+      "closed_at": "…",
+      "clock": "…",
+      "response_files": [
+        "…"
+      ],
+      "attachments": [
+        "…"
+      ],
+      "also": [
+        "…"
+      ]
+    }
   ]
 }
 ```
@@ -1266,8 +1423,8 @@ No request body.
 }
 ```
 
-<a id="21_get_me_requests_request_uuid_trail"></a>
-## 21. `GET /me/requests/{request_uuid}/trail` — What was recorded about my request
+<a id="22_get_me_requests_request_uuid_trail"></a>
+## 22. `GET /me/requests/{request_uuid}/trail` — What was recorded about my request
 
 ### API
 
@@ -1317,8 +1474,8 @@ No request body.
 }
 ```
 
-<a id="22_get_me_requests_request_uuid_download"></a>
-## 22. `GET /me/requests/{request_uuid}/download` — The response, while the window is open
+<a id="23_get_me_requests_request_uuid_download"></a>
+## 23. `GET /me/requests/{request_uuid}/download` — The response, while the window is open
 
 ### API
 
@@ -1366,8 +1523,8 @@ No request body.
 }
 ```
 
-<a id="23_get_me_requests_request_uuid_files_file_uuid"></a>
-## 23. `GET /me/requests/{request_uuid}/files/{file_uuid}` — A file released with the response, while the window is open
+<a id="24_get_me_requests_request_uuid_files_file_uuid"></a>
+## 24. `GET /me/requests/{request_uuid}/files/{file_uuid}` — A file released with the response, while the window is open
 
 ### API
 
@@ -1416,8 +1573,8 @@ No request body.
 }
 ```
 
-<a id="24_post_me_requests_request_uuid_attachments"></a>
-## 24. `POST /me/requests/{request_uuid}/attachments` — Send a document with my request
+<a id="25_post_me_requests_request_uuid_attachments"></a>
+## 25. `POST /me/requests/{request_uuid}/attachments` — Send a document with my request
 
 ### API
 
@@ -1521,6 +1678,47 @@ Request body required: **yes**.
       "content_type": "string",
       "added_at": "2026-09-17T12:00:00Z"
     }
+  ],
+  "also": [
+    {
+      "request_uuid": "00000000-0000-4000-8000-000000000000",
+      "reference": "string",
+      "request_type": "string",
+      "status": "string",
+      "outcome": "…",
+      "channel": "string",
+      "request_text": "string",
+      "received_at": "2026-09-17T12:00:00Z",
+      "due_at": "2026-09-17T12:00:00Z",
+      "acknowledged_at": "…",
+      "verification_status": "string",
+      "responded_at": "…",
+      "response_text": "…",
+      "refusal_reason": "…",
+      "remedy_text": "…",
+      "grievance_upheld": "…",
+      "download_available": true,
+      "download_expires_at": "…",
+      "linked_reference": "…",
+      "linked_request_uuid": "…",
+      "consent_uuid": "…",
+      "consent_project": "…",
+      "consent_notice_code": "…",
+      "consent_notice_version": "…",
+      "consent_at": "…",
+      "consent_purposes": "…",
+      "closed_at": "…",
+      "clock": "…",
+      "response_files": [
+        "…"
+      ],
+      "attachments": [
+        "…"
+      ],
+      "also": [
+        "…"
+      ]
+    }
   ]
 }
 ```
@@ -1543,8 +1741,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="25_post_me_requests_request_uuid_dispute"></a>
-## 25. `POST /me/requests/{request_uuid}/dispute` — Dispute the response - a grievance under s.13
+<a id="26_post_me_requests_request_uuid_dispute"></a>
+## 26. `POST /me/requests/{request_uuid}/dispute` — Dispute the response - a grievance under s.13
 
 ### API
 
@@ -1645,6 +1843,47 @@ Request body required: **yes**.
       "content_type": "string",
       "added_at": "2026-09-17T12:00:00Z"
     }
+  ],
+  "also": [
+    {
+      "request_uuid": "00000000-0000-4000-8000-000000000000",
+      "reference": "string",
+      "request_type": "string",
+      "status": "string",
+      "outcome": "…",
+      "channel": "string",
+      "request_text": "string",
+      "received_at": "2026-09-17T12:00:00Z",
+      "due_at": "2026-09-17T12:00:00Z",
+      "acknowledged_at": "…",
+      "verification_status": "string",
+      "responded_at": "…",
+      "response_text": "…",
+      "refusal_reason": "…",
+      "remedy_text": "…",
+      "grievance_upheld": "…",
+      "download_available": true,
+      "download_expires_at": "…",
+      "linked_reference": "…",
+      "linked_request_uuid": "…",
+      "consent_uuid": "…",
+      "consent_project": "…",
+      "consent_notice_code": "…",
+      "consent_notice_version": "…",
+      "consent_at": "…",
+      "consent_purposes": "…",
+      "closed_at": "…",
+      "clock": "…",
+      "response_files": [
+        "…"
+      ],
+      "attachments": [
+        "…"
+      ],
+      "also": [
+        "…"
+      ]
+    }
   ]
 }
 ```
@@ -1667,8 +1906,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="26_get_me_nominations"></a>
-## 26. `GET /me/nominations` — Whom I have nominated
+<a id="27_get_me_nominations"></a>
+## 27. `GET /me/nominations` — Whom I have nominated
 
 ### API
 
@@ -1716,8 +1955,8 @@ No request body.
 ]
 ```
 
-<a id="27_post_me_nominations"></a>
-## 27. `POST /me/nominations` — Nominate somebody - s.14
+<a id="28_post_me_nominations"></a>
+## 28. `POST /me/nominations` — Nominate somebody - s.14
 
 ### API
 
@@ -1796,8 +2035,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="28_get_me_nominee_of"></a>
-## 28. `GET /me/nominee-of` — Who has nominated me
+<a id="29_get_me_nominee_of"></a>
+## 29. `GET /me/nominee-of` — Who has nominated me
 
 ### API
 
@@ -1860,8 +2099,8 @@ No request body.
 ]
 ```
 
-<a id="29_delete_me_nominations_nomination_uuid"></a>
-## 29. `DELETE /me/nominations/{nomination_uuid}` — Revoke a nomination
+<a id="30_delete_me_nominations_nomination_uuid"></a>
+## 30. `DELETE /me/nominations/{nomination_uuid}` — Revoke a nomination
 
 ### API
 
@@ -1997,6 +2236,13 @@ For state changes whose only interesting output is that they happened.
 | `email_verified_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `secondary_email_verified_at` | `string` or `null` | Yes | format: `date-time` | — |
 
+<a id="schema-myofficesout"></a>
+#### `MyOfficesOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `offices` | array of [`OfficeChoiceOut`](#schema-officechoiceout) | Yes | — | — |
+
 <a id="schema-nominationin"></a>
 #### `NominationIn`
 
@@ -2045,6 +2291,7 @@ For state changes whose only interesting output is that they happened.
 | `request_type` | `string` | Yes | — | — |
 | `request_text` | `string` | Yes | min length: `1`; max length: `20000` | — |
 | `about_dpo` | `boolean` | No | default: `False` | — |
+| `office` | enum: `rnd`, `hr`, `both` or `null` | No | — | — |
 
 <a id="schema-subjectrequestout"></a>
 #### `SubjectRequestOut`
@@ -2084,6 +2331,7 @@ the holders are in the response itself, and the notes are ours.
 | `clock` | [`ClockOut`](#schema-clockout) | Yes | — | — |
 | `response_files` | array of [`ResponseFileOut`](#schema-responsefileout) | No | — | — |
 | `attachments` | array of [`AttachmentOut`](#schema-attachmentout) | No | — | — |
+| `also` | array of [`SubjectRequestOut`](#schema-subjectrequestout) | No | — | — |
 
 <a id="schema-updateme"></a>
 #### `UpdateMe`
@@ -2113,6 +2361,14 @@ the holders are in the response itself, and the notes are ours.
 | `type` | `string` | Yes | — | — |
 | `input` | `object` | No | — | — |
 | `ctx` | `object` | No | — | — |
+
+<a id="schema-officechoiceout"></a>
+#### `OfficeChoiceOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `code` | `string` | Yes | — | — |
+| `title` | `string` | Yes | — | — |
 
 <a id="schema-clockout"></a>
 #### `ClockOut`

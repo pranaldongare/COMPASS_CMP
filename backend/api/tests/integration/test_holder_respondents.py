@@ -36,8 +36,8 @@ async def _processor(conn: Any, *, name: str, in_house: bool) -> dict[str, Any]:
 
 
 async def _request(conn: Any, seeded: dict[str, Any]) -> dict[str, Any]:
-    """An access request from her account: verified by the session, so the
-    clock is running and the DPO can start work on it."""
+    """An access request from her account to the DPO office: verified by the
+    session, so the clock is running and the DPO can start work on it."""
     row = await service.create(
         conn,
         request_type="access",
@@ -47,6 +47,7 @@ async def _request(conn: Any, seeded: dict[str, Any]) -> dict[str, Any]:
         subject_user_id=seeded["subject"]["id"],
         actor_id=seeded["subject"]["id"],
         verification_method="session",
+        office="rnd",
     )
     return dict(row)
 

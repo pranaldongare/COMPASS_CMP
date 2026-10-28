@@ -310,7 +310,7 @@ Key `office_note` · channels: email
 | CC | Never - it is written to one person about her own data; a copy would disclose it. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_office_note` (`backend/api/src/cmp/tasks/notifications/batch.py:51`) |
-| Queued from | `backend/api/src/cmp/api/routers/v1/dashboard.py:844` |
+| Queued from | `backend/api/src/cmp/api/routers/v1/dashboard.py:848` |
 | Variables | `event` (What the notification was about.), `occurred_on` (When it happened.), `console_url` (The staff console (CONSOLE_BASE_URL).), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `A message from the {organisation} Privacy Office`
@@ -335,7 +335,7 @@ Key `staff_role_changed` · channels: email
 | To | The member of staff whose role changed, at their primary email. |
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
-| Sent by | `cmp.notifications.send_staff_role_changed` (`backend/api/src/cmp/tasks/notifications/alerts.py:168`) |
+| Sent by | `cmp.notifications.send_staff_role_changed` (`backend/api/src/cmp/tasks/notifications/alerts.py:193`) |
 | Queued from | - |
 | Variables | `full_name` (The member of staff.), `old_role` (The role they had.), `new_role` (The role they have now.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
@@ -360,7 +360,7 @@ Key `staff_access_ended` · channels: email
 | To | The person whose console access ended, at their primary email. |
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
-| Sent by | `cmp.notifications.send_staff_access_ended` (`backend/api/src/cmp/tasks/notifications/alerts.py:179`) |
+| Sent by | `cmp.notifications.send_staff_access_ended` (`backend/api/src/cmp/tasks/notifications/alerts.py:204`) |
 | Queued from | - |
 | Variables | `full_name` (The person.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
@@ -385,7 +385,7 @@ Key `delegation_arranged` · channels: email
 | To | The person being covered and the colleague covering, each at their primary email. |
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
-| Sent by | `cmp.notifications.send_delegation_arranged` (`backend/api/src/cmp/tasks/notifications/alerts.py:191`) |
+| Sent by | `cmp.notifications.send_delegation_arranged` (`backend/api/src/cmp/tasks/notifications/alerts.py:216`) |
 | Queued from | - |
 | Variables | `delegator_name` (The person being covered.), `delegate_name` (The colleague covering.), `role_title` (The role covered.), `starts_on` (When it starts.), `ends_on` (When it ends, or 'until it is ended'.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 

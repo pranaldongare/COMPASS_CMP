@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import {
   getMyRequest,
+  getMyRequestOffices,
   listMyNominations,
   listNominationsNamingMe,
   listMyRequestTrail,
@@ -14,7 +15,7 @@ import {
 } from "@/features/rights/api";
 import type { ApiError } from "@/lib/errors";
 import { keys } from "@/lib/query";
-import type { AuditEntry, MyRequest, Nomination, NomineeOf, Uuid } from "@/types";
+import type { AuditEntry, MyRequest, Nomination, NomineeOf, RequestOffice, Uuid } from "@/types";
 
 /* ------------------------------------------------------ the principal */
 
@@ -22,6 +23,14 @@ export function useMyRequests() {
   return useQuery<MyRequest[], ApiError>({
     queryKey: keys.me.requests,
     queryFn: listMyRequests,
+  });
+}
+
+/** The offices her requests can go to (0055). */
+export function useMyRequestOffices() {
+  return useQuery<{ offices: RequestOffice[] }, ApiError>({
+    queryKey: keys.me.requestOffices,
+    queryFn: getMyRequestOffices,
   });
 }
 

@@ -111,6 +111,31 @@ def send_rights_request_received(
     )
 
 
+@shared_task(name="cmp.notifications.send_rights_transfer_received", **RETRY_KW)
+def send_rights_transfer_received(
+    to: str,
+    reference: str,
+    request_type: str,
+    received_at: str,
+    due_date: str,
+    from_office: str,
+    reason: str,
+    request_uuid: str,
+) -> dict[str, Any]:
+    """`reason` travels sealed and is opened at delivery."""
+    return deliver(
+        Message.RIGHTS_TRANSFER_RECEIVED,
+        to=to,
+        reference=reference,
+        request_type=request_type,
+        received_at=received_at,
+        due_date=due_date,
+        from_office=from_office,
+        reason=reason,
+        request_url=console(f"/requests/{request_uuid}"),
+    )
+
+
 @shared_task(name="cmp.notifications.send_rights_due_digest", **RETRY_KW)
 def send_rights_due_digest(to: str, count: int, items: str) -> dict[str, Any]:
     return deliver(

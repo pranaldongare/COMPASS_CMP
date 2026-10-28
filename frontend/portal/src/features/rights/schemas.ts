@@ -26,6 +26,8 @@ export const myRequestSchema = z.object({
   request_type: requestTypeSchema,
   request_text: requestText,
   about_dpo: z.boolean().default(false),
+  /** Asked only when she holds consents with both offices (0055). */
+  office: z.enum(["rnd", "hr", "both"]).nullable().default(null),
 });
 export type MyRequestForm = z.input<typeof myRequestSchema>;
 export type MyRequestValues = z.output<typeof myRequestSchema>;

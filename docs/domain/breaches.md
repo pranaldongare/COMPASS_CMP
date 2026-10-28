@@ -9,6 +9,15 @@ which puts the incident first; the code is `cmp.domain.breach`, the routes are
 under `/breaches`, and the console's pages are **Breaches** in the DPO's menu,
 headed **Incidents and personal data breaches**.
 
+**A breach belongs to an office** (0055). It is logged into the register of
+the office that noticed it, and that office's officer holds it with every
+power described here: the DPO on the DPO office's register, the Legal PoC on
+the Legal office's. Neither sees the other's - its uuid answers 404, as to
+anyone without the register. A member of staff of either office who is sent a
+ticket on a breach answers it whichever office's breach it is. A legal hold is
+likewise an office's to list and release, but what it stops it stops for
+both: erasure of a person stops at a hold either office placed on her.
+
 In order: an **incident** is logged as it was noticed; the DPO team
 **validates** whether it is a personal data breach under s.2(u); the first
 *yes* **records the breach** and starts the DPDP duties. CERT-In runs from the

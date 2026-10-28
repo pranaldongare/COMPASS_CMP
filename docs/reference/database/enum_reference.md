@@ -29,7 +29,7 @@
 | `purpose_status` | `draft`, `pending_approval`, `active`, `retired` |
 | `record_status` | `active`, `suspended`, `terminated` |
 | `retention_basis` | `statutory`, `contractual`, `business_policy` |
-| `rights_holder_source` | `export_line`, `asset_consent`, `manual` |
+| `rights_holder_source` | `export_line`, `asset_consent`, `manual`, `activity_processor` |
 | `rights_item_state` | `proposed`, `decided`, `instructed`, `applied` |
 | `rights_request_channel` | `portal`, `public_form`, `staff_logged`, `nominee` |
 | `rights_request_outcome` | `complete`, `partial`, `no_records`, `refused`, `not_verified`, `reclassified_withdrawal`, `upheld`, `not_upheld` |

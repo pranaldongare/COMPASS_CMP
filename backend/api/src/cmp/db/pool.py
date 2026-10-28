@@ -84,6 +84,28 @@ async def _apply_office(conn: psycopg.AsyncConnection[Any]) -> None:
     await conn.execute("SELECT set_config('app.office', %s, false)", (office,))
 
 
+@asynccontextmanager
+async def across_offices(conn: psycopg.AsyncConnection[Any]) -> AsyncIterator[None]:
+    """Both offices' rows, for one statement or a few whose bounds the caller
+    has already settled - the request a transfer moves (open point F-12), the
+    trail of a request that changed office, the ticket a holder of the other
+    office was sent (F-13) - then the office the connection had.
+
+    In a transaction that failed, the setting is not put back here: the
+    rollback that follows undoes it, and a statement now would only raise.
+    """
+    row = await (
+        await conn.execute("SELECT current_setting('app.office', true) AS office")
+    ).fetchone()
+    had = (row or {}).get("office") or ""
+    await conn.execute("SELECT set_config('app.office', %s, false)", (ALL_OFFICES,))
+    try:
+        yield
+    finally:
+        if conn.info.transaction_status != psycopg.pq.TransactionStatus.INERROR:
+            await conn.execute("SELECT set_config('app.office', %s, false)", (had,))
+
+
 async def _probe() -> None:
     """One direct connection before the pool opens.
 

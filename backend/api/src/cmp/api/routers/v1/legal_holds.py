@@ -65,6 +65,7 @@ async def place_hold(body: LegalHoldIn, principal: LegalHoldWriter) -> dict[str,
             subject_uuid=str(body.subject_uuid) if body.subject_uuid else None,
             reason=body.reason,
             actor_id=principal.user_id,
+            office=principal.office,
         )
 
 

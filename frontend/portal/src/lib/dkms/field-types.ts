@@ -52,6 +52,7 @@ export const TYPE_BY_FIELD: Readonly<Record<string, DataType>> = {
   sent_back_reason: "FREE_TEXT",
   submitted_contact: "CONTACT",
   submitted_name: "NAME",
+  transfer_reason: "FREE_TEXT",
   username: "NAME",
   verification_note: "FREE_TEXT",
 

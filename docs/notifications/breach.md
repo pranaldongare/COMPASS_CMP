@@ -14,8 +14,8 @@ The people a breach touched, the staff asked to help on a ticket, and the DPO's 
 | 2 | [Personal data breach notice, to someone with no account](#breach-notice-direct) | Rule 7(1), to a person the breach touched who has no account here - named in a list sent to the Privacy Office (2026-10-07). The same five as the notice, in full, with no account to point to: by email, and by SMS. | Each person a breach touched who has no account, at the email and mobile in the list sent to the office. | Never | None |
 | 3 | [A ticket from the Privacy Office is waiting](#breach-ticket-waiting) | Tells a member of staff that the Privacy Office has a ticket waiting for them in the console - when one is assigned, sent back or reopened (S3-08). It never names the breach: no reference, no title, no words from it (BD-18). Email only. | The member of staff holding the breach ticket, at their primary email. | Office may set | None |
 | 4 | [Temporary console access for a breach ticket](#breach-ticket-access) | Sent to somebody with no console login whom the Privacy Office - or a colleague - has asked to answer a ticket (S3-09). It gives temporary access to the console to answer it - when the matter is closed they can still read it, no longer answer it - and how to set a password. It names no breach (BD-18). Email only; sent by the sign-in service, like an invitation. | Somebody with no console login asked to answer a breach ticket, at the work email given. | Never | None |
-| 5 | [A breach duty is due soon or overdue](#breach-duty-due) | Sent to the Privacy Office when a breach's duty with a deadline - the organisation's board, CERT-In, the Board's report - is about to fall due, and again if it falls overdue. Once per stage per duty. | Every active Data Protection Officer, at their primary email. | Office may set | None |
-| 6 | [A breach ticket was answered](#breach-ticket-returned) | Sent to the Privacy Office when the holder of a breach ticket returns it with their answer. | Every active Data Protection Officer, at their primary email. | Office may set | None |
+| 5 | [A breach duty is due soon or overdue](#breach-duty-due) | Sent to the Privacy Office when a breach's duty with a deadline - the organisation's board, CERT-In, the Board's report - is about to fall due, and again if it falls overdue. Once per stage per duty. | Every active officer of the breach's office - the Data Protection Officer, or the Legal PoC - at their primary email. | Office may set | None |
+| 6 | [A breach ticket was answered](#breach-ticket-returned) | Sent to the Privacy Office when the holder of a breach ticket returns it with their answer. | Every active officer of the breach's office - the Data Protection Officer, or the Legal PoC - at their primary email. | Office may set | None |
 
 <a id="breach-notice"></a>
 ## 1. Personal data breach notice
@@ -178,10 +178,10 @@ Key `breach_duty_due` · channels: email
 | | |
 |---|---|
 | When | Sent to the Privacy Office when a breach's duty with a deadline - the organisation's board, CERT-In, the Board's report - is about to fall due, and again if it falls overdue. Once per stage per duty. |
-| To | Every active Data Protection Officer, at their primary email. |
+| To | Every active officer of the breach's office - the Data Protection Officer, or the Legal PoC - at their primary email. |
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
-| Sent by | `cmp.notifications.send_breach_duty_due` (`backend/api/src/cmp/tasks/notifications/alerts.py:139`) |
+| Sent by | `cmp.notifications.send_breach_duty_due` (`backend/api/src/cmp/tasks/notifications/alerts.py:164`) |
 | Queued from | - |
 | Variables | `breach_reference` (The breach's reference.), `duty` (The duty.), `due_at` (When it is due, in UTC.), `state` (Due soon or overdue, in words.), `breach_url` (The breach in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
@@ -203,10 +203,10 @@ Key `breach_ticket_returned` · channels: email
 | | |
 |---|---|
 | When | Sent to the Privacy Office when the holder of a breach ticket returns it with their answer. |
-| To | Every active Data Protection Officer, at their primary email. |
+| To | Every active officer of the breach's office - the Data Protection Officer, or the Legal PoC - at their primary email. |
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
-| Sent by | `cmp.notifications.send_breach_ticket_returned` (`backend/api/src/cmp/tasks/notifications/alerts.py:154`) |
+| Sent by | `cmp.notifications.send_breach_ticket_returned` (`backend/api/src/cmp/tasks/notifications/alerts.py:179`) |
 | Queued from | - |
 | Variables | `breach_reference` (The breach's reference.), `holder_name` (Who answered.), `outcome` (Done, partly done, or could not be done.), `breach_url` (The breach's tickets in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 

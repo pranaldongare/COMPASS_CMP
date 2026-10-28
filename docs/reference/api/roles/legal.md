@@ -2,7 +2,7 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `hr-activities`, `hr-categories`, `templates`, `purposes`, `consents`, `exports`, `processors`, `users`, `audit`, `tickets`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `requests`, `breaches`, `hr-activities`, `hr-categories`, `templates`, `purposes`, `consents`, `exports`, `processors`, `users`, `audit`, `tickets`, `notifications`, `profile`.
 
 ## Resource access
 
@@ -11,7 +11,7 @@ Navigation returned after sign-in: `dashboard`, `hr-activities`, `hr-categories`
 | `approval` | No | No | `none` | Denied |
 | `asset` | No | No | `none` | Denied |
 | `audit` | Yes | No | `all` | All rows |
-| `breach` | No | No | `none` | Denied |
+| `breach` | Yes | Yes | `all` | All rows |
 | `breach_ticket` | Yes | Yes | `own` | Own or addressed rows |
 | `collection` | No | No | `none` | Denied |
 | `consent` | Yes | No | `all` | All rows |
@@ -19,7 +19,7 @@ Navigation returned after sign-in: `dashboard`, `hr-activities`, `hr-categories`
 | `export` | Yes | Yes | `all` | All rows |
 | `hr_category` | Yes | Yes | `all` | All rows |
 | `import` | No | No | `none` | Denied |
-| `legal_hold` | No | No | `none` | Denied |
+| `legal_hold` | Yes | Yes | `all` | All rows |
 | `link` | Yes | No | `all` | All rows |
 | `me` | No | No | `none` | Denied |
 | `message_template` | No | No | `none` | Denied |
@@ -29,7 +29,7 @@ Navigation returned after sign-in: `dashboard`, `hr-activities`, `hr-categories`
 | `project` | Yes | No | `all` | All rows |
 | `purpose` | Yes | Yes | `all` | All rows |
 | `restricted_country` | No | No | `none` | Denied |
-| `rights_request` | No | No | `none` | Denied |
+| `rights_request` | Yes | Yes | `all` | All rows |
 | `site` | Yes | No | `all` | All rows |
 | `ticket` | Yes | Yes | `own` | Own or addressed rows |
 | `user` | Yes | No | `all` | All rows |

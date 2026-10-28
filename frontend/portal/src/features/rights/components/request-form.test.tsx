@@ -69,6 +69,49 @@ describe("MyRequestForm", () => {
     expect(order).toEqual(["request", "document", "document"]);
   });
 
+  it("asks which office when her consents are with both, and sends to both", async () => {
+    const other = makeMyRequest({
+      request_uuid: "34343434-3434-4434-8434-343434343434",
+      reference: "RR-2026-000002",
+    });
+    let body: Record<string, unknown> | null = null;
+    server.use(
+      http.get(`${API}/me/requests/offices`, () =>
+        HttpResponse.json({
+          offices: [
+            { code: "hr", title: "Legal office" },
+            { code: "rnd", title: "DPO office" },
+          ],
+        }),
+      ),
+      http.post(`${API}/me/requests`, async ({ request }) => {
+        body = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ ...created, also: [other] }, { status: 201 });
+      }),
+    );
+    const onDone = vi.fn();
+    const { user } = render(<MyRequestForm onDone={onDone} />);
+    const which = await screen.findByLabelText(/which office is this for/i);
+    await user.type(screen.getByLabelText(/your request/i), "Everything you hold about me");
+    expect(screen.getByRole("button", { name: /send the request/i })).toBeDisabled();
+    await user.selectOptions(which, "both");
+    await user.click(screen.getByRole("button", { name: /send the request/i }));
+    await waitFor(() => expect(onDone).toHaveBeenCalled());
+    expect(body).toMatchObject({ office: "both" });
+    expect(await screen.findByText(/and RR-2026-000002/)).toBeInTheDocument();
+  });
+
+  it("asks nothing when her consents are with one office", async () => {
+    server.use(
+      http.get(`${API}/me/requests/offices`, () =>
+        HttpResponse.json({ offices: [{ code: "rnd", title: "DPO office" }] }),
+      ),
+    );
+    render(<MyRequestForm onDone={() => {}} />);
+    await screen.findByLabelText(/your request/i);
+    expect(screen.queryByLabelText(/which office is this for/i)).not.toBeInTheDocument();
+  });
+
   it("says what it will not take, and lets a chosen file be taken off", async () => {
     const { container, user } = render(<MyRequestForm onDone={() => {}} />);
     // Past the picker's own filter, as a drag-and-drop or "All files" would be.

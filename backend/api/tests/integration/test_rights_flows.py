@@ -146,7 +146,10 @@ async def _portal_request(
     """A request as the portal makes it. A kind the office no longer takes
     (correction, since 2026-10-07) is made as a row from before would be: an
     access request, then given its kind - so how such a request is handled
-    to its end stays tested."""
+    to its end stays tested.
+
+    The seeded subject holds no consent, so her request would go to the
+    shared intake (0055); these flows are the DPO office's, and say so."""
     if kind in {k.value for k in Kind} and kind not in {k.value for k in service.TAKEN}:
         row = await _portal_request(conn, seeded, "access", **kw)
         await conn.execute(
@@ -164,7 +167,7 @@ async def _portal_request(
         subject_user_id=seeded["subject"]["id"],
         actor_id=seeded["subject"]["id"],
         verification_method="session",
-        **kw,
+        **{"office": "rnd", **kw},
     )
 
 
@@ -1002,6 +1005,10 @@ class TestNomination:
         row = await service.classify(
             conn, row, request_type="access", note=None, role=DPO, actor_id=dpo
         )
+        # She held no consent, so nobody knew her office: the request came in
+        # to the shared intake, and the DPO takes it (0055).
+        assert row["office_code"] is None
+        row = await service.claim(conn, row, role=DPO, office="rnd", actor_id=dpo)
         with pytest.raises(Conflict):
             await service.transition(
                 conn, row, to="in_progress", reason=None, role=DPO, actor_id=dpo

@@ -70,6 +70,17 @@ as a release yet.
   about an HR participant derives her activity's category processors as
   holders (`activity_processor`), answered by the account the category names
   for each, or the activity's HR PoC.
+- **Rights requests and breaches by office**: a request is routed on receipt
+  by the person's consents - the Legal office's queue, the DPO's, or, when
+  nobody can tell (the public form, a stranger, consents with both), the
+  shared intake both offices see until one claims it. Signed in with
+  consents in both offices, she chooses which, or both: one request to each,
+  the same received date. An office transfers a request to the other with a
+  reason; the dates do not move, the reason is sealed, the receiving office
+  is emailed (`rights_transfer_received`). The Legal PoC holds the Legal
+  office's requests, breaches and legal holds with the DPO's powers;
+  alerts, the daily list and the dashboard's counts are per office. A legal
+  hold names its office and stops erasure for both. Migration 0055.
 - **Sign-in as "Light split"** (2026-10-11, chosen from three designs): the
   left 7/12 has COMPASS at the top left, the app's name as a kicker, the
   headline on two lines, the line under it, the dotted world map, and three

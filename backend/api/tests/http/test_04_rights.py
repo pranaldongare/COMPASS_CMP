@@ -64,6 +64,16 @@ async def _public_request(http: httpx.AsyncClient, queued: Any, contact: str, te
     return reference
 
 
+async def _claim(http: httpx.AsyncClient, dpo: Any, ruuid: str) -> None:
+    await call(
+        http,
+        "POST",
+        f"/requests/{ruuid}/claim",
+        template=RIGHTS + "/claim",
+        session=dpo,
+    )
+
+
 class TestAnAccessRequestThroughTheOffice:
     async def test_from_the_public_form_to_the_downloaded_response(
         self, http: httpx.AsyncClient, world: World, queued: Any, session_for: SessionFactory
@@ -103,6 +113,8 @@ class TestAnAccessRequestThroughTheOffice:
             json={"request_type": "access", "note": "As stated."},
         )
 
+        # From the public form, so in the shared intake: the DPO takes it (0055).
+        await _claim(http, dpo, ruuid)
         await call(
             http,
             "POST",
@@ -624,6 +636,8 @@ class TestTicketsFromTheHoldersSide:
             session=dpo,
             json={"request_type": "access"},
         )
+        # From the public form, so in the shared intake: the DPO takes it (0055).
+        await _claim(http, dpo, ruuid)
         await call(
             http,
             "POST",
@@ -837,6 +851,8 @@ class TestAnOutsideHolder:
             session=dpo,
             json={"request_type": "access", "note": "As stated."},
         )
+        # From the public form, so in the shared intake: the DPO takes it (0055).
+        await _claim(http, dpo, ruuid)
         await call(
             http,
             "POST",

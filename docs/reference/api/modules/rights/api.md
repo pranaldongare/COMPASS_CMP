@@ -1,6 +1,6 @@
 # Rights API
 
-Generated from `backend/api/openapi.json`. **50 operations.**
+Generated from `backend/api/openapi.json`. **52 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -13,49 +13,51 @@ For each operation the information is deliberately ordered as **API → Validati
 5. [`GET /requests/{request_uuid}/linked/trail`](#5_get_requests_request_uuid_linked_trail)
 6. [`GET /requests/{request_uuid}/transitions`](#6_get_requests_request_uuid_transitions)
 7. [`GET /requests/{request_uuid}/trail`](#7_get_requests_request_uuid_trail)
-8. [`POST /requests/{request_uuid}/acknowledge`](#8_post_requests_request_uuid_acknowledge)
-9. [`POST /requests/{request_uuid}/verification/code`](#9_post_requests_request_uuid_verification_code)
-10. [`POST /requests/{request_uuid}/verification/confirm`](#10_post_requests_request_uuid_verification_confirm)
-11. [`POST /requests/{request_uuid}/verification/manual`](#11_post_requests_request_uuid_verification_manual)
-12. [`POST /requests/{request_uuid}/verification/fail`](#12_post_requests_request_uuid_verification_fail)
-13. [`POST /requests/{request_uuid}/classify`](#13_post_requests_request_uuid_classify)
-14. [`POST /requests/{request_uuid}/refuse`](#14_post_requests_request_uuid_refuse)
-15. [`POST /requests/{request_uuid}/withdrawal`](#15_post_requests_request_uuid_withdrawal)
-16. [`POST /requests/{request_uuid}/intent`](#16_post_requests_request_uuid_intent)
-17. [`POST /requests/{request_uuid}/event`](#17_post_requests_request_uuid_event)
-18. [`GET /requests/{request_uuid}/event/evidence`](#18_get_requests_request_uuid_event_evidence)
-19. [`POST /requests/{request_uuid}/escalate`](#19_post_requests_request_uuid_escalate)
-20. [`POST /requests/{request_uuid}/reviewer`](#20_post_requests_request_uuid_reviewer)
-21. [`POST /requests/{request_uuid}/transition`](#21_post_requests_request_uuid_transition)
-22. [`POST /requests/{request_uuid}/holders/derive`](#22_post_requests_request_uuid_holders_derive)
-23. [`POST /requests/{request_uuid}/holders`](#23_post_requests_request_uuid_holders)
-24. [`POST /requests/{request_uuid}/holders/{holder_uuid}/confirm`](#24_post_requests_request_uuid_holders_holder_uuid_confirm)
-25. [`GET /requests/{request_uuid}/holders/{holder_uuid}/thread`](#25_get_requests_request_uuid_holders_holder_uuid_thread)
-26. [`POST /requests/{request_uuid}/holders/{holder_uuid}/thread`](#26_post_requests_request_uuid_holders_holder_uuid_thread)
-27. [`POST /requests/{request_uuid}/holders/{holder_uuid}/send-back`](#27_post_requests_request_uuid_holders_holder_uuid_send_back)
-28. [`POST /requests/{request_uuid}/holders/{holder_uuid}/correct-contact`](#28_post_requests_request_uuid_holders_holder_uuid_correct_contact)
-29. [`PUT /requests/{request_uuid}/holders/{holder_uuid}/instruction`](#29_put_requests_request_uuid_holders_holder_uuid_instruction)
-30. [`POST /requests/{request_uuid}/holders/{holder_uuid}/accept`](#30_post_requests_request_uuid_holders_holder_uuid_accept)
-31. [`POST /requests/{request_uuid}/holders/{holder_uuid}/reopen`](#31_post_requests_request_uuid_holders_holder_uuid_reopen)
-32. [`DELETE /requests/{request_uuid}/holders/{holder_uuid}`](#32_delete_requests_request_uuid_holders_holder_uuid)
-33. [`POST /requests/{request_uuid}/holders/{holder_uuid}/withdraw`](#33_post_requests_request_uuid_holders_holder_uuid_withdraw)
-34. [`POST /requests/{request_uuid}/holders/{holder_uuid}/reassign`](#34_post_requests_request_uuid_holders_holder_uuid_reassign)
-35. [`POST /requests/{request_uuid}/holders/{holder_uuid}/remind`](#35_post_requests_request_uuid_holders_holder_uuid_remind)
-36. [`GET /requests/{request_uuid}/holders/{holder_uuid}/messages/{message_uuid}/evidence`](#36_get_requests_request_uuid_holders_holder_uuid_messages_message_uuid_evidence)
-37. [`POST /requests/{request_uuid}/holders/{holder_uuid}/contact`](#37_post_requests_request_uuid_holders_holder_uuid_contact)
-38. [`POST /requests/{request_uuid}/tickets`](#38_post_requests_request_uuid_tickets)
-39. [`POST /requests/{request_uuid}/holders/{holder_uuid}/return`](#39_post_requests_request_uuid_holders_holder_uuid_return)
-40. [`GET /requests/{request_uuid}/holders/{holder_uuid}/evidence`](#40_get_requests_request_uuid_holders_holder_uuid_evidence)
-41. [`POST /requests/{request_uuid}/holders/{holder_uuid}/escalate`](#41_post_requests_request_uuid_holders_holder_uuid_escalate)
-42. [`POST /requests/{request_uuid}/scope/derive`](#42_post_requests_request_uuid_scope_derive)
-43. [`PUT /requests/{request_uuid}/scope/{item_uuid}`](#43_put_requests_request_uuid_scope_item_uuid)
-44. [`POST /requests/{request_uuid}/scope/{item_uuid}/apply`](#44_post_requests_request_uuid_scope_item_uuid_apply)
-45. [`POST /requests/{request_uuid}/scope/{item_uuid}/execute`](#45_post_requests_request_uuid_scope_item_uuid_execute)
-46. [`POST /requests/{request_uuid}/respond`](#46_post_requests_request_uuid_respond)
-47. [`GET /requests/{request_uuid}/files/{file_uuid}`](#47_get_requests_request_uuid_files_file_uuid)
-48. [`GET /requests/{request_uuid}/attachments/{attachment_uuid}`](#48_get_requests_request_uuid_attachments_attachment_uuid)
-49. [`POST /requests/{request_uuid}/decide`](#49_post_requests_request_uuid_decide)
-50. [`GET /requests/{request_uuid}/download`](#50_get_requests_request_uuid_download)
+8. [`POST /requests/{request_uuid}/claim`](#8_post_requests_request_uuid_claim)
+9. [`POST /requests/{request_uuid}/transfer`](#9_post_requests_request_uuid_transfer)
+10. [`POST /requests/{request_uuid}/acknowledge`](#10_post_requests_request_uuid_acknowledge)
+11. [`POST /requests/{request_uuid}/verification/code`](#11_post_requests_request_uuid_verification_code)
+12. [`POST /requests/{request_uuid}/verification/confirm`](#12_post_requests_request_uuid_verification_confirm)
+13. [`POST /requests/{request_uuid}/verification/manual`](#13_post_requests_request_uuid_verification_manual)
+14. [`POST /requests/{request_uuid}/verification/fail`](#14_post_requests_request_uuid_verification_fail)
+15. [`POST /requests/{request_uuid}/classify`](#15_post_requests_request_uuid_classify)
+16. [`POST /requests/{request_uuid}/refuse`](#16_post_requests_request_uuid_refuse)
+17. [`POST /requests/{request_uuid}/withdrawal`](#17_post_requests_request_uuid_withdrawal)
+18. [`POST /requests/{request_uuid}/intent`](#18_post_requests_request_uuid_intent)
+19. [`POST /requests/{request_uuid}/event`](#19_post_requests_request_uuid_event)
+20. [`GET /requests/{request_uuid}/event/evidence`](#20_get_requests_request_uuid_event_evidence)
+21. [`POST /requests/{request_uuid}/escalate`](#21_post_requests_request_uuid_escalate)
+22. [`POST /requests/{request_uuid}/reviewer`](#22_post_requests_request_uuid_reviewer)
+23. [`POST /requests/{request_uuid}/transition`](#23_post_requests_request_uuid_transition)
+24. [`POST /requests/{request_uuid}/holders/derive`](#24_post_requests_request_uuid_holders_derive)
+25. [`POST /requests/{request_uuid}/holders`](#25_post_requests_request_uuid_holders)
+26. [`POST /requests/{request_uuid}/holders/{holder_uuid}/confirm`](#26_post_requests_request_uuid_holders_holder_uuid_confirm)
+27. [`GET /requests/{request_uuid}/holders/{holder_uuid}/thread`](#27_get_requests_request_uuid_holders_holder_uuid_thread)
+28. [`POST /requests/{request_uuid}/holders/{holder_uuid}/thread`](#28_post_requests_request_uuid_holders_holder_uuid_thread)
+29. [`POST /requests/{request_uuid}/holders/{holder_uuid}/send-back`](#29_post_requests_request_uuid_holders_holder_uuid_send_back)
+30. [`POST /requests/{request_uuid}/holders/{holder_uuid}/correct-contact`](#30_post_requests_request_uuid_holders_holder_uuid_correct_contact)
+31. [`PUT /requests/{request_uuid}/holders/{holder_uuid}/instruction`](#31_put_requests_request_uuid_holders_holder_uuid_instruction)
+32. [`POST /requests/{request_uuid}/holders/{holder_uuid}/accept`](#32_post_requests_request_uuid_holders_holder_uuid_accept)
+33. [`POST /requests/{request_uuid}/holders/{holder_uuid}/reopen`](#33_post_requests_request_uuid_holders_holder_uuid_reopen)
+34. [`DELETE /requests/{request_uuid}/holders/{holder_uuid}`](#34_delete_requests_request_uuid_holders_holder_uuid)
+35. [`POST /requests/{request_uuid}/holders/{holder_uuid}/withdraw`](#35_post_requests_request_uuid_holders_holder_uuid_withdraw)
+36. [`POST /requests/{request_uuid}/holders/{holder_uuid}/reassign`](#36_post_requests_request_uuid_holders_holder_uuid_reassign)
+37. [`POST /requests/{request_uuid}/holders/{holder_uuid}/remind`](#37_post_requests_request_uuid_holders_holder_uuid_remind)
+38. [`GET /requests/{request_uuid}/holders/{holder_uuid}/messages/{message_uuid}/evidence`](#38_get_requests_request_uuid_holders_holder_uuid_messages_message_uuid_evidence)
+39. [`POST /requests/{request_uuid}/holders/{holder_uuid}/contact`](#39_post_requests_request_uuid_holders_holder_uuid_contact)
+40. [`POST /requests/{request_uuid}/tickets`](#40_post_requests_request_uuid_tickets)
+41. [`POST /requests/{request_uuid}/holders/{holder_uuid}/return`](#41_post_requests_request_uuid_holders_holder_uuid_return)
+42. [`GET /requests/{request_uuid}/holders/{holder_uuid}/evidence`](#42_get_requests_request_uuid_holders_holder_uuid_evidence)
+43. [`POST /requests/{request_uuid}/holders/{holder_uuid}/escalate`](#43_post_requests_request_uuid_holders_holder_uuid_escalate)
+44. [`POST /requests/{request_uuid}/scope/derive`](#44_post_requests_request_uuid_scope_derive)
+45. [`PUT /requests/{request_uuid}/scope/{item_uuid}`](#45_put_requests_request_uuid_scope_item_uuid)
+46. [`POST /requests/{request_uuid}/scope/{item_uuid}/apply`](#46_post_requests_request_uuid_scope_item_uuid_apply)
+47. [`POST /requests/{request_uuid}/scope/{item_uuid}/execute`](#47_post_requests_request_uuid_scope_item_uuid_execute)
+48. [`POST /requests/{request_uuid}/respond`](#48_post_requests_request_uuid_respond)
+49. [`GET /requests/{request_uuid}/files/{file_uuid}`](#49_get_requests_request_uuid_files_file_uuid)
+50. [`GET /requests/{request_uuid}/attachments/{attachment_uuid}`](#50_get_requests_request_uuid_attachments_attachment_uuid)
+51. [`POST /requests/{request_uuid}/decide`](#51_post_requests_request_uuid_decide)
+52. [`GET /requests/{request_uuid}/download`](#52_get_requests_request_uuid_download)
 
 <a id="1_get_requests_attention"></a>
 ## 1. `GET /requests/attention` — What the office has not read
@@ -151,6 +153,7 @@ No request body.
       "acknowledged_at": "…",
       "verification_status": "string",
       "about_dpo": true,
+      "office": "…",
       "linked_reference": "…",
       "consent_uuid": "…",
       "consent_project": "…",
@@ -247,6 +250,7 @@ Request body required: **yes**.
   "acknowledged_at": "2026-09-17T12:00:00Z",
   "verification_status": "string",
   "about_dpo": true,
+  "office": "string",
   "linked_reference": "string",
   "consent_uuid": "00000000-0000-4000-8000-000000000000",
   "consent_project": "string",
@@ -378,6 +382,7 @@ No request body.
   "acknowledged_at": "2026-09-17T12:00:00Z",
   "verification_status": "string",
   "about_dpo": true,
+  "office": "string",
   "linked_reference": "string",
   "consent_uuid": "00000000-0000-4000-8000-000000000000",
   "consent_project": "string",
@@ -443,6 +448,10 @@ No request body.
   "tickets_returned": 1,
   "item_count": 1,
   "items_undecided": 1,
+  "transferred_from": "string",
+  "transferred_at": "2026-09-17T12:00:00Z",
+  "transfer_reason": "string",
+  "claimed_at": "2026-09-17T12:00:00Z",
   "holders": [
     {
       "holder_uuid": "00000000-0000-4000-8000-000000000000",
@@ -773,8 +782,206 @@ No request body.
 }
 ```
 
-<a id="8_post_requests_request_uuid_acknowledge"></a>
-## 8. `POST /requests/{request_uuid}/acknowledge` — Send (or re-send) the acknowledgement
+<a id="8_post_requests_request_uuid_claim"></a>
+## 8. `POST /requests/{request_uuid}/claim` — Take a request out of the shared intake into my office's queue
+
+### API
+
+- **Operation ID:** `claim_requests__request_uuid__claim_post`
+- **Access:** Role-controlled `rights` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `request_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`RequestOut`](#schema-requestout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "request_uuid": "00000000-0000-4000-8000-000000000000",
+  "reference": "string",
+  "request_type": "string",
+  "original_type": "string",
+  "status": "string",
+  "outcome": "string",
+  "channel": "string",
+  "subject_uuid": "00000000-0000-4000-8000-000000000000",
+  "subject_name": "string",
+  "submitted_name": "string",
+  "submitted_contact": "string",
+  "received_at": "2026-09-17T12:00:00Z",
+  "due_at": "2026-09-17T12:00:00Z",
+  "acknowledged_at": "2026-09-17T12:00:00Z",
+  "verification_status": "string",
+  "about_dpo": true,
+  "office": "string",
+  "linked_reference": "string",
+  "consent_uuid": "00000000-0000-4000-8000-000000000000",
+  "consent_project": "string",
+  "threads_unread": 0,
+  "holder_count": 1,
+  "tickets_outstanding": 1,
+  "closed_at": "2026-09-17T12:00:00Z",
+  "clock": {
+    "received_at": "2026-09-17T12:00:00Z",
+    "due_at": "2026-09-17T12:00:00Z",
+    "acknowledge_by": "2026-09-17T12:00:00Z",
+    "tickets_by": "2026-09-17T12:00:00Z",
+    "halfway_at": "2026-09-17T12:00:00Z",
+    "collate_by": "2026-09-17T12:00:00Z",
+    "days_remaining": 1,
+    "overdue": true,
+    "at_risk": true,
+    "progress": 1.0,
+    "checkpoints": [
+      {}
+    ],
+    "next_checkpoint": "string"
+  },
+  "request_text": "string",
+  "subject_email": "string",
+  "subject_mobile": "string",
+  "verification_method": "string",
+  "verified_at": "2026-09-17T12:00:00Z",
+  "verified_by_name": "string",
+  "verification_note": "string",
+  "classified_at": "2026-09-17T12:00:00Z",
+  "refusal_reason": "string",
+  "intent_confirmed_at": "2026-09-17T12:00:00Z",
+  "linked_request_uuid": "00000000-0000-4000-8000-000000000000",
+  "linked_request_type": "string",
+  "consent_project_uuid": "00000000-0000-4000-8000-000000000000",
+  "consent_notice_code": "string",
+  "consent_notice_version": 1,
+  "consent_at": "2026-09-17T12:00:00Z",
+  "consent_withdrawn": true,
+  "consent_purposes": [
+    "string"
+  ],
+  "nomination_uuid": "00000000-0000-4000-8000-000000000000",
+  "nominee_name": "string",
+  "nominee_contact": "string",
+  "trigger_event": "string",
+  "trigger_evidence_hash": "string",
+  "trigger_evidenced_at": "2026-09-17T12:00:00Z",
+  "reviewer_uuid": "00000000-0000-4000-8000-000000000000",
+  "reviewer_name": "string",
+  "escalated_at": "2026-09-17T12:00:00Z",
+  "grievance_upheld": true,
+  "remedy_text": "string",
+  "response_text": "string",
+  "response_file_hash": "string",
+  "responded_at": "2026-09-17T12:00:00Z",
+  "download_expires_at": "2026-09-17T12:00:00Z",
+  "created_at": "2026-09-17T12:00:00Z",
+  "updated_at": "2026-09-17T12:00:00Z",
+  "holders_confirmed": 1,
+  "tickets_issued": 1,
+  "tickets_returned": 1,
+  "item_count": 1,
+  "items_undecided": 1
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="9_post_requests_request_uuid_transfer"></a>
+## 9. `POST /requests/{request_uuid}/transfer` — Transfer a request to the other office, with the reason
+
+### API
+
+- **Operation ID:** `transfer_requests__request_uuid__transfer_post`
+- **Access:** Role-controlled `rights` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+D0 and the due date do not move. The request leaves this office's
+queue; what is returned is all it still sees of it.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `request_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`TransferIn`](#schema-transferin)
+
+```json
+{
+  "office": "rnd",
+  "reason": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`TransferOut`](#schema-transferout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "request_uuid": "00000000-0000-4000-8000-000000000000",
+  "reference": "string",
+  "office": "string"
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="10_post_requests_request_uuid_acknowledge"></a>
+## 10. `POST /requests/{request_uuid}/acknowledge` — Send (or re-send) the acknowledgement
 
 ### API
 
@@ -818,6 +1025,7 @@ No request body.
   "acknowledged_at": "2026-09-17T12:00:00Z",
   "verification_status": "string",
   "about_dpo": true,
+  "office": "string",
   "linked_reference": "string",
   "consent_uuid": "00000000-0000-4000-8000-000000000000",
   "consent_project": "string",
@@ -904,8 +1112,8 @@ No request body.
 }
 ```
 
-<a id="9_post_requests_request_uuid_verification_code"></a>
-## 9. `POST /requests/{request_uuid}/verification/code` — Send a code to the stored channel
+<a id="11_post_requests_request_uuid_verification_code"></a>
+## 11. `POST /requests/{request_uuid}/verification/code` — Send a code to the stored channel
 
 ### API
 
@@ -949,6 +1157,7 @@ No request body.
   "acknowledged_at": "2026-09-17T12:00:00Z",
   "verification_status": "string",
   "about_dpo": true,
+  "office": "string",
   "linked_reference": "string",
   "consent_uuid": "00000000-0000-4000-8000-000000000000",
   "consent_project": "string",
@@ -1035,8 +1244,8 @@ No request body.
 }
 ```
 
-<a id="10_post_requests_request_uuid_verification_confirm"></a>
-## 10. `POST /requests/{request_uuid}/verification/confirm` — Enter the code she read back
+<a id="12_post_requests_request_uuid_verification_confirm"></a>
+## 12. `POST /requests/{request_uuid}/verification/confirm` — Enter the code she read back
 
 ### API
 
@@ -1089,6 +1298,7 @@ Request body required: **yes**.
   "acknowledged_at": "2026-09-17T12:00:00Z",
   "verification_status": "string",
   "about_dpo": true,
+  "office": "string",
   "linked_reference": "string",
   "consent_uuid": "00000000-0000-4000-8000-000000000000",
   "consent_project": "string",
@@ -1175,8 +1385,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="11_post_requests_request_uuid_verification_manual"></a>
-## 11. `POST /requests/{request_uuid}/verification/manual` — Verified by hand, with the reason recorded
+<a id="13_post_requests_request_uuid_verification_manual"></a>
+## 13. `POST /requests/{request_uuid}/verification/manual` — Verified by hand, with the reason recorded
 
 ### API
 
@@ -1229,6 +1439,7 @@ Request body required: **yes**.
   "acknowledged_at": "2026-09-17T12:00:00Z",
   "verification_status": "string",
   "about_dpo": true,
+  "office": "string",
   "linked_reference": "string",
   "consent_uuid": "00000000-0000-4000-8000-000000000000",
   "consent_project": "string",
@@ -1315,8 +1526,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="12_post_requests_request_uuid_verification_fail"></a>
-## 12. `POST /requests/{request_uuid}/verification/fail` — No match, or verification not satisfied
+<a id="14_post_requests_request_uuid_verification_fail"></a>
+## 14. `POST /requests/{request_uuid}/verification/fail` — No match, or verification not satisfied
 
 ### API
 
@@ -1369,6 +1580,7 @@ Request body required: **yes**.
   "acknowledged_at": "2026-09-17T12:00:00Z",
   "verification_status": "string",
   "about_dpo": true,
+  "office": "string",
   "linked_reference": "string",
   "consent_uuid": "00000000-0000-4000-8000-000000000000",
   "consent_project": "string",
@@ -1455,8 +1667,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="13_post_requests_request_uuid_classify"></a>
-## 13. `POST /requests/{request_uuid}/classify` — Confirm, or reclassify, what this is
+<a id="15_post_requests_request_uuid_classify"></a>
+## 15. `POST /requests/{request_uuid}/classify` — Confirm, or reclassify, what this is
 
 ### API
 
@@ -1510,6 +1722,7 @@ Request body required: **yes**.
   "acknowledged_at": "2026-09-17T12:00:00Z",
   "verification_status": "string",
   "about_dpo": true,
+  "office": "string",
   "linked_reference": "string",
   "consent_uuid": "00000000-0000-4000-8000-000000000000",
   "consent_project": "string",
@@ -1596,8 +1809,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="14_post_requests_request_uuid_refuse"></a>
-## 14. `POST /requests/{request_uuid}/refuse` — Not a rights request, or refused - with reasons
+<a id="16_post_requests_request_uuid_refuse"></a>
+## 16. `POST /requests/{request_uuid}/refuse` — Not a rights request, or refused - with reasons
 
 ### API
 
@@ -1650,6 +1863,7 @@ Request body required: **yes**.
   "acknowledged_at": "2026-09-17T12:00:00Z",
   "verification_status": "string",
   "about_dpo": true,
+  "office": "string",
   "linked_reference": "string",
   "consent_uuid": "00000000-0000-4000-8000-000000000000",
   "consent_project": "string",
@@ -1736,8 +1950,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="15_post_requests_request_uuid_withdrawal"></a>
-## 15. `POST /requests/{request_uuid}/withdrawal` — She meant withdrawal, not erasure
+<a id="17_post_requests_request_uuid_withdrawal"></a>
+## 17. `POST /requests/{request_uuid}/withdrawal` — She meant withdrawal, not erasure
 
 ### API
 
@@ -1790,6 +2004,7 @@ Request body required: **yes**.
   "acknowledged_at": "2026-09-17T12:00:00Z",
   "verification_status": "string",
   "about_dpo": true,
+  "office": "string",
   "linked_reference": "string",
   "consent_uuid": "00000000-0000-4000-8000-000000000000",
   "consent_project": "string",
@@ -1876,8 +2091,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="16_post_requests_request_uuid_intent"></a>
-## 16. `POST /requests/{request_uuid}/intent` — She means erasure - confirmed
+<a id="18_post_requests_request_uuid_intent"></a>
+## 18. `POST /requests/{request_uuid}/intent` — She means erasure - confirmed
 
 ### API
 
@@ -1921,6 +2136,7 @@ No request body.
   "acknowledged_at": "2026-09-17T12:00:00Z",
   "verification_status": "string",
   "about_dpo": true,
+  "office": "string",
   "linked_reference": "string",
   "consent_uuid": "00000000-0000-4000-8000-000000000000",
   "consent_project": "string",
@@ -2007,8 +2223,8 @@ No request body.
 }
 ```
 
-<a id="17_post_requests_request_uuid_event"></a>
-## 17. `POST /requests/{request_uuid}/event` — Is the triggering event evidenced?
+<a id="19_post_requests_request_uuid_event"></a>
+## 19. `POST /requests/{request_uuid}/event` — Is the triggering event evidenced?
 
 ### API
 
@@ -2062,6 +2278,7 @@ Request body required: **yes**.
   "acknowledged_at": "2026-09-17T12:00:00Z",
   "verification_status": "string",
   "about_dpo": true,
+  "office": "string",
   "linked_reference": "string",
   "consent_uuid": "00000000-0000-4000-8000-000000000000",
   "consent_project": "string",
@@ -2148,8 +2365,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="18_get_requests_request_uuid_event_evidence"></a>
-## 18. `GET /requests/{request_uuid}/event/evidence` — Download the triggering-event evidence
+<a id="20_get_requests_request_uuid_event_evidence"></a>
+## 20. `GET /requests/{request_uuid}/event/evidence` — Download the triggering-event evidence
 
 ### API
 
@@ -2197,8 +2414,8 @@ No request body.
 }
 ```
 
-<a id="19_post_requests_request_uuid_escalate"></a>
-## 19. `POST /requests/{request_uuid}/escalate` — The complaint is about the DPO
+<a id="21_post_requests_request_uuid_escalate"></a>
+## 21. `POST /requests/{request_uuid}/escalate` — The complaint is about the DPO
 
 ### API
 
@@ -2242,6 +2459,7 @@ No request body.
   "acknowledged_at": "2026-09-17T12:00:00Z",
   "verification_status": "string",
   "about_dpo": true,
+  "office": "string",
   "linked_reference": "string",
   "consent_uuid": "00000000-0000-4000-8000-000000000000",
   "consent_project": "string",
@@ -2328,8 +2546,8 @@ No request body.
 }
 ```
 
-<a id="20_post_requests_request_uuid_reviewer"></a>
-## 20. `POST /requests/{request_uuid}/reviewer` — Name the independent reviewer
+<a id="22_post_requests_request_uuid_reviewer"></a>
+## 22. `POST /requests/{request_uuid}/reviewer` — Name the independent reviewer
 
 ### API
 
@@ -2382,6 +2600,7 @@ Request body required: **yes**.
   "acknowledged_at": "2026-09-17T12:00:00Z",
   "verification_status": "string",
   "about_dpo": true,
+  "office": "string",
   "linked_reference": "string",
   "consent_uuid": "00000000-0000-4000-8000-000000000000",
   "consent_project": "string",
@@ -2468,8 +2687,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="21_post_requests_request_uuid_transition"></a>
-## 21. `POST /requests/{request_uuid}/transition` — Transition
+<a id="23_post_requests_request_uuid_transition"></a>
+## 23. `POST /requests/{request_uuid}/transition` — Transition
 
 ### API
 
@@ -2523,6 +2742,7 @@ Request body required: **yes**.
   "acknowledged_at": "2026-09-17T12:00:00Z",
   "verification_status": "string",
   "about_dpo": true,
+  "office": "string",
   "linked_reference": "string",
   "consent_uuid": "00000000-0000-4000-8000-000000000000",
   "consent_project": "string",
@@ -2609,8 +2829,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="22_post_requests_request_uuid_holders_derive"></a>
-## 22. `POST /requests/{request_uuid}/holders/derive` — Holders derived from export_line and asset_consent
+<a id="24_post_requests_request_uuid_holders_derive"></a>
+## 24. `POST /requests/{request_uuid}/holders/derive` — Holders derived from export_line and asset_consent
 
 ### API
 
@@ -2711,8 +2931,8 @@ No request body.
 }
 ```
 
-<a id="23_post_requests_request_uuid_holders"></a>
-## 23. `POST /requests/{request_uuid}/holders` — A holder the records missed
+<a id="25_post_requests_request_uuid_holders"></a>
+## 25. `POST /requests/{request_uuid}/holders` — A holder the records missed
 
 ### API
 
@@ -2823,8 +3043,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="24_post_requests_request_uuid_holders_holder_uuid_confirm"></a>
-## 24. `POST /requests/{request_uuid}/holders/{holder_uuid}/confirm` — Confirm Holder
+<a id="26_post_requests_request_uuid_holders_holder_uuid_confirm"></a>
+## 26. `POST /requests/{request_uuid}/holders/{holder_uuid}/confirm` — Confirm Holder
 
 ### API
 
@@ -2935,8 +3155,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="25_get_requests_request_uuid_holders_holder_uuid_thread"></a>
-## 25. `GET /requests/{request_uuid}/holders/{holder_uuid}/thread` — The ticket's thread, as the office reads it
+<a id="27_get_requests_request_uuid_holders_holder_uuid_thread"></a>
+## 27. `GET /requests/{request_uuid}/holders/{holder_uuid}/thread` — The ticket's thread, as the office reads it
 
 ### API
 
@@ -3050,8 +3270,8 @@ No request body.
 }
 ```
 
-<a id="26_post_requests_request_uuid_holders_holder_uuid_thread"></a>
-## 26. `POST /requests/{request_uuid}/holders/{holder_uuid}/thread` — Write to the holder on the ticket, with a file if it helps
+<a id="28_post_requests_request_uuid_holders_holder_uuid_thread"></a>
+## 28. `POST /requests/{request_uuid}/holders/{holder_uuid}/thread` — Write to the holder on the ticket, with a file if it helps
 
 ### API
 
@@ -3178,8 +3398,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="27_post_requests_request_uuid_holders_holder_uuid_send_back"></a>
-## 27. `POST /requests/{request_uuid}/holders/{holder_uuid}/send-back` — Send a returned ticket back to its holder
+<a id="29_post_requests_request_uuid_holders_holder_uuid_send_back"></a>
+## 29. `POST /requests/{request_uuid}/holders/{holder_uuid}/send-back` — Send a returned ticket back to its holder
 
 ### API
 
@@ -3292,8 +3512,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="28_post_requests_request_uuid_holders_holder_uuid_correct_contact"></a>
-## 28. `POST /requests/{request_uuid}/holders/{holder_uuid}/correct-contact` — Correct a holder's email: the ticket goes again to the right address
+<a id="30_post_requests_request_uuid_holders_holder_uuid_correct_contact"></a>
+## 30. `POST /requests/{request_uuid}/holders/{holder_uuid}/correct-contact` — Correct a holder's email: the ticket goes again to the right address
 
 ### API
 
@@ -3406,8 +3626,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="29_put_requests_request_uuid_holders_holder_uuid_instruction"></a>
-## 29. `PUT /requests/{request_uuid}/holders/{holder_uuid}/instruction` — What this holder's ticket will ask, before it is sent
+<a id="31_put_requests_request_uuid_holders_holder_uuid_instruction"></a>
+## 31. `PUT /requests/{request_uuid}/holders/{holder_uuid}/instruction` — What this holder's ticket will ask, before it is sent
 
 ### API
 
@@ -3519,8 +3739,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="30_post_requests_request_uuid_holders_holder_uuid_accept"></a>
-## 30. `POST /requests/{request_uuid}/holders/{holder_uuid}/accept` — Accept a holder's answer: only now does it count
+<a id="32_post_requests_request_uuid_holders_holder_uuid_accept"></a>
+## 32. `POST /requests/{request_uuid}/holders/{holder_uuid}/accept` — Accept a holder's answer: only now does it count
 
 ### API
 
@@ -3624,8 +3844,8 @@ No request body.
 }
 ```
 
-<a id="31_post_requests_request_uuid_holders_holder_uuid_reopen"></a>
-## 31. `POST /requests/{request_uuid}/holders/{holder_uuid}/reopen` — Reopen a withdrawn ticket, with a new date
+<a id="33_post_requests_request_uuid_holders_holder_uuid_reopen"></a>
+## 33. `POST /requests/{request_uuid}/holders/{holder_uuid}/reopen` — Reopen a withdrawn ticket, with a new date
 
 ### API
 
@@ -3734,8 +3954,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="32_delete_requests_request_uuid_holders_holder_uuid"></a>
-## 32. `DELETE /requests/{request_uuid}/holders/{holder_uuid}` — Remove a holder found by mistake, before anything is sent to it
+<a id="34_delete_requests_request_uuid_holders_holder_uuid"></a>
+## 34. `DELETE /requests/{request_uuid}/holders/{holder_uuid}` — Remove a holder found by mistake, before anything is sent to it
 
 ### API
 
@@ -3778,8 +3998,8 @@ No request body.
 }
 ```
 
-<a id="33_post_requests_request_uuid_holders_holder_uuid_withdraw"></a>
-## 33. `POST /requests/{request_uuid}/holders/{holder_uuid}/withdraw` — Withdraw a ticket issued in error
+<a id="35_post_requests_request_uuid_holders_holder_uuid_withdraw"></a>
+## 35. `POST /requests/{request_uuid}/holders/{holder_uuid}/withdraw` — Withdraw a ticket issued in error
 
 ### API
 
@@ -3888,8 +4108,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="34_post_requests_request_uuid_holders_holder_uuid_reassign"></a>
-## 34. `POST /requests/{request_uuid}/holders/{holder_uuid}/reassign` — Send an open ticket to a different respondent
+<a id="36_post_requests_request_uuid_holders_holder_uuid_reassign"></a>
+## 36. `POST /requests/{request_uuid}/holders/{holder_uuid}/reassign` — Send an open ticket to a different respondent
 
 ### API
 
@@ -4000,8 +4220,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="35_post_requests_request_uuid_holders_holder_uuid_remind"></a>
-## 35. `POST /requests/{request_uuid}/holders/{holder_uuid}/remind` — Send the respondent a reminder now
+<a id="37_post_requests_request_uuid_holders_holder_uuid_remind"></a>
+## 37. `POST /requests/{request_uuid}/holders/{holder_uuid}/remind` — Send the respondent a reminder now
 
 ### API
 
@@ -4101,8 +4321,8 @@ No request body.
 }
 ```
 
-<a id="36_get_requests_request_uuid_holders_holder_uuid_messages_message_uuid_evidence"></a>
-## 36. `GET /requests/{request_uuid}/holders/{holder_uuid}/messages/{message_uuid}/evidence` — Download a file attached to a message on the ticket
+<a id="38_get_requests_request_uuid_holders_holder_uuid_messages_message_uuid_evidence"></a>
+## 38. `GET /requests/{request_uuid}/holders/{holder_uuid}/messages/{message_uuid}/evidence` — Download a file attached to a message on the ticket
 
 ### API
 
@@ -4152,8 +4372,8 @@ No request body.
 }
 ```
 
-<a id="37_post_requests_request_uuid_holders_holder_uuid_contact"></a>
-## 37. `POST /requests/{request_uuid}/holders/{holder_uuid}/contact` — Record a mail sent, a chase, or a reply - and optionally send the mail
+<a id="39_post_requests_request_uuid_holders_holder_uuid_contact"></a>
+## 39. `POST /requests/{request_uuid}/holders/{holder_uuid}/contact` — Record a mail sent, a chase, or a reply - and optionally send the mail
 
 ### API
 
@@ -4267,8 +4487,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="38_post_requests_request_uuid_tickets"></a>
-## 38. `POST /requests/{request_uuid}/tickets` — Issue a ticket to every confirmed holder
+<a id="40_post_requests_request_uuid_tickets"></a>
+## 40. `POST /requests/{request_uuid}/tickets` — Issue a ticket to every confirmed holder
 
 ### API
 
@@ -4379,8 +4599,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="39_post_requests_request_uuid_holders_holder_uuid_return"></a>
-## 39. `POST /requests/{request_uuid}/holders/{holder_uuid}/return` — Record what the holder returned
+<a id="41_post_requests_request_uuid_holders_holder_uuid_return"></a>
+## 41. `POST /requests/{request_uuid}/holders/{holder_uuid}/return` — Record what the holder returned
 
 ### API
 
@@ -4491,8 +4711,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="40_get_requests_request_uuid_holders_holder_uuid_evidence"></a>
-## 40. `GET /requests/{request_uuid}/holders/{holder_uuid}/evidence` — Download a holder's return evidence
+<a id="42_get_requests_request_uuid_holders_holder_uuid_evidence"></a>
+## 42. `GET /requests/{request_uuid}/holders/{holder_uuid}/evidence` — Download a holder's return evidence
 
 ### API
 
@@ -4541,8 +4761,8 @@ No request body.
 }
 ```
 
-<a id="41_post_requests_request_uuid_holders_holder_uuid_escalate"></a>
-## 41. `POST /requests/{request_uuid}/holders/{holder_uuid}/escalate` — A holder missed its date - escalate once
+<a id="43_post_requests_request_uuid_holders_holder_uuid_escalate"></a>
+## 43. `POST /requests/{request_uuid}/holders/{holder_uuid}/escalate` — A holder missed its date - escalate once
 
 ### API
 
@@ -4642,8 +4862,8 @@ No request body.
 }
 ```
 
-<a id="42_post_requests_request_uuid_scope_derive"></a>
-## 42. `POST /requests/{request_uuid}/scope/derive` — Every appearance of her in a collected asset
+<a id="44_post_requests_request_uuid_scope_derive"></a>
+## 44. `POST /requests/{request_uuid}/scope/derive` — Every appearance of her in a collected asset
 
 ### API
 
@@ -4728,8 +4948,8 @@ No request body.
 }
 ```
 
-<a id="43_put_requests_request_uuid_scope_item_uuid"></a>
-## 43. `PUT /requests/{request_uuid}/scope/{item_uuid}` — What can go, what must stay, and why
+<a id="45_put_requests_request_uuid_scope_item_uuid"></a>
+## 45. `PUT /requests/{request_uuid}/scope/{item_uuid}` — What can go, what must stay, and why
 
 ### API
 
@@ -4825,8 +5045,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="44_post_requests_request_uuid_scope_item_uuid_apply"></a>
-## 44. `POST /requests/{request_uuid}/scope/{item_uuid}/apply` — Quarantine her appearance, then carry the decision out
+<a id="46_post_requests_request_uuid_scope_item_uuid_apply"></a>
+## 46. `POST /requests/{request_uuid}/scope/{item_uuid}/apply` — Quarantine her appearance, then carry the decision out
 
 ### API
 
@@ -4910,8 +5130,8 @@ No request body.
 }
 ```
 
-<a id="45_post_requests_request_uuid_scope_item_uuid_execute"></a>
-## 45. `POST /requests/{request_uuid}/scope/{item_uuid}/execute` — Try an applied item's stores again now
+<a id="47_post_requests_request_uuid_scope_item_uuid_execute"></a>
+## 47. `POST /requests/{request_uuid}/scope/{item_uuid}/execute` — Try an applied item's stores again now
 
 ### API
 
@@ -4999,8 +5219,8 @@ No request body.
 }
 ```
 
-<a id="46_post_requests_request_uuid_respond"></a>
-## 46. `POST /requests/{request_uuid}/respond` — Release and close
+<a id="48_post_requests_request_uuid_respond"></a>
+## 48. `POST /requests/{request_uuid}/respond` — Release and close
 
 ### API
 
@@ -5058,6 +5278,7 @@ Request body required: **yes**.
   "acknowledged_at": "2026-09-17T12:00:00Z",
   "verification_status": "string",
   "about_dpo": true,
+  "office": "string",
   "linked_reference": "string",
   "consent_uuid": "00000000-0000-4000-8000-000000000000",
   "consent_project": "string",
@@ -5144,8 +5365,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="47_get_requests_request_uuid_files_file_uuid"></a>
-## 47. `GET /requests/{request_uuid}/files/{file_uuid}` — A file released with the response
+<a id="49_get_requests_request_uuid_files_file_uuid"></a>
+## 49. `GET /requests/{request_uuid}/files/{file_uuid}` — A file released with the response
 
 ### API
 
@@ -5194,8 +5415,8 @@ No request body.
 }
 ```
 
-<a id="48_get_requests_request_uuid_attachments_attachment_uuid"></a>
-## 48. `GET /requests/{request_uuid}/attachments/{attachment_uuid}` — A document the requester sent; every download is audited
+<a id="50_get_requests_request_uuid_attachments_attachment_uuid"></a>
+## 50. `GET /requests/{request_uuid}/attachments/{attachment_uuid}` — A document the requester sent; every download is audited
 
 ### API
 
@@ -5244,8 +5465,8 @@ No request body.
 }
 ```
 
-<a id="49_post_requests_request_uuid_decide"></a>
-## 49. `POST /requests/{request_uuid}/decide` — Decide a grievance
+<a id="51_post_requests_request_uuid_decide"></a>
+## 51. `POST /requests/{request_uuid}/decide` — Decide a grievance
 
 ### API
 
@@ -5305,8 +5526,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="50_get_requests_request_uuid_download"></a>
-## 50. `GET /requests/{request_uuid}/download` — The released response file
+<a id="52_get_requests_request_uuid_download"></a>
+## 52. `GET /requests/{request_uuid}/download` — The released response file
 
 ### API
 
@@ -5580,7 +5801,8 @@ One line on a holder's contact log, optionally sending the mail too.
 <a id="schema-logrequest"></a>
 #### `LogRequest`
 
-A request that arrived by email, logged by the DPO. Same record as the others.
+A request that arrived by email, logged by an office's officer. Same
+record as the others, in the logging officer's office.
 
 | Field | Type | Required | Validation | Description |
 |---|---|---:|---|---|
@@ -5658,6 +5880,7 @@ A request that arrived by email, logged by the DPO. Same record as the others.
 | `acknowledged_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `verification_status` | `string` | Yes | — | — |
 | `about_dpo` | `boolean` | Yes | — | — |
+| `office` | `string` or `null` | No | — | — |
 | `linked_reference` | `string` or `null` | Yes | — | — |
 | `consent_uuid` | `string` or `null` | No | format: `uuid` | — |
 | `consent_project` | `string` or `null` | No | — | — |
@@ -5706,6 +5929,10 @@ A request that arrived by email, logged by the DPO. Same record as the others.
 | `tickets_returned` | `integer` | Yes | — | — |
 | `item_count` | `integer` | Yes | — | — |
 | `items_undecided` | `integer` | Yes | — | — |
+| `transferred_from` | `string` or `null` | No | — | — |
+| `transferred_at` | `string` or `null` | No | format: `date-time` | — |
+| `transfer_reason` | `string` or `null` | No | — | — |
+| `claimed_at` | `string` or `null` | No | format: `date-time` | — |
 | `holders` | array of [`HolderOut`](#schema-holderout) | Yes | — | — |
 | `items` | array of [`ItemOut`](#schema-itemout) | Yes | — | — |
 | `transitions` | array of `object` | Yes | — | — |
@@ -5737,6 +5964,7 @@ A request that arrived by email, logged by the DPO. Same record as the others.
 | `acknowledged_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `verification_status` | `string` | Yes | — | — |
 | `about_dpo` | `boolean` | Yes | — | — |
+| `office` | `string` or `null` | No | — | — |
 | `linked_reference` | `string` or `null` | Yes | — | — |
 | `consent_uuid` | `string` or `null` | No | format: `uuid` | — |
 | `consent_project` | `string` or `null` | No | — | — |
@@ -5809,6 +6037,25 @@ A request that arrived by email, logged by the DPO. Same record as the others.
 | `holder` | [`HolderOut`](#schema-holderout) | Yes | — | — |
 | `messages` | array of [`cmp__api__routers__v1__rights__MessageOut`](#schema-cmp_api_routers_v1_rights_messageout) | Yes | — | — |
 
+<a id="schema-transferin"></a>
+#### `TransferIn`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `office` | enum: `rnd`, `hr` | Yes | — | — |
+| `reason` | `string` | Yes | max length: `1000` | — |
+
+<a id="schema-transferout"></a>
+#### `TransferOut`
+
+What the sender may still see of a request it moved: no more.
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `request_uuid` | `string` | Yes | format: `uuid` | — |
+| `reference` | `string` | Yes | — | — |
+| `office` | `string` | Yes | — | — |
+
 <a id="schema-transitionin"></a>
 #### `TransitionIn`
 
@@ -5874,6 +6121,7 @@ A request that arrived by email, logged by the DPO. Same record as the others.
 | `acknowledged_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `verification_status` | `string` | Yes | — | — |
 | `about_dpo` | `boolean` | Yes | — | — |
+| `office` | `string` or `null` | No | — | — |
 | `linked_reference` | `string` or `null` | Yes | — | — |
 | `consent_uuid` | `string` or `null` | No | format: `uuid` | — |
 | `consent_project` | `string` or `null` | No | — | — |

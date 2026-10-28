@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 355,
-  "registered_business_and_system_operations": 358,
+  "documented_operations": 358,
+  "registered_business_and_system_operations": 361,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -7267,7 +7267,8 @@
       "resolved_gate": "RequireResource(rights_request, write=False)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -7281,11 +7282,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L621",
@@ -7307,7 +7309,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -7321,12 +7324,13 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "YES",
         "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
-        "Creation admits both DPO and Admin and does not apply an existing-row scope predicate. Admin can create an ordinary request it cannot subsequently read through the scoped register."
+        "Creation admits both DPO and Admin and does not apply an existing-row scope predicate. Admin can create an ordinary request it cannot subsequently read through the scoped register.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L654",
@@ -7348,7 +7352,8 @@
       "resolved_gate": "RequireResource(rights_request, write=False)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -7362,11 +7367,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L611",
@@ -7388,7 +7394,8 @@
       "resolved_gate": "RequireResource(rights_request, write=False)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -7402,11 +7409,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L683",
@@ -7428,7 +7436,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -7442,11 +7451,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L743",
@@ -7468,7 +7478,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -7482,11 +7493,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L818",
@@ -7508,7 +7520,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -7522,12 +7535,13 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "COND",
         "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
-        "DPO decides ordinary grievances. A grievance about the DPO requires Admin; if a reviewer is assigned, only that reviewer can decide it."
+        "DPO decides ordinary grievances. A grievance about the DPO requires Admin; if a reviewer is assigned, only that reviewer can decide it.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1435",
@@ -7550,7 +7564,8 @@
       "resolved_gate": "RequireResource(rights_request, write=False)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -7564,11 +7579,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1459",
@@ -7590,7 +7606,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -7604,11 +7621,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L917",
@@ -7630,7 +7648,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -7644,11 +7663,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L879",
@@ -7670,7 +7690,8 @@
       "resolved_gate": "RequireResource(rights_request, write=False)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -7684,11 +7705,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L897",
@@ -7710,7 +7732,8 @@
       "resolved_gate": "RequireResource(rights_request, write=False)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -7724,11 +7747,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1410",
@@ -7750,7 +7774,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -7764,11 +7789,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L982",
@@ -7790,7 +7816,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -7804,11 +7831,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L968",
@@ -7830,7 +7858,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -7844,11 +7873,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L998",
@@ -7870,7 +7900,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -7884,11 +7915,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1204",
@@ -7910,7 +7942,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -7924,11 +7957,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1306",
@@ -7950,7 +7984,8 @@
       "resolved_gate": "RequireResource(rights_request, write=False)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -7964,11 +7999,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1274",
@@ -7990,7 +8026,8 @@
       "resolved_gate": "RequireResource(rights_request, write=False)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8004,11 +8041,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1185",
@@ -8030,7 +8068,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8044,11 +8083,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1145",
@@ -8070,7 +8110,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8084,11 +8125,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1167",
@@ -8110,7 +8152,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8124,12 +8167,13 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
-        "A return must state `outcome` - done, partial or failed (422 otherwise); only done counts as the work done (review DPDP-1, 2026-10-01)."
+        "A return must state `outcome` - done, partial or failed (422 otherwise); only done counts as the work done (review DPDP-1, 2026-10-01).",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1248",
@@ -8151,7 +8195,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8165,11 +8210,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1102",
@@ -8191,7 +8237,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8205,11 +8252,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1020",
@@ -8231,7 +8279,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8245,11 +8294,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1072",
@@ -8271,7 +8321,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8285,11 +8336,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1125",
@@ -8311,7 +8363,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8325,11 +8378,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L868",
@@ -8351,7 +8405,8 @@
       "resolved_gate": "RequireResource(rights_request, write=False)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8365,11 +8420,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L695",
@@ -8391,7 +8447,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8405,11 +8462,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L838",
@@ -8431,7 +8489,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8445,12 +8504,13 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
-        "`complete` is refused (response_partial_required) while a holder has not returned or a correction or erasure has not been carried out with evidence; the reason is served on the request as complete_blocked_by (S2-02)."
+        "`complete` is refused (response_partial_required) while a holder has not returned or a correction or erasure has not been carried out with evidence; the reason is served on the request as complete_blocked_by (S2-02).",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1370",
@@ -8514,7 +8574,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8528,11 +8589,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1322",
@@ -8554,7 +8616,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8568,11 +8631,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1335",
@@ -8594,7 +8658,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8608,11 +8673,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1358",
@@ -8634,7 +8700,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8648,11 +8715,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1228",
@@ -8674,7 +8742,8 @@
       "resolved_gate": "RequireResource(rights_request, write=False)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8688,11 +8757,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L723",
@@ -8714,7 +8784,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8728,12 +8799,13 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
-        "Available actions depend on request type, verification, intent, nominee evidence, reviewer, holder tickets and current state."
+        "Available actions depend on request type, verification, intent, nominee evidence, reviewer, holder tickets and current state.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L945",
@@ -8756,7 +8828,8 @@
       "resolved_gate": "RequireResource(rights_request, write=False)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8770,12 +8843,13 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
-        "Available actions depend on request type, verification, intent, nominee evidence, reviewer, holder tickets and current state."
+        "Available actions depend on request type, verification, intent, nominee evidence, reviewer, holder tickets and current state.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L713",
@@ -8798,7 +8872,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8812,11 +8887,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L754",
@@ -8838,7 +8914,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8852,11 +8929,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L769",
@@ -8878,7 +8956,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8892,11 +8971,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L801",
@@ -8918,7 +8998,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8932,11 +9013,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L784",
@@ -8958,7 +9040,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -8972,11 +9055,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L853",
@@ -10161,7 +10245,8 @@
       "gate": "LegalHoldReader",
       "resolved_gate": "RequireResource(legal_hold)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "legal_hold",
@@ -10175,11 +10260,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource legal_hold, S2-03). A hold covers one asset or one person, stops the erasure executor on every item it covers, and is placed once and released once; the reason is sealed."
+        "The DPO's alone (resource legal_hold, S2-03). A hold covers one asset or one person, stops the erasure executor on every item it covers, and is placed once and released once; the reason is sealed.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/legal_holds.py",
@@ -10200,7 +10286,8 @@
       "gate": "LegalHoldWriter",
       "resolved_gate": "RequireResource(legal_hold, write=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "legal_hold",
@@ -10214,11 +10301,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource legal_hold, S2-03). A hold covers one asset or one person, stops the erasure executor on every item it covers, and is placed once and released once; the reason is sealed."
+        "The DPO's alone (resource legal_hold, S2-03). A hold covers one asset or one person, stops the erasure executor on every item it covers, and is placed once and released once; the reason is sealed.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/legal_holds.py",
@@ -10239,7 +10327,8 @@
       "gate": "LegalHoldWriter",
       "resolved_gate": "RequireResource(legal_hold, write=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "legal_hold",
@@ -10253,11 +10342,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource legal_hold, S2-03). A hold covers one asset or one person, stops the erasure executor on every item it covers, and is placed once and released once; the reason is sealed."
+        "The DPO's alone (resource legal_hold, S2-03). A hold covers one asset or one person, stops the erasure executor on every item it covers, and is placed once and released once; the reason is sealed.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/legal_holds.py",
@@ -10279,7 +10369,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -10293,11 +10384,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "As for the rest of the request: DPO all, Admin where about_dpo. Retries an applied erasure or redaction's stores now (S2-03); anything else is item_not_executable."
+        "As for the rest of the request: DPO all, Admin where about_dpo. Retries an applied erasure or redaction's stores now (S2-03); anything else is item_not_executable.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py",
@@ -10478,7 +10570,8 @@
       "gate": "BreachReader",
       "resolved_gate": "RequireResource(breach, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -10492,11 +10585,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. `status` filters open or closed; each breach carries its duties and their clocks. (S3-01)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. `status` filters open or closed; each breach carries its duties and their clocks. (S3-01)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -10518,7 +10612,8 @@
       "gate": "BreachWriter",
       "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -10532,11 +10627,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Detection is entered, never defaulted; began must not follow it. A processor or source is named only for that kind of location. (S3-01)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Detection is entered, never defaulted; began must not follow it. A processor or source is named only for that kind of location. (S3-01)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -10558,7 +10654,8 @@
       "gate": "BreachReader",
       "resolved_gate": "RequireResource(breach, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -10572,11 +10669,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. (S3-01)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. (S3-01)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -10598,7 +10696,8 @@
       "gate": "BreachWriter",
       "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -10612,11 +10711,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Yes needs the time of awareness and creates the three DPDP duties; no sets aside those not done. Refused on a closed breach (409 `breach_closed`). (S3-01)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Yes needs the time of awareness and creates the three DPDP duties; no sets aside those not done. Refused on a closed breach (409 `breach_closed`). (S3-01)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -10638,7 +10738,8 @@
       "gate": "BreachReader",
       "resolved_gate": "RequireResource(breach, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -10652,11 +10753,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. (S3-01)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. (S3-01)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -10678,7 +10780,8 @@
       "gate": "BreachWriter",
       "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -10692,11 +10795,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. A new revision; the previous stays. Every narrative field sealed. (S3-01)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. A new revision; the previous stays. Every narrative field sealed. (S3-01)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -10718,7 +10822,8 @@
       "gate": "BreachWriter",
       "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -10732,11 +10837,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Once per breach (409 `cert_in_marked`); due six hours from detection. (S3-01)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Once per breach (409 `cert_in_marked`); due six hours from detection. (S3-01)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -10758,7 +10864,8 @@
       "gate": "BreachWriter",
       "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -10772,11 +10879,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. An unknown duty is 422; `principals` is refused (409): it completes by delivery (S3-03). (S3-01)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. An unknown duty is 422; `principals` is refused (409): it completes by delivery (S3-03). (S3-01)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -10798,7 +10906,8 @@
       "gate": "BreachWriter",
       "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -10812,11 +10921,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. The detailed report only; the date allowed must be later than its current due time. (S3-01)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. The detailed report only; the date allowed must be later than its current due time. (S3-01)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -10838,7 +10948,8 @@
       "gate": "BreachReader",
       "resolved_gate": "RequireResource(breach, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -10852,11 +10963,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. (S3-01)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. (S3-01)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -10878,7 +10990,8 @@
       "gate": "BreachWriter",
       "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -10892,11 +11005,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Closing is refused while undetermined or while any duty is outstanding; reopening needs a reason. (S3-01)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Closing is refused while undetermined or while any duty is outstanding; reopening needs a reason. (S3-01)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -10918,7 +11032,8 @@
       "gate": "BreachReader",
       "resolved_gate": "RequireResource(breach, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -10932,11 +11047,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Every revision, and the listed people a page at a time (`cursor` is a listed person's uuid). (S3-02)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Every revision, and the listed people a page at a time (`cursor` is a listed person's uuid). (S3-02)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -10958,7 +11074,8 @@
       "gate": "BreachReader",
       "resolved_gate": "RequireResource(breach, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -10972,11 +11089,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. A read despite the method: derives from the scopes and writes nothing. An unknown table is 422 naming the choices. (S3-02)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. A read despite the method: derives from the scopes and writes nothing. An unknown table is 422 naming the choices. (S3-02)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -10998,7 +11116,8 @@
       "gate": "BreachReader",
       "resolved_gate": "RequireResource(breach, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -11012,11 +11131,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Every version, and the account of notices by version, channel and state (Rule 7(2)(b)(vi)). (S3-03)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Every version, and the account of notices by version, channel and state (Rule 7(2)(b)(vi)). (S3-03)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -11038,7 +11158,8 @@
       "gate": "BreachWriter",
       "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -11052,11 +11173,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Starts the next version as a draft; one draft at a time (409 `notice_draft_open`). (S3-03)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Starts the next version as a draft; one draft at a time (409 `notice_draft_open`). (S3-03)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -11078,7 +11200,8 @@
       "gate": "BreachWriter",
       "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -11092,11 +11215,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. A draft only: an approved notice does not change (409 `notice_approved`, and by trigger). (S3-03)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. A draft only: an approved notice does not change (409 `notice_approved`, and by trigger). (S3-03)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -11118,7 +11242,8 @@
       "gate": "BreachWriter",
       "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -11132,11 +11257,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Refused with any of the five Rule 7(1) contents empty (422 naming each). (S3-03)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Refused with any of the five Rule 7(1) contents empty (422 naming each). (S3-03)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -11158,7 +11284,8 @@
       "gate": "BreachWriter",
       "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -11172,11 +11299,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Refused before approval (409 `no_approved_notice`) or with nobody listed; writes each listed person's account at once and queues email and SMS; a resend adds only what is missing. (S3-03)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Refused before approval (409 `no_approved_notice`) or with nobody listed; writes each listed person's account at once and queues email and SMS; a resend adds only what is missing. (S3-03)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -11198,7 +11326,8 @@
       "gate": "BreachReader",
       "resolved_gate": "RequireResource(breach, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -11212,11 +11341,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Rule 7(2)(a), drafted from the register at any point; what it lacks is named in `missing`. Never submitted by the platform. (S3-04)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Rule 7(2)(a), drafted from the register at any point; what it lacks is named in `missing`. Never submitted by the platform. (S3-04)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -11238,7 +11368,8 @@
       "gate": "BreachReader",
       "resolved_gate": "RequireResource(breach, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -11252,11 +11383,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Rule 7(2)(b)(i)-(vi); item (vi), the account of notices, is stated in words when nothing was sent. Never submitted by the platform. (S3-04)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Rule 7(2)(b)(i)-(vi); item (vi), the account of notices, is stated in words when nothing was sent. Never submitted by the platform. (S3-04)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -11278,7 +11410,8 @@
       "gate": "BreachWriter",
       "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -11292,11 +11425,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Re-derives from the scopes server-side, leaves out `exclude`, adds `add`; a new revision listing only people not already listed. Refused on a closed breach. (S3-02)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Re-derives from the scopes server-side, leaves out `exclude`, adds `add`; a new revision listing only people not already listed. Refused on a closed breach. (S3-02)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -11356,7 +11490,8 @@
       "gate": "BreachReader",
       "resolved_gate": "RequireResource(breach, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -11370,11 +11505,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403. Drafted from the register at any point, from the incident's first minutes; counts only for who it touched, no finding on who caused it, no name or contact. The platform never reports to the organisation's board. (S3-07, ADR 0022)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403. Drafted from the register at any point, from the incident's first minutes; counts only for who it touched, no finding on who caused it, no name or contact. The platform never reports to the organisation's board. (S3-07, ADR 0022)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -11396,7 +11532,8 @@
       "gate": "BreachReader",
       "resolved_gate": "RequireResource(breach, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -11410,11 +11547,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -11436,7 +11574,8 @@
       "gate": "BreachWriter",
       "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -11450,11 +11589,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08) Refused before the breach is recorded (409 `breach_not_recorded`); the assignee is active staff picked by `user_uuid`, or - S3-09 - anybody named by `full_name`, `email` and optionally `mobile`, whose address must be on `BREACH_TICKET_EMAIL_DOMAINS` (422, the address not echoed); somebody without a console login is given a breach-only login (`breach_holder`) for this breach; one ticket per person per breach (409 `ticket_exists`)."
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08) Refused before the breach is recorded (409 `breach_not_recorded`); the assignee is active staff picked by `user_uuid`, or - S3-09 - anybody named by `full_name`, `email` and optionally `mobile`, whose address must be on `BREACH_TICKET_EMAIL_DOMAINS` (422, the address not echoed); somebody without a console login is given a breach-only login (`breach_holder`) for this breach; one ticket per person per breach (409 `ticket_exists`).",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -11476,7 +11616,8 @@
       "gate": "BreachReader",
       "resolved_gate": "RequireResource(breach, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -11490,11 +11631,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08) Reading it marks the holder's messages read."
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08) Reading it marks the holder's messages read.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -11516,7 +11658,8 @@
       "gate": "BreachWriter",
       "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -11530,11 +11673,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -11556,7 +11700,8 @@
       "gate": "BreachReader",
       "resolved_gate": "RequireResource(breach, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -11570,11 +11715,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08) Every read is audited."
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08) Every read is audited.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -11596,7 +11742,8 @@
       "gate": "BreachWriter",
       "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -11610,11 +11757,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -11636,7 +11784,8 @@
       "gate": "BreachWriter",
       "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -11650,11 +11799,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08) Only the DPO closes a ticket (BD-07)."
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08) Only the DPO closes a ticket (BD-07).",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -11676,7 +11826,8 @@
       "gate": "BreachWriter",
       "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -11690,11 +11841,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -11716,7 +11868,8 @@
       "gate": "BreachWriter",
       "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -11730,11 +11883,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08)"
+        "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -12032,7 +12186,8 @@
       "gate": "BreachWriter",
       "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -12046,11 +12201,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone (resource `breach`, S3-01), hidden from every other role (404). Multipart: `file` (PDF, PNG, JPEG, text, CSV, .eml, .msg or .docx; at most 25 MB), `kind` (email, proof, chat, other), an optional `note`. Kept as evidence - never replaced or removed, by trigger and grant; the name and note sealed. Refused on a closed breach (409 `breach_closed`), checked before the file is stored. The trail records the kind, never the name. (2026-10-06)"
+        "The DPO's alone (resource `breach`, S3-01), hidden from every other role (404). Multipart: `file` (PDF, PNG, JPEG, text, CSV, .eml, .msg or .docx; at most 25 MB), `kind` (email, proof, chat, other), an optional `note`. Kept as evidence - never replaced or removed, by trigger and grant; the name and note sealed. Refused on a closed breach (409 `breach_closed`), checked before the file is stored. The trail records the kind, never the name. (2026-10-06)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -12072,7 +12228,8 @@
       "gate": "BreachReader",
       "resolved_gate": "RequireResource(breach, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -12086,11 +12243,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone, hidden from every other role (404). A file of this breach only (404 otherwise). The response carries `X-Recorded-SHA256` (as kept) and `X-Content-SHA256` (as read); every read is `breach.attachment_read` on the trail. (2026-10-06)"
+        "The DPO's alone, hidden from every other role (404). A file of this breach only (404 otherwise). The response carries `X-Recorded-SHA256` (as kept) and `X-Content-SHA256` (as read); every read is `breach.attachment_read` on the trail. (2026-10-06)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -12153,7 +12311,8 @@
       "resolved_gate": "RequireResource(rights_request, write=False)",
       "route_roles": [
         "dpo",
-        "admin"
+        "admin",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -12167,11 +12326,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "As every read of a request: the DPO all, the admin those about the DPO. A document of this request only (404 otherwise). The response carries `X-Recorded-SHA256` (as kept) and `X-Content-SHA256` (as read); every read is `rights.attachment_read` on the trail. (2026-10-07)"
+        "As every read of a request: the DPO all, the admin those about the DPO. A document of this request only (404 otherwise). The response carries `X-Recorded-SHA256` (as kept) and `X-Content-SHA256` (as read); every read is `rights.attachment_read` on the trail. (2026-10-07)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py",
@@ -12653,7 +12813,8 @@
       "gate": "BreachReader",
       "resolved_gate": "RequireResource(breach, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -12667,11 +12828,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone, hidden from every other role (404). `kind` is contacts or assets; a header, guidance lines starting with #, and an example row. (2026-10-07)"
+        "The DPO's alone, hidden from every other role (404). `kind` is contacts or assets; a header, guidance lines starting with #, and an example row. (2026-10-07)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -12693,7 +12855,8 @@
       "gate": "BreachWriter",
       "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -12707,11 +12870,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "Multipart `kind` and `file` (a CSV, 25 MB, 50,000 rows; a spreadsheet is refused with how to save it as CSV). Counts what would be added and names each unreadable row by number. Writes nothing. (2026-10-07)"
+        "Multipart `kind` and `file` (a CSV, 25 MB, 50,000 rows; a spreadsheet is refused with how to save it as CSV). Counts what would be added and names each unreadable row by number. Writes nothing. (2026-10-07)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -12733,7 +12897,8 @@
       "gate": "BreachWriter",
       "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -12747,11 +12912,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "Refused on a closed breach. A person whose email or mobile is an account's is listed as that account (`found_by` upload); anybody else is kept as a contact of this breach, name/email/mobile sealed, deduplicated by blind index. Assets: matched by platform asset ID or by `source_asset_ref` (with `source_code` when two sources share it); their consented people are listed, untraceable subjects counted. The file is not kept, only its sealed name, hash and counts. The trail records counts, never a name or contact. 409 `nothing_new` when everybody is already listed. (2026-10-07)"
+        "Refused on a closed breach. A person whose email or mobile is an account's is listed as that account (`found_by` upload); anybody else is kept as a contact of this breach, name/email/mobile sealed, deduplicated by blind index. Assets: matched by platform asset ID or by `source_asset_ref` (with `source_code` when two sources share it); their consented people are listed, untraceable subjects counted. The file is not kept, only its sealed name, hash and counts. The trail records counts, never a name or contact. 409 `nothing_new` when everybody is already listed. (2026-10-07)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -12773,7 +12939,8 @@
       "gate": "BreachReader",
       "resolved_gate": "RequireResource(breach, hidden=True)",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "breach",
@@ -12787,11 +12954,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone, hidden from every other role (404). Name, email and mobile sealed; paged by `cursor`. (2026-10-07)"
+        "The DPO's alone, hidden from every other role (404). Name, email and mobile sealed; paged by `cursor`. (2026-10-07)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -12855,7 +13023,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "dpo",
-        "admin"
+        "admin",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -12869,11 +13038,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "Only an answer waiting for review (409 `nothing_to_review`). Only an accepted answer counts toward collating or an erasure being done. A holder in the console is told; the trail records `rights.ticket_accepted`. An answer the office records itself is accepted as it is recorded. (2026-10-08)"
+        "Only an answer waiting for review (409 `nothing_to_review`). Only an accepted answer counts toward collating or an erasure being done. A holder in the console is told; the trail records `rights.ticket_accepted`. An answer the office records itself is accepted as it is recorded. (2026-10-08)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py",
@@ -12896,7 +13066,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "dpo",
-        "admin"
+        "admin",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -12910,11 +13081,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "Only a withdrawn ticket (409 `ticket_not_withdrawn`); `due_on` not in the past (422), kept as the end of that day. The holder is told; a collating request goes back to awaiting holders. The trail records `rights.ticket_reopened`. (2026-10-08)"
+        "Only a withdrawn ticket (409 `ticket_not_withdrawn`); `due_on` not in the past (422), kept as the end of that day. The holder is told; a collating request goes back to awaiting holders. The trail records `rights.ticket_reopened`. (2026-10-08)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py",
@@ -12937,7 +13109,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "dpo",
-        "admin"
+        "admin",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -12951,11 +13124,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "Only a holder with no ticket sent, no message and no erasure item (409 `holder_in_use`): nothing about it has left the office, so nothing evidential is lost. 204. The trail records `rights.holder_removed`. (2026-10-08)"
+        "Only a holder with no ticket sent, no message and no erasure item (409 `holder_in_use`): nothing about it has left the office, so nothing evidential is lost. 204. The trail records `rights.holder_removed`. (2026-10-08)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py",
@@ -13338,7 +13512,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "dpo",
-        "admin"
+        "admin",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -13352,11 +13527,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "Only before the ticket is sent (409 `ticket_already_sent`); empty or null goes back to the standard words. Sealed at rest, as every instruction. The trail records `rights.holder_instruction_set` with whether the words are the office's own, never the words. (2026-10-08)"
+        "Only before the ticket is sent (409 `ticket_already_sent`); empty or null goes back to the standard words. Sealed at rest, as every instruction. The trail records `rights.holder_instruction_set` with whether the words are the office's own, never the words. (2026-10-08)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py",
@@ -13377,7 +13553,8 @@
       "resolved_gate": "RequireResource(rights_request, write=True)",
       "route_roles": [
         "dpo",
-        "admin"
+        "admin",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "rights_request",
@@ -13391,11 +13568,12 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "Only an open ticket (409 `ticket_not_open`) reached by email or a temporary login; `responder_contact` must be an email address (422). Nobody at the wrong address is written to; the ticket is sent again to the right one, an outside holder with a new link (the old stops working), an internal address with no login given a temporary one. The trail records `rights.holder_contact_corrected`, never an address. (2026-10-08)"
+        "Only an open ticket (409 `ticket_not_open`) reached by email or a temporary login; `responder_contact` must be an email address (422). Nobody at the wrong address is written to; the ticket is sent again to the right one, an outside holder with a new link (the old stops working), an internal address with no login given a temporary one. The trail records `rights.holder_contact_corrected`, never an address. (2026-10-08)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py",
@@ -14628,6 +14806,121 @@
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/infrastructure/identity/oidc.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/infrastructure/identity/state.py"
       ]
+    },
+    {
+      "module": "rights",
+      "method": "POST",
+      "path": "/requests/{request_uuid}/claim",
+      "summary": "Take a request out of the shared intake into my office's queue",
+      "function": "claim",
+      "operation_id": "claim_requests__request_uuid__claim_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RightsWriter",
+      "resolved_gate": "RequireResource(rights_request, write=True)",
+      "route_roles": [
+        "admin",
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "rights_request",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "SCOPED",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "Only a request in the shared intake (office_id IS NULL); the claiming officer's office takes it. A second claim is 409 already_claimed. The administrator holds no office and is refused."
+      ],
+      "evidence": [
+        "backend/api/src/cmp/api/routers/v1/rights.py"
+      ]
+    },
+    {
+      "module": "rights",
+      "method": "POST",
+      "path": "/requests/{request_uuid}/transfer",
+      "summary": "Transfer a request to the other office, with the reason",
+      "function": "transfer",
+      "operation_id": "transfer_requests__request_uuid__transfer_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RightsWriter",
+      "resolved_gate": "RequireResource(rights_request, write=True)",
+      "route_roles": [
+        "admin",
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "rights_request",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "SCOPED",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "Only a request the caller's office holds; the reason is required and sealed; received_at and due_at do not change; the receiving office's officers are emailed. The response carries the reference and the new office only."
+      ],
+      "evidence": [
+        "backend/api/src/cmp/api/routers/v1/rights.py"
+      ]
+    },
+    {
+      "module": "me",
+      "method": "GET",
+      "path": "/me/requests/offices",
+      "summary": "The offices my requests can go to",
+      "function": "my_offices",
+      "operation_id": "my_offices_me_requests_offices_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireDataSubject",
+      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DATA_SUBJECT))]",
+      "route_roles": [
+        "data_subject"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "NO",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "OWN",
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "The offices whose notices the signed-in person holds a current artefact on; codes and titles only."
+      ],
+      "evidence": [
+        "backend/api/src/cmp/api/routers/v1/rights.py"
+      ]
     }
   ],
   "amended": [
@@ -14750,6 +15043,11 @@
       "on": "2026-10-28",
       "commit": "HR track increment 5",
       "note": "Four public operations for an `sso` consent link: the start, the callback, and the new employee's mobile gate. Evidence links point at HEAD."
+    },
+    {
+      "on": "2026-10-28",
+      "commit": "HR track increment 7",
+      "note": "Rights requests, legal holds and breaches by office: the Legal PoC holds each as the DPO does on its own office's records (89 entries widened); claim, transfer and the portal's office list added."
     }
   ]
 }

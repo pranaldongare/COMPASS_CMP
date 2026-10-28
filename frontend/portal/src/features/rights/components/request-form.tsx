@@ -17,7 +17,12 @@
  *
  * Signed in, she can send documents with it (2026-10-07). They go once the
  * request is recorded, one by one; one refused does not undo the request, and
- * the toast says which and why. The public form takes none: nobody is known
+ * the toast says which and why.
+ *
+ * When she holds consents with both offices - the research projects' DPO
+ * office and her employer's Legal office - the form asks which this is for,
+ * or both; both makes one request to each, and her documents go with each
+ * (0055). With one office or none, nothing is asked: the server places it. The public form takes none: nobody is known
  * until the code is confirmed, and a file from nobody is not kept.
  */
 "use client";
@@ -32,6 +37,7 @@ import { attachToMyRequest, submitPublicRequest } from "@/features/rights/api";
 import { REQUEST_TYPE_COPY } from "@/features/rights/components/copy";
 import { DocumentPicker } from "@/features/rights/components/document-picker";
 import { useMakeRequest } from "@/features/rights/mutations";
+import { useMyRequestOffices } from "@/features/rights/queries";
 import {
   myRequestSchema,
   publicRequestSchema,
@@ -88,29 +94,37 @@ export function MyRequestForm({
   const toast = useToast();
   const qc = useQueryClient();
   const make = useMakeRequest();
+  const offices = useMyRequestOffices().data?.offices ?? [];
   const [documents, setDocuments] = React.useState<File[]>([]);
   const [sending, setSending] = React.useState(false);
   const form = useApiForm<MyRequestValues, MyRequestFormValues>(myRequestSchema, {
     request_type: initialType,
     request_text: "",
     about_dpo: false,
+    office: null,
   });
   const type = form.watch("request_type") as TakenRequestType;
+  const office = form.watch("office");
+  const asks = offices.length > 1;
 
   const submit = form.submit(async (values) => {
-    const created = await make.mutateAsync(values);
-    // The request first - its clock runs from now - then its documents.
+    const created = await make.mutateAsync({ ...values, office: asks ? values.office : null });
+    const made = [created, ...(created.also ?? [])];
+    // The request first - its clock runs from now - then its documents, with
+    // each request when she asked both offices.
     const refused: string[] = [];
     if (documents.length) {
       setSending(true);
       try {
-        for (const file of documents) {
-          try {
-            await attachToMyRequest(created.request_uuid, file);
-          } catch (err) {
-            refused.push(
-              `${file.name}: ${err instanceof ApiError ? err.userMessage() : "not accepted"}`,
-            );
+        for (const request of made) {
+          for (const file of documents) {
+            try {
+              await attachToMyRequest(request.request_uuid, file);
+            } catch (err) {
+              refused.push(
+                `${file.name}: ${err instanceof ApiError ? err.userMessage() : "not accepted"}`,
+              );
+            }
           }
         }
       } finally {
@@ -118,9 +132,9 @@ export function MyRequestForm({
         void qc.invalidateQueries({ queryKey: ["me"] });
       }
     }
-    const sent = documents.length - refused.length;
+    const sent = documents.length * made.length - refused.length;
     toast.success(
-      `Recorded as ${created.reference}`,
+      `Recorded as ${made.map((r) => r.reference).join(" and ")}`,
       `You will hear from us by ${new Date(created.due_at).toLocaleDateString()}.` +
         (sent ? ` ${sent} document${sent === 1 ? "" : "s"} sent with it.` : ""),
     );
@@ -161,6 +175,35 @@ export function MyRequestForm({
           {(p) => <Textarea {...p} rows={5} maxLength={20_000} {...form.register("request_text")} />}
         </Field>
 
+        {asks && (
+          <Field
+            label="Which office is this for"
+            hint="Your consents are with both. Choose both if you are not sure: each office answers for what it holds."
+            required
+            error={form.formState.errors.office?.message}
+          >
+            {(p) => (
+              <Select
+                {...p}
+                value={office ?? ""}
+                onChange={(e) =>
+                  form.setValue("office", (e.target.value || null) as MyRequestValues["office"], {
+                    shouldValidate: true,
+                  })
+                }
+              >
+                <option value="">Choose</option>
+                {offices.map((o) => (
+                  <option key={o.code} value={o.code}>
+                    {o.title}
+                  </option>
+                ))}
+                <option value="both">Both</option>
+              </Select>
+            )}
+          </Field>
+        )}
+
         <DocumentPicker files={documents} onChange={setDocuments} />
 
         {type === "grievance" && (
@@ -181,7 +224,12 @@ export function MyRequestForm({
       </div>
 
       <DialogFooter>
-        <Button type="submit" variant="primary" loading={make.isPending || sending}>
+        <Button
+          type="submit"
+          variant="primary"
+          loading={make.isPending || sending}
+          disabled={asks && !office}
+        >
           Send the request
         </Button>
       </DialogFooter>

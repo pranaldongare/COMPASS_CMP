@@ -63,6 +63,7 @@ import {
   STATUS_COPY,
 } from "@/features/rights/components/copy";
 import { HoldersCard } from "@/features/rights/components/holders-card";
+import { OfficeCard } from "@/features/rights/components/office-card";
 import {
   LinkedFrom,
   LinkedRequestCard,
@@ -458,6 +459,7 @@ export default function RequestDetailPage() {
                 request={r}
                 actionsHref={nextMoveIsResponse ? "#response" : "#actions"}
               />
+              <OfficeCard request={r} />
               <LinkedRequestCard request={r} />
             </div>
           </div>

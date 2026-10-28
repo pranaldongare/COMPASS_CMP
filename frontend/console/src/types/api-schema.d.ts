@@ -1545,6 +1545,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/requests/offices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The offices my requests can go to */
+        get: operations["my_offices_me_requests_offices_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/me/requests": {
         parameters: {
             query?: never;
@@ -1559,6 +1576,9 @@ export interface paths {
          * Make a request, signed in
          * @description From the dashboard. The session is the verification, so the clock starts
          *     and the acknowledgement goes out in the same moment.
+         *
+         *     `office` `both` makes one request to each office, received together: the
+         *     first is returned, the second under `also`.
          */
         post: operations["make_request_me_requests_post"];
         delete?: never;
@@ -4484,6 +4504,44 @@ export interface paths {
         get: operations["get_trail_requests__request_uuid__trail_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Take a request out of the shared intake into my office's queue */
+        post: operations["claim_requests__request_uuid__claim_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Transfer a request to the other office, with the reason
+         * @description D0 and the due date do not move. The request leaves this office's
+         *     queue; what is returned is all it still sees of it.
+         */
+        post: operations["transfer_requests__request_uuid__transfer_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9981,7 +10039,8 @@ export interface components {
         };
         /**
          * LogRequest
-         * @description A request that arrived by email, logged by the DPO. Same record as the others.
+         * @description A request that arrived by email, logged by an office's officer. Same
+         *     record as the others, in the logging officer's office.
          */
         LogRequest: {
             /** Request Type */
@@ -10192,6 +10251,11 @@ export interface components {
             moves: components["schemas"]["BreachTicketMoveOut"][];
             /** May Add Colleague */
             may_add_colleague: boolean;
+        };
+        /** MyOfficesOut */
+        MyOfficesOut: {
+            /** Offices */
+            offices: components["schemas"]["OfficeChoiceOut"][];
         };
         /** NominationActIn */
         NominationActIn: {
@@ -10512,6 +10576,13 @@ export interface components {
             note?: string | null;
             /** Change Class */
             change_class?: string | null;
+        };
+        /** OfficeChoiceOut */
+        OfficeChoiceOut: {
+            /** Code */
+            code: string;
+            /** Title */
+            title: string;
         };
         /** OfficeOut */
         OfficeOut: {
@@ -11421,6 +11492,8 @@ export interface components {
             verification_status: string;
             /** About Dpo */
             about_dpo: boolean;
+            /** Office */
+            office?: string | null;
             /** Linked Reference */
             linked_reference: string | null;
             /** Consent Uuid */
@@ -11525,6 +11598,14 @@ export interface components {
             item_count: number;
             /** Items Undecided */
             items_undecided: number;
+            /** Transferred From */
+            transferred_from?: string | null;
+            /** Transferred At */
+            transferred_at?: string | null;
+            /** Transfer Reason */
+            transfer_reason?: string | null;
+            /** Claimed At */
+            claimed_at?: string | null;
             /** Holders */
             holders: components["schemas"]["HolderOut"][];
             /** Items */
@@ -11588,6 +11669,8 @@ export interface components {
             verification_status: string;
             /** About Dpo */
             about_dpo: boolean;
+            /** Office */
+            office?: string | null;
             /** Linked Reference */
             linked_reference: string | null;
             /** Consent Uuid */
@@ -11736,6 +11819,8 @@ export interface components {
             verification_status: string;
             /** About Dpo */
             about_dpo: boolean;
+            /** Office */
+            office?: string | null;
             /** Linked Reference */
             linked_reference: string | null;
             /** Consent Uuid */
@@ -12127,6 +12212,8 @@ export interface components {
              * @default false
              */
             about_dpo: boolean;
+            /** Office */
+            office?: ("rnd" | "hr" | "both") | null;
         };
         /**
          * SubjectRequestOut
@@ -12202,6 +12289,8 @@ export interface components {
             response_files?: components["schemas"]["ResponseFileOut"][];
             /** Attachments */
             attachments?: components["schemas"]["AttachmentOut"][];
+            /** Also */
+            also?: components["schemas"]["SubjectRequestOut"][];
         };
         /** TemplateDetail */
         TemplateDetail: {
@@ -12657,6 +12746,31 @@ export interface components {
             consent_at?: string | null;
             /** Consent Purposes */
             consent_purposes?: string[] | null;
+        };
+        /** TransferIn */
+        TransferIn: {
+            /**
+             * Office
+             * @enum {string}
+             */
+            office: "rnd" | "hr";
+            /** Reason */
+            reason: string;
+        };
+        /**
+         * TransferOut
+         * @description What the sender may still see of a request it moved: no more.
+         */
+        TransferOut: {
+            /**
+             * Request Uuid
+             * Format: uuid
+             */
+            request_uuid: string;
+            /** Reference */
+            reference: string;
+            /** Office */
+            office: string;
         };
         /** TransitionIn */
         TransitionIn: {
@@ -15763,6 +15877,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_offices_me_requests_offices_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyOfficesOut"];
                 };
             };
         };
@@ -21460,6 +21594,72 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     }[];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    claim_requests__request_uuid__claim_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    transfer_requests__request_uuid__transfer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TransferOut"];
                 };
             };
             /** @description Validation Error */

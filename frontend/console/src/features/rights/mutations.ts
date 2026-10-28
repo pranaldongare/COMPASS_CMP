@@ -84,6 +84,25 @@ export const useEscalate = (uuid: Uuid) =>
   useRequestAction<RightsRequest, void>(uuid, () => api.escalate(uuid));
 export const useAssignReviewer = (uuid: Uuid) =>
   useRequestAction<RightsRequest, Uuid>(uuid, (reviewer) => api.assignReviewer(uuid, reviewer));
+/** Out of the shared intake, into my office's queue (0055). */
+export const useClaimRequest = (uuid: Uuid) =>
+  useRequestAction<RightsRequest, void>(uuid, () => api.claimRequest(uuid));
+
+/** To the other office. The request leaves this office's view with it, so
+ *  its page is dropped rather than refetched into a 404. */
+export function useTransferRequest(
+  uuid: Uuid,
+): Result<Awaited<ReturnType<typeof api.transferRequest>>, Parameters<typeof api.transferRequest>[1]> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: Parameters<typeof api.transferRequest>[1]) => api.transferRequest(uuid, body),
+    onSuccess: () => {
+      qc.removeQueries({ queryKey: keys.rights.detail(uuid) });
+      void qc.invalidateQueries({ queryKey: prefixes.anyRequestList });
+      void qc.invalidateQueries({ queryKey: keys.dashboard.all });
+    },
+  });
+}
 export const useTransitionRequest = (uuid: Uuid) =>
   useRequestAction<RightsRequest, Parameters<typeof api.transitionRequest>[1]>(uuid, (body) =>
     api.transitionRequest(uuid, body),

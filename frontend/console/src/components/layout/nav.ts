@@ -269,7 +269,7 @@ const DAILY_WORK: Record<string, string[]> = {
   admin: ["dashboard", "users", "requests", "messages", "processors", "sources", "audit"],
   breach_holder: ["tickets"],
   // The HR track (ADR 0032): their registers join as the increments land.
-  legal: ["dashboard", "hr-activities", "hr-categories", "templates", "purposes", "tickets"],
+  legal: ["dashboard", "requests", "breaches", "hr-activities", "hr-categories", "templates", "purposes", "tickets"],
   hr_user: ["dashboard", "hr-activities", "links", "consents", "tickets"],
 };
 
