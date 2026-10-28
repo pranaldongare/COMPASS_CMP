@@ -892,8 +892,10 @@ async def assign_agent(
     agent_ref: str | None,
     actor_id: int,
     role: Role | str,
+    audience_mode: str = "otp",
 ) -> dict[str, Any]:
-    """Mint the site's link for a Field Agent, and record who it was for."""
+    """Mint the site's link for a Field Agent, and record who it was for.
+    `audience_mode` `sso` makes it an employee link (ADR 0034)."""
     from cmp.domain.consent import service as consent_service
 
     link = await consent_service.create_link(
@@ -903,6 +905,7 @@ async def assign_agent(
         max_uses=max_uses,
         actor_id=actor_id,
         role=role,
+        audience_mode=audience_mode,
     )
     await audit.record(
         conn,

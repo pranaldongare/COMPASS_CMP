@@ -1,6 +1,6 @@
 # Public Consent API
 
-Generated from `backend/api/openapi.json`. **6 operations.**
+Generated from `backend/api/openapi.json`. **9 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -12,6 +12,9 @@ For each operation the information is deliberately ordered as **API → Validati
 4. [`POST /c/{token}/otp/verify`](#4_post_c_token_otp_verify)
 5. [`GET /c/{token}/notice`](#5_get_c_token_notice)
 6. [`POST /c/{token}/consent`](#6_post_c_token_consent)
+7. [`GET /c/{token}/sso/start`](#7_get_c_token_sso_start)
+8. [`POST /c/{token}/sso/mobile`](#8_post_c_token_sso_mobile)
+9. [`POST /c/{token}/sso/mobile/verify`](#9_post_c_token_sso_mobile_verify)
 
 <a id="1_get_c_token"></a>
 ## 1. `GET /c/{token}` — Validate the link
@@ -51,7 +54,8 @@ No request body.
   "available_languages": [
     "string"
   ],
-  "already_registered": false
+  "already_registered": false,
+  "audience_mode": "otp"
 }
 ```
 
@@ -393,6 +397,183 @@ Request body required: **yes**.
 }
 ```
 
+<a id="7_get_c_token_sso_start"></a>
+## 7. `GET /c/{token}/sso/start` — Where to sign in with the organisation's account
+
+### API
+
+- **Operation ID:** `sso_start_c__token__sso_start_get`
+- **Access:** Public or operator endpoint; see the endpoint description and deployment controls.
+
+404 for a link that is not `sso`; 503 when the organisation's sign-in
+is off or its provider does not answer.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `token` | path | Yes | `string` | min length: `20`; max length: `64`; pattern: `^[A-Za-z0-9_-]+$` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`SsoStart`](#schema-ssostart) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "redirect_url": "string"
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="8_post_c_token_sso_mobile"></a>
+## 8. `POST /c/{token}/sso/mobile` — A code to the mobile a new employee account will carry
+
+### API
+
+- **Operation ID:** `sso_mobile_c__token__sso_mobile_post`
+- **Access:** Public or operator endpoint; see the endpoint description and deployment controls.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `token` | path | Yes | `string` | min length: `20`; max length: `64`; pattern: `^[A-Za-z0-9_-]+$` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`SsoMobileBody`](#schema-ssomobilebody)
+
+```json
+{
+  "mobile": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`Acknowledged`](#schema-acknowledged) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "ok": true,
+  "message": "string"
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="9_post_c_token_sso_mobile_verify"></a>
+## 9. `POST /c/{token}/sso/mobile/verify` — Confirm the mobile; the employee account is created and signed in
+
+### API
+
+- **Operation ID:** `sso_mobile_verify_c__token__sso_mobile_verify_post`
+- **Access:** Public or operator endpoint; see the endpoint description and deployment controls.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `token` | path | Yes | `string` | min length: `20`; max length: `64`; pattern: `^[A-Za-z0-9_-]+$` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`SsoMobileVerifyBody`](#schema-ssomobileverifybody)
+
+```json
+{
+  "mobile": "string",
+  "code": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`Acknowledged`](#schema-acknowledged) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "ok": true,
+  "message": "string"
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
 # Referenced schemas
 
 <a id="schema-acknowledged"></a>
@@ -443,6 +624,7 @@ For state changes whose only interesting output is that they happened.
 | `notice_uuid` | `string` | Yes | format: `uuid` | — |
 | `available_languages` | array of `string` | Yes | — | — |
 | `already_registered` | `boolean` | No | default: `False` | — |
+| `audience_mode` | `string` | No | default: `otp` | — |
 
 <a id="schema-otpbody"></a>
 #### `OtpBody`
@@ -458,6 +640,28 @@ For state changes whose only interesting output is that they happened.
 |---|---|---:|---|---|
 | `contact` | `string` | Yes | min length: `3`; max length: `255` | — |
 | `code` | `string` | Yes | min length: `4`; max length: `10`; pattern: `^[0-9]+$` | — |
+
+<a id="schema-ssomobilebody"></a>
+#### `SsoMobileBody`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `mobile` | `string` | Yes | min length: `6`; max length: `20`; pattern: `^\+?[0-9 \-]+$` | — |
+
+<a id="schema-ssomobileverifybody"></a>
+#### `SsoMobileVerifyBody`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `mobile` | `string` | Yes | min length: `6`; max length: `20`; pattern: `^\+?[0-9 \-]+$` | — |
+| `code` | `string` | Yes | min length: `4`; max length: `10`; pattern: `^[0-9]+$` | — |
+
+<a id="schema-ssostart"></a>
+#### `SsoStart`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `redirect_url` | `string` | Yes | — | — |
 
 <a id="schema-cmp_api_routers_public_consent_registerbody"></a>
 #### `cmp__api__routers__public__consent__RegisterBody`

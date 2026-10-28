@@ -78,9 +78,16 @@ async def update(
     description: str | None,
     role: Role | str,
     user_id: int,
+    default_person_type: str | None = None,
 ) -> dict[str, Any]:
     category = await find(conn, category_uuid, role=role, user_id=user_id)
-    await repo.update(conn, category["category_id"], name=name, description=description)
+    await repo.update(
+        conn,
+        category["category_id"],
+        name=name,
+        description=description,
+        default_person_type=default_person_type,
+    )
     await audit.record(
         conn,
         event=Event.HR_CATEGORY_UPDATED,

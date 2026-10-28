@@ -249,6 +249,8 @@ export interface AgentInput {
   expires_at: string;
   max_uses?: number | null;
   agent_ref?: string | null;
+  /** `sso` for an employee link, through the organisation's account (ADR 0034). */
+  audience_mode?: "sso" | "otp";
 }
 
 /**

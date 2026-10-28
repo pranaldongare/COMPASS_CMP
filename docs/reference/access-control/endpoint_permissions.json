@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 351,
-  "registered_business_and_system_operations": 354,
+  "documented_operations": 355,
+  "registered_business_and_system_operations": 358,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -5568,7 +5568,8 @@
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
         "Site-level lookup further limits DCO/RCO to sites they run; DCO Admin to non-in-house sites; R&D to sites on own projects.",
-        "Only DPO and collection-owner roles can mint the site link; expiry is mandatory and site scope still applies."
+        "Only DPO and collection-owner roles can mint the site link; expiry is mandatory and site scope still applies.",
+        "`audience_mode` `sso` mints an employee link, signed in through the organisation's account. (2026-10-28, ADR 0034)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/projects.py#L807",
@@ -5860,7 +5861,8 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "Valid link and registered contact required for code delivery; no prior session required."
+        "Valid link and registered contact required for code delivery; no prior session required.",
+        "On an `sso` link the same sentence, and no code is sent. (2026-10-28, ADR 0034)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/consent.py#L156",
@@ -5935,7 +5937,8 @@
       },
       "conditions": [
         "Valid consent link required. Registration/contact verification does not grant a staff session.",
-        "A date of birth is required; one under eighteen creates no account and spends no use of the link (S2-01, cmp.domain.users.age). An existing account is recognised and not updated."
+        "A date of birth is required; one under eighteen creates no account and spends no use of the link (S2-01, cmp.domain.users.age). An existing account is recognised and not updated.",
+        "Refused (409 `sso_link`) on an `sso` link; `organization_id` and `person_type` are ignored: the person type is the link's category's, else external (F-8, OP-8). (2026-10-28, ADR 0034)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/consent.py#L132",
@@ -14469,6 +14472,162 @@
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/hr_activities.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/projects/state_machine.py"
       ]
+    },
+    {
+      "module": "public consent",
+      "method": "GET",
+      "path": "/c/{token}/sso/start",
+      "summary": "Where to sign in with the organisation's account",
+      "function": "sso_start",
+      "operation_id": "request_code_c__token__otp_post",
+      "in_openapi": true,
+      "authentication": "No session required",
+      "anonymous": "COND",
+      "gate": "Public; no session dependency",
+      "resolved_gate": "Public; no session dependency",
+      "route_roles": [],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "PUBLIC",
+        "admin": "PUBLIC",
+        "dco": "PUBLIC",
+        "dco_admin": "PUBLIC",
+        "rco": "PUBLIC",
+        "rnd_user": "PUBLIC",
+        "data_subject": "PUBLIC",
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "The link's token is the credential. 404 unless the link is `sso`; 503 `sso_unavailable` when SSO is off or the provider does not answer. Writes the state, nonce and PKCE verifier to Redis (`sso:state:*`, ten minutes) and answers the provider's URL; rate-limited per address as `GET /c/{token}` is. (2026-10-28, ADR 0034)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/consent.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/auth.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/auth/authentication/sso.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/infrastructure/identity/oidc.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/infrastructure/identity/state.py"
+      ]
+    },
+    {
+      "module": "public consent",
+      "method": "POST",
+      "path": "/c/{token}/sso/mobile",
+      "summary": "A code to the mobile a new employee account will carry",
+      "function": "sso_mobile",
+      "operation_id": "request_code_c__token__otp_post",
+      "in_openapi": true,
+      "authentication": "No session required",
+      "anonymous": "COND",
+      "gate": "Public; no session dependency",
+      "resolved_gate": "Public; no session dependency",
+      "route_roles": [],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "PUBLIC",
+        "admin": "PUBLIC",
+        "dco": "PUBLIC",
+        "dco_admin": "PUBLIC",
+        "rco": "PUBLIC",
+        "rnd_user": "PUBLIC",
+        "data_subject": "PUBLIC",
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "The pending sign-in cookie (`cmp_sso_pending`, httpOnly) and the link's token are the credential. A number already on an account is refused with the neutral sentence (409 `sso_conflict`, open point F-10). Rate-limited per number. (2026-10-28, ADR 0034)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/consent.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/auth.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/auth/authentication/sso.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/infrastructure/identity/oidc.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/infrastructure/identity/state.py"
+      ]
+    },
+    {
+      "module": "public consent",
+      "method": "POST",
+      "path": "/c/{token}/sso/mobile/verify",
+      "summary": "Confirm the mobile; the employee account is created and signed in",
+      "function": "sso_mobile_verify",
+      "operation_id": "request_code_c__token__otp_post",
+      "in_openapi": true,
+      "authentication": "No session required",
+      "anonymous": "COND",
+      "gate": "Public; no session dependency",
+      "resolved_gate": "Public; no session dependency",
+      "route_roles": [],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "PUBLIC",
+        "admin": "PUBLIC",
+        "dco": "PUBLIC",
+        "dco_admin": "PUBLIC",
+        "rco": "PUBLIC",
+        "rnd_user": "PUBLIC",
+        "data_subject": "PUBLIC",
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "The pending cookie, the link's token and the code. Creates the account (`employee`, active, the asserted employee ID, name and address, the confirmed mobile, `registered_via_link_id`), spends one use of the link, and mints a data principal's session. (2026-10-28, ADR 0034)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/consent.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/auth.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/auth/authentication/sso.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/infrastructure/identity/oidc.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/infrastructure/identity/state.py"
+      ]
+    },
+    {
+      "module": "auth",
+      "method": "GET",
+      "path": "/auth/sso/callback",
+      "summary": "Where the organisation's identity provider returns (ADR 0034)",
+      "function": "sso_callback",
+      "operation_id": "request_code_c__token__otp_post",
+      "in_openapi": true,
+      "authentication": "No session required",
+      "anonymous": "COND",
+      "gate": "Public; no session dependency",
+      "resolved_gate": "Public; no session dependency",
+      "route_roles": [],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "PUBLIC",
+        "admin": "PUBLIC",
+        "dco": "PUBLIC",
+        "dco_admin": "PUBLIC",
+        "rco": "PUBLIC",
+        "rnd_user": "PUBLIC",
+        "data_subject": "PUBLIC",
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "The state the start issued is the credential, taken once: unknown or used is a 404. Exchanges the code, validates the ID token, matches the employee ID, and redirects (303) to the link with `?sso=` ok, mobile, conflict, invalid, unavailable or cancelled; sets a data principal's session on a match, or the pending cookie for a new employee. Never records a claim. (2026-10-28, ADR 0034)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/consent.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/auth.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/auth/authentication/sso.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/infrastructure/identity/oidc.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/infrastructure/identity/state.py"
+      ]
     }
   ],
   "amended": [
@@ -14586,6 +14745,11 @@
       "on": "2026-10-28",
       "commit": "HR track increment 4",
       "note": "Six operations added under /hr/activities. The Legal PoC and the HR PoC now hold project, notice, link, consent, export and site (and Legal audit), so the existing routes guarded by those resources carry their scope; consent records open to both."
+    },
+    {
+      "on": "2026-10-28",
+      "commit": "HR track increment 5",
+      "note": "Four public operations for an `sso` consent link: the start, the callback, and the new employee's mobile gate. Evidence links point at HEAD."
     }
   ]
 }

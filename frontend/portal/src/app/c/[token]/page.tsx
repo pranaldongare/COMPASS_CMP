@@ -29,6 +29,11 @@
  * valid, and the page offers every possibility at once instead — which helps a
  * legitimate visitor and tells an attacker nothing.
  *
+ * **An employee link signs in through her organisation (ADR 0034).** On an
+ * `sso` link the first step is "Continue with your organisation account"; the
+ * provider sends her back here with `?sso=` saying what happened - signed in,
+ * a mobile still to confirm, or why not - and the flow takes up from there.
+ *
  * **An outage is not an invalid link.** Only the API's 404 means the link is
  * no good; anything else - no answer, a 5xx, a 429 - says so and offers to try
  * again, rather than sending somebody away to ask for a new link because the
@@ -50,6 +55,8 @@ import {
   DoneStep,
   NoticeStep,
   IdentifyStep,
+  SsoMobileStep,
+  SsoStep,
   Shell,
   Steps,
   VerifyStep,
@@ -70,6 +77,8 @@ export default function ConsentPage() {
     null,
   );
   const [error, setError] = React.useState<string | null>(null);
+  /** Why she is back at the organisation sign-in, when she is (ADR 0034). */
+  const [ssoNote, setSsoNote] = React.useState<string | null>(null);
   /** Bumped by "Try again" on an outage, to check the link once more. */
   const [attempt, setAttempt] = React.useState(0);
   const [opening, setOpening] = React.useState<{ busy: boolean; failed: string | null }>({
@@ -80,10 +89,52 @@ export default function ConsentPage() {
   React.useEffect(() => {
     let cancelled = false;
     getLink(token)
-      .then((data) => {
+      .then(async (data) => {
         if (cancelled) return;
         setLink(data);
-        setLanguage(data.available_languages[0] ?? "english");
+        const first = data.available_languages[0] ?? "english";
+        setLanguage(first);
+        const sso = new URLSearchParams(window.location.search).get("sso");
+        if (sso) window.history.replaceState(null, "", window.location.pathname);
+        if (data.audience_mode !== "sso" || !sso) {
+          setStep("identify");
+          return;
+        }
+        // Back from her organisation's sign-in.
+        if (sso === "ok") {
+          setStep("opening");
+          try {
+            const me = await getMe();
+            if (cancelled) return;
+            if (me.is_minor === null) {
+              setStep("age");
+              return;
+            }
+            setNotice(await serveNotice(token, first));
+            setStep("notice");
+          } catch (err) {
+            setOpening({
+              busy: false,
+              failed: err instanceof ApiError ? err.userMessage() : "Could not load the notice.",
+            });
+          }
+          return;
+        }
+        if (sso === "mobile") {
+          setStep("sso-mobile");
+          return;
+        }
+        if (sso === "invalid") {
+          setStep("invalid");
+          return;
+        }
+        setSsoNote(
+          sso === "unavailable"
+            ? "The sign-in service did not answer. Your link is fine - try again in a moment."
+            : sso === "conflict"
+              ? "We could not sign you in with your organisation account. Please contact the administrator, quoting this link."
+              : "The sign-in was not finished. Continue when you are ready.",
+        );
         setStep("identify");
       })
       .catch((err: unknown) => {
@@ -211,7 +262,22 @@ export default function ConsentPage() {
 
       <Steps current={step} />
 
-      {step === "identify" && (
+      {step === "identify" && link?.audience_mode === "sso" && (
+        <SsoStep token={token} note={ssoNote} onError={setError} />
+      )}
+
+      {step === "sso-mobile" && (
+        <SsoMobileStep
+          token={token}
+          onDone={async () => {
+            setStep("opening");
+            await proceed();
+          }}
+          onError={setError}
+        />
+      )}
+
+      {step === "identify" && link?.audience_mode !== "sso" && (
         <IdentifyStep
           token={token}
           languages={link?.available_languages ?? []}

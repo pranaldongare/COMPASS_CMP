@@ -38,7 +38,14 @@ export type Role =
  *  A DPO or an administrator owning a rig would be a category error: ownership
  *  is accountability for collection, so it belongs to the people who do it. */
 export const SOURCE_OWNING_ROLES = ["dco", "rco"] as const satisfies readonly Role[];
-export type PersonType = "external" | "employee" | "ex_employee" | "vendor";
+export type PersonType =
+  | "external"
+  | "employee"
+  | "ex_employee"
+  | "vendor"
+  /** Somebody the organisation is considering, or on site for a while (0054). */
+  | "candidate"
+  | "visitor";
 export type UserStatus = "pending" | "active" | "suspended" | "deactivated";
 
 export type ProjectStatus =

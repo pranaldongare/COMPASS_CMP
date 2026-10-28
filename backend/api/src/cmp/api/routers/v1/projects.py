@@ -11,7 +11,7 @@ from __future__ import annotations
 import re
 from datetime import date, datetime
 from pathlib import Path
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, Query, Request, Response, UploadFile, status
@@ -151,6 +151,9 @@ class AgentAssign(Schema):
     expires_at: datetime
     max_uses: Annotated[int | None, Field(default=None, ge=1, le=100_000)] = None
     agent_ref: Annotated[str | None, Field(default=None, max_length=120)] = None
+    #: `sso` for an employee link, signed in through the organisation's
+    #: account; `otp`, by a code, otherwise (ADR 0034).
+    audience_mode: Literal["sso", "otp"] = "otp"
 
 
 ProjectReader = Annotated[Any, Depends(RequireResource("project"))]
@@ -846,6 +849,7 @@ async def assign_agent(
             agent_ref=body.agent_ref,
             actor_id=principal.user_id,
             role=principal.role,
+            audience_mode=body.audience_mode,
         )
     return {
         "link_uuid": link["link_uuid"],

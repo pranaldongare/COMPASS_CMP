@@ -29,6 +29,7 @@ export function AgentForm({ siteUuid, onDone }: { siteUuid: string; onDone: () =
     expires_at: "",
     max_uses: null,
     agent_ref: "",
+    employees: false,
   });
 
   const onSubmit = form.submit(async (values) => {
@@ -36,6 +37,7 @@ export function AgentForm({ siteUuid, onDone }: { siteUuid: string; onDone: () =
       expires_at: new Date(values.expires_at).toISOString(),
       max_uses: values.max_uses || null,
       agent_ref: values.agent_ref || null,
+      audience_mode: values.employees ? "sso" : "otp",
     });
     setMinted(result);
     toast.success("Consent link created");
@@ -78,6 +80,17 @@ export function AgentForm({ siteUuid, onDone }: { siteUuid: string; onDone: () =
             {(p) => <Input {...p} {...form.register("agent_ref")} />}
           </Field>
         </div>
+
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            {...form.register("employees")}
+            className="mt-0.5 size-4 rounded border-border-strong accent-[var(--accent)]"
+          />
+          <span>
+            Employees only: they sign in with their organisation account instead of a code
+          </span>
+        </label>
       </div>
 
       <DialogFooter>

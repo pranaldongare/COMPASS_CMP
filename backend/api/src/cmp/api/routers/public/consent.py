@@ -22,13 +22,15 @@ from pydantic import EmailStr, Field
 from cmp.api.dependencies import set_session_cookies
 from cmp.api.dependencies.sessions import session_from_request
 from cmp.auth.authentication import service as auth_service
+from cmp.auth.authentication import sso
 from cmp.auth.rate_limit import service as ratelimit
 from cmp.auth.sessions import service as sessions
 from cmp.core.config import settings
-from cmp.core.errors import Unauthenticated
+from cmp.core.errors import ServiceUnavailable, Unauthenticated
 from cmp.core.permissions import Role
 from cmp.db.pool import transaction
 from cmp.domain.consent import service as service
+from cmp.infrastructure.identity import state as sso_state
 from cmp.schemas.common import (
     Acknowledged,
     DateOfBirth,
@@ -53,6 +55,9 @@ class LinkView(Out):
     notice_uuid: UUID
     available_languages: list[str]
     already_registered: bool = False
+    #: How the link signs a person in (ADR 0034): `sso`, through the
+    #: organisation's account, or `otp`, by a code to a contact.
+    audience_mode: str = "otp"
 
 
 class RegisterBody(Schema):
@@ -62,8 +67,14 @@ class RegisterBody(Schema):
     #: one is an account whose age nobody knows.
     dob: DateOfBirth
     email: EmailStr | None = None
-    organization_id: Annotated[str | None, Field(default=None, max_length=60)] = None
-    person_type: str | None = None
+    #: Accepted for compatibility and ignored. An employee ID is never taken
+    #: from an unauthenticated form: only an assertion the organisation's
+    #: identity provider signed carries one (ADR 0034, open point F-8).
+    organization_id: Annotated[str | None, Field(default=None, max_length=60, deprecated=True)] = (
+        None
+    )
+    #: Ignored: the person type is the link's category's, else external.
+    person_type: Annotated[str | None, Field(default=None, deprecated=True)] = None
 
 
 class OtpBody(Schema):
@@ -125,6 +136,7 @@ async def open_link(token: TokenPath, request: Request, response: Response) -> d
         "available_languages": [
             x["language_code"] for x in languages if x["approved_at"] is not None
         ],
+        "audience_mode": link.get("audience_mode") or "otp",
     }
 
 
@@ -141,8 +153,6 @@ async def register(token: TokenPath, body: RegisterBody, response: Response) -> 
             full_name=body.full_name,
             mobile=body.mobile,
             email=str(body.email) if body.email else None,
-            organization_id=body.organization_id,
-            person_type=body.person_type,
             dob=body.dob.isoformat(),
         )
     return {
@@ -269,3 +279,94 @@ async def give_consent(
             "any time using the links in the notice."
         ),
     }
+
+
+# ========================================================== organisation SSO
+#
+# An `sso` link's one way in (ADR 0034). The start answers with where to send
+# the browser rather than redirecting, so the portal can say "the service did
+# not answer" when the provider is down instead of leaving her on an error
+# page. The callback is `GET /auth/sso/callback`, in the auth router.
+
+
+class SsoStart(Out):
+    redirect_url: str
+
+
+class SsoMobileBody(Schema):
+    mobile: Mobile
+
+
+class SsoMobileVerifyBody(Schema):
+    mobile: Mobile
+    code: OtpCode
+
+
+@router.get(
+    "/c/{token}/sso/start",
+    response_model=SsoStart,
+    summary="Where to sign in with the organisation's account",
+)
+async def sso_start(token: TokenPath, request: Request, response: Response) -> dict[str, Any]:
+    """404 for a link that is not `sso`; 503 when the organisation's sign-in
+    is off or its provider does not answer."""
+    _no_referrer(response)
+    await ratelimit.enforce(
+        "public_link",
+        request.client.host if request.client else "unknown",
+        limit=settings.public_link_rate_per_minute,
+        window_s=60,
+        fail_open=False,
+    )
+    try:
+        async with transaction() as conn:
+            url = await sso.start(conn, token=token)
+    except sso.SsoUnavailable as exc:
+        raise ServiceUnavailable(
+            "Signing in with your organisation account is not available just now",
+            code="sso_unavailable",
+        ) from exc
+    return {"redirect_url": url}
+
+
+@router.post(
+    "/c/{token}/sso/mobile",
+    response_model=Acknowledged,
+    summary="A code to the mobile a new employee account will carry",
+)
+async def sso_mobile(
+    token: TokenPath, body: SsoMobileBody, request: Request, response: Response
+) -> dict[str, Any]:
+    _no_referrer(response)
+    async with transaction() as conn:
+        await sso.send_mobile_code(
+            conn,
+            token=token,
+            pending_id=request.cookies.get(sso_state.PENDING_COOKIE),
+            mobile=body.mobile,
+        )
+    return {"ok": True, "message": "We have sent a code to that number."}
+
+
+@router.post(
+    "/c/{token}/sso/mobile/verify",
+    response_model=Acknowledged,
+    summary="Confirm the mobile; the employee account is created and signed in",
+)
+async def sso_mobile_verify(
+    token: TokenPath, body: SsoMobileVerifyBody, request: Request, response: Response
+) -> dict[str, Any]:
+    _no_referrer(response)
+    async with transaction() as conn:
+        raw, session = await sso.confirm_mobile(
+            conn,
+            token=token,
+            pending_id=request.cookies.get(sso_state.PENDING_COOKIE),
+            mobile=body.mobile,
+            code=body.code,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+        )
+    set_session_cookies(response, raw, session.csrf_token, max_age=settings.session_ttl_s)
+    response.delete_cookie(sso_state.PENDING_COOKIE, path="/")
+    return {"ok": True, "message": "Confirmed. You can now read the notice."}

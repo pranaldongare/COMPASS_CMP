@@ -20,6 +20,7 @@ from cmp.db.sql import Conn, Row, execute, fetch_all, fetch_one
 
 _COLUMNS = """
   c.category_id, c.category_uuid, c.category_code, c.name, c.description, c.status,
+  c.default_person_type::text AS default_person_type,
   c.created_at, c.updated_at, c.retired_at,
   (SELECT o.office_code FROM office o WHERE o.office_id = c.office_id) AS office_code,
   (SELECT count(*) FROM category_processor cp
@@ -114,15 +115,21 @@ async def lock(conn: Conn, category_id: int) -> None:
 
 
 async def update(
-    conn: Conn, category_id: int, *, name: str | None, description: str | None
+    conn: Conn,
+    category_id: int,
+    *,
+    name: str | None,
+    description: str | None,
+    default_person_type: str | None = None,
 ) -> None:
-    """The name and description; a code is stable once given."""
+    """The name, description and default person type; a code is stable once given."""
     await execute(
         conn,
         """UPDATE hr_category
-              SET name = COALESCE(%s, name), description = COALESCE(%s, description)
+              SET name = COALESCE(%s, name), description = COALESCE(%s, description),
+                  default_person_type = COALESCE(%s::person_type, default_person_type)
             WHERE category_id = %s""",
-        (name, description, category_id),
+        (name, description, default_person_type, category_id),
     )
 
 

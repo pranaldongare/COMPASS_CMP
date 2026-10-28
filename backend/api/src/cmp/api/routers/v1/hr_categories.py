@@ -35,6 +35,8 @@ class CategoryOut(Out):
     description: str | None
     status: str
     office_code: str
+    #: Who an account created through its links is, by default (0054).
+    default_person_type: str | None = None
     processor_count: int
     poc_count: int
     template_count: int
@@ -88,6 +90,9 @@ class CategoryUpdate(Schema):
 
     name: ShortText | None = None
     description: LongText | None = None
+    #: The person type of an account created through one of the category's
+    #: activities' links: a BGV category's candidates, a camp's visitors (0054).
+    default_person_type: Literal["external", "vendor", "candidate", "visitor"] | None = None
 
 
 class CategoryStatusIn(Schema):
@@ -161,6 +166,7 @@ async def update_category(
             description=body.description,
             role=principal.role,
             user_id=principal.user_id,
+            default_person_type=body.default_person_type,
         )
 
 

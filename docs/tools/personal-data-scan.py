@@ -186,6 +186,7 @@ NOT_PERSONAL = {
     "new_contacts": "how many people with no account a list added",
     "office_name": "the DPO office or the Legal office (ADR 0032)",
     "category_name": "a kind of HR activity, like wellness (0052)",
+    "default_person_type": "a category's setting: who its links reach, not a person (0054)",
 }
 
 #: Shapes that suggest a person. Anything matching and unclassified is reported.

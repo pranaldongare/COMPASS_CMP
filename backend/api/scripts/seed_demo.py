@@ -208,6 +208,8 @@ HR_CATEGORIES: list[dict[str, Any]] = [
         "category_code": "BGV",
         "name": "Background verification",
         "description": "Pre-joining checks by an accredited agency.",
+        # Its code links reach candidates, not employees (0054).
+        "default_person_type": "candidate",
         "processors": [("aar", "hrms"), ("kfr", "vendor")],
         "pocs": ["hr2"],
     },
@@ -994,6 +996,13 @@ async def hr_registry(
         )
         uuid = r.json()["category_uuid"]
         category_uuid[c["category_code"]] = uuid
+        if c.get("default_person_type"):
+            await api.call(
+                "PATCH",
+                f"/hr/categories/{uuid}",
+                actor=legal,
+                json={"default_person_type": c["default_person_type"]},
+            )
         await api.call(
             "PUT",
             f"/hr/categories/{uuid}/processors",

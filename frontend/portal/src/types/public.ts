@@ -18,6 +18,9 @@ export interface LinkView {
   site_label: string;
   notice_uuid: Uuid;
   available_languages: LanguageCode[];
+  /** How the link signs a person in (ADR 0034): `sso` through her
+   *  organisation's account, `otp` by a code to a contact. */
+  audience_mode?: "sso" | "otp";
 }
 
 export interface ServedNotice {

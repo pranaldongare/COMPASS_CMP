@@ -139,6 +139,13 @@ class Event:
     PASSWORD_RESET_REQUESTED = "auth.password_reset_requested"
     PASSWORD_RESET_COMPLETED = "auth.password_reset_completed"
     ACCESS_DENIED = "auth.access_denied"  # every 403 is audited
+    #: A consent link's sign-in through the organisation (ADR 0034). Never the
+    #: claims: the account, the link, and for a conflict which account the
+    #: asserted address already belongs to.
+    SSO_SIGNED_IN = "auth.sso_signed_in"
+    SSO_ACCOUNT_CREATED = "auth.sso_account_created"
+    SSO_IDENTITY_CONFLICT = "auth.sso_identity_conflict"
+    SSO_ASSERTION_REFUSED = "auth.sso_assertion_refused"
 
     # registry
     PURPOSE_CREATED = "purpose.created"

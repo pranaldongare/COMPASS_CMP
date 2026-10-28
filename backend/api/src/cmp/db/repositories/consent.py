@@ -99,7 +99,9 @@ async def link_by_token(conn: Conn, token_stored: str) -> Row | None:
         conn,
         """
         SELECT cl.link_id, cl.link_uuid, cl.notice_id, cl.site_id, cl.expires_at,
-               cl.max_uses, cl.use_count, cl.status,
+               cl.max_uses, cl.use_count, cl.status, cl.audience_mode,
+               (SELECT c.default_person_type::text FROM hr_category c
+                 WHERE c.category_id = p.category_id) AS default_person_type,
                n.notice_uuid, n.status AS notice_status, n.notice_code, n.version,
                n.withdraw_url, n.exercise_rights_url, n.board_complaint_url, n.dpo_contact,
                n.recipients_text,

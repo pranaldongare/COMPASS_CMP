@@ -1,6 +1,6 @@
 # Auth API
 
-Generated from `backend/api/openapi.json`. **14 operations.**
+Generated from `backend/api/openapi.json`. **15 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -20,6 +20,7 @@ For each operation the information is deliberately ordered as **API → Validati
 12. [`POST /auth/password/reset/confirm`](#12_post_auth_password_reset_confirm)
 13. [`GET /auth/sessions`](#13_get_auth_sessions)
 14. [`DELETE /auth/sessions/{session_uuid}`](#14_delete_auth_sessions_session_uuid)
+15. [`GET /auth/sso/callback`](#15_get_auth_sso_callback)
 
 <a id="1_post_auth_login"></a>
 ## 1. `POST /auth/login` — Staff sign-in
@@ -760,6 +761,56 @@ No request body.
 | Status | Description | Content type | Schema |
 |---:|---|---|---|
 | `204` | Successful Response | — | — |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="15_get_auth_sso_callback"></a>
+## 15. `GET /auth/sso/callback` — Where the organisation's identity provider returns (ADR 0034)
+
+### API
+
+- **Operation ID:** `sso_callback_auth_sso_callback_get`
+- **Access:** Authentication endpoint; availability depends on the current sign-in or recovery step.
+
+Continues the sign-in `state` names, once; an unknown or used state is
+a 404 that says nothing else. Otherwise back to the link, with what
+happened as `?sso=`: `ok` (signed in), `mobile` (confirm a mobile first),
+`conflict`, `invalid`, `unavailable` or `cancelled` - never the claims.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `state` | query | Yes | `string` | min length: `16`; max length: `128` | — |
+| `code` | query | No | `string` or `null` | max length: `4096` | — |
+| `error` | query | No | `string` or `null` | max length: `200` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `303` | Successful Response | — | — |
 | `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
 
 **Example `422` `application/json` response:**

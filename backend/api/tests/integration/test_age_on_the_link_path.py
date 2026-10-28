@@ -62,8 +62,6 @@ async def test_a_new_account_through_a_link_carries_its_age(
         full_name="Ravi Link",
         mobile="+915550000071",
         email=None,
-        organization_id=None,
-        person_type=None,
         dob=_years_ago(30),
     )
 
@@ -91,8 +89,6 @@ async def test_a_minor_through_a_link_is_refused_and_uses_nothing(
             full_name="Child Link",
             mobile="+915550000072",
             email=None,
-            organization_id=None,
-            person_type=None,
             dob=_years_ago(12),
         )
 
@@ -114,8 +110,6 @@ async def test_an_existing_account_is_not_rewritten_by_an_unauthenticated_caller
         full_name="Test Subject",
         mobile="+915550000001",  # the seeded subject
         email=None,
-        organization_id=None,
-        person_type=None,
         dob=_years_ago(40),
     )
 

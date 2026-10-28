@@ -1700,7 +1700,8 @@ Request body required: **yes**.
 {
   "expires_at": "2026-09-17T12:00:00Z",
   "max_uses": 1.0,
-  "agent_ref": "string"
+  "agent_ref": "string",
+  "audience_mode": "otp"
 }
 ```
 
@@ -1755,6 +1756,7 @@ For state changes whose only interesting output is that they happened.
 | `expires_at` | `string` | Yes | format: `date-time` | — |
 | `max_uses` | `integer` or `null` | No | minimum: `1.0`; maximum: `100000.0` | — |
 | `agent_ref` | `string` or `null` | No | max length: `120` | — |
+| `audience_mode` | enum: `sso`, `otp` | No | default: `otp` | — |
 
 <a id="schema-body_add_approval_projects_project_uuid_approvals_post"></a>
 #### `Body_add_approval_projects__project_uuid__approvals_post`

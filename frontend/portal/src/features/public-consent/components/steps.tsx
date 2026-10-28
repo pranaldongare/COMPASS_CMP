@@ -17,6 +17,8 @@ export type Step =
   | "unavailable"
   | "identify"
   | "verify"
+  /** Signed in by her organisation, with no account yet: confirm a mobile. */
+  | "sso-mobile"
   | "age"
   /** Her code was accepted and spent; the notice is on its way. */
   | "opening"
@@ -38,7 +40,12 @@ export const STEP_LABELS: Array<{ key: Step; label: string }> = [
 export function Steps({ current }: { current: Step }) {
   // Asking for a date of birth is part of confirming who she is, not a stop of
   // its own: most people never see it.
-  const shown = current === "age" ? "verify" : current === "opening" ? "notice" : current;
+  const shown =
+    current === "age" || current === "sso-mobile"
+      ? "verify"
+      : current === "opening"
+        ? "notice"
+        : current;
   const index = STEP_LABELS.findIndex((s) => s.key === shown);
   return (
     <div className="mb-5">

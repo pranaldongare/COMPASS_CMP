@@ -18,6 +18,8 @@ export interface HrCategory {
   description: string | null;
   status: "active" | "retired";
   office_code: string;
+  /** The person type of an account created through its links (0054). */
+  default_person_type?: string | null;
   processor_count: number;
   poc_count: number;
   template_count: number;

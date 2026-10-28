@@ -47,7 +47,11 @@ export function createHrCategory(body: HrCategoryInput): Promise<HrCategory> {
 
 export function updateHrCategory(
   uuid: Uuid,
-  body: { name?: string | null; description?: string | null },
+  body: {
+    name?: string | null;
+    description?: string | null;
+    default_person_type?: "external" | "vendor" | "candidate" | "visitor" | null;
+  },
 ): Promise<HrCategory> {
   return apiPatch<HrCategory>(base(uuid), body);
 }

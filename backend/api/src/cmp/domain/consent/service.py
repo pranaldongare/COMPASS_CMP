@@ -178,8 +178,6 @@ async def register_subject(
     full_name: str,
     mobile: str,
     email: str | None,
-    organization_id: str | None,
-    person_type: str | None,
     dob: str,
 ) -> dict[str, Any]:
     """Create or recognise the person behind a link.
@@ -196,6 +194,10 @@ async def register_subject(
     who otherwise leaves no artefact to trace.
     """
     link = await resolve_link(conn, token)
+    if link.get("audience_mode") == "sso":
+        # An `sso` link enrols through the organisation's account, never a form
+        # (ADR 0034).
+        raise Conflict("This link signs you in with your organisation account.", code="sso_link")
     mobile = normalise_mobile(mobile)
     email = email.strip().lower() if email and email.strip() else None
     if not mobile:
@@ -223,9 +225,13 @@ async def register_subject(
             full_name=full_name,
             email=email,
             mobile=mobile,
-            organization_id=organization_id,
+            # Never an employee ID from an unauthenticated form: only an
+            # assertion the organisation signed carries one (ADR 0034, F-8).
+            organization_id=None,
             role="data_subject",
-            person_type=person_type,
+            # The link's category says who it reaches - a candidate, a visitor
+            # - else external (open point OP-8). A hint, never a permission.
+            person_type=link.get("default_person_type") or "external",
             status="pending",
             registered_via_link_id=link["link_id"],
             dob=dob,
@@ -247,6 +253,11 @@ async def register_subject(
 async def send_contact_code(conn: Conn, *, token: str, contact: str) -> None:
     link = await resolve_link(conn, token)
     contact = normalise_contact(contact)
+    if link.get("audience_mode") == "sso":
+        # An `sso` link signs in through the organisation; a code is never
+        # sent on it, and the reply is the same sentence as ever (ADR 0034).
+        log.info("consent.code_requested_on_sso_link")
+        return
 
     await ratelimit.enforce(
         "consent_otp_contact",

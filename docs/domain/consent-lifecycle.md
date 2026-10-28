@@ -21,6 +21,12 @@ served. A checklist says what a version still lacks before it can be
 published: renditions approved, purposes activated by the DPO, the rights
 route present.
 
+On the HR track an activity's notice is composed from an approved template
+version - its locked text, the purposes the HR PoC chose, the one
+description - and published as the activity is created
+([ADR 0033](../decisions/0033-hr-consent-is-governed-by-an-approved-template-version.md));
+the rest of this lifecycle is identical.
+
 **Publication freezes the notice.** The trigger `cmp_notice_freeze()` refuses
 any change to a published notice or its renditions. A correction is a new
 version; the old one survives, because consents recorded against it must be
@@ -114,6 +120,17 @@ On this page the question comes between confirming the code and serving the
 notice. The rule lives in `cmp.domain.users.age`. See
 [ADR 0007](../decisions/0007-mobile-first-contacts.md) for why the mobile
 comes first.
+
+**An employee link signs in through the organisation.** A link minted
+`audience_mode = sso` - an HR activity's for its employees, or an R&D site's
+- offers one way in: the organisation's identity provider. The person is
+matched on the employee ID it asserts, or created as an employee once a
+mobile is confirmed; the session is a data principal's, as a code's is, and
+the date-of-birth question and everything after it are the same
+([ADR 0034](../decisions/0034-an-employee-link-signs-in-through-the-organisations-sso.md),
+[authentication.md](../security/authentication.md#employees-on-a-consent-link)).
+On an `otp` link a person who signs up through it is given the person type
+its category names - a candidate, a visitor - else external.
 
 ## 4. Serving the notice
 

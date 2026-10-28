@@ -636,6 +636,78 @@
         }
       }
     },
+    "/auth/sso/callback": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Where the organisation's identity provider returns (ADR 0034)",
+        "description": "Continues the sign-in `state` names, once; an unknown or used state is\na 404 that says nothing else. Otherwise back to the link, with what\nhappened as `?sso=`: `ok` (signed in), `mobile` (confirm a mobile first),\n`conflict`, `invalid`, `unavailable` or `cancelled` - never the claims.",
+        "operationId": "sso_callback_auth_sso_callback_get",
+        "parameters": [
+          {
+            "name": "state",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 16,
+              "maxLength": 128,
+              "title": "State"
+            }
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 4096
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Code"
+            }
+          },
+          {
+            "name": "error",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Error"
+            }
+          }
+        ],
+        "responses": {
+          "303": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/c/{token}": {
       "get": {
         "tags": [
@@ -948,6 +1020,162 @@
                   "type": "object",
                   "additionalProperties": true,
                   "title": "Response Give Consent C  Token  Consent Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/c/{token}/sso/start": {
+      "get": {
+        "tags": [
+          "public consent"
+        ],
+        "summary": "Where to sign in with the organisation's account",
+        "description": "404 for a link that is not `sso`; 503 when the organisation's sign-in\nis off or its provider does not answer.",
+        "operationId": "sso_start_c__token__sso_start_get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 20,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SsoStart"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/c/{token}/sso/mobile": {
+      "post": {
+        "tags": [
+          "public consent"
+        ],
+        "summary": "A code to the mobile a new employee account will carry",
+        "operationId": "sso_mobile_c__token__sso_mobile_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 20,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SsoMobileBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Acknowledged"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/c/{token}/sso/mobile/verify": {
+      "post": {
+        "tags": [
+          "public consent"
+        ],
+        "summary": "Confirm the mobile; the employee account is created and signed in",
+        "operationId": "sso_mobile_verify_c__token__sso_mobile_verify_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 20,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SsoMobileVerifyBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Acknowledged"
                 }
               }
             }
@@ -19726,6 +19954,15 @@
               }
             ],
             "title": "Agent Ref"
+          },
+          "audience_mode": {
+            "type": "string",
+            "enum": [
+              "sso",
+              "otp"
+            ],
+            "title": "Audience Mode",
+            "default": "otp"
           }
         },
         "additionalProperties": false,
@@ -24581,6 +24818,17 @@
             "type": "string",
             "title": "Office Code"
           },
+          "default_person_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Person Type"
+          },
           "processor_count": {
             "type": "integer",
             "title": "Processor Count"
@@ -24717,6 +24965,17 @@
           "office_code": {
             "type": "string",
             "title": "Office Code"
+          },
+          "default_person_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Person Type"
           },
           "processor_count": {
             "type": "integer",
@@ -24986,6 +25245,23 @@
               }
             ],
             "title": "Description"
+          },
+          "default_person_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "external",
+                  "vendor",
+                  "candidate",
+                  "visitor"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Person Type"
           }
         },
         "additionalProperties": false,
@@ -29000,6 +29276,11 @@
             "type": "boolean",
             "title": "Already Registered",
             "default": false
+          },
+          "audience_mode": {
+            "type": "string",
+            "title": "Audience Mode",
+            "default": "otp"
           }
         },
         "type": "object",
@@ -35991,6 +36272,61 @@
         "type": "object",
         "title": "SourceUpdate"
       },
+      "SsoMobileBody": {
+        "properties": {
+          "mobile": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 6,
+            "pattern": "^\\+?[0-9 \\-]+$",
+            "title": "Mobile"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "mobile"
+        ],
+        "title": "SsoMobileBody"
+      },
+      "SsoMobileVerifyBody": {
+        "properties": {
+          "mobile": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 6,
+            "pattern": "^\\+?[0-9 \\-]+$",
+            "title": "Mobile"
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 10,
+            "minLength": 4,
+            "pattern": "^[0-9]+$",
+            "title": "Code"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "mobile",
+          "code"
+        ],
+        "title": "SsoMobileVerifyBody"
+      },
+      "SsoStart": {
+        "properties": {
+          "redirect_url": {
+            "type": "string",
+            "title": "Redirect Url"
+          }
+        },
+        "type": "object",
+        "required": [
+          "redirect_url"
+        ],
+        "title": "SsoStart"
+      },
       "SubjectRequestIn": {
         "properties": {
           "request_type": {
@@ -39054,7 +39390,8 @@
                 "type": "null"
               }
             ],
-            "title": "Organization Id"
+            "title": "Organization Id",
+            "deprecated": true
           },
           "person_type": {
             "anyOf": [
@@ -39065,7 +39402,8 @@
                 "type": "null"
               }
             ],
-            "title": "Person Type"
+            "title": "Person Type",
+            "deprecated": true
           }
         },
         "additionalProperties": false,

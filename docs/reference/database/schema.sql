@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 9xEwZgqoDHDBPPze9KfY0ZWEvcc4CnDRa2pkXiGWCYKvW8bJ3AcNUJDQDfEnYcN
+\restrict UWWmIBRwM0drgbgvrvEwhnPYr51wdj2HO5dYPWboN7hKI6UwC4wLwJQBYlj03ve
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -244,7 +244,9 @@ CREATE TYPE public.person_type AS ENUM (
     'external',
     'employee',
     'ex_employee',
-    'vendor'
+    'vendor',
+    'candidate',
+    'visitor'
 );
 
 
@@ -3341,6 +3343,7 @@ CREATE TABLE public.hr_category (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     retired_at timestamp with time zone,
+    default_person_type public.person_type,
     CONSTRAINT hr_category_code_shape CHECK (((category_code)::text ~ '^[A-Z][A-Z0-9_]{1,23}$'::text)),
     CONSTRAINT hr_category_retired_at CHECK ((((status)::text = 'retired'::text) = (retired_at IS NOT NULL))),
     CONSTRAINT hr_category_status CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'retired'::character varying])::text[])))
@@ -3361,6 +3364,13 @@ COMMENT ON TABLE public.hr_category IS 'A kind of HR activity the Legal office g
 --
 
 COMMENT ON COLUMN public.hr_category.category_code IS 'Short and stable: WELLNESS, CSR, BGV. Upper case, digits and underscores';
+
+
+--
+-- Name: COLUMN hr_category.default_person_type; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.hr_category.default_person_type IS 'The person type of an account created through one of the category''s links; NULL is external';
 
 
 --
@@ -10631,5 +10641,5 @@ ALTER TABLE public.template_version_purpose ENABLE ROW LEVEL SECURITY;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 9xEwZgqoDHDBPPze9KfY0ZWEvcc4CnDRa2pkXiGWCYKvW8bJ3AcNUJDQDfEnYcN
+\unrestrict UWWmIBRwM0drgbgvrvEwhnPYr51wdj2HO5dYPWboN7hKI6UwC4wLwJQBYlj03ve
 

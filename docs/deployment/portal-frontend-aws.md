@@ -350,6 +350,16 @@ DKMS bound to `127.0.0.1` cannot be reached from the portal (see
 | Rate-based rule on `/api/auth/*` | Block above, for example, 300 requests per 5 minutes per IP | Coarse protection in front of the API's own rate limits |
 | Rate-based rule on everything | Block above, for example, 2,000 per 5 minutes per IP | Tune from real traffic |
 
+**SSO on employee links** ([ADR 0034](../decisions/0034-an-employee-link-signs-in-through-the-organisations-sso.md)):
+the identity provider returns the browser to `/api/auth/sso/callback?code=…&state=…`.
+Its query string carries a long authorisation code; if a managed rule (for
+example `GenericRFI_QUERYARGUMENTS` or a query-length restriction) blocks it,
+set that rule to Count for the path `/api/auth/sso/callback` rather than
+disabling it everywhere. The callback must not be cached by CloudFront
+(it is under `/api/*`, which is not). Register exactly
+`https://portal.<domain>/api/auth/sso/callback` with the provider and set
+`SSO_REDIRECT_URL` to it.
+
 Then create the Route 53 alias `portal.<domain>` → the distribution.
 
 ### 7.9 Parameters

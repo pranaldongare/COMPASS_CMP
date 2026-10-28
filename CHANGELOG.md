@@ -51,6 +51,18 @@ as a release yet.
   reads every activity, its consents and exports, and the office's audit
   trail; an HR PoC those of their categories. Every project, notice, link,
   consent and export read now carries the caller's office in the query.
+- **SSO on employee links** (ADR 0034): a consent link minted `sso` - an HR
+  activity's, or an R&D site's - signs a person in through the organisation's
+  identity provider (OpenID Connect with PKCE). The account is matched on
+  the employee ID it asserts; an employee the register has not met confirms
+  a mobile by code and is then created as an active `employee`; an asserted
+  address on another account is refused neutrally and audited. The session
+  is a data principal's; the date of birth and the notice follow as on any
+  link. A provider that does not answer is said to be that, never a bad
+  link. A code is never sent on an `sso` link, and the open registration
+  form no longer takes an employee ID. Candidates and visitors join the
+  person types, and a category names the type its code links give new
+  accounts. `SSO_*` settings; `/ready` checks the provider. Migration 0054.
 - **Sign-in as "Light split"** (2026-10-11, chosen from three designs): the
   left 7/12 has COMPASS at the top left, the app's name as a kicker, the
   headline on two lines, the line under it, the dotted world map, and three

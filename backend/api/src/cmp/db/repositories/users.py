@@ -134,6 +134,19 @@ async def by_email(conn: Conn, email: str) -> Row | None:
     )
 
 
+async def by_employee_id(conn: Conn, employee_id: str) -> Row | None:
+    """The account carrying this employee ID, by its keyed hash (ADR 0034).
+
+    Only ever called with an ID the organisation's identity provider signed:
+    an employee ID is never a way to find a person in the open.
+    """
+    return await fetch_one(
+        conn,
+        f"SELECT u.id, {PUBLIC_COLUMNS} FROM auth_user u WHERE u.organization_id_hash = %s",
+        (index_of("text", employee_id.strip()),),
+    )
+
+
 async def by_contact(conn: Conn, contact: str) -> Row | None:
     """Resolve a person by a contact they know: email, mobile, or a second
     email once a code sent to it has come back.

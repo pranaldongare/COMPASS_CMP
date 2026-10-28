@@ -35,9 +35,10 @@ async def test_the_world_stands(world: World, committed: Any) -> None:
     ):
         assert str(row[column]).startswith("SE::"), f"{column} is sealed in the row"
         assert plain(row[column]) == expected, f"{column} opens to what she typed"
-    assert str(row["full_name"]).startswith("SE::") and str(row["organization_id"]).startswith(
-        "SE::"
-    )
+    assert str(row["full_name"]).startswith("SE::")
+    # The form sent an employee ID, and the open form takes none: only an
+    # assertion the organisation signed carries one (ADR 0034, open point F-8).
+    assert row["organization_id"] is None
 
 
 async def test_her_consent_carries_a_sealed_address(world: World, committed: Any) -> None:

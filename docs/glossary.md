@@ -104,6 +104,11 @@ version, with the purposes chosen from the version's list and one
 description, live as it is created with one open consent link and no
 approval step ([ADR 0033](decisions/0033-hr-consent-is-governed-by-an-approved-template-version.md)).
 
+**Audience mode.** Whether a consent link signs a person in through the
+organisation's SSO (`sso`, employees) or by a one-time code (`otp`,
+everyone else), chosen when the link is minted, on either track
+([ADR 0034](decisions/0034-an-employee-link-signs-in-through-the-organisations-sso.md)).
+
 **Category.** The Legal office's registry of kinds of HR activity (wellness,
 CSR, background verification, …), each with its templates, the processors
 that hold data collected under it, and the HR PoCs assigned to run its

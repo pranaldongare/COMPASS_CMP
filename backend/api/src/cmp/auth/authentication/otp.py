@@ -54,6 +54,10 @@ class Scope:
     #: An outside holder opening its ticket's link, proving the address the
     #: ticket was sent to (0049). Keyed on the holder uuid.
     HOLDER_TICKET = "holder_ticket"
+    #: An employee signed in by SSO with no account yet, confirming the mobile
+    #: the account will be created with (ADR 0034, F-7). Keyed on the pending
+    #: sign-in and the number: "<pending>:<mobile>".
+    SSO_MOBILE = "sso_mobile"
 
 
 @dataclass(frozen=True, slots=True)

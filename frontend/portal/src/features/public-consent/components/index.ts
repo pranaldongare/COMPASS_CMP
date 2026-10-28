@@ -11,6 +11,7 @@ export { Shell } from "@/features/public-consent/components/shell";
 export { Steps, STEP_LABELS, type Step } from "@/features/public-consent/components/steps";
 export { IdentifyStep } from "@/features/public-consent/components/identify-step";
 export { VerifyStep } from "@/features/public-consent/components/verify-step";
+export { SsoMobileStep, SsoStep } from "@/features/public-consent/components/sso-step";
 export { NoticeStep } from "@/features/public-consent/components/notice-step";
 export { DoneStep } from "@/features/public-consent/components/done-step";
 export { PurposeChoice } from "@/features/public-consent/components/purpose-choice";

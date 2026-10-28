@@ -186,8 +186,6 @@ class TestConsentLinkRegistration:
             full_name="Link Registrant",
             mobile=MOBILE,
             email=EMAIL,
-            organization_id=None,
-            person_type=None,
             dob="1990-05-17",
         )
         assert result["created"] and plain(result["user"]["mobile"]) == STORED
@@ -218,8 +216,6 @@ class TestConsentLinkRegistration:
             full_name="Mobile Only",
             mobile="+915550000902",
             email=None,
-            organization_id=None,
-            person_type=None,
             dob="1990-05-17",
         )
         link_uuid = str(result["link"]["link_uuid"])

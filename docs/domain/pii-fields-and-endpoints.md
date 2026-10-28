@@ -87,15 +87,15 @@ hash and no email is written
 rows from before that change stand as written, because the trail is
 hash-chained and cannot be rewritten.
 
-## 2. API endpoints that carry PII — 248 endpoints in 23 modules
+## 2. API endpoints that carry PII — 252 endpoints in 23 modules
 
 Every GET, POST, PUT, PATCH and DELETE whose request or response includes a
 personal field. *In* is what the caller sends (body, path and query); *out* is
 what a 2xx response returns. The response carries the value **as stored** — a
-sealed column comes back as `SE::…` and the portal decrypts it. 28 of
+sealed column comes back as `SE::…` and the portal decrypts it. 32 of
 these need no session; they are marked **public**.
 
-### Authentication (`/auth`) — 11 endpoints
+### Authentication (`/auth`) — 12 endpoints
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
@@ -110,6 +110,7 @@ these need no session; they are marked **public**.
 | POST | `/auth/register` **public** | `dob`, `email`, `full_name`, `mobile` | — |
 | POST | `/auth/register/verify` **public** | `email_code`, `mobile`, `mobile_code` | — |
 | GET | `/auth/sessions` | — | `ip_address`, `last_seen_at`, `mfa_verified`, `user_agent` |
+| GET | `/auth/sso/callback` **public** | `code` | — |
 
 ### My own records (`/me`) — 23 endpoints
 
@@ -139,7 +140,7 @@ these need no session; they are marked **public**.
 | POST | `/me/requests/{request_uuid}/dispute` | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `content_type`, `download_available`, `download_expires_at`, `file_name`, `file_uuid`, `refusal_reason`, `remedy_text`, `request_text`, `response_files`, `response_text`, `size_bytes` |
 | GET | `/me/requests/{request_uuid}/files/{file_uuid}` | `file_uuid` | — |
 
-### Consent link (`/c/{token}`) — 6 endpoints
+### Consent link (`/c/{token}`) — 9 endpoints
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
@@ -149,6 +150,9 @@ these need no session; they are marked **public**.
 | POST | `/c/{token}/otp` **public** | `contact`, `token` | — |
 | POST | `/c/{token}/otp/verify` **public** | `code`, `contact`, `token` | — |
 | POST | `/c/{token}/register` **public** | `dob`, `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `token` | — |
+| POST | `/c/{token}/sso/mobile` **public** | `mobile`, `token` | — |
+| POST | `/c/{token}/sso/mobile/verify` **public** | `code`, `mobile`, `token` | — |
+| GET | `/c/{token}/sso/start` **public** | `token` | — |
 
 ### Public rights pages (`/rights`) — 8 endpoints
 

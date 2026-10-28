@@ -171,6 +171,15 @@ async def ready(response: Response) -> dict[str, Any]:
         ReadyCheck(name="encryption", ok=dkms_ok, detail=dkms_detail),
         ReadyCheck(name="storage", ok=storage_ok, detail=storage_detail),
     ]
+    if settings.sso_enabled:
+        # An `sso` link's provider (ADR 0034): without its discovery document
+        # no employee can sign in through one.
+        from cmp.infrastructure.identity import oidc
+
+        sso_ok = await oidc.reachable()
+        checks.append(
+            ReadyCheck(name="sso", ok=sso_ok, detail=None if sso_ok else "provider unreachable")
+        )
     all_ok = all(c.ok for c in checks)
     if not all_ok:
         response.status_code = status.HTTP_503_SERVICE_UNAVAILABLE

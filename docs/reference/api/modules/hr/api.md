@@ -59,6 +59,7 @@ No request body.
     "description": "string",
     "status": "string",
     "office_code": "string",
+    "default_person_type": "string",
     "processor_count": 1,
     "poc_count": 1,
     "template_count": 1,
@@ -133,6 +134,7 @@ Request body required: **yes**.
   "description": "string",
   "status": "string",
   "office_code": "string",
+  "default_person_type": "string",
   "processor_count": 1,
   "poc_count": 1,
   "template_count": 1,
@@ -195,6 +197,7 @@ No request body.
   "description": "string",
   "status": "string",
   "office_code": "string",
+  "default_person_type": "string",
   "processor_count": 1,
   "poc_count": 1,
   "template_count": 1,
@@ -268,7 +271,8 @@ Request body required: **yes**.
 ```json
 {
   "name": "string",
-  "description": "string"
+  "description": "string",
+  "default_person_type": "external"
 }
 ```
 
@@ -289,6 +293,7 @@ Request body required: **yes**.
   "description": "string",
   "status": "string",
   "office_code": "string",
+  "default_person_type": "string",
   "processor_count": 1,
   "poc_count": 1,
   "template_count": 1,
@@ -362,6 +367,7 @@ Request body required: **yes**.
   "description": "string",
   "status": "string",
   "office_code": "string",
+  "default_person_type": "string",
   "processor_count": 1,
   "poc_count": 1,
   "template_count": 1,
@@ -1017,6 +1023,7 @@ Request body required: **yes**.
 | `description` | `string` or `null` | Yes | — | — |
 | `status` | `string` | Yes | — | — |
 | `office_code` | `string` | Yes | — | — |
+| `default_person_type` | `string` or `null` | No | — | — |
 | `processor_count` | `integer` | Yes | — | — |
 | `poc_count` | `integer` | Yes | — | — |
 | `template_count` | `integer` | Yes | — | — |
@@ -1046,6 +1053,7 @@ Request body required: **yes**.
 | `description` | `string` or `null` | Yes | — | — |
 | `status` | `string` | Yes | — | — |
 | `office_code` | `string` | Yes | — | — |
+| `default_person_type` | `string` or `null` | No | — | — |
 | `processor_count` | `integer` | Yes | — | — |
 | `poc_count` | `integer` | Yes | — | — |
 | `template_count` | `integer` | Yes | — | — |
@@ -1077,6 +1085,7 @@ trail name the category, so it does not change.
 |---|---|---:|---|---|
 | `name` | `string` or `null` | No | min length: `1`; max length: `200` | — |
 | `description` | `string` or `null` | No | min length: `1`; max length: `20000` | — |
+| `default_person_type` | enum: `external`, `vendor`, `candidate`, `visitor` or `null` | No | — | — |
 
 <a id="schema-closein"></a>
 #### `CloseIn`

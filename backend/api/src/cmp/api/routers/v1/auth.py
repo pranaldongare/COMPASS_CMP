@@ -11,7 +11,8 @@ from datetime import datetime
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Request, Response, status
+from fastapi import APIRouter, Query, Request, Response, status
+from fastapi.responses import RedirectResponse
 from pydantic import EmailStr, Field
 
 from cmp.api.dependencies import (
@@ -356,3 +357,58 @@ async def revoke_session(session_uuid: UUID, principal: CurrentUser, response: R
         )
     if str(session_uuid) == principal.session.sid:
         clear_session_cookies(response)
+
+
+# ========================================================== organisation SSO
+@router.get(
+    "/sso/callback",
+    summary="Where the organisation's identity provider returns (ADR 0034)",
+    response_class=RedirectResponse,
+    status_code=status.HTTP_303_SEE_OTHER,
+)
+async def sso_callback(
+    request: Request,
+    state: Annotated[str, Query(min_length=16, max_length=128)],
+    code: Annotated[str | None, Query(max_length=4096)] = None,
+    error: Annotated[str | None, Query(max_length=200)] = None,
+) -> RedirectResponse:
+    """Continues the sign-in `state` names, once; an unknown or used state is
+    a 404 that says nothing else. Otherwise back to the link, with what
+    happened as `?sso=`: `ok` (signed in), `mobile` (confirm a mobile first),
+    `conflict`, `invalid`, `unavailable` or `cancelled` - never the claims."""
+    from cmp.auth.authentication import sso
+    from cmp.infrastructure.identity import state as sso_state
+
+    async with transaction() as conn:
+        outcome = await sso.callback(
+            conn,
+            state=state,
+            code=code,
+            error=error,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+        )
+    shown = {"signed_in": "ok", "mobile_needed": "mobile"}.get(outcome.kind, outcome.kind)
+    target = f"{settings.public_base_url.rstrip('/')}/c/{outcome.link_token}?sso={shown}"
+    response = RedirectResponse(target, status_code=status.HTTP_303_SEE_OTHER)
+    response.headers["Referrer-Policy"] = "no-referrer"
+    response.headers["Cache-Control"] = "no-store"
+    if outcome.session_token and outcome.session:
+        set_session_cookies(
+            response,
+            outcome.session_token,
+            outcome.session.csrf_token,
+            max_age=settings.session_ttl_s,
+        )
+    if outcome.pending_id:
+        response.set_cookie(
+            sso_state.PENDING_COOKIE,
+            outcome.pending_id,
+            max_age=sso_state.PENDING_TTL_S,
+            httponly=True,
+            secure=settings.cookie_secure,
+            samesite="lax",
+            domain=settings.cookie_domain,
+            path="/",
+        )
+    return response

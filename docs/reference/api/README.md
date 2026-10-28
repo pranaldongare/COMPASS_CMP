@@ -1,6 +1,6 @@
 # API documentation
 
-Reference for **362 operations over 314 paths**, grouped by OpenAPI module/tag.
+Reference for **366 operations over 318 paths**, grouped by OpenAPI module/tag.
 
 ## How to read an endpoint
 
@@ -18,7 +18,7 @@ Generated values are structural examples, not production credentials or semantic
 | Module | Operations | File |
 |---|---:|---|
 | Audit | 7 | [`modules/audit/api.md`](modules/audit/api.md) |
-| Auth | 14 | [`modules/auth/api.md`](modules/auth/api.md) |
+| Auth | 15 | [`modules/auth/api.md`](modules/auth/api.md) |
 | Breach Tickets | 6 | [`modules/breach_tickets/api.md`](modules/breach_tickets/api.md) |
 | Breaches | 37 | [`modules/breaches/api.md`](modules/breaches/api.md) |
 | Consent | 15 | [`modules/consent/api.md`](modules/consent/api.md) |
@@ -35,7 +35,7 @@ Generated values are structural examples, not production credentials or semantic
 | Notices | 24 | [`modules/notices/api.md`](modules/notices/api.md) |
 | Offices | 1 | [`modules/offices/api.md`](modules/offices/api.md) |
 | Projects | 27 | [`modules/projects/api.md`](modules/projects/api.md) |
-| Public Consent | 6 | [`modules/public_consent/api.md`](modules/public_consent/api.md) |
+| Public Consent | 9 | [`modules/public_consent/api.md`](modules/public_consent/api.md) |
 | Public Information | 10 | [`modules/public_information/api.md`](modules/public_information/api.md) |
 | Registry | 29 | [`modules/registry/api.md`](modules/registry/api.md) |
 | Rights | 50 | [`modules/rights/api.md`](modules/rights/api.md) |

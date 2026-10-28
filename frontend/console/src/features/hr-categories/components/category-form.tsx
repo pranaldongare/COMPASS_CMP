@@ -11,7 +11,7 @@ import { z } from "zod";
 
 import { FormError, useApiForm } from "@/components/forms";
 import { DialogFooter } from "@/components/ui/dialog";
-import { Badge, Button, Field, Input, Textarea } from "@/components/ui/primitives";
+import { Badge, Button, Field, Input, Select, Textarea } from "@/components/ui/primitives";
 import {
   useCreateHrCategory,
   useUpdateHrCategory,
@@ -19,6 +19,8 @@ import {
 import { useToast } from "@/providers";
 import { optional } from "@/schemas/primitives";
 import type { HrCategory } from "@/types";
+
+type PersonDefault = "external" | "vendor" | "candidate" | "visitor";
 
 export function CategoryStatusBadge({ status }: { status: "active" | "retired" }) {
   return status === "active" ? (
@@ -53,6 +55,7 @@ const categorySchema = z.object({
   description: optional(
     z.string().trim().max(20000, "That is longer than the field holds"),
   ),
+  default_person_type: z.string().optional(),
 });
 
 export function CategoryForm({
@@ -71,6 +74,7 @@ export function CategoryForm({
     category_code: category?.category_code ?? "",
     name: category?.name ?? "",
     description: category?.description ?? "",
+    default_person_type: category?.default_person_type ?? "",
   });
 
   const onSubmit = form.submit(async (values) => {
@@ -78,6 +82,7 @@ export function CategoryForm({
       const saved = await update.mutateAsync({
         name: values.name,
         description: values.description || null,
+        default_person_type: (values.default_person_type || null) as PersonDefault | null,
       });
       toast.success("Category saved");
       onDone(saved);
@@ -125,6 +130,21 @@ export function CategoryForm({
             <Input {...p} {...form.register("name")} placeholder="Employee wellness" />
           )}
         </Field>
+        {category && (
+          <Field
+            label="Who its links reach"
+            hint="The person type of an account created through one of its activities' code links. Employees signing in by SSO are always employees."
+          >
+            {(p) => (
+              <Select {...p} {...form.register("default_person_type")}>
+                <option value="">External (the default)</option>
+                <option value="candidate">Candidates</option>
+                <option value="visitor">Visitors</option>
+                <option value="vendor">Vendors</option>
+              </Select>
+            )}
+          </Field>
+        )}
         <Field
           label="Description"
           hint="What activities fall under it. Optional."

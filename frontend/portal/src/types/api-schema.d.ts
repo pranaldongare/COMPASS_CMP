@@ -358,6 +358,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/sso/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Where the organisation's identity provider returns (ADR 0034)
+         * @description Continues the sign-in `state` names, once; an unknown or used state is
+         *     a 404 that says nothing else. Otherwise back to the link, with what
+         *     happened as `?sso=`: `ok` (signed in), `mobile` (confirm a mobile first),
+         *     `conflict`, `invalid`, `unavailable` or `cancelled` - never the claims.
+         */
+        get: operations["sso_callback_auth_sso_callback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/c/{token}": {
         parameters: {
             query?: never;
@@ -477,6 +500,61 @@ export interface paths {
          *     The subject is taken from the session, never from the body.
          */
         post: operations["give_consent_c__token__consent_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/c/{token}/sso/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Where to sign in with the organisation's account
+         * @description 404 for a link that is not `sso`; 503 when the organisation's sign-in
+         *     is off or its provider does not answer.
+         */
+        get: operations["sso_start_c__token__sso_start_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/c/{token}/sso/mobile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A code to the mobile a new employee account will carry */
+        post: operations["sso_mobile_c__token__sso_mobile_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/c/{token}/sso/mobile/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm the mobile; the employee account is created and signed in */
+        post: operations["sso_mobile_verify_c__token__sso_mobile_verify_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6502,6 +6580,12 @@ export interface components {
             max_uses?: number | null;
             /** Agent Ref */
             agent_ref?: string | null;
+            /**
+             * Audience Mode
+             * @default otp
+             * @enum {string}
+             */
+            audience_mode: "sso" | "otp";
         };
         /** ApprovalListRow */
         ApprovalListRow: {
@@ -8108,6 +8192,8 @@ export interface components {
             status: string;
             /** Office Code */
             office_code: string;
+            /** Default Person Type */
+            default_person_type?: string | null;
             /** Processor Count */
             processor_count: number;
             /** Poc Count */
@@ -8157,6 +8243,8 @@ export interface components {
             status: string;
             /** Office Code */
             office_code: string;
+            /** Default Person Type */
+            default_person_type?: string | null;
             /** Processor Count */
             processor_count: number;
             /** Poc Count */
@@ -8260,6 +8348,8 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
+            /** Default Person Type */
+            default_person_type?: ("external" | "vendor" | "candidate" | "visitor") | null;
         };
         /** ChannelOut */
         ChannelOut: {
@@ -9793,6 +9883,11 @@ export interface components {
              * @default false
              */
             already_registered: boolean;
+            /**
+             * Audience Mode
+             * @default otp
+             */
+            audience_mode: string;
         };
         /**
          * LinkedRefOut
@@ -12004,6 +12099,23 @@ export interface components {
             /** Is Authoritative For */
             is_authoritative_for?: string[] | null;
         };
+        /** SsoMobileBody */
+        SsoMobileBody: {
+            /** Mobile */
+            mobile: string;
+        };
+        /** SsoMobileVerifyBody */
+        SsoMobileVerifyBody: {
+            /** Mobile */
+            mobile: string;
+            /** Code */
+            code: string;
+        };
+        /** SsoStart */
+        SsoStart: {
+            /** Redirect Url */
+            redirect_url: string;
+        };
         /** SubjectRequestIn */
         SubjectRequestIn: {
             /** Request Type */
@@ -13027,9 +13139,15 @@ export interface components {
             dob: string;
             /** Email */
             email?: string | null;
-            /** Organization Id */
+            /**
+             * Organization Id
+             * @deprecated
+             */
             organization_id?: string | null;
-            /** Person Type */
+            /**
+             * Person Type
+             * @deprecated
+             */
             person_type?: string | null;
         };
         /**
@@ -13695,6 +13813,37 @@ export interface operations {
             };
         };
     };
+    sso_callback_auth_sso_callback_get: {
+        parameters: {
+            query: {
+                state: string;
+                code?: string | null;
+                error?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            303: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     open_link_c__token__get: {
         parameters: {
             query?: never;
@@ -13890,6 +14039,107 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sso_start_c__token__sso_start_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SsoStart"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sso_mobile_c__token__sso_mobile_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SsoMobileBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Acknowledged"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sso_mobile_verify_c__token__sso_mobile_verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SsoMobileVerifyBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Acknowledged"];
                 };
             };
             /** @description Validation Error */

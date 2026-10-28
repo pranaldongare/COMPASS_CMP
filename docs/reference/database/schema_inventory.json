@@ -1,6 +1,6 @@
 {
-  "commit": "704b16b13fe782f9da09c13f47f0d89b861f489f",
-  "migration_head": "0053",
+  "commit": "4337bea92b67322900c268e570bcf0532de29935",
+  "migration_head": "0054",
   "migrations": [
     {
       "revision": "0001",
@@ -213,6 +213,10 @@
     {
       "revision": "0053",
       "source": "backend/api/migrations/versions/0053_template_versions.py"
+    },
+    {
+      "revision": "0054",
+      "source": "backend/api/migrations/versions/0054_link_audience_and_person_types.py"
     }
   ],
   "postgres_version": "16.15",
@@ -3334,7 +3338,7 @@
     {
       "table_name": "consent_link",
       "name": "audience_mode",
-      "position": 17,
+      "position": 16,
       "type": "character varying(4)",
       "not_null": true,
       "default_value": "'otp'::character varying",
@@ -3933,6 +3937,15 @@
       "not_null": false,
       "default_value": null,
       "comment": null
+    },
+    {
+      "table_name": "hr_category",
+      "name": "default_person_type",
+      "position": 13,
+      "type": "person_type",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The person type of an account created through one of the category's links; NULL is external"
     },
     {
       "table_name": "hr_poc_category",
@@ -4666,7 +4679,7 @@
     {
       "table_name": "notice",
       "name": "template_version_id",
-      "position": 22,
+      "position": 21,
       "type": "integer",
       "not_null": false,
       "default_value": null,
@@ -5521,7 +5534,7 @@
     {
       "table_name": "project",
       "name": "category_id",
-      "position": 17,
+      "position": 14,
       "type": "integer",
       "not_null": false,
       "default_value": null,
@@ -5530,7 +5543,7 @@
     {
       "table_name": "project",
       "name": "template_version_id",
-      "position": 18,
+      "position": 15,
       "type": "integer",
       "not_null": false,
       "default_value": null,
@@ -5539,7 +5552,7 @@
     {
       "table_name": "project",
       "name": "activity_description",
-      "position": 19,
+      "position": 16,
       "type": "text",
       "not_null": false,
       "default_value": null,
@@ -16796,7 +16809,9 @@
         "external",
         "employee",
         "ex_employee",
-        "vendor"
+        "vendor",
+        "candidate",
+        "visitor"
       ]
     },
     {
@@ -17692,7 +17707,7 @@
     "application_tables": 66,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 798,
+    "table_columns": 799,
     "foreign_keys": 195,
     "enums": 39,
     "triggers": 70,

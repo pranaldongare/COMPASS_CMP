@@ -65,6 +65,42 @@ The reasoning: a data subject who could set a password would have an account
 worth phishing, and would reuse a password they use elsewhere. One who receives a
 code per sign-in has nothing worth stealing between sessions.
 
+## Employees on a consent link
+
+A consent link minted `audience_mode = sso` signs a person in through the
+organisation's identity provider instead of a code
+([ADR 0034](../decisions/0034-an-employee-link-signs-in-through-the-organisations-sso.md)):
+
+1. `GET /c/{token}/sso/start` writes the sign-in's state, nonce and PKCE
+   verifier to Redis (`sso:state:*`, ten minutes) and answers the provider's
+   authorisation URL; the portal sends the browser there.
+2. The provider returns to `GET /auth/sso/callback?code=&state=` (through the
+   portal's `/api/` path). The state is taken once; unknown or used, 404.
+3. The code is exchanged with the verifier, and the ID token validated:
+   signature against the provider's published keys (refetched on an unknown
+   key id), issuer, audience, expiry, nonce; `none` and HMAC are refused.
+4. The account is matched on the employee ID's keyed hash
+   (`organization_id_hash`) and nothing else. A match is signed in; no match
+   holds the assertion, sealed, until the person confirms a mobile by code
+   (`POST /c/{token}/sso/mobile`, `/verify`), then creates the account as an
+   active `employee` with the asserted name, address and ID. An asserted
+   address already on another account, or a confirmed mobile that is, is
+   refused with one neutral sentence and audited
+   (`auth.sso_identity_conflict`): the administrator resolves it.
+5. The session is a data principal's (`open_principal_session`, ADR 0013),
+   whatever the account's role: the organisation's word on a consent link is
+   worth exactly what a code is.
+
+The callback sends the browser back to the link with `?sso=` saying what
+happened; a failed assertion lands on the same neutral page as an invalid
+link, and a provider that does not answer is reported as that, with "Try
+again". A code is never sent on an `sso` link, and nobody registers by form
+on one. An employee ID is never accepted from an unauthenticated form
+(`POST /c/{token}/register` ignores one, open point F-8). The audit records
+`auth.sso_signed_in`, `auth.sso_account_created`,
+`auth.sso_identity_conflict` and `auth.sso_assertion_refused`, never the
+claims.
+
 ## How an account is found
 
 The contacts and the username are sealed, so ciphertext that differs on every

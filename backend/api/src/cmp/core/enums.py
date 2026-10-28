@@ -54,6 +54,10 @@ class PersonType(StrEnum):
     EMPLOYEE = "employee"
     EX_EMPLOYEE = "ex_employee"
     VENDOR = "vendor"
+    #: Somebody the organisation is considering: a background check (0054).
+    CANDIDATE = "candidate"
+    #: Somebody on site for a while: a wellness camp, an event (0054).
+    VISITOR = "visitor"
 
 
 class UserStatus(StrEnum):

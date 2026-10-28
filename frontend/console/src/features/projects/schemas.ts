@@ -102,6 +102,8 @@ export const agentSchema = z.object({
       .max(100_000, "Split a campaign this large across several links"),
   ),
   agent_ref: optional(refText("The agent reference")),
+  /** Employees sign in with their organisation account (ADR 0034). */
+  employees: z.boolean().optional(),
 });
 
 export type AgentValues = z.infer<typeof agentSchema>;

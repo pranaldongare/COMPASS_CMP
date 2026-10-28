@@ -100,3 +100,28 @@ export function recordConsent(
 ): Promise<{ consent_uuid: string }> {
   return apiPost<{ consent_uuid: string }>(`/c/${token}/consent`, body);
 }
+
+// ---------------------------------------------------------- organisation SSO
+//
+// An `sso` link signs in through the organisation's account (ADR 0034). The
+// start answers with where to send the browser, so an outage can be told
+// apart from a bad link; the provider sends the browser back to the link with
+// `?sso=` saying what happened.
+
+/** Where to send the browser to sign in with the organisation's account. */
+export function ssoStart(token: string): Promise<{ redirect_url: string }> {
+  return apiGet<{ redirect_url: string }>(`/c/${token}/sso/start`);
+}
+
+/** A code to the mobile a new employee's account will carry. */
+export function ssoMobile(token: string, mobile: string): Promise<Acknowledged> {
+  return apiPost<Acknowledged>(`/c/${token}/sso/mobile`, { mobile });
+}
+
+/** The code back: the account is created and she is signed in. */
+export function ssoMobileVerify(
+  token: string,
+  body: { mobile: string; code: string },
+): Promise<Acknowledged> {
+  return apiPost<Acknowledged>(`/c/${token}/sso/mobile/verify`, body);
+}

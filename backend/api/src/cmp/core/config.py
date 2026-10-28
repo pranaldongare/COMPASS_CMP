@@ -111,6 +111,29 @@ class Settings(BaseSettings):
     #: which is where data principals and nominees go.
     console_base_url: str = "http://localhost:3000"
 
+    # ----------------------------------------------------------------- SSO
+    #
+    # The organisation's identity provider, for consent links minted
+    # `audience_mode = sso` (ADR 0034): OpenID Connect, Authorization Code with
+    # PKCE. Off by default; an `sso` link with it off answers that the service
+    # is not available. Claim names are settings because the directory decides
+    # them (open point OP-1).
+    sso_enabled: bool = False
+    #: The provider's issuer URL; discovery is `<issuer>/.well-known/openid-configuration`.
+    sso_issuer: str = ""
+    sso_client_id: str = ""
+    sso_client_secret: SecretStr = SecretStr("")
+    #: Where the provider sends the browser back: the portal's `/api/` path,
+    #: which it forwards to the API (open point F-9).
+    sso_redirect_url: str = "http://localhost:3001/api/auth/sso/callback"
+    sso_scopes: str = "openid email profile"
+    sso_claim_employee_id: str = "employee_id"
+    sso_claim_email: str = "email"
+    sso_claim_name: str = "name"
+    #: How long the provider has to answer one call before the person is told
+    #: it did not answer (never that the link is invalid; review UX-3).
+    sso_timeout_s: float = 8.0
+
     # ---------------------------------------------------------------- CORS
     cors_origins: Annotated[tuple[str, ...], NoDecode] = ("http://localhost:3000",)
     trusted_hosts: Annotated[tuple[str, ...], NoDecode] = ("*",)
@@ -368,6 +391,12 @@ class Settings(BaseSettings):
                 raise ValueError("DEBUG must be false in production")
             if "*" in self.cors_origins:
                 raise ValueError("CORS_ORIGINS must be explicit in production")
+            # An `sso` link signs a person in on the provider's word alone: a
+            # missing secret or a plain-HTTP issuer would let that word be forged.
+            if self.sso_enabled and not self.sso_client_secret.get_secret_value():
+                raise ValueError("SSO_CLIENT_SECRET must be set when SSO_ENABLED in production")
+            if self.sso_enabled and not self.sso_issuer.startswith("https://"):
+                raise ValueError("SSO_ISSUER must be an https:// URL in production")
             # A transport that does not deliver is a sign-in nobody can
             # complete. In production the choice has to be explicit and real.
             # Test mode writes to nobody real: a production that redirected

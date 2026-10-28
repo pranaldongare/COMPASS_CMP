@@ -22,7 +22,7 @@
 | `nomination_status` | `pending`, `active`, `declined`, `revoked` |
 | `notice_audience` | `data_subject`, `employee`, `ex_employee`, `others` |
 | `notice_status` | `draft`, `approved`, `published`, `superseded` |
-| `person_type` | `external`, `employee`, `ex_employee`, `vendor` |
+| `person_type` | `external`, `employee`, `ex_employee`, `vendor`, `candidate`, `visitor` |
 | `processor_request_status` | `pending`, `approved`, `rejected` |
 | `processor_type` | `lab`, `tool`, `other` |
 | `project_status` | `in_draft`, `under_process`, `pending_approval`, `approved`, `closed` |
