@@ -793,12 +793,16 @@ async def list_requests(
     q: Annotated[str | None, Query(max_length=120)] = None,
     unread: Annotated[bool, Query()] = False,
     due_soon: Annotated[bool, Query()] = False,
+    intake: Annotated[bool, Query()] = False,
 ) -> dict[str, Any]:
     """The register. Soonest due is the sort that matters; newest first is the default.
 
     `due_soon` is open and due within seven days - the window the dashboard counts.
+    `intake` is open and in the shared intake, claimed by no office yet (0055).
     """
-    reject_unknown_filters(request, ("type", "status", "overdue", "q", "unread", "due_soon"))
+    reject_unknown_filters(
+        request, ("type", "status", "overdue", "q", "unread", "due_soon", "intake")
+    )
     async with connection() as conn:
         items, cursor, total = await repo.list_requests(
             conn,
@@ -811,6 +815,7 @@ async def list_requests(
             q=q,
             unread=unread,
             due_soon=due_soon,
+            intake=intake,
         )
     return {"items": [_with_clock(r) for r in items], "next_cursor": cursor, "total": total}
 

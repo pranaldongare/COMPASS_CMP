@@ -87,7 +87,7 @@ hash and no email is written
 rows from before that change stand as written, because the trail is
 hash-chained and cannot be rewritten.
 
-## 2. API endpoints that carry PII — 255 endpoints in 23 modules
+## 2. API endpoints that carry PII — 259 endpoints in 23 modules
 
 Every GET, POST, PUT, PATCH and DELETE whose request or response includes a
 personal field. *In* is what the caller sends (body, path and query); *out* is
@@ -112,7 +112,7 @@ these need no session; they are marked **public**.
 | GET | `/auth/sessions` | — | `ip_address`, `last_seen_at`, `mfa_verified`, `user_agent` |
 | GET | `/auth/sso/callback` **public** | `code` | — |
 
-### My own records (`/me`) — 24 endpoints
+### My own records (`/me`) — 25 endpoints
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
@@ -124,6 +124,7 @@ these need no session; they are marked **public**.
 | GET | `/me/consents/{consent_uuid}/grants` | `consent_uuid` | — |
 | GET | `/me/consents/{consent_uuid}/history` | `consent_uuid` | — |
 | GET | `/me/consents/{consent_uuid}/notice` | `consent_uuid` | — |
+| GET | `/me/consents/{consent_uuid}/record` | `consent_uuid` | — |
 | GET | `/me/consents/{consent_uuid}/trail` | `consent_uuid` | — |
 | POST | `/me/consents/{consent_uuid}/withdraw` | `consent_uuid` | — |
 | POST | `/me/contact/verify` | `code`, `contact` | — |
@@ -276,7 +277,7 @@ these need no session; they are marked **public**.
 | POST | `/tickets/{holder_uuid}/messages` | `body`, `evidence` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | POST | `/tickets/{holder_uuid}/return` | `evidence` | `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `instruction`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 
-### Consents and links — 9 endpoints
+### Consents and links — 10 endpoints
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
@@ -284,6 +285,7 @@ these need no session; they are marked **public**.
 | GET | `/consents/{consent_uuid}` | `consent_uuid` | `action_type`, `affirmative_action_at`, `consent_uuid`, `is_withdrawal`, `served_at`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid` |
 | GET | `/consents/{consent_uuid}/assets` | `consent_uuid` | `disposition`, `has_unmapped_subjects`, `storage_ref`, `subject_role` |
 | GET | `/consents/{consent_uuid}/grants` | `consent_uuid` | `granted` |
+| GET | `/consents/{consent_uuid}/record` | `consent_uuid` | — |
 | GET | `/links` | — | `registrations`, `url_path` |
 | GET | `/links/{link_uuid}` | — | `url_path` |
 | GET | `/links/{link_uuid}/stats` | — | `consents`, `registrations`, `withdrawals` |
@@ -386,14 +388,16 @@ these need no session; they are marked **public**.
 | POST | `/projects/{project_uuid}/notices/import` | `document` | `dpo_contact` |
 | POST | `/projects/{project_uuid}/notices/import/validate` | `document` | — |
 
-### Purposes, processors, sources — 7 endpoints
+### Purposes, processors, sources — 9 endpoints
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
+| GET | `/processors/import/template` | `sample` | — |
 | GET | `/processors/{processor_uuid}/respondents` | — | `contact`, `user_role`, `user_uuid` |
 | POST | `/processors/{processor_uuid}/respondents` | `contact`, `user_uuid` | `contact`, `user_role`, `user_uuid` |
 | GET | `/sources` | — | `owner_name`, `owner_role`, `owner_user_uuid` |
 | POST | `/sources` | — | `owner_name`, `owner_role`, `owner_user_uuid` |
+| GET | `/sources/import/template` | `sample` | — |
 | GET | `/sources/{source_uuid}` | — | `owner_name`, `owner_role`, `owner_user_uuid` |
 | PUT | `/sources/{source_uuid}` | — | `owner_name`, `owner_role`, `owner_user_uuid` |
 | PUT | `/sources/{source_uuid}/owner` | `owner_user_uuid` | — |

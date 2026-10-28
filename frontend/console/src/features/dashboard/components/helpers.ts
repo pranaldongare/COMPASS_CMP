@@ -80,6 +80,10 @@ export function roleBlurb(role: string | null | undefined): string {
       return "Accounts, access and the registry's health.";
     case "breach_holder":
       return "The tickets the Privacy Office has asked you to answer.";
+    case "legal":
+      return "The Legal office's rights requests, breaches, templates and activities.";
+    case "hr_user":
+      return "Your activities, their consents, and the tickets addressed to you.";
     default:
       return "What is waiting for you, and the state of the platform.";
   }

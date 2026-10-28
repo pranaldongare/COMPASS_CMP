@@ -6,22 +6,22 @@
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
-| GET | `/messages` | `dpo`, `admin` | Full session; anonymous NO |
-| GET | `/messages/{key}` | `dpo`, `admin` | Full session; anonymous NO |
-| DELETE | `/messages/{key}/{channel}` | `dpo`, `admin` | Full session; anonymous NO |
-| PUT | `/messages/{key}/{channel}` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/messages/{key}/{channel}/preview` | `dpo`, `admin` | Full session; anonymous NO |
+| GET | `/messages` | `admin`, `dpo` | Full session; anonymous NO |
+| GET | `/messages/{key}` | `admin`, `dpo` | Full session; anonymous NO |
+| DELETE | `/messages/{key}/{channel}` | `admin`, `dpo` | Full session; anonymous NO |
+| PUT | `/messages/{key}/{channel}` | `admin`, `dpo` | Full session; anonymous NO |
+| POST | `/messages/{key}/{channel}/preview` | `admin`, `dpo` | Full session; anonymous NO |
 | PUT | `/messages/{key}/copies` | `dpo`, `admin` | Full session; anonymous NO |
 
 ## GET /messages
 
 Every message, with the words in force.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`.
 - **Route guard:** `MessageReader`.
 - **Resolved gate:** `RequireResource(message_template, write=False)`.
 - **Rules:** DPO/Admin manage message templates globally. Preview uses the read grant; saving/resetting a template uses the write grant.
@@ -31,11 +31,11 @@ Every message, with the words in force.
 
 One message.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`.
 - **Route guard:** `MessageReader`.
 - **Resolved gate:** `RequireResource(message_template, write=False)`.
 - **Rules:** DPO/Admin manage message templates globally. Preview uses the read grant; saving/resetting a template uses the write grant.
@@ -45,11 +45,11 @@ One message.
 
 Back to the default.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`.
 - **Route guard:** `MessageWriter`.
 - **Resolved gate:** `RequireResource(message_template, write=True)`.
 - **Rules:** DPO/Admin manage message templates globally. Preview uses the read grant; saving/resetting a template uses the write grant.
@@ -59,11 +59,11 @@ Back to the default.
 
 Replace the words.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`.
 - **Route guard:** `MessageWriter`.
 - **Resolved gate:** `RequireResource(message_template, write=True)`.
 - **Rules:** DPO/Admin manage message templates globally. Preview uses the read grant; saving/resetting a template uses the write grant.
@@ -73,11 +73,11 @@ Replace the words.
 
 Render words with sample values, saving nothing.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`.
 - **Route guard:** `MessageReader`.
 - **Resolved gate:** `RequireResource(message_template, write=False)`.
 - **Rules:** DPO/Admin manage message templates globally. Preview uses the read grant; saving/resetting a template uses the write grant.
@@ -87,9 +87,9 @@ Render words with sample values, saving nothing.
 
 Who it is copied to by email: up to five addresses.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `admin`.
 - **Route guard:** `MessageWriter`.

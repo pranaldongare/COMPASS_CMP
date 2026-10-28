@@ -310,7 +310,7 @@ Key `office_note` · channels: email
 | CC | Never - it is written to one person about her own data; a copy would disclose it. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_office_note` (`backend/api/src/cmp/tasks/notifications/batch.py:51`) |
-| Queued from | `backend/api/src/cmp/api/routers/v1/dashboard.py:848` |
+| Queued from | `backend/api/src/cmp/api/routers/v1/dashboard.py:990` |
 | Variables | `event` (What the notification was about.), `occurred_on` (When it happened.), `console_url` (The staff console (CONSOLE_BASE_URL).), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `A message from the {organisation} Privacy Office`

@@ -53,6 +53,8 @@ import { useAuth } from "@/providers";
 const ROLE_TITLE: Record<string, string> = {
   dpo: "Data Protection Officer",
   admin: "Administrator",
+  legal: "Legal PoC",
+  hr_user: "HR PoC",
 };
 
 export default function DashboardPage() {

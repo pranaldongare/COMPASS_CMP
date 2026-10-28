@@ -6,43 +6,43 @@
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
-| GET | `/approvals` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/approvals/{approval_uuid}` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/approvals/{approval_uuid}/proof` | `dpo`, `rnd_user` | Full session; anonymous NO |
-| GET | `/projects` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| POST | `/projects` | `rnd_user` | Full session; anonymous NO |
-| GET | `/projects/{project_uuid}` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| PUT | `/projects/{project_uuid}` | `rnd_user` | Full session; anonymous NO |
-| GET | `/projects/{project_uuid}/approvals` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| POST | `/projects/{project_uuid}/approvals` | `rnd_user` | Full session; anonymous NO |
-| POST | `/projects/{project_uuid}/close` | `dpo`, `dco`, `dco_admin`, `rco` | Full session; anonymous NO |
-| GET | `/projects/{project_uuid}/history` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/projects/{project_uuid}/processors` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| POST | `/projects/{project_uuid}/processors` | `rnd_user` | Full session; anonymous NO |
-| PUT | `/projects/{project_uuid}/processors` | `rnd_user` | Full session; anonymous NO |
+| GET | `/approvals` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/approvals/{approval_uuid}` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/approvals/{approval_uuid}/proof` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/projects` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| POST | `/projects` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/projects/{project_uuid}` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| PUT | `/projects/{project_uuid}` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/projects/{project_uuid}/approvals` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| POST | `/projects/{project_uuid}/approvals` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| POST | `/projects/{project_uuid}/close` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/projects/{project_uuid}/history` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/projects/{project_uuid}/processors` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| POST | `/projects/{project_uuid}/processors` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| PUT | `/projects/{project_uuid}/processors` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
 | POST | `/projects/{project_uuid}/processors/{processor_uuid}/decision` | `dpo` | Full session; anonymous NO |
-| GET | `/projects/{project_uuid}/sites` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| POST | `/projects/{project_uuid}/sites` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/projects/{project_uuid}/summary` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| POST | `/projects/{project_uuid}/transition` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/projects/{project_uuid}/transitions` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/sites` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/sites/{site_uuid}` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| PUT | `/sites/{site_uuid}` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| POST | `/sites/{site_uuid}/agent` | `dpo`, `dco`, `dco_admin`, `rco` | Full session; anonymous NO |
+| GET | `/projects/{project_uuid}/sites` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| POST | `/projects/{project_uuid}/sites` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/projects/{project_uuid}/summary` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| POST | `/projects/{project_uuid}/transition` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/projects/{project_uuid}/transitions` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/sites` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/sites/{site_uuid}` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| PUT | `/sites/{site_uuid}` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| POST | `/sites/{site_uuid}/agent` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
 | POST | `/sites/{site_uuid}/deactivate` | `dpo` | Full session; anonymous NO |
-| PUT | `/sites/{site_uuid}/owner` | `dpo`, `dco_admin`, `rnd_user` | Full session; anonymous NO |
-| PUT | `/sites/{site_uuid}/source` | `dpo`, `dco_admin`, `rnd_user` | Full session; anonymous NO |
+| PUT | `/sites/{site_uuid}/owner` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| PUT | `/sites/{site_uuid}/source` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
 
 ## GET /approvals
 
 All approvals in scope.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
 - **Resolved gate:** `RequireResource(project, write=False)`.
 - **Rules:** Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.
@@ -52,11 +52,11 @@ All approvals in scope.
 
 Get Approval.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
 - **Resolved gate:** `RequireResource(project, write=False)`.
 - **Rules:** Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.
@@ -66,11 +66,11 @@ Get Approval.
 
 Download the proof file.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
 - **Resolved gate:** `RequireResource(project, write=False)`.
 - **Additional role checks:** `principal.role not in (Role.DPO, Role.RND_USER)`.
@@ -82,11 +82,11 @@ Download the proof file.
 
 List Projects.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
 - **Resolved gate:** `RequireResource(project, write=False)`.
 - **Rules:** Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.
@@ -96,11 +96,11 @@ List Projects.
 
 Create Project.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `rnd_user`.
+- **Who:** `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `CurrentUser`.
 - **Additional role checks:** `principal.role is not Role.RND_USER`.
 - **Rules:** Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.
@@ -111,11 +111,11 @@ Create Project.
 
 Get Project.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
 - **Resolved gate:** `RequireResource(project, write=False)`.
 - **Rules:** Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.
@@ -125,11 +125,11 @@ Get Project.
 
 Draft only.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `rnd_user`.
+- **Who:** `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `CurrentUser`.
 - **Additional role checks:** `principal.role is not Role.RND_USER`.
 - **Rules:** Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.
@@ -140,11 +140,11 @@ Draft only.
 
 List Approvals.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
 - **Resolved gate:** `RequireResource(project, write=False)`.
 - **Rules:** Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.
@@ -154,11 +154,11 @@ List Approvals.
 
 Upload an approval - proof is mandatory (INV-8).
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `rnd_user`.
+- **Who:** `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `CurrentUser`.
 - **Additional role checks:** `principal.role is not Role.RND_USER`.
 - **Rules:** Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.
@@ -168,11 +168,11 @@ Upload an approval - proof is mandatory (INV-8).
 
 Close Project.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
 - **Resolved gate:** `RequireResource(project, write=False)`.
 - **Additional role checks:** `principal.role is not Role.DPO and principal.role not in COLLECTION_OWNERS`.
@@ -184,11 +184,11 @@ Close Project.
 
 Project History.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
 - **Resolved gate:** `RequireResource(project, write=False)`.
 - **Rules:** Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.
@@ -198,11 +198,11 @@ Project History.
 
 List Project Processors.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
 - **Resolved gate:** `RequireResource(project, write=False)`.
 - **Rules:** Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.
@@ -212,11 +212,11 @@ List Project Processors.
 
 Request Project Processor.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
 - **Resolved gate:** `RequireResource(project, write=False)`.
 - **Additional role checks:** `principal.role is not Role.RND_USER`.
@@ -228,11 +228,11 @@ Request Project Processor.
 
 Draft only — replaces the set.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
 - **Resolved gate:** `RequireResource(project, write=False)`.
 - **Additional role checks:** `principal.role is not Role.RND_USER`.
@@ -244,9 +244,9 @@ Draft only — replaces the set.
 
 Decide Project Processor.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | SCOPED |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -258,11 +258,11 @@ Decide Project Processor.
 
 List Sites.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
 - **Resolved gate:** `RequireResource(project, write=False)`.
 - **Rules:** Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.
@@ -273,11 +273,11 @@ List Sites.
 
 Add Site.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
 - **Resolved gate:** `RequireResource(project, write=False)`.
 - **Additional role checks:** `principal.role not in (Role.DPO, Role.DCO, Role.DCO_ADMIN, Role.RCO, Role.RND_USER)`.
@@ -291,11 +291,11 @@ Add Site.
 
 Everything a dashboard needs, in one call.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
 - **Resolved gate:** `RequireResource(project, write=False)`.
 - **Rules:** Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.
@@ -305,11 +305,11 @@ Everything a dashboard needs, in one call.
 
 Transition.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
 - **Resolved gate:** `RequireResource(project, write=False)`.
 - **Rules:** Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.
@@ -321,11 +321,11 @@ Transition.
 
 What may happen next, and why not.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
 - **Resolved gate:** `RequireResource(project, write=False)`.
 - **Rules:** Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.
@@ -335,11 +335,11 @@ What may happen next, and why not.
 
 All sites in scope.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
 - **Resolved gate:** `RequireResource(project, write=False)`.
 - **Rules:** Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.
@@ -350,11 +350,11 @@ All sites in scope.
 
 Get Site.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
 - **Resolved gate:** `RequireResource(project, write=False)`.
 - **Rules:** Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.
@@ -365,11 +365,11 @@ Get Site.
 
 Update Site.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
 - **Resolved gate:** `RequireResource(project, write=False)`.
 - **Rules:** Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.
@@ -381,11 +381,11 @@ Update Site.
 
 Assign the Field Agent and mint the link.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ProjectReader`.
 - **Resolved gate:** `RequireResource(project, write=False)`.
 - **Additional role checks:** `principal.role is not Role.DPO and principal.role not in COLLECTION_OWNERS`.
@@ -398,9 +398,9 @@ Assign the Field Agent and mint the link.
 
 Deactivate Site.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | SCOPED |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -413,11 +413,11 @@ Deactivate Site.
 
 Name who runs this site, overriding its source.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | SCOPED | NO | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | SCOPED | NO | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco_admin`, `rnd_user`.
+- **Who:** `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `CurrentUser`.
 - **Additional role checks:** `principal.role not in (Role.DPO, Role.ADMIN, Role.DCO_ADMIN, Role.RND_USER)`.
 - **Rules:** Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.
@@ -430,11 +430,11 @@ Name who runs this site, overriding its source.
 
 Attach the data source that stands here.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | SCOPED | NO | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | SCOPED | NO | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco_admin`, `rnd_user`.
+- **Who:** `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `CurrentUser`.
 - **Additional role checks:** `principal.role not in (Role.DPO, Role.ADMIN, Role.DCO_ADMIN, Role.RND_USER)`.
 - **Rules:** Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.

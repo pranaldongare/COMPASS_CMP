@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict X5VEo36Ib6u9H1eamh7dk33zYAxMWDaOr0jpHH3AUIdfklS9QhlfLrK0nfDa9k9
+\restrict DeLXnGnv5LDlLI4ED9a3O0erXGKbISUcnRACXegafdX0iXhzhJRoLZOa4maCctZ
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -10582,9 +10582,13 @@ CREATE POLICY office_isolation ON public.rights_item_execution USING (((current_
 -- Name: rights_request office_isolation; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY office_isolation ON public.rights_request USING (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id IS NULL) OR (office_id = ( SELECT o.office_id
+CREATE POLICY office_isolation ON public.rights_request USING (((current_setting('app.office'::text, true) = 'all'::text) OR ((office_id IS NULL) AND (( SELECT o.office_id
    FROM public.office o
-  WHERE ((o.office_code)::text = current_setting('app.office'::text, true)))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id IS NULL) OR (office_id = ( SELECT o.office_id
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true))) IS NOT NULL)) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true)))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR ((office_id IS NULL) AND (( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true))) IS NOT NULL)) OR (office_id = ( SELECT o.office_id
    FROM public.office o
   WHERE ((o.office_code)::text = current_setting('app.office'::text, true))))));
 
@@ -10777,5 +10781,5 @@ ALTER TABLE public.template_version_purpose ENABLE ROW LEVEL SECURITY;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict X5VEo36Ib6u9H1eamh7dk33zYAxMWDaOr0jpHH3AUIdfklS9QhlfLrK0nfDa9k9
+\unrestrict DeLXnGnv5LDlLI4ED9a3O0erXGKbISUcnRACXegafdX0iXhzhJRoLZOa4maCctZ
 

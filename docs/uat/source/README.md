@@ -12,6 +12,13 @@ these, never the Word or Excel file.
 | `build_docx.js` | Renders the Word document from `runbook.js` and the `*.json` cases |
 | `build_xlsx.py` | Renders the Excel tracker from the same cases (Summary, Test Cases, Test Steps, Defect Log, Accounts) |
 
+## The HR track's run
+
+`run_hr_track.py` (with `hr_harness.py`) runs the cases of
+[hr-track-uat-cases.md](../hr-track-uat-cases.md) against the local stack
+through its API and writes `results.json` beside itself (not committed). It
+changes the dev database - read its docstring before running it.
+
 ## Rebuild
 
 ```bash

@@ -6,19 +6,19 @@
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
-| GET | `/dashboard` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | Full session; anonymous NO |
-| GET | `/notifications` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | Full session; anonymous NO |
-| POST | `/notifications/{log_uuid}/resend` | `dpo`, `dco` | Full session; anonymous NO |
+| GET | `/dashboard` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
+| GET | `/notifications` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
+| POST | `/notifications/{log_uuid}/resend` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
 
 ## GET /dashboard
 
 Role-aware aggregate.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| COND | COND | COND | COND | COND | COND | COND | COND |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| COND | COND | COND | COND | COND | COND | COND | COND | NO | NO |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder`.
+- **Who:** `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder`.
 - **Route guard:** `CurrentUser`.
 - **Rules:** All eight roles have a dashboard branch; a temporary holder's is empty, with its tickets beside it. Results are role-specific aggregates; staff also see their assigned tickets. A data principal sees their own dashboard.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/dashboard.py#L316).
@@ -27,11 +27,11 @@ Role-aware aggregate.
 
 Notifications.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| COND | COND | COND | COND | COND | COND | COND | COND |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| COND | COND | COND | COND | COND | COND | COND | COND | NO | NO |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder`.
+- **Who:** `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder`.
 - **Route guard:** `CurrentUser`.
 - **Rules:** Principal sees own audit events. Staff receive selected event types scoped as the project register is: an event about a project, or about a notice, import or export on one, is shown only to a role that could see that project; a lockout is shown to DPO and Admin; a consent withdrawal to DPO only. Plus own ticket events; DPO also gets office ticket events. (Before `79b7fac` the staff query had no project/owner predicate.)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/daca825864313166693c3f2973d50ec5c05d4170/backend/api/src/cmp/api/routers/v1/dashboard.py#L805-L846).
@@ -40,11 +40,11 @@ Notifications.
 
 Resend.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| COND | NO | COND | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| COND | NO | COND | NO | NO | NO | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `dco`.
+- **Who:** `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `CurrentUser`.
 - **Additional role checks:** `principal.role not in (Role.DPO, Role.DCO)`.
 - **Rules:** DPO/DCO only. Event and subject recipient must exist. The event lookup is by log UUID without a caller/project-scope predicate.

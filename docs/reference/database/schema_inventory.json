@@ -1,6 +1,6 @@
 {
-  "commit": "cc0d2f6955e641250ee9348d36048e846343e903",
-  "migration_head": "0055",
+  "commit": "999abc6e46dba5439889c245602a6ccd71c39dbe",
+  "migration_head": "0056",
   "migrations": [
     {
       "revision": "0001",
@@ -221,6 +221,10 @@
     {
       "revision": "0055",
       "source": "backend/api/migrations/versions/0055_rights_and_breaches_by_office.py"
+    },
+    {
+      "revision": "0056",
+      "source": "backend/api/migrations/versions/0056_the_intake_is_an_offices.py"
     }
   ],
   "postgres_version": "16.15",

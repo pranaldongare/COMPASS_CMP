@@ -2,34 +2,37 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-14 operations; 14 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
+17 operations; 17 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
-| GET | `/users` | `dpo`, `admin` | Full session; anonymous NO |
+| GET | `/users` | `dpo`, `legal`, `admin` | Full session; anonymous NO |
 | POST | `/users` | `admin` | Full session; anonymous NO |
-| GET | `/users/collection-owners` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/users/staff` | `dpo`, `admin` | Full session; anonymous NO |
-| GET | `/users/{user_uuid}` | `dpo`, `admin` | Full session; anonymous NO |
+| GET | `/users/collection-owners` | `admin`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/users/staff` | `admin`, `dpo` | Full session; anonymous NO |
+| GET | `/users/{user_uuid}` | `dpo`, `legal`, `admin` | Full session; anonymous NO |
 | PATCH | `/users/{user_uuid}` | `admin` | Full session; anonymous NO |
 | POST | `/users/{user_uuid}/deactivate` | `admin` | Full session; anonymous NO |
 | POST | `/users/{user_uuid}/invite` | `admin` | Full session; anonymous NO |
 | POST | `/users/{user_uuid}/mfa/reset` | `admin` | Full session; anonymous NO |
-| GET | `/users/{user_uuid}/person-type-history` | `dpo`, `admin` | Full session; anonymous NO |
+| GET | `/users/{user_uuid}/person-type-history` | `dpo`, `legal`, `admin` | Full session; anonymous NO |
 | POST | `/users/{user_uuid}/reactivate` | `admin` | Full session; anonymous NO |
 | POST | `/users/{user_uuid}/role` | `admin` | Full session; anonymous NO |
 | DELETE | `/users/{user_uuid}/sessions` | `admin` | Full session; anonymous NO |
 | PUT | `/users/{user_uuid}/processors` | `admin` | Full session; anonymous NO |
+| GET | `/users/hr-pocs` | `legal`, `admin` | Full session; anonymous NO |
+| PUT | `/users/{user_uuid}/categories` | `admin` | Full session; anonymous NO |
+| GET | `/offices` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `legal`, `hr_user` | Full session; anonymous NO |
 
 ## GET /users
 
 The staff and subject register.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `dpo`, `legal`, `admin`.
 - **Route guard:** `RequireDPOorAdmin`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]`.
 - **Rules:** Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff.
@@ -39,9 +42,9 @@ The staff and subject register.
 
 Create User.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `admin`.
 - **Route guard:** `RequireAdmin`.
@@ -54,11 +57,11 @@ Create User.
 
 Active DCOs and RCOs, for source ownership.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | ALL | ALL | ALL | ALL | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | ALL | ALL | ALL | ALL | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `admin`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `RequireStaff`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(*STAFF_ROLES))]`.
 - **Rules:** Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff.
@@ -70,11 +73,11 @@ Active DCOs and RCOs, for source ownership.
 
 Active staff, for naming a processor's respondent.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`.
 - **Route guard:** `Annotated[Any, Depends(RequireRole(Role.DPO, Role.ADMIN))]`.
 - **Rules:** Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/users.py#L133).
@@ -83,11 +86,11 @@ Active staff, for naming a processor's respondent.
 
 Get User.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `dpo`, `legal`, `admin`.
 - **Route guard:** `RequireDPOorAdmin`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]`.
 - **Rules:** Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff.
@@ -97,9 +100,9 @@ Get User.
 
 Update User.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `admin`.
 - **Route guard:** `RequireAdmin`.
@@ -111,9 +114,9 @@ Update User.
 
 Deactivate.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `admin`.
 - **Route guard:** `RequireAdmin`.
@@ -126,9 +129,9 @@ Deactivate.
 
 Send the invitation again.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `admin`.
 - **Route guard:** `RequireAdmin`.
@@ -141,9 +144,9 @@ Send the invitation again.
 
 Reset Mfa.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `admin`.
 - **Route guard:** `RequireAdmin`.
@@ -155,11 +158,11 @@ Reset Mfa.
 
 Person Type History.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `dpo`, `legal`, `admin`.
 - **Route guard:** `RequireDPOorAdmin`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]`.
 - **Rules:** Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff.
@@ -169,9 +172,9 @@ Person Type History.
 
 Reactivate.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `admin`.
 - **Route guard:** `RequireAdmin`.
@@ -183,9 +186,9 @@ Reactivate.
 
 Change a role.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `admin`.
 - **Route guard:** `RequireAdmin`.
@@ -198,9 +201,9 @@ Change a role.
 
 Force logout.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `admin`.
 - **Route guard:** `RequireAdmin`.
@@ -212,12 +215,52 @@ Force logout.
 
 Set the processors a DCO or an RCO collects for.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
 
-- **Who:** `admin`; everyone else 403.
+- **Who:** `admin`.
 - **Route guard:** `RequireAdmin`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.ADMIN))]`.
 - **Rules:** The whole set: what is not named is taken away. Only for a DCO (third-party processors) or an RCO (in-house), 422 otherwise; a processor whose sources they are still accountable for is not taken away (409 `processor_still_held`). The trail records `user.processors_set` with the processor uuids before and after. (2026-10-09)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/users.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/users/service.py).
+## GET /users/hr-pocs
+
+Active HR PoCs, for a picker.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `legal`, `admin`.
+- **Route guard:** `RequireRole(LEGAL, ADMIN)`.
+- **Resolved gate:** `Annotated[Any, Depends(RequireRole(Role.LEGAL, Role.ADMIN))]`.
+- **Rules:** Active `hr_user` accounts; `category` keeps those assigned to it (404 for a category the caller cannot read). (2026-10-28, 0052)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/users.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/hr_categories.py).
+
+## PUT /users/{user_uuid}/categories
+
+Set the categories an HR PoC runs activities in.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
+
+- **Who:** `admin`.
+- **Route guard:** `RequireAdmin`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.ADMIN))]`.
+- **Rules:** The whole set. Only for an HR PoC (422 otherwise); a retired category is refused as a new assignment and kept as an existing one. The trail records `user.categories_set` with the codes before and after, on the Legal office's trail. (2026-10-28, 0052)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/users.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/hr/categories.py).
+## GET /offices
+
+The offices an account can work in.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | ALL | ALL | ALL | ALL | NO | NO | ALL | ALL |
+
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `legal`, `hr_user`.
+- **Route guard:** `RequireStaff`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(*STAFF_ROLES))]`.
+- **Rules:** Every member of staff (ADR 0032): the two offices with their codes and names, for the administrator's account form and the console's labels; no personal data.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/offices.py).

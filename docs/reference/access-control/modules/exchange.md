@@ -6,35 +6,35 @@
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
-| GET | `/assets/{asset_uuid}` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/assets/{asset_uuid}/subjects` | `dpo`, `dco` | Full session; anonymous NO |
-| GET | `/collections` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/collections/{collection_uuid}` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/collections/{collection_uuid}/assets` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/collections/{collection_uuid}/exceptions` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/exports` | `dpo`, `dco`, `dco_admin`, `rco` | Full session; anonymous NO |
-| GET | `/exports/{export_uuid}` | `dpo`, `dco`, `dco_admin`, `rco` | Full session; anonymous NO |
-| GET | `/exports/{export_uuid}/download` | `dpo`, `dco`, `dco_admin`, `rco` | Full session; anonymous NO |
-| GET | `/exports/{export_uuid}/lines` | `dpo`, `dco`, `dco_admin`, `rco` | Full session; anonymous NO |
-| GET | `/imports` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject` | Full session; anonymous NO |
-| POST | `/imports` | `dpo`, `dco`, `dco_admin`, `rco` | Full session; anonymous NO |
-| GET | `/imports/template` | `dpo`, `dco`, `dco_admin`, `rco` | Full session; anonymous NO |
-| POST | `/imports/validate` | `dpo`, `dco`, `dco_admin`, `rco` | Full session; anonymous NO |
-| GET | `/imports/{batch_uuid}` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject` | Full session; anonymous NO |
-| GET | `/imports/{batch_uuid}/errors` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject` | Full session; anonymous NO |
-| GET | `/projects/{project_uuid}/collections` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/projects/{project_uuid}/exports` | `dpo`, `dco`, `dco_admin`, `rco` | Full session; anonymous NO |
-| POST | `/projects/{project_uuid}/exports` | `dpo`, `dco`, `dco_admin`, `rco` | Full session; anonymous NO |
+| GET | `/assets/{asset_uuid}` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/assets/{asset_uuid}/subjects` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/collections` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/collections/{collection_uuid}` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/collections/{collection_uuid}/assets` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/collections/{collection_uuid}/exceptions` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/exports` | `dco`, `dco_admin`, `dpo`, `rco` | Full session; anonymous NO |
+| GET | `/exports/{export_uuid}` | `dco`, `dco_admin`, `dpo`, `rco` | Full session; anonymous NO |
+| GET | `/exports/{export_uuid}/download` | `dco`, `dco_admin`, `dpo`, `rco` | Full session; anonymous NO |
+| GET | `/exports/{export_uuid}/lines` | `dco`, `dco_admin`, `dpo`, `rco` | Full session; anonymous NO |
+| GET | `/imports` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| POST | `/imports` | `dco`, `dco_admin`, `dpo`, `rco` | Full session; anonymous NO |
+| GET | `/imports/template` | `dco`, `dco_admin`, `dpo`, `rco` | Full session; anonymous NO |
+| POST | `/imports/validate` | `dco`, `dco_admin`, `dpo`, `rco` | Full session; anonymous NO |
+| GET | `/imports/{batch_uuid}` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/imports/{batch_uuid}/errors` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/projects/{project_uuid}/collections` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/projects/{project_uuid}/exports` | `dco`, `dco_admin`, `dpo`, `rco` | Full session; anonymous NO |
+| POST | `/projects/{project_uuid}/exports` | `dco`, `dco_admin`, `dpo`, `rco` | Full session; anonymous NO |
 
 ## GET /assets/{asset_uuid}
 
 Get Asset.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `CollectionReader`.
 - **Resolved gate:** `RequireResource(collection, write=False)`.
 - **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.
@@ -44,11 +44,11 @@ Get Asset.
 
 One row per subject, bystanders included.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | NO | NO | NO | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `dco`.
+- **Who:** `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `CurrentUser`.
 - **Additional role checks:** `principal.role not in (Role.DPO, Role.DCO)`.
 - **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.
@@ -59,11 +59,11 @@ One row per subject, bystanders included.
 
 All collections, with their reconciliation gap.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `CollectionReader`.
 - **Resolved gate:** `RequireResource(collection, write=False)`.
 - **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.
@@ -73,11 +73,11 @@ All collections, with their reconciliation gap.
 
 Get Collection.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `CollectionReader`.
 - **Resolved gate:** `RequireResource(collection, write=False)`.
 - **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.
@@ -87,11 +87,11 @@ Get Collection.
 
 Collection Assets.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `CollectionReader`.
 - **Resolved gate:** `RequireResource(collection, write=False)`.
 - **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.
@@ -101,11 +101,11 @@ Collection Assets.
 
 Declared against mapped - the control that makes direct collection workable.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `CollectionReader`.
 - **Resolved gate:** `RequireResource(collection, write=False)`.
 - **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.
@@ -115,11 +115,11 @@ Declared against mapped - the control that makes direct collection workable.
 
 The disclosure register.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`.
 - **Route guard:** `ExportReader`.
 - **Resolved gate:** `RequireResource(export, write=False)`.
 - **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.
@@ -129,11 +129,11 @@ The disclosure register.
 
 Get Export.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`.
 - **Route guard:** `ExportReader`.
 - **Resolved gate:** `RequireResource(export, write=False)`.
 - **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.
@@ -143,11 +143,11 @@ Get Export.
 
 Download Export.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`.
 - **Route guard:** `ExportReader`.
 - **Resolved gate:** `RequireResource(export, write=False)`.
 - **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.
@@ -157,11 +157,11 @@ Download Export.
 
 Who was in this file (s.11(1)(b)).
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`.
 - **Route guard:** `ExportReader`.
 - **Resolved gate:** `RequireResource(export, write=False)`.
 - **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.
@@ -171,11 +171,11 @@ Who was in this file (s.11(1)(b)).
 
 List Imports.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| COND | COND | COND | COND | COND | COND | COND | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| COND | COND | COND | COND | COND | COND | COND | NO | NO | NO |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`.
+- **Who:** `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `CurrentUser`.
 - **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.
 - All full-session roles pass the route. Project-linked batches follow import scope: DPO all; DCO/DCO Admin/RCO scoped; R&D own projects; Admin/principal none. However, b.project_id IS NULL is allowed for EVERY signed-in role, including Admin and data_subject; list, detail and error-report lookups share this exception.
@@ -185,11 +185,11 @@ List Imports.
 
 Create Import.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`.
 - **Route guard:** `ImportActor`.
 - **Resolved gate:** `RequireResource(import, write=True)`.
 - **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.
@@ -200,11 +200,11 @@ Create Import.
 
 A manifest file to fill in.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`.
 - **Route guard:** `ImportActor`.
 - **Resolved gate:** `RequireResource(import, write=True)`.
 - **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.
@@ -214,11 +214,11 @@ A manifest file to fill in.
 
 Dry run - nothing is written.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`.
 - **Route guard:** `ImportActor`.
 - **Resolved gate:** `RequireResource(import, write=True)`.
 - **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.
@@ -229,11 +229,11 @@ Dry run - nothing is written.
 
 Get Import.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| COND | COND | COND | COND | COND | COND | COND | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| COND | COND | COND | COND | COND | COND | COND | NO | NO | NO |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`.
+- **Who:** `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `CurrentUser`.
 - **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.
 - All full-session roles pass the route. Project-linked batches follow import scope: DPO all; DCO/DCO Admin/RCO scoped; R&D own projects; Admin/principal none. However, b.project_id IS NULL is allowed for EVERY signed-in role, including Admin and data_subject; list, detail and error-report lookups share this exception.
@@ -243,11 +243,11 @@ Get Import.
 
 Import Errors.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| COND | COND | COND | COND | COND | COND | COND | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| COND | COND | COND | COND | COND | COND | COND | NO | NO | NO |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`.
+- **Who:** `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `CurrentUser`.
 - **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.
 - All full-session roles pass the route. Project-linked batches follow import scope: DPO all; DCO/DCO Admin/RCO scoped; R&D own projects; Admin/principal none. However, b.project_id IS NULL is allowed for EVERY signed-in role, including Admin and data_subject; list, detail and error-report lookups share this exception.
@@ -257,11 +257,11 @@ Import Errors.
 
 List Collections.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `CollectionReader`.
 - **Resolved gate:** `RequireResource(collection, write=False)`.
 - **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.
@@ -271,11 +271,11 @@ List Collections.
 
 List Exports.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`.
 - **Route guard:** `ExportReader`.
 - **Resolved gate:** `RequireResource(export, write=False)`.
 - **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.
@@ -285,11 +285,11 @@ List Exports.
 
 Generate Export.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`.
 - **Route guard:** `ExportActor`.
 - **Resolved gate:** `RequireResource(export, write=True)`.
 - **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading. Each row's destination - the processor running its site - is checked under s.16 first (S2-04): an unknown location, a restricted country, or a granted purpose not permitted cross-border refuses the whole export with 422 `transfer_refused`, recorded in its own transaction.

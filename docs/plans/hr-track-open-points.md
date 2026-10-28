@@ -143,6 +143,38 @@ _(date · increment · the call made · why · what would change it)_
 | H-12 | **F-21 applied in 0055.** `legal_hold.office_id`: an asset hold takes the asset's project's office, a person hold the placing officer's; each office lists and releases its own; `active_covering` reads both offices' holds, so erasure stops at a hold either office placed | A hold on a person is about all that is held on her | Legal wanting holds on a person confined to its own office's data |
 | H-13 | The officer's dashboard counts (`rights.counts`, the holder queues, open breach tickets, the week's lines) carry the office in the query, as every other read does locally (B-2); `requests_in_intake` is a new count | Locally the superuser bypasses the policies | Increment 8's Legal dashboard reading it |
 
+### Made during increment 8 (2026-10-28)
+
+| # | The call | Why | What would change it |
+|---|---|---|---|
+| I-1 | The Legal PoC's dashboard is the DPO's on its own office - the same request and breach queries, scoped by the session - with its own figures (live activities, consents, template versions in draft) and two rows of its own in **Needs attention**: requests in the shared intake to claim, versions waiting for approval. The HR PoC's counts the activities of their categories, their consents, this week's withdrawals, and links ending within a week, the one row that asks for action. `GET /requests?intake=true` lists the open intake for the row to open | D-10; a dashboard row opens the rows it counts | The product owner choosing other figures |
+| I-2 | The access-control reference was brought up to the inventory mechanically: every table gains the Legal PoC and HR PoC columns from `endpoint_permissions.json`, "Who" follows it, and the 0055 officer rule is appended where it applies; the hand-written rules stay as written, but "The DPO's alone" became "The officers' alone" on breaches and holds. Two module pages (HR categories, HR activities). Eleven operations the inventory had missed are added: `GET /offices` (increment 1's, missed then), the consent-record PDFs and the registry's Excel import (both before this sprint) | B-8: the reference must not lag the routes | A generator for the module pages, if the team prefers one to hand review |
+| I-3 | The UAT was run once through the API as each screen calls it, not in a browser (`docs/uat/source/run_hr_track.py`); the four SSO cases need the organisation's identity provider and are covered by the stub-provider tests. The run resets the seeded Legal PoC's and HR PoCs' passwords and leaves its records in the dev database | A repeatable run that a reviewer can read | A browser pass by a tester (Playwright) before go-live |
+| I-4 | **Open.** The UAT workbook has no "HR track" sheet yet: the workbook is generated from `docs/uat/source/`, and the HR cases have no source file there | The markdown carries the cases and their results meanwhile | A source file for the HR cases and a step in `build_xlsx.py` |
+| I-5 | ADRs 0032-0034 stay `proposed` in `decisions/README.md`; the doc deltas say to mark each `accepted` in the pull request that lands it | The branch is not yet pushed | The pull request |
+| I-7 | **Found by the UAT run, fixed in 0056.** 0051's policy on `rights_request` admitted a row with no office to *every* connection, including one with no `app.office` - the deny-by-default the policies exist for. No row had no office until 0055 routed requests; the UAT's public-form request left one in the dev database and the isolation suite's "saying nothing reads nothing" failed on it. The intake is now seen only by a session that names an office | The wall's rule: a connection that says nothing reads nothing | - |
+| I-6 | HR-E9 stops before closing the breach: the Board and principals duties stand open, as they would for the DPO; closing is covered by the breach tests | Walking a breach to its close is the breach suite's, unchanged by office | - |
+
+### Carried to the next sprint
+
+What the HR track leaves open, by owner. The product owner's decisions
+first; each names the increment its answer would change.
+
+| # | What | Owner | Belongs to |
+|---|---|---|---|
+| OP-1 | The identity provider's details (issuer, claims); local runs have none | IT / product owner | 5 |
+| OP-2 | Dependents under 18: the guardian route | Legal | after the guardian route |
+| OP-3, OP-4, OP-10 | BGV refusal wording; processing under new terms before re-consent; a `change_summary` on versions | Legal | 3, 4 |
+| OP-6 | Phase 2: machine credentials for HRMS events and a consent-check API over the SQS relay (ADR 0003) | Product owner | its own ADR |
+| OP-7 | `max_uses` on consent links is never consumed (pre-existing) | Product owner | - |
+| F-16 | A vendor without an account cannot be a category's respondent | Product owner | 6 |
+| F-20 | Pinning roles to offices (settled by default; reversible) | Product owner | 2 |
+| F-22 | The production database role must be the one the policies bind | IT | deployment |
+| F-24 | The worker's message rendering reads outside the pool with no office | Engineer | if wording per office is added |
+| A-11 | A breach that should move between offices | Product owner | 7 |
+| H-1 | A signed-in person with no consent goes to the shared intake | Product owner | 7 |
+| I-4, I-5 | The UAT workbook sheet; ADR acceptance in the pull request | Engineer | 8 |
+
 ### Found in analysis, for later increments (owner to answer before that increment)
 
 | # | Increment | Finding | Owner | Until settled, the agent |

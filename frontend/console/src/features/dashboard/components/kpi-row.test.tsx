@@ -43,6 +43,45 @@ describe("KpiRow", () => {
     expect(screen.getAllByRole("link")).toHaveLength(4);
   });
 
+  it("shows the Legal PoC its office's requests, with the shared intake to claim", () => {
+    render(
+      <KpiRow
+        role="legal"
+        counts={{
+          requests_open: 4,
+          requests_in_intake: 2,
+          requests_overdue: 0,
+          open_breaches: 1,
+          breach_duties_late: 0,
+          activities_live: 3,
+          total_consents: 40,
+          versions_in_draft: 1,
+        }}
+      />,
+    );
+    expect(screen.getByRole("link", { name: /Open rights requests/ })).toHaveTextContent(
+      "2 in the shared intake",
+    );
+    expect(screen.getByRole("link", { name: /Live activities/ })).toHaveTextContent("40 consents");
+    expect(screen.getByRole("link", { name: /Template versions in draft/ })).toHaveTextContent(
+      "to approve",
+    );
+    expect(screen.getAllByRole("link")).toHaveLength(4);
+  });
+
+  it("warns an HR PoC of a link about to stop taking consent", () => {
+    render(
+      <KpiRow
+        role="hr_user"
+        counts={{ activities_live: 2, consents: 9, withdrawals_7d: 1, links_expiring_7d: 1, tickets_for_me: 0 }}
+      />,
+    );
+    const ending = screen.getByRole("link", { name: /Activity links ending within 7 days/ });
+    expect(ending).toHaveTextContent("extend or let close");
+    expect(ending.className).toContain("var(--warning)");
+    expect(screen.getByRole("link", { name: /Consents/ })).toHaveTextContent("1 withdrawn this week");
+  });
+
   it("leaves out a figure the server did not send, and a role it does not know", () => {
     const { unmount } = render(
       <KpiRow role="dco" counts={{ approved_projects: 1, consents: 2 }} />,

@@ -41,6 +41,8 @@ export interface RequestFilters extends ListFilters {
   unread?: boolean;
   /** Open and due within seven days - the window the dashboard counts. */
   due_soon?: boolean;
+  /** Open and in the shared intake, claimed by no office yet (0055). */
+  intake?: boolean;
 }
 
 export function listRequests(filters: RequestFilters = {}): Promise<Page<RightsRequestRow>> {

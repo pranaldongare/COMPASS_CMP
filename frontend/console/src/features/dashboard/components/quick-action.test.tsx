@@ -53,6 +53,22 @@ describe("QuickAction", () => {
     ).not.toBeInTheDocument();
   });
 
+  it("gives the Legal PoC Log an incident, and an HR PoC New activity", async () => {
+    const { unmount } = render(
+      <QuickAction me={makeMe({ role: "legal", writes: ["breach", "hr_category"] })} />,
+    );
+    expect(screen.getByRole("button", { name: "Log an incident" })).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "New notice template" }),
+    ).not.toBeInTheDocument();
+    unmount();
+    const { user } = render(
+      <QuickAction me={makeMe({ role: "hr_user", writes: ["project"], nav: ["dashboard", "hr-activities"] })} />,
+    );
+    await user.click(screen.getByRole("button", { name: "New activity" }));
+    expect(screen.getByRole("dialog", { name: "New activity" })).toBeInTheDocument();
+  });
+
   // Nothing is created from here without its site or processor (the reason
   // these roles once had no button): the button opens the register where that
   // choice is made (2026-10-10, the role-dashboard design).

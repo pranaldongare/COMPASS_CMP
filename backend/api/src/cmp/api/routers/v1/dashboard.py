@@ -78,6 +78,8 @@ _QUEUE_HREF = {
     "Sites awaiting a data source": "/sites",
     "Processors with no collection set up": "/projects",
     "Import exceptions": "/collections",
+    "Template versions in draft": "/notices/templates",
+    "Activity links ending within a week": "/hr-activities",
 }
 
 #: What needs each role today, in priority order. Each row names where its
@@ -280,6 +282,63 @@ _ATTENTION: dict[str, list[dict[str, Any]]] = {
 }
 _ATTENTION["rco"] = _ATTENTION["dco"]
 
+#: The Legal office (increment 8): the DPO's rows on its own requests and
+#: breaches - the same counts, scoped by the session's office - then what
+#: only it has: requests in the shared intake to claim, versions to approve.
+_ATTENTION["legal"] = [
+    *(
+        row
+        for row in _ATTENTION["dpo"]
+        if row.get("count")
+        in {
+            "breach_duties_late",
+            "breach_duties_outstanding",
+            "breach_tickets_returned",
+            "breach_tickets_overdue",
+            "requests_overdue",
+            "requests_due_7d",
+            "requests_unverified",
+            "tickets_for_me",
+        }
+        or row.get("queue") in {"Tickets past their date", "Teams have written on their tickets"}
+    ),
+    {
+        "count": "requests_in_intake",
+        "label": "Requests in the shared intake to claim",
+        "severity": "warning",
+        "href": "/requests?intake=1",
+    },
+    {
+        "count": "grievances_to_escalate",
+        "label": "Grievances about the office to escalate",
+        "severity": "warning",
+        "href": "/requests?type=grievance",
+    },
+    {
+        "count": "versions_in_draft",
+        "label": "Template versions waiting for approval",
+        "severity": "info",
+        "href": "/notices/templates",
+    },
+]
+
+#: An HR PoC (increment 8): a link about to stop taking consent, and the
+#: tickets addressed to them.
+_ATTENTION["hr_user"] = [
+    {
+        "count": "links_expiring_7d",
+        "label": "Activity links ending within a week",
+        "severity": "warning",
+        "href": "/hr-activities",
+    },
+    {
+        "count": "tickets_for_me",
+        "label": "Tickets addressed to you",
+        "severity": "warning",
+        "href": "/tickets",
+    },
+]
+
 
 def _attention(
     role: str, counts: dict[str, int], queues: list[dict[str, Any]]
@@ -393,10 +452,10 @@ async def dashboard(principal: CurrentUser) -> dict[str, Any]:
                 # A breach-only login (S3-09): its open breach tickets, below,
                 # and nothing else.
                 data = {"role": "breach_holder", "counts": {}, "queues": [], "recent": []}
-            case Role.LEGAL | Role.HR_USER:
-                # The HR track's roles (ADR 0032): their tickets, below, until
-                # the dashboards of their own registers arrive with them.
-                data = {"role": principal.role.value, "counts": {}, "queues": [], "recent": []}
+            case Role.LEGAL:
+                data = await _legal(conn)
+            case Role.HR_USER:
+                data = await _hr_user(conn, principal.user_id)
             case _:
                 raise Forbidden("No dashboard for this role")
         # Every member of staff, whatever their role: a rights request's
@@ -608,6 +667,89 @@ async def _dpo(conn: Any) -> dict[str, Any]:
             {"name": "Drafts whose purposes are not activated", "items": draft_queue},
         ],
         "recent": recent,
+    }
+
+
+async def _legal(conn: Any) -> dict[str, Any]:
+    """The Legal office's: its requests and breaches as the DPO reads the DPO
+    office's - the same queries, scoped by the session's office - its
+    activities and consents, and the template versions it has not approved."""
+    rights_counts = await rights_repo.counts(conn)
+    breaches = await breach_service.register(conn, status="open")
+    duties = [d for b in breaches for d in b["obligations"] if d["state"] == "outstanding"]
+    overdue = [
+        {
+            "request_uuid": str(r["request_uuid"]),
+            "reference": r["reference"],
+            "subject_name": r.get("subject_name"),
+            "action": f"{r['label']} is past its date",
+            "due_at": r["due_at"].isoformat() if r.get("due_at") else None,
+            "overdue": True,
+        }
+        for r in await rights_repo.holders_overdue(conn)
+    ]
+    replies = [
+        {
+            "request_uuid": str(r["request_uuid"]),
+            "reference": r["reference"],
+            "subject_name": r.get("subject_name"),
+            "action": f"{r['label']} wrote on its ticket · {int(r['unread'])} unread",
+            "due_at": r["due_at"].isoformat() if r.get("due_at") else None,
+        }
+        for r in await rights_repo.holders_awaiting_office(conn)
+    ]
+    drafts = [
+        {**r, "href": f"/notices/templates/{r['template_uuid']}"}
+        for r in await dashboard_repo.versions_in_draft(conn)
+    ]
+    recent = await entity_repo.attach(
+        conn,
+        [
+            e
+            for e in await audit_repo.recent(conn, limit=60, office=current_context().office)
+            if not str(e["event_type"]).startswith("auth.")
+        ][:8],
+        reader_role=Role.LEGAL,
+    )
+    return {
+        "role": "legal",
+        "counts": {
+            **_ints(rights_counts),
+            **_ints(await dashboard_repo.legal_counts(conn)),
+            "open_breaches": len(breaches),
+            "breach_duties_outstanding": len(duties),
+            "breach_duties_late": sum(
+                1 for d in duties if d["clock"]["overdue"] or d["clock"]["past_target"]
+            ),
+            **await breach_tickets.dashboard_counts(conn),
+        },
+        "breaches": breaches,
+        "queues": [
+            {"name": "Tickets past their date", "items": overdue},
+            {
+                "name": "Rights requests, soonest due first",
+                "items": await rights_repo.queue(conn, role=Role.LEGAL, user_id=0),
+            },
+            {"name": "Teams have written on their tickets", "items": replies},
+            {"name": "Template versions in draft", "items": drafts},
+        ],
+        "recent": recent,
+    }
+
+
+async def _hr_user(conn: Any, user_id: int) -> dict[str, Any]:
+    """An HR PoC's: the activities of their categories, their consents, and
+    the links about to stop taking consent."""
+    return {
+        "role": "hr_user",
+        "counts": _ints(await dashboard_repo.hr_poc_counts(conn, user_id)),
+        "queues": [
+            {
+                "name": "Activity links ending within a week",
+                "items": await dashboard_repo.hr_links_ending(conn, user_id),
+            },
+        ],
+        "recent": [],
     }
 
 

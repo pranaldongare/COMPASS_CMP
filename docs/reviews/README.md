@@ -89,6 +89,7 @@ decision.
 | Notifications as an inbox or a feed; splitting Users into staff and participants | Product owner | the 2026-10-05 UX review |
 | UX package 6: contrast on real colour pairs, error summaries on long forms, core journeys at 320px, no interactive element inside another | Frontend | the 2026-10-05 UX review |
 | An email to a project's collector when a source's owner changes; an email when a cover ends on its date | Product owner | [notifications plan](../notifications/implementation-plan.md) |
+| HR track phase 2: machine credentials for HRMS events and a consent-check API, over the SQS relay; needs its own ADR against ADR 0003 | Product owner | [ADR 0034](../decisions/0034-an-employee-link-signs-in-through-the-organisations-sso.md) consequences, [hr-track.md](../domain/hr-track.md) §4, [open points](../plans/hr-track-open-points.md) |
 
 ## Known environment issues
 

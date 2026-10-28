@@ -388,6 +388,7 @@ async def list_requests(
     q: str | None = None,
     unread: bool = False,
     due_soon: bool = False,
+    intake: bool = False,
 ) -> tuple[list[Row], str | None, int]:
     pred, sparams = scope_predicate(role, user_id)
     where = [pred]
@@ -407,6 +408,10 @@ async def list_requests(
         where.append(
             "r.status <> 'closed' AND r.due_at BETWEEN now() AND now() + interval '7 days'"
         )
+    if intake:
+        # Open and in no office's queue yet: the dashboard's
+        # requests_in_intake (0055).
+        where.append("r.status <> 'closed' AND r.office_id IS NULL")
     if unread:
         # A team has written on a ticket and the office has not read it.
         where.append(f"r.status <> 'closed' AND {_UNREAD_THREADS} > 0")

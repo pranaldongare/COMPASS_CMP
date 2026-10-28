@@ -562,6 +562,16 @@ class TestTheViewAndTheIntake:
         await _as(conn, probe, office)
         assert unrouted in await _visible(conn, "rights_request")
 
+    @pytest.mark.parametrize("setting", [None, "", "nowhere"], ids=["unset", "empty", "unknown"])
+    async def test_the_shared_intake_is_not_visible_to_no_office(
+        self, conn: Any, worlds: dict[str, dict[str, int]], probe: str, setting: str | None
+    ) -> None:
+        """An office's session sees the intake; a connection that names none
+        sees nothing, the intake included (0056)."""
+        unrouted = await _request(conn, office=None, tag=f"intake-{uuid.uuid4().hex[:8]}")
+        await _as(conn, probe, setting)
+        assert unrouted not in await _visible(conn, "rights_request")
+
 
 class TestThePoolSetsTheOffice:
     """The application's half: the setting the policies read is the one the

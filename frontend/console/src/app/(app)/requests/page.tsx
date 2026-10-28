@@ -57,6 +57,7 @@ function RequestsPageView() {
   // One "Clock" control over two filters the API keeps apart.
   const clock = overdue ? "overdue" : dueSoon ? "due_soon" : "";
   const [unread, setUnread] = useFilterParam("unread");
+  const [intake, setIntake] = useFilterParam("intake");
   const [logging, setLogging] = React.useState(false);
 
   const query = useRequests({
@@ -65,6 +66,7 @@ function RequestsPageView() {
     overdue: overdue ? true : undefined,
     due_soon: dueSoon ? true : undefined,
     unread: unread ? true : undefined,
+    intake: intake ? true : undefined,
     cursor: stack.cursor,
     limit: 25,
   });
@@ -135,6 +137,18 @@ function RequestsPageView() {
           options={[{ value: "1", label: "Unread from a team" }]}
           allLabel="Any"
         />
+        {!isAdmin && (
+          <FilterSelect
+            label="Office"
+            value={intake}
+            onChange={(v) => {
+              setIntake(v);
+              stack.reset();
+            }}
+            options={[{ value: "1", label: "In the shared intake" }]}
+            allLabel="Mine and the intake"
+          />
+        )}
       </FilterBar>
 
       <ResourceList<RightsRequestRow>
@@ -145,7 +159,7 @@ function RequestsPageView() {
         keyOf={(r) => r.request_uuid}
         empty={{
           illustration: <EmptyRecords />,
-          title: status || type || clock || unread ? "No requests match" : "No requests yet",
+          title: status || type || clock || unread || intake ? "No requests match" : "No requests yet",
           description: isAdmin
             ? "A grievance escalated away from the DPO appears here."
             : "A request made from the dashboard, the notice link or an email you log appears here with its clock.",

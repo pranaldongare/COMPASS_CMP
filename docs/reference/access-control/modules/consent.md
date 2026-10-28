@@ -2,32 +2,35 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-12 operations; 12 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
+15 operations; 15 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
-| GET | `/consents` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/consents/{consent_uuid}` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/consents/{consent_uuid}/assets` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/consents/{consent_uuid}/grants` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/links` | `dpo`, `dco`, `dco_admin`, `rco` | Full session; anonymous NO |
-| GET | `/links/{link_uuid}` | `dpo`, `dco`, `dco_admin`, `rco` | Full session; anonymous NO |
-| POST | `/links/{link_uuid}/remint` | `dpo`, `dco`, `dco_admin`, `rco` | Full session; anonymous NO |
-| POST | `/links/{link_uuid}/revoke` | `dpo`, `dco`, `dco_admin`, `rco` | Full session; anonymous NO |
-| GET | `/links/{link_uuid}/stats` | `dpo`, `dco`, `dco_admin`, `rco` | Full session; anonymous NO |
-| GET | `/projects/{project_uuid}/consents` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/projects/{project_uuid}/consents/summary` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/projects/{project_uuid}/links` | `dpo`, `dco`, `dco_admin`, `rco` | Full session; anonymous NO |
+| GET | `/consents` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/consents/{consent_uuid}` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/consents/{consent_uuid}/assets` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/consents/{consent_uuid}/grants` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/links` | `dco`, `dco_admin`, `dpo`, `rco` | Full session; anonymous NO |
+| GET | `/links/{link_uuid}` | `dco`, `dco_admin`, `dpo`, `rco` | Full session; anonymous NO |
+| POST | `/links/{link_uuid}/remint` | `dco`, `dco_admin`, `dpo`, `rco` | Full session; anonymous NO |
+| POST | `/links/{link_uuid}/revoke` | `dco`, `dco_admin`, `dpo`, `rco` | Full session; anonymous NO |
+| GET | `/links/{link_uuid}/stats` | `dco`, `dco_admin`, `dpo`, `rco` | Full session; anonymous NO |
+| GET | `/projects/{project_uuid}/consents` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/projects/{project_uuid}/consents/summary` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/projects/{project_uuid}/links` | `dco`, `dco_admin`, `dpo`, `rco` | Full session; anonymous NO |
+| GET | `/consents/{consent_uuid}/record` | `dpo`, `dco`, `dco_admin`, `rco`, `legal`, `hr_user` | Full session; anonymous NO |
+| GET | `/consent-records` | `dpo`, `dco`, `dco_admin`, `rco`, `legal`, `hr_user` | Full session; anonymous NO |
+| POST | `/consent-records` | `dpo`, `dco`, `dco_admin`, `rco`, `legal`, `hr_user` | Full session; anonymous NO |
 
 ## GET /consents
 
 All consents in scope.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ConsentReader`.
 - **Resolved gate:** `RequireResource(consent, write=False)`.
 - **Rules:** Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).
@@ -38,11 +41,11 @@ All consents in scope.
 
 Get Consent.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ConsentReader`.
 - **Resolved gate:** `RequireResource(consent, write=False)`.
 - **Rules:** Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).
@@ -53,11 +56,11 @@ Get Consent.
 
 Which assets contain this person.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ConsentReader`.
 - **Resolved gate:** `RequireResource(consent, write=False)`.
 - **Rules:** Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).
@@ -68,11 +71,11 @@ Which assets contain this person.
 
 Consent Grants.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ConsentReader`.
 - **Resolved gate:** `RequireResource(consent, write=False)`.
 - **Rules:** Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).
@@ -83,11 +86,11 @@ Consent Grants.
 
 All links in scope.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`.
 - **Route guard:** `LinkReader`.
 - **Resolved gate:** `RequireResource(link, write=False)`.
 - **Rules:** Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).
@@ -97,11 +100,11 @@ All links in scope.
 
 Get Link.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`.
 - **Route guard:** `LinkReader`.
 - **Resolved gate:** `RequireResource(link, write=False)`.
 - **Rules:** Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).
@@ -111,11 +114,11 @@ Get Link.
 
 Replace a link with a fresh one.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`.
 - **Route guard:** `LinkReader`.
 - **Resolved gate:** `RequireResource(link, write=False)`.
 - **Rules:** Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).
@@ -126,11 +129,11 @@ Replace a link with a fresh one.
 
 Revoke Link.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`.
 - **Route guard:** `LinkReader`.
 - **Resolved gate:** `RequireResource(link, write=False)`.
 - **Rules:** Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).
@@ -141,11 +144,11 @@ Revoke Link.
 
 Link Stats.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`.
 - **Route guard:** `LinkReader`.
 - **Resolved gate:** `RequireResource(link, write=False)`.
 - **Rules:** Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).
@@ -155,11 +158,11 @@ Link Stats.
 
 List Consents.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ConsentReader`.
 - **Resolved gate:** `RequireResource(consent, write=False)`.
 - **Rules:** Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).
@@ -170,11 +173,11 @@ List Consents.
 
 Consents Summary.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `ConsentReader`.
 - **Resolved gate:** `RequireResource(consent, write=False)`.
 - **Rules:** Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).
@@ -186,12 +189,53 @@ Consents Summary.
 
 List Links.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`.
 - **Route guard:** `LinkReader`.
 - **Resolved gate:** `RequireResource(link, write=False)`.
 - **Rules:** Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/consents.py#L224), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/consent.py#L21).
+## GET /consents/{consent_uuid}/record
+
+The consent record as a PDF, for audit.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO | ALL | SCOPED |
+
+- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `legal`, `hr_user`.
+- **Route guard:** `RecordReader`.
+- **Resolved gate:** `Depends(RequireRole(Role.DPO, Role.DCO, Role.DCO_ADMIN, Role.RCO, Role.LEGAL, Role.HR_USER))`.
+- **Rules:** Staff in scope only (ADR 0031): a consent in the caller's read scope of consents, within the caller's office; name and one masked contact; every download audited. The administrator and the R&D User are refused by the route.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/consents.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/consent/record.py).
+
+## GET /consent-records
+
+Consent records as PDFs in a ZIP, with a manifest, for a downstream store.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO | ALL | SCOPED |
+
+- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `legal`, `hr_user`.
+- **Route guard:** `RecordReader`.
+- **Resolved gate:** `Depends(RequireRole(Role.DPO, Role.DCO, Role.DCO_ADMIN, Role.RCO, Role.LEGAL, Role.HR_USER))`.
+- **Rules:** Staff in scope only (ADR 0031): a consent in the caller's read scope of consents, within the caller's office; name and one masked contact; every download audited. The administrator and the R&D User are refused by the route. A ZIP with a manifest; the filters select within scope only.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/consents.py).
+
+## POST /consent-records
+
+The consent records a list of consent IDs names, as PDFs in a ZIP.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO | ALL | SCOPED |
+
+- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `legal`, `hr_user`.
+- **Route guard:** `RecordReader`.
+- **Resolved gate:** `Depends(RequireRole(Role.DPO, Role.DCO, Role.DCO_ADMIN, Role.RCO, Role.LEGAL, Role.HR_USER))`.
+- **Rules:** Staff in scope only (ADR 0031): a consent in the caller's read scope of consents, within the caller's office; name and one masked contact; every download audited. The administrator and the R&D User are refused by the route. An ID outside scope is listed in the manifest as not found, never fetched.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/consents.py).

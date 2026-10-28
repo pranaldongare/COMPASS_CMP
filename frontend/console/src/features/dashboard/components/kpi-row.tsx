@@ -18,6 +18,7 @@ import {
   Link2,
   Scale,
   ShieldAlert,
+  Sparkles,
   UserPlus,
   Users,
   type LucideIcon,
@@ -156,6 +157,67 @@ const FIGURES: Record<string, Figure[]> = {
       icon: CheckCircle2,
       hint: (c) => (c.approved ? "collecting" : undefined),
       hintTone: () => "good",
+    },
+  ],
+  // The Legal office (increment 8): its requests and breaches as the DPO's,
+  // and the HR track's own work - activities live, versions to approve.
+  legal: [
+    {
+      key: "requests_open",
+      icon: Scale,
+      hint: (c) =>
+        c.requests_in_intake
+          ? `${c.requests_in_intake} in the shared intake`
+          : c.requests_overdue
+            ? `${plural(c.requests_overdue, "overdue")}`
+            : "none overdue",
+      alarm: (c) => (c.requests_overdue ?? 0) > 0,
+      hintTone: (c) => (c.requests_overdue ? "bad" : c.requests_in_intake ? "warn" : "good"),
+    },
+    {
+      key: "open_breaches",
+      label: "Open breaches",
+      icon: ShieldAlert,
+      href: "/breaches",
+      hint: (c) =>
+        c.breach_duties_late
+          ? `${plural(c.breach_duties_late, "duty", "duties")} late`
+          : "no duty late",
+      alarm: (c) => (c.breach_duties_late ?? 0) > 0,
+      hintTone: (c) => (c.breach_duties_late ? "bad" : "good"),
+    },
+    {
+      key: "activities_live",
+      icon: Sparkles,
+      hint: (c) => (c.total_consents != null ? `${c.total_consents} consents` : undefined),
+    },
+    {
+      key: "versions_in_draft",
+      icon: FileText,
+      hint: (c) => (c.versions_in_draft ? "to approve" : "none waiting"),
+      hintTone: (c) => (c.versions_in_draft ? "warn" : "good"),
+    },
+  ],
+  hr_user: [
+    { key: "activities_live", label: "Your live activities", icon: Sparkles },
+    {
+      key: "consents",
+      icon: FileText,
+      hint: (c) => (c.withdrawals_7d ? `${c.withdrawals_7d} withdrawn this week` : undefined),
+    },
+    {
+      key: "links_expiring_7d",
+      icon: Link2,
+      alarm: (c) => (c.links_expiring_7d ?? 0) > 0,
+      hint: (c) => (c.links_expiring_7d ? "extend or let close" : "none ending"),
+      hintTone: (c) => (c.links_expiring_7d ? "warn" : "good"),
+    },
+    {
+      key: "tickets_for_me",
+      icon: Inbox,
+      alarm: (c) => (c.tickets_for_me ?? 0) > 0,
+      hint: (c) => (c.tickets_for_me ? "waiting on you" : "none waiting"),
+      hintTone: (c) => (c.tickets_for_me ? "warn" : "good"),
     },
   ],
   admin: [

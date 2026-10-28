@@ -4,7 +4,8 @@
  *
  * The DPO logs an incident: the organisation's board is owed word within
  * thirty minutes of its being first noticed, so the button must not be a
- * menu and a page away. An R&D user registers a project, an administrator
+ * menu and a page away. So does the Legal PoC, on the Legal office's
+ * register (0055); an HR PoC starts an activity (ADR 0033). An R&D user registers a project, an administrator
  * provisions an account - each the start of that role's work, needing no
  * record to hang off. Collection owners and the DCO Admin get none: what they
  * begin - a link, a site, a source - belongs to a project or a site, which
@@ -15,7 +16,7 @@
  */
 "use client";
 
-import { Database, Link2, Plus, ShieldAlert, UserPlus } from "lucide-react";
+import { Database, Link2, Plus, ShieldAlert, Sparkles, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import * as React from "react";
@@ -23,12 +24,13 @@ import * as React from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/primitives";
 import { RecordBreachForm } from "@/features/breach/components/record-breach";
+import { ActivityWizard } from "@/features/hr-activities/components/activity-wizard";
 import { NewTemplateButton } from "@/features/notice-templates/components/templates-panel";
 import { ProjectForm } from "@/features/projects/components";
 import { UserForm } from "@/features/users/components/forms";
 import type { Me } from "@/types";
 
-type Action = "incident" | "project" | "account" | "link" | "source";
+type Action = "incident" | "project" | "account" | "link" | "source" | "activity";
 
 function actionFor(me: Me | null | undefined): Action | null {
   if (!me) return null;
@@ -36,6 +38,7 @@ function actionFor(me: Me | null | undefined): Action | null {
   // server sent, as the Breaches page is.
   if (me.writes.includes("breach")) return "incident";
   if (me.role === "rnd_user") return "project";
+  if (me.role === "hr_user" && me.nav.includes("hr-activities")) return "activity";
   if (me.role === "admin") return "account";
   // The collection roles' starts (2026-10-10, the role-dashboard design): a
   // DCO Admin registers a source; a DCO or RCO issues a consent link from the
@@ -57,6 +60,7 @@ export function QuickAction({ me }: { me: Me | null | undefined }) {
     account: { label: "Provision an account", icon: UserPlus },
     link: { label: "New consent link", icon: Link2 },
     source: { label: "Register a data source", icon: Database },
+    activity: { label: "New activity", icon: Sparkles },
   }[action];
   const Icon = copy.icon;
 
@@ -104,6 +108,15 @@ export function QuickAction({ me }: { me: Me | null | undefined }) {
                 if (created) router.push(`/projects/${created.project_uuid}`);
               }}
             />
+          </DialogContent>
+        )}
+        {action === "activity" && (
+          <DialogContent
+            title="New activity"
+            description="From a template version Legal approved. It is live, with its link, the moment you create it."
+            size="lg"
+          >
+            {open && <ActivityWizard onDone={() => setOpen(false)} />}
           </DialogContent>
         )}
         {action === "account" && (

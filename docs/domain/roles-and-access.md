@@ -52,10 +52,10 @@ denied: no wildcard, no inheritance.
 | asset | all |  | scoped | scoped | scoped | own |  |  |  |  |
 | audit | all | all |  |  |  |  |  |  | all |  |
 | message_template | all +w | all +w |  |  |  |  |  |  |  |  |
-| rights_request | all +w | scoped +w |  |  |  |  |  |  |  |  |
-| legal_hold | all +w |  |  |  |  |  |  |  |  |  |
+| rights_request | all +w | scoped +w |  |  |  |  |  |  | all +w |  |
+| legal_hold | all +w |  |  |  |  |  |  |  | all +w |  |
 | restricted_country | all +w | all |  |  |  |  |  |  |  |  |
-| breach | all +w |  |  |  |  |  |  |  |  |  |
+| breach | all +w |  |  |  |  |  |  |  | all +w |  |
 | ticket | own +w | own +w | own +w | own +w | own +w | own +w |  | own +w | own +w | own +w |
 | breach_ticket | own +w | own +w | own +w | own +w | own +w | own +w |  | own +w | own +w | own +w |
 | me |  |  |  |  |  |  | own +w |  |  |  |
@@ -167,7 +167,7 @@ matrix, so it cannot drift into showing a button that answers 403.
 | R&D User | dashboard, projects, notices, processors, approvals, imports, collections, tickets, notifications, profile |
 | Data principal | consents, requests, notifications, profile |
 | Temporary ticket holder | tickets, notifications, profile |
-| Legal PoC | dashboard, hr-activities, hr-categories, templates, purposes, consents, exports, processors, users, audit, tickets, notifications, profile |
+| Legal PoC | dashboard, requests, breaches, hr-activities, hr-categories, templates, purposes, consents, exports, processors, users, audit, tickets, notifications, profile |
 | HR PoC | dashboard, hr-activities, hr-categories, links, consents, exports, tickets, notifications, profile |
 
 A temporary ticket holder has no dashboard: the console sends it from
@@ -189,7 +189,7 @@ daily destinations in the order the work runs (`DAILY_WORK` in
 | DCO Admin | Dashboard, Collection sites, Data sources, My tasks, Consent links, Projects |
 | DCO, RCO | Dashboard, My projects, Collection sites, Consent links, My tasks, Collections |
 | Administrator | Dashboard, Users, Grievances about the DPO, Message templates, Processors, Data sources, Audit trail |
-| Legal PoC | Dashboard, HR activities, HR categories, Notice templates, Purposes, My tasks |
+| Legal PoC | Dashboard, Rights requests, Breaches, HR activities, HR categories, Notice templates, Purposes, My tasks |
 | HR PoC | Dashboard, HR activities, Consent links, Consents, My tasks |
 
 Profile and notifications are not in the sidebar: the account menu holds
@@ -363,18 +363,27 @@ review**, apart from **Needs your action** (UX review 2026-10-05).
 | DCO, RCO | tickets past their date; tickets addressed to them; imports that did not reconcile; assets with unmapped subjects |
 | DCO Admin | tickets past their date; sites awaiting a data source; sources with nobody accountable; processors with no collection set up; tickets addressed to them |
 | R&D User | projects needing something from them; tickets addressed to them |
+| Legal PoC | the DPO's rows on the Legal office's own requests and breaches (breach duties, breach tickets, tickets past their date, requests overdue, due within seven days or awaiting verification, teams that have written); requests in the shared intake to claim; grievances about the office to escalate; template versions waiting for approval; tickets addressed to them |
+| HR PoC | activity links ending within a week; tickets addressed to them |
 | Temporary ticket holder | no dashboard: the console sends it to **My tasks**, where its breach and rights tickets are |
 
-Three roles start something from nothing, and its button sits at the top of
+Five roles start something from nothing, and its button sits at the top of
 their dashboard (2026-10-06): the DPO **Log an incident** - the organisation's
 board is owed word within thirty minutes of its being first noticed, so it is
 never a menu away - with **New notice template** beside it as a secondary
-button, an R&D User **Register a project**, an administrator
+button, the Legal PoC **Log an incident** on the Legal office's register, an
+R&D User **Register a project**, an HR PoC **New activity**, an administrator
 **Provision an account**. The collection roles get none: a link, a site or a
 source belongs to a project or a site, which their queues already lead to.
 
 Every staff dashboard also lists the breach tickets addressed to its reader,
 and the DPO's shows the open breaches above the queues.
+
+The Legal PoC's figures are the DPO's on its own office - open requests
+(with those in the shared intake), open breaches - and its own: live
+activities with their consents, template versions in draft. An HR PoC's are
+the activities of their categories, their consents, this week's withdrawals
+and the links ending within a week (increment 8).
 
 A data principal who has not finished her own sign-up is not the
 administrator's to activate, so she is not counted; a grievance about the

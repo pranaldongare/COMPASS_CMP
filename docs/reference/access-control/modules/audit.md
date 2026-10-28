@@ -6,23 +6,23 @@
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
-| GET | `/audit` | `dpo`, `admin` | Full session; anonymous NO |
-| GET | `/audit/verify` | `dpo`, `admin` | Full session; anonymous NO |
-| GET | `/audit/summary` | `dpo`, `admin` | Full session; anonymous NO |
-| GET | `/audit/vocabulary` | `dpo`, `admin` | Full session; anonymous NO |
-| GET | `/audit/lookup` | `dpo`, `admin` | Full session; anonymous NO |
-| GET | `/audit/export.csv` | `dpo`, `admin` | Full session; anonymous NO |
-| GET | `/audit/{log_uuid}` | `dpo`, `admin` | Full session; anonymous NO |
+| GET | `/audit` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/audit/summary` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/audit/vocabulary` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/audit/lookup` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/audit/export.csv` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/audit/verify` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/audit/{log_uuid}` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
 
 ## GET /audit
 
 Search the trail.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RequireDPOorAdmin`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]`.
 - **Rules:** DPO/Admin may inspect the audit trail and verify its chain. No API to edit audit entries is registered. Since `c7d3f6b` the search also takes `actor_role`, `entity` (a public uuid with `entity_type`, resolved server-side; unknown matches nothing), `event_group` and `q`; the same filters drive the summary and the export.
@@ -32,11 +32,11 @@ Search the trail.
 
 The shape of the rows a filter selects.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RequireDPOorAdmin`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]`.
 - **Rules:** DPO/Admin only. Counts by event, area, actor role and day over exactly the rows the same filters would list; the filters are validated as on GET /audit (an unknown entity uuid matches nothing).
@@ -46,11 +46,11 @@ The shape of the rows a filter selects.
 
 What the trail can be filtered by.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RequireDPOorAdmin`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]`.
 - **Rules:** DPO/Admin only. Static: every entity type and event type the trail may carry, with labels, and the pickers the console offers. No row data.
@@ -60,11 +60,11 @@ What the trail can be filtered by.
 
 Find a record to filter on.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RequireDPOorAdmin`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]`.
 - **Rules:** DPO/Admin only. Finds data principals, staff, consent records, processors, data sources, projects, notices, sites and rights requests, unscoped (the two supervising roles read every row). Names and contacts are sealed, so a person is matched by the whole email, mobile or username through its keyed hash, by uuid, or by three or more characters of a name through the hashed name runs (since `f5fffcc`); labels and hints come back sealed for the console to open. `kind` must be a known lookup kind, else 422; at most ten answers.
@@ -74,11 +74,11 @@ Find a record to filter on.
 
 Download the rows a filter selects, as CSV.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RequireDPOorAdmin`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]`.
 - **Rules:** DPO/Admin only. Newest first, at most 10,000 rows, free-text cells neutralised against spreadsheet formulas. The download is itself recorded in the trail as `audit.exported`, with the filters used and the caller as actor.
@@ -88,11 +88,11 @@ Download the rows a filter selects, as CSV.
 
 Verify the hash chain.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RequireDPOorAdmin`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]`.
 - **Rules:** DPO/Admin may inspect the audit trail and verify its chain. No API to edit audit entries is registered.
@@ -102,11 +102,11 @@ Verify the hash chain.
 
 Get Entry.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RequireDPOorAdmin`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]`.
 - **Rules:** DPO/Admin may inspect the audit trail and verify its chain. No API to edit audit entries is registered.

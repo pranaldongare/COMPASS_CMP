@@ -6,7 +6,7 @@
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
-| GET | `/restricted-countries` | `dpo`, `admin` | Full session; anonymous NO |
+| GET | `/restricted-countries` | `admin`, `dpo` | Full session; anonymous NO |
 | POST | `/restricted-countries` | `dpo` | Full session; anonymous NO |
 | POST | `/restricted-countries/{country_uuid}/lift` | `dpo` | Full session; anonymous NO |
 
@@ -14,11 +14,11 @@
 
 The restricted list.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`.
 - **Route guard:** `TransferListReader`.
 - **Resolved gate:** `RequireResource(restricted_country)`.
 - **Rules:** The Government's s.16 restricted-country list (resource `restricted_country`, S2-04): the DPO keeps it, the administrator reads it. Data, not code - a country, the notification that lists it, lifted once; one active listing per country, and India cannot be listed. Every export is checked against it.
@@ -28,9 +28,9 @@ The restricted list.
 
 Restrict transfers to a country.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `TransferListWriter`.
@@ -42,9 +42,9 @@ Restrict transfers to a country.
 
 Lift a restriction.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `TransferListWriter`.

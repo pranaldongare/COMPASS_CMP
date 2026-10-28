@@ -2,13 +2,12 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-28 operations; 28 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
+30 operations; 30 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
-| GET | `/me/breach-notices` | `data_subject` | Full session; anonymous NO |
-| GET | `/me` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | Full session; anonymous NO |
-| PATCH | `/me` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | Full session; anonymous NO |
+| GET | `/me` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
+| PATCH | `/me` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
 | GET | `/me/consents` | `data_subject` | Full session; anonymous NO |
 | GET | `/me/consents/{consent_uuid}` | `data_subject` | Full session; anonymous NO |
 | GET | `/me/consents/{consent_uuid}/grants` | `data_subject` | Full session; anonymous NO |
@@ -16,15 +15,15 @@
 | GET | `/me/consents/{consent_uuid}/notice` | `data_subject` | Full session; anonymous NO |
 | GET | `/me/consents/{consent_uuid}/trail` | `data_subject` | Full session; anonymous NO |
 | POST | `/me/consents/{consent_uuid}/withdraw` | `data_subject` | Full session; anonymous NO |
-| POST | `/me/contact/verify` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | Full session; anonymous NO |
-| POST | `/me/contacts/code` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | Full session; anonymous NO |
+| POST | `/me/contact/verify` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
+| POST | `/me/contacts/code` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
 | GET | `/me/disclosures` | `data_subject` | Full session; anonymous NO |
 | GET | `/me/nominations` | `data_subject` | Full session; anonymous NO |
 | POST | `/me/nominations` | `data_subject` | Full session; anonymous NO |
 | DELETE | `/me/nominations/{nomination_uuid}` | `data_subject` | Full session; anonymous NO |
 | GET | `/me/nominee-of` | `data_subject` | Full session; anonymous NO |
 | GET | `/me/notifications` | `data_subject` | Full session; anonymous NO |
-| POST | `/me/person-type` | `dpo`, `admin`, `data_subject` | Full session; anonymous NO |
+| POST | `/me/person-type` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
 | GET | `/me/requests` | `data_subject` | Full session; anonymous NO |
 | POST | `/me/requests` | `data_subject` | Full session; anonymous NO |
 | GET | `/me/requests/{request_uuid}` | `data_subject` | Full session; anonymous NO |
@@ -32,18 +31,21 @@
 | GET | `/me/requests/{request_uuid}/download` | `data_subject` | Full session; anonymous NO |
 | GET | `/me/requests/{request_uuid}/files/{file_uuid}` | `data_subject` | Full session; anonymous NO |
 | GET | `/me/requests/{request_uuid}/trail` | `data_subject` | Full session; anonymous NO |
-| DELETE | `/me/secondary-email` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | Full session; anonymous NO |
+| DELETE | `/me/secondary-email` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
+| GET | `/me/breach-notices` | `data_subject` | Full session; anonymous NO |
 | POST | `/me/requests/{request_uuid}/attachments` | `data_subject` | Full session; anonymous NO |
+| GET | `/me/requests/offices` | `data_subject` | Full session; anonymous NO |
+| GET | `/me/consents/{consent_uuid}/record` | `data_subject` | Full session; anonymous NO |
 
 ## GET /me
 
 Get Me.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | OWN | OWN |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| OWN | OWN | OWN | OWN | OWN | OWN | OWN | OWN | NO | NO |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder`.
+- **Who:** `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder`.
 - **Route guard:** `CurrentUser`.
 - **Rules:** Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.
 - Shared account/profile route: staff sessions are accepted. POST /me/person-type is narrower: DPO, Admin and data_subject only.
@@ -53,11 +55,11 @@ Get Me.
 
 Update Me.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | OWN | OWN |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| OWN | OWN | OWN | OWN | OWN | OWN | OWN | OWN | NO | NO |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder`.
+- **Who:** `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder`.
 - **Route guard:** `CurrentUser`.
 - **Rules:** Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.
 - Shared account/profile route: staff sessions are accepted. POST /me/person-type is narrower: DPO, Admin and data_subject only.
@@ -68,9 +70,9 @@ Update Me.
 
 My Consents.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
 - **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
@@ -83,9 +85,9 @@ My Consents.
 
 My Consent.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
 - **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
@@ -98,9 +100,9 @@ My Consent.
 
 My Consent Grants.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
 - **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
@@ -113,9 +115,9 @@ My Consent Grants.
 
 The supersession chain.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
 - **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
@@ -128,9 +130,9 @@ The supersession chain.
 
 The words she actually saw.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
 - **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
@@ -143,9 +145,9 @@ The words she actually saw.
 
 What was recorded about this consent.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
 - **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
@@ -158,9 +160,9 @@ What was recorded about this consent.
 
 Withdraw.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
 - **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
@@ -173,11 +175,11 @@ Withdraw.
 
 Confirm one of my contacts.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | OWN | OWN |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| OWN | OWN | OWN | OWN | OWN | OWN | OWN | OWN | NO | NO |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder`.
+- **Who:** `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder`.
 - **Route guard:** `CurrentUser`.
 - **Rules:** Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.
 - Shared account/profile route: staff sessions are accepted. POST /me/person-type is narrower: DPO, Admin and data_subject only.
@@ -188,11 +190,11 @@ Confirm one of my contacts.
 
 A code to confirm one of my contacts.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | OWN | OWN |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| OWN | OWN | OWN | OWN | OWN | OWN | OWN | OWN | NO | NO |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder`.
+- **Who:** `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder`.
 - **Route guard:** `CurrentUser`.
 - **Rules:** Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.
 - Shared account/profile route: staff sessions are accepted. POST /me/person-type is narrower: DPO, Admin and data_subject only.
@@ -203,9 +205,9 @@ A code to confirm one of my contacts.
 
 Who was my data shared with (s.11(1)(b)).
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
 - **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
@@ -218,9 +220,9 @@ Who was my data shared with (s.11(1)(b)).
 
 Whom I have nominated.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
 - **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
@@ -233,9 +235,9 @@ Whom I have nominated.
 
 Nominate somebody - s.14.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
 - **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
@@ -248,9 +250,9 @@ Nominate somebody - s.14.
 
 Revoke a nomination.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
 - **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
@@ -263,9 +265,9 @@ Revoke a nomination.
 
 Who has nominated me.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
 - **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
@@ -280,9 +282,9 @@ Who has nominated me.
 
 My Notifications.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
 - **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
@@ -295,11 +297,11 @@ My Notifications.
 
 Change Person Type.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| OWN | OWN | NO | NO | NO | NO | OWN | NO | NO | NO |
 
-- **Who:** `dpo`, `admin`, `data_subject`.
+- **Who:** `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `CurrentUser`.
 - **Additional role checks:** `principal.role not in (Role.DATA_SUBJECT, Role.DPO, Role.ADMIN)`.
 - **Rules:** Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.
@@ -310,9 +312,9 @@ Change Person Type.
 
 My requests.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
 - **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
@@ -325,9 +327,9 @@ My requests.
 
 Make a request, signed in.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
 - **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
@@ -340,9 +342,9 @@ Make a request, signed in.
 
 My Request.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
 - **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
@@ -356,9 +358,9 @@ My Request.
 
 Dispute the response - a grievance under s.13.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
 - **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
@@ -371,9 +373,9 @@ Dispute the response - a grievance under s.13.
 
 The response, while the window is open.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
 - **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
@@ -387,9 +389,9 @@ The response, while the window is open.
 
 A file released with the response, while the window is open.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
 - **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
@@ -403,9 +405,9 @@ A file released with the response, while the window is open.
 
 What was recorded about my request.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
 - **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
@@ -419,11 +421,11 @@ What was recorded about my request.
 
 Remove my second address.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | OWN | OWN |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| OWN | OWN | OWN | OWN | OWN | OWN | OWN | OWN | NO | NO |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder`.
+- **Who:** `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder`.
 - **Route guard:** `CurrentUser`.
 - **Rules:** Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.
 - Shared account/profile route: staff sessions are accepted. POST /me/person-type is narrower: DPO, Admin and data_subject only.
@@ -433,11 +435,11 @@ Remove my second address.
 
 Notices about a personal data breach written to my account (Rule 7(1)).
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
-- **Who:** `data_subject`, her own.
+- **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
 - **Rules:** Her own: the breach notices written to her account (S3-03), only versions actually sent to her.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/me.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/breach_notices.py).
@@ -446,12 +448,38 @@ Notices about a personal data breach written to my account (Rule 7(1)).
 
 Send a document with my request.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | NO | NO | NO | NO | NO | OWN | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
 
-- **Who:** `data_subject`, on her own request only.
+- **Who:** `data_subject`.
 - **Route guard:** `RequireDataSubject`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DATA_SUBJECT))]`.
 - **Rules:** Only her own request (404 otherwise, including one a nominee raised for her), and only while it is open (409 `request_closed`), checked before the file is stored. Multipart `file`: PDF, PNG, JPEG, text or .docx, at most 25 MB; at most 10 on a request (409 `too_many_attachments`). Kept as it came - never replaced or removed, by trigger and grant; the name sealed. The trail records `rights.attachment_added`, never the name. (2026-10-07)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+## GET /me/requests/offices
+
+The offices my requests can go to.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
+
+- **Who:** `data_subject`.
+- **Route guard:** `RequireDataSubject`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DATA_SUBJECT))]`.
+- **Rules:** The offices whose notices the signed-in person holds a current artefact on; codes and titles only.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py).
+## GET /me/consents/{consent_uuid}/record
+
+Her consent record as a PDF.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | NO | NO | NO | NO | NO | OWN | NO | NO | NO |
+
+- **Who:** `data_subject`.
+- **Route guard:** `RequireDataSubject`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DATA_SUBJECT))]`.
+- **Rules:** Her own consent only (ADR 0031): the record as a PDF; another person's consent uuid is 404.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/me.py).

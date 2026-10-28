@@ -12833,7 +12833,7 @@
           "rights"
         ],
         "summary": "Every request in scope",
-        "description": "The register. Soonest due is the sort that matters; newest first is the default.\n\n`due_soon` is open and due within seven days - the window the dashboard counts.",
+        "description": "The register. Soonest due is the sort that matters; newest first is the default.\n\n`due_soon` is open and due within seven days - the window the dashboard counts.\n`intake` is open and in the shared intake, claimed by no office yet (0055).",
         "operationId": "list_requests_requests_get",
         "parameters": [
           {
@@ -12913,6 +12913,16 @@
               "type": "boolean",
               "default": false,
               "title": "Due Soon"
+            }
+          },
+          {
+            "name": "intake",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Intake"
             }
           },
           {

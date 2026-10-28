@@ -4415,6 +4415,7 @@ export interface paths {
          * @description The register. Soonest due is the sort that matters; newest first is the default.
          *
          *     `due_soon` is open and due within seven days - the window the dashboard counts.
+         *     `intake` is open and in the shared intake, claimed by no office yet (0055).
          */
         get: operations["list_requests_requests_get"];
         put?: never;
@@ -21416,6 +21417,7 @@ export interface operations {
                 q?: string | null;
                 unread?: boolean;
                 due_soon?: boolean;
+                intake?: boolean;
                 limit?: number | null;
                 cursor?: string | null;
                 sort?: string | null;

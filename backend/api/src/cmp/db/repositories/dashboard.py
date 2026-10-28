@@ -22,6 +22,100 @@ async def projects_in_scope(conn: Conn, role: Role, user_id: int) -> list[Row]:
     return await fetch_all(conn, f"SELECT p.project_id FROM project p WHERE {pred}", pred_params)
 
 
+# ------------------------------------------------- the HR track (increment 8)
+
+#: The activities an HR PoC runs: those of the categories assigned to them.
+_MY_CATEGORIES = """EXISTS (SELECT 1 FROM hr_poc_category a
+                             WHERE a.category_id = p.category_id AND a.user_id = %(u)s)"""
+
+
+async def legal_counts(conn: Conn) -> Row | None:
+    """The Legal office's figures beyond its requests and breaches: its
+    activities, the template versions still in draft, and its consents."""
+    return await fetch_one(
+        conn,
+        """SELECT
+             (SELECT count(*) FROM project p
+               WHERE p.template_version_id IS NOT NULL AND p.project_status = 'approved'
+                 AND cmp_office_visible(p.office_id)) AS activities_live,
+             (SELECT count(*) FROM project p
+               WHERE p.template_version_id IS NOT NULL AND p.project_status = 'closed'
+                 AND cmp_office_visible(p.office_id)) AS activities_closed,
+             (SELECT count(*) FROM template_version v
+                JOIN notice_template t ON t.template_id = v.template_id
+               WHERE v.status = 'draft' AND cmp_office_visible(t.office_id)) AS versions_in_draft,
+             (SELECT count(*) FROM v_current_consent vc
+                JOIN notice n ON n.notice_id = vc.notice_id
+               WHERE NOT vc.is_withdrawal AND cmp_office_visible(n.office_id)) AS total_consents,
+             (SELECT count(*) FROM v_current_consent vc
+                JOIN notice n ON n.notice_id = vc.notice_id
+               WHERE vc.is_withdrawal AND cmp_office_visible(n.office_id)) AS withdrawals""",
+    )
+
+
+async def versions_in_draft(conn: Conn) -> list[Row]:
+    """Template versions the Legal office has opened and not yet approved."""
+    return await fetch_all(
+        conn,
+        """SELECT t.template_uuid, t.template_code || ' v' || v.version AS reference,
+                  t.title AS name, v.updated_at,
+                  'Draft - preview and approve' AS action
+             FROM template_version v
+             JOIN notice_template t ON t.template_id = v.template_id
+            WHERE v.status = 'draft' AND cmp_office_visible(t.office_id)
+            ORDER BY v.updated_at DESC LIMIT 25""",
+    )
+
+
+async def hr_poc_counts(conn: Conn, user_id: int) -> Row | None:
+    """An HR PoC's activities, their consents, this week's withdrawals and
+    the links that end within a week."""
+    return await fetch_one(
+        conn,
+        f"""WITH mine AS (
+              SELECT p.project_id, p.project_status FROM project p
+               WHERE p.template_version_id IS NOT NULL AND {_MY_CATEGORIES}
+                 AND cmp_office_visible(p.office_id))
+            SELECT
+              (SELECT count(*) FROM mine WHERE project_status = 'approved') AS activities_live,
+              (SELECT count(*) FROM mine WHERE project_status = 'closed') AS activities_closed,
+              (SELECT count(*) FROM v_current_consent vc
+                 JOIN notice n ON n.notice_id = vc.notice_id
+                WHERE NOT vc.is_withdrawal
+                  AND n.project_id IN (SELECT project_id FROM mine)) AS consents,
+              (SELECT count(*) FROM v_current_consent vc
+                 JOIN notice n ON n.notice_id = vc.notice_id
+                WHERE vc.is_withdrawal AND vc.created_at >= now() - interval '7 days'
+                  AND n.project_id IN (SELECT project_id FROM mine)) AS withdrawals_7d,
+              (SELECT count(*) FROM consent_link cl
+                 JOIN notice n ON n.notice_id = cl.notice_id
+                WHERE cl.status = 'active'
+                  AND cl.expires_at BETWEEN now() AND now() + interval '7 days'
+                  AND n.project_id IN (SELECT project_id FROM mine
+                                        WHERE project_status = 'approved')) AS links_expiring_7d""",
+        {"u": user_id},
+    )
+
+
+async def hr_links_ending(conn: Conn, user_id: int) -> list[Row]:
+    """The live activities whose open link ends within a week, soonest first."""
+    return await fetch_all(
+        conn,
+        f"""SELECT c.category_code AS reference, p.project_name AS name,
+                   '/hr-activities/' || p.project_uuid AS href,
+                   'Link ends ' || to_char(cl.expires_at, 'DD Mon') AS action
+              FROM consent_link cl
+              JOIN notice n ON n.notice_id = cl.notice_id
+              JOIN project p ON p.project_id = n.project_id
+              JOIN hr_category c ON c.category_id = p.category_id
+             WHERE cl.status = 'active' AND p.project_status = 'approved'
+               AND cl.expires_at BETWEEN now() AND now() + interval '7 days'
+               AND {_MY_CATEGORIES} AND cmp_office_visible(p.office_id)
+             ORDER BY cl.expires_at LIMIT 25""",
+        {"u": user_id},
+    )
+
+
 async def rnd_counts(conn: Conn, user_id: int) -> Row | None:
     return await fetch_one(
         conn,
@@ -498,6 +592,41 @@ async def trends(conn: Conn, role: Role, user_id: int) -> dict[str, list[int]]:
                            SELECT 1 FROM project_processor pp
                              JOIN processor pr ON pr.processor_id = pp.processor_id
                             WHERE pp.project_id = p.project_id AND NOT pr.is_in_house)""",
+                    p,
+                ),
+            }
+        case Role.LEGAL:
+            return {
+                "requests_open": await _daily(
+                    conn,
+                    f"SELECT received_at::date AS day FROM rights_request"
+                    f" WHERE request_type <> 'grievance' AND received_at >= {_SINCE}"
+                    " AND (office_id IS NULL OR cmp_office_visible(office_id))",
+                    p,
+                ),
+                "open_breaches": await _daily(
+                    conn,
+                    f"SELECT detected_at::date AS day FROM breach WHERE detected_at >= {_SINCE}"
+                    " AND cmp_office_visible(office_id)",
+                    p,
+                ),
+                "activities_live": await _daily(
+                    conn,
+                    f"SELECT p.created_at::date AS day FROM project p"
+                    f" WHERE p.template_version_id IS NOT NULL AND p.created_at >= {_SINCE}"
+                    " AND cmp_office_visible(p.office_id)",
+                    p,
+                ),
+            }
+        case Role.HR_USER:
+            return {
+                "consents": await _daily(
+                    conn,
+                    f"""SELECT vc.created_at::date AS day FROM v_current_consent vc
+                          JOIN notice n ON n.notice_id = vc.notice_id
+                          JOIN project p ON p.project_id = n.project_id
+                         WHERE NOT vc.is_withdrawal AND vc.created_at >= {_SINCE}
+                           AND {_MY_CATEGORIES}""",
                     p,
                 ),
             }

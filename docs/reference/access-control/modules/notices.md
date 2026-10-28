@@ -2,54 +2,64 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-34 operations; 34 appear in the existing OpenAPI/API docs. Snapshot `1757d50`; `GET /notices/copy-sources` added 2026-09-28.
+44 operations; 44 appear in the existing OpenAPI/API docs. Snapshot `1757d50`; `GET /notices/copy-sources` added 2026-09-28.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
-| GET | `/notices` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/notices` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
 | GET | `/notices/copy-sources` | `dpo`, `rnd_user` | Full session; anonymous NO |
-| GET | `/notices/import/template` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/notices/{notice_uuid}` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/notices/import/template` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/notices/{notice_uuid}` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
 | PUT | `/notices/{notice_uuid}` | `dpo` | Full session; anonymous NO |
-| GET | `/notices/{notice_uuid}/checklist` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/notices/{notice_uuid}/languages` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/notices/{notice_uuid}/checklist` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/notices/{notice_uuid}/languages` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
 | POST | `/notices/{notice_uuid}/languages` | `dpo` | Full session; anonymous NO |
 | PUT | `/notices/{notice_uuid}/languages/{code}` | `dpo` | Full session; anonymous NO |
 | POST | `/notices/{notice_uuid}/languages/{code}/approve` | `dpo` | Full session; anonymous NO |
-| GET | `/notices/{notice_uuid}/preview` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/notices/{notice_uuid}/preview` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
 | POST | `/notices/{notice_uuid}/publish` | `dpo` | Full session; anonymous NO |
-| GET | `/notices/{notice_uuid}/purposes` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/notices/{notice_uuid}/purposes` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
 | POST | `/notices/{notice_uuid}/purposes` | `dpo` | Full session; anonymous NO |
 | POST | `/notices/{notice_uuid}/purposes/activate` | `dpo` | Full session; anonymous NO |
 | DELETE | `/notices/{notice_uuid}/purposes/{purpose_uuid}` | `dpo` | Full session; anonymous NO |
 | PUT | `/notices/{notice_uuid}/purposes/{purpose_uuid}` | `dpo` | Full session; anonymous NO |
-| GET | `/notices/{notice_uuid}/versions` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/projects/{project_uuid}/notices` | `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/notices/{notice_uuid}/versions` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
+| GET | `/projects/{project_uuid}/notices` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
 | POST | `/projects/{project_uuid}/notices` | `dpo` | Full session; anonymous NO |
 | POST | `/projects/{project_uuid}/notices/copy` | `dpo`, `rnd_user` | Full session; anonymous NO |
 | POST | `/projects/{project_uuid}/notices/import` | `dpo`, `rnd_user` | Full session; anonymous NO |
 | POST | `/projects/{project_uuid}/notices/import/validate` | `dpo`, `rnd_user` | Full session; anonymous NO |
-| GET | `/notice-templates` | `dpo` | Full session; anonymous NO |
-| POST | `/notice-templates` | `dpo` | Full session; anonymous NO |
-| GET | `/notice-templates/{template_uuid}` | `dpo` | Full session; anonymous NO |
-| PUT | `/notice-templates/{template_uuid}` | `dpo` | Full session; anonymous NO |
-| POST | `/notice-templates/{template_uuid}/status` | `dpo` | Full session; anonymous NO |
-| POST | `/notice-templates/{template_uuid}/purposes` | `dpo` | Full session; anonymous NO |
-| DELETE | `/notice-templates/{template_uuid}/purposes/{purpose_uuid}` | `dpo` | Full session; anonymous NO |
-| PUT | `/notice-templates/{template_uuid}/languages/{code}` | `dpo` | Full session; anonymous NO |
-| DELETE | `/notice-templates/{template_uuid}/languages/{code}` | `dpo` | Full session; anonymous NO |
+| GET | `/notice-templates` | `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/notice-templates` | `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/notice-templates/{template_uuid}` | `dpo`, `legal` | Full session; anonymous NO |
+| PUT | `/notice-templates/{template_uuid}` | `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/notice-templates/{template_uuid}/status` | `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/notice-templates/{template_uuid}/purposes` | `dpo`, `legal` | Full session; anonymous NO |
+| DELETE | `/notice-templates/{template_uuid}/purposes/{purpose_uuid}` | `dpo`, `legal` | Full session; anonymous NO |
+| PUT | `/notice-templates/{template_uuid}/languages/{code}` | `dpo`, `legal` | Full session; anonymous NO |
+| DELETE | `/notice-templates/{template_uuid}/languages/{code}` | `dpo`, `legal` | Full session; anonymous NO |
 | GET | `/notice-templates/by-code/{template_code}` | `dpo`, `rnd_user` | Full session; anonymous NO |
 | POST | `/projects/{project_uuid}/notices/from-template` | `dpo`, `rnd_user` | Full session; anonymous NO |
+| GET | `/notice-templates/{template_uuid}/versions` | `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/notice-templates/{template_uuid}/versions` | `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/notice-templates/{template_uuid}/versions/{number}` | `dpo`, `legal` | Full session; anonymous NO |
+| PATCH | `/notice-templates/{template_uuid}/versions/{number}` | `dpo`, `legal` | Full session; anonymous NO |
+| PUT | `/notice-templates/{template_uuid}/versions/{number}/languages/{code}` | `dpo`, `legal` | Full session; anonymous NO |
+| DELETE | `/notice-templates/{template_uuid}/versions/{number}/languages/{code}` | `dpo`, `legal` | Full session; anonymous NO |
+| PUT | `/notice-templates/{template_uuid}/versions/{number}/purposes` | `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/notice-templates/{template_uuid}/versions/{number}/approve` | `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/notice-templates/{template_uuid}/versions/{number}/status` | `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/notice-templates/{template_uuid}/versions/{number}/preview` | `dpo`, `legal` | Full session; anonymous NO |
 
 ## GET /notices
 
 All notices in scope.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `NoticeReader`.
 - **Resolved gate:** `RequireResource(notice, write=False)`.
 - **Rules:** Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.
@@ -59,9 +69,9 @@ All notices in scope.
 
 Notices a new one may start from.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | ALL | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | ALL | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `rnd_user`.
 - **Route guard:** `NoticeAuthor`.
@@ -74,11 +84,11 @@ Notices a new one may start from.
 
 The notice document to fill in.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `NoticeReader`.
 - **Resolved gate:** `RequireResource(notice, write=False)`.
 - **Rules:** Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.
@@ -88,11 +98,11 @@ The notice document to fill in.
 
 Get Notice.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `NoticeReader`.
 - **Resolved gate:** `RequireResource(notice, write=False)`.
 - **Rules:** Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.
@@ -102,9 +112,9 @@ Get Notice.
 
 Draft only.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -118,11 +128,11 @@ Draft only.
 
 Checklist.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `NoticeReader`.
 - **Resolved gate:** `RequireResource(notice, write=False)`.
 - **Rules:** Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.
@@ -132,11 +142,11 @@ Checklist.
 
 List Languages.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `NoticeReader`.
 - **Resolved gate:** `RequireResource(notice, write=False)`.
 - **Rules:** Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.
@@ -146,9 +156,9 @@ List Languages.
 
 Add Language.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -162,9 +172,9 @@ Add Language.
 
 Draft only.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -178,9 +188,9 @@ Draft only.
 
 Approve Language.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | SCOPED |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -193,11 +203,11 @@ Approve Language.
 
 Preview.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `NoticeReader`.
 - **Resolved gate:** `RequireResource(notice, write=False)`.
 - **Rules:** Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.
@@ -207,9 +217,9 @@ Preview.
 
 Publish.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | SCOPED |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -222,11 +232,11 @@ Publish.
 
 List Notice Purposes.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `NoticeReader`.
 - **Resolved gate:** `RequireResource(notice, write=False)`.
 - **Rules:** Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.
@@ -236,9 +246,9 @@ List Notice Purposes.
 
 Attach Purpose.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -252,9 +262,9 @@ Attach Purpose.
 
 Activate every draft purpose on this notice.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | SCOPED |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -267,9 +277,9 @@ Activate every draft purpose on this notice.
 
 Draft only.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -283,9 +293,9 @@ Draft only.
 
 Narrow Rule 3(b) for this notice.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -299,11 +309,11 @@ Narrow Rule 3(b) for this notice.
 
 Notice Versions.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `NoticeReader`.
 - **Resolved gate:** `RequireResource(notice, write=False)`.
 - **Rules:** Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.
@@ -313,11 +323,11 @@ Notice Versions.
 
 List Notices.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`, `dco`, `dco_admin`, `rco`, `rnd_user`.
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`.
 - **Route guard:** `NoticeReader`.
 - **Resolved gate:** `RequireResource(notice, write=False)`.
 - **Rules:** Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.
@@ -327,9 +337,9 @@ List Notices.
 
 Create Notice.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | NO | NO |
 
 - **Who:** `dpo`.
 - **Route guard:** `RequireDPO`.
@@ -343,9 +353,9 @@ Create Notice.
 
 Copy an existing notice into this project.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | OWN | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `rnd_user`.
 - **Route guard:** `NoticeAuthor`.
@@ -359,9 +369,9 @@ Copy an existing notice into this project.
 
 Create the notice and its purposes from an uploaded document.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | OWN | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `rnd_user`.
 - **Route guard:** `NoticeAuthor`.
@@ -374,9 +384,9 @@ Create the notice and its purposes from an uploaded document.
 
 Dry run - reports what the document says, writes nothing.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | OWN | NO | NO | NO | NO |
 
 - **Who:** `dpo`, `rnd_user`.
 - **Route guard:** `NoticeAuthor`.
@@ -389,11 +399,11 @@ Dry run - reports what the document says, writes nothing.
 
 The DPO's notice templates, newest first.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`; everyone else 403.
+- **Who:** `dpo`, `legal`.
 - **Route guard:** `RequireDPO`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
 - **Rules:** Every template; `status` (active, retired) and `q` (ID or name) filter. A template has no project, so there is no project scope. (2026-10-07)
@@ -403,11 +413,11 @@ The DPO's notice templates, newest first.
 
 Write a notice template, before any project exists.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`; everyone else 403.
+- **Who:** `dpo`, `legal`.
 - **Route guard:** `RequireDPO`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
 - **Rules:** Title, the three Rule 3 links, the DPO contact, audience and note; optionally the first text. The ID (`TPL-0007`) is minted by the database. Never served to a data principal. (2026-10-07)
@@ -417,25 +427,25 @@ Write a notice template, before any project exists.
 
 A template with its purposes, languages and the notices made from it.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`; everyone else 403.
+- **Who:** `dpo`, `legal`.
 - **Route guard:** `RequireDPO`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
-- **Rules:** The DPO's alone; 404 for an unknown template. (2026-10-07)
+- **Rules:** Each office's officer reads its own office's templates (ADR 0032); 404 for an unknown template or one of the other office. (2026-10-07)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notices.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/templates.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
 
 ## PUT /notice-templates/{template_uuid}
 
 Edit a template.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`; everyone else 403.
+- **Who:** `dpo`, `legal`.
 - **Route guard:** `RequireDPO`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
 - **Rules:** Edited in place: a template is not evidence. Notices already made from it are copies and do not change. (2026-10-07)
@@ -445,11 +455,11 @@ Edit a template.
 
 Retire a template, or bring it back.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`; everyone else 403.
+- **Who:** `dpo`, `legal`.
 - **Route guard:** `RequireDPO`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
 - **Rules:** `active` or `retired`. A retired template cannot be attached to a project; it is never deleted. (2026-10-07)
@@ -459,11 +469,11 @@ Retire a template, or bring it back.
 
 Put a purpose on a template.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`; everyone else 403.
+- **Who:** `dpo`, `legal`.
 - **Route guard:** `RequireDPO`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
 - **Rules:** An active or draft purpose from the register (a retired one is 422); a notice made from it cannot publish until each purpose is active. (2026-10-07)
@@ -473,11 +483,11 @@ Put a purpose on a template.
 
 Take a purpose off a template.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`; everyone else 403.
+- **Who:** `dpo`, `legal`.
 - **Route guard:** `RequireDPO`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
 - **Rules:** 404 when the purpose is not on it. (2026-10-07)
@@ -487,11 +497,11 @@ Take a purpose off a template.
 
 The template's text in one language, added or replaced.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`; everyone else 403.
+- **Who:** `dpo`, `legal`.
 - **Route guard:** `RequireDPO`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
 - **Rules:** A language the platform renders (422 otherwise). No approval on a template: each language is approved on the project notice made from it. (2026-10-07)
@@ -501,11 +511,11 @@ The template's text in one language, added or replaced.
 
 Remove a language from a template.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`; everyone else 403.
+- **Who:** `dpo`, `legal`.
 - **Route guard:** `RequireDPO`.
 - **Resolved gate:** `Annotated[Principal, Depends(RequireRole(Role.DPO))]`.
 - **Rules:** 404 when the template has no text in that language. (2026-10-07)
@@ -515,11 +525,11 @@ Remove a language from a template.
 
 Look up a template by the ID the DPO gave out, before attaching it.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | OWN | NO | NO | ALL | SCOPED |
 
-- **Who:** `dpo`; `rnd_user`, who brings notices to their own projects.
+- **Who:** `dpo`, `rnd_user`.
 - **Route guard:** `NoticeAuthor`.
 - **Resolved gate:** `RequireResource(notice, write=True)`.
 - **Rules:** Whoever may bring a notice to a project. Case and spacing in the ID are forgiven; 404 for an unknown one. Returns what the template carries - its fields, purposes and languages - never which projects used it. (2026-10-07)
@@ -529,12 +539,151 @@ Look up a template by the ID the DPO gave out, before attaching it.
 
 Make this project's notice from a template, by its ID.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | NO | NO | NO | NO | OWN | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | OWN | NO | NO | NO | NO |
 
-- **Who:** `dpo`; `rnd_user` on their own project.
+- **Who:** `dpo`, `rnd_user`.
 - **Route guard:** `NoticeAuthor`.
 - **Resolved gate:** `RequireResource(notice, write=True)`.
 - **Rules:** The project must be within the caller's scope (404 otherwise). Copies the template's links, contact, audience, note, purposes and every language into a fresh draft notice with the project's own code; `notice.template_id` records the template. Nothing is approved. A retired template is 409 `template_retired`. (2026-10-07)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notices.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/templates.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+## GET /notice-templates/{template_uuid}/versions
+
+A Legal office template's versions.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `TemplateReader`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireResource("notice_template"))]`.
+- **Rules:** Newest first, within the caller's office. Versions are the Legal office's: a DPO office template answers 409 `template_not_versioned` (ADR 0028). (2026-10-28, 0053)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/versions.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/template_versions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/composer.py).
+
+## POST /notice-templates/{template_uuid}/versions
+
+Open the next version as a draft.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `TemplateWriter`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireResource("notice_template", write=True))]`.
+- **Rules:** A copy of the last version's text, purposes and fields, or the template's links, contact and audience for the first. One draft at a time (409 `version_draft_open`); a retired template takes none. Versions are the Legal office's: a DPO office template answers 409 `template_not_versioned` (ADR 0028). (2026-10-28, 0053)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/versions.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/template_versions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/composer.py).
+
+## GET /notice-templates/{template_uuid}/versions/{number}
+
+Get Version.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `TemplateReader`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireResource("notice_template"))]`.
+- **Rules:** With its locked text per language (and each hash once approved) and its purposes. Versions are the Legal office's: a DPO office template answers 409 `template_not_versioned` (ADR 0028). (2026-10-28, 0053)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/versions.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/template_versions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/composer.py).
+
+## PATCH /notice-templates/{template_uuid}/versions/{number}
+
+Edit a draft version.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `TemplateWriter`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireResource("notice_template", write=True))]`.
+- **Rules:** The slot's guidance and limit (100-4000), the re-consent flag, the Rule 3 links, the contact and the audience. 409 `version_not_draft` once approved. Versions are the Legal office's: a DPO office template answers 409 `template_not_versioned` (ADR 0028). (2026-10-28, 0053)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/versions.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/template_versions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/composer.py).
+
+## PUT /notice-templates/{template_uuid}/versions/{number}/languages/{code}
+
+A draft version's locked text in one language.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `TemplateWriter`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireResource("notice_template", write=True))]`.
+- **Rules:** Added or replaced; its hash is cleared until approval. Draft only. Versions are the Legal office's: a DPO office template answers 409 `template_not_versioned` (ADR 0028). (2026-10-28, 0053)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/versions.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/template_versions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/composer.py).
+
+## DELETE /notice-templates/{template_uuid}/versions/{number}/languages/{code}
+
+Remove Version Language.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `TemplateWriter`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireResource("notice_template", write=True))]`.
+- **Rules:** Draft only. Versions are the Legal office's: a DPO office template answers 409 `template_not_versioned` (ADR 0028). (2026-10-28, 0053)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/versions.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/template_versions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/composer.py).
+
+## PUT /notice-templates/{template_uuid}/versions/{number}/purposes
+
+The purposes an activity may choose, and which are mandatory.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `TemplateWriter`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireResource("notice_template", write=True))]`.
+- **Rules:** The whole list, in order; each the template office's own and not retired. Draft only. Versions are the Legal office's: a DPO office template answers 409 `template_not_versioned` (ADR 0028). (2026-10-28, 0053)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/versions.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/template_versions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/composer.py).
+
+## POST /notice-templates/{template_uuid}/versions/{number}/approve
+
+Approve a draft version: hashed and frozen.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `TemplateWriter`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireResource("notice_template", write=True))]`.
+- **Rules:** 409 `purpose_not_active` naming the purpose; 422 for a language missing a slot (`language`, `placeholder`), no English text, or no audience. Then each language's hash is stored and `cmp_template_version_freeze` holds it. Versions are the Legal office's: a DPO office template answers 409 `template_not_versioned` (ADR 0028). (2026-10-28, 0053)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/versions.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/template_versions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/composer.py).
+
+## POST /notice-templates/{template_uuid}/versions/{number}/status
+
+Retire an approved version.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `TemplateWriter`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireResource("notice_template", write=True))]`.
+- **Rules:** approved -> retired only (409 otherwise). Activities already on it continue. Versions are the Legal office's: a DPO office template answers 409 `template_not_versioned` (ADR 0028). (2026-10-28, 0053)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/versions.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/template_versions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/composer.py).
+
+## GET /notice-templates/{template_uuid}/versions/{number}/preview
+
+What an activity made from it would serve.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `TemplateReader`.
+- **Resolved gate:** `Annotated[Principal, Depends(RequireResource("notice_template"))]`.
+- **Rules:** Every purpose on the list and the description given (or a sample), composed per language with its hash; a description with a slot or a link is 422. Versions are the Legal office's: a DPO office template answers 409 `template_not_versioned` (ADR 0028). (2026-10-28, 0053)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/versions.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/template_versions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/notices/composer.py).

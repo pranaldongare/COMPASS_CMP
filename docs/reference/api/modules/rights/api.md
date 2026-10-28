@@ -105,6 +105,7 @@ No request body.
 The register. Soonest due is the sort that matters; newest first is the default.
 
 `due_soon` is open and due within seven days - the window the dashboard counts.
+`intake` is open and in the shared intake, claimed by no office yet (0055).
 
 ### Validation
 
@@ -116,6 +117,7 @@ The register. Soonest due is the sort that matters; newest first is the default.
 | `q` | query | No | `string` or `null` | max length: `120` | — |
 | `unread` | query | No | `boolean` | default: `False` | — |
 | `due_soon` | query | No | `boolean` | default: `False` | — |
+| `intake` | query | No | `boolean` | default: `False` | — |
 | `limit` | query | No | `integer` or `null` | minimum: `1`; maximum: `200` | — |
 | `cursor` | query | No | `string` or `null` | max length: `512` | — |
 | `sort` | query | No | `string` or `null` | max length: `64` | — |

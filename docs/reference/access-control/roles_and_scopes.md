@@ -15,39 +15,53 @@ Roles refer to the **effective session role**. A staff account signed in through
 | `rco` | Research Collection Owner |
 | `rnd_user` | R&D User |
 | `data_subject` | Data Subject |
+| `legal` | Legal PoC: the Legal office's officer for the HR track (ADR 0032, 0033). Holds the Legal office's categories, purposes, templates and versions, and its rights requests, breaches and legal holds as the DPO holds the DPO office's. |
+| `hr_user` | HR PoC: runs HR activities in the categories the administrator assigned them (`hr_poc_category`). |
 | `breach_holder` | Temporary ticket holder: a breach-only login (S3-09, [ADR 0023](../../decisions/0023-breach-tickets-and-breach-only-logins.md)). Never given by hand; set while the person holds a breach ticket and put back when the last one ends. Signs in to the console with a password and the emailed second factor; sees Tickets, Notifications and Profile, and nothing else. |
 
 ## Static resource matrix
 
 `R` = resource read grant; `RW` = read/write grant. This table alone is insufficient to determine endpoint access: handlers and services can narrow or bypass the matrix. The endpoint matrix records those differences.
 
-| Resource | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| user | R / ALL | RW / ALL | NO | NO | NO | NO | NO | NO |
-| purpose | RW / ALL | R / ALL | R / ALL | R / ALL | R / ALL | R / ALL | NO | NO |
-| processor | RW / ALL | RW / ALL | R / ALL | R / ALL | R / ALL | R / ALL | NO | NO |
-| data_source | RW / ALL | RW / ALL | RW / SCOPED | RW / ALL | RW / SCOPED | R / ALL | NO | NO |
-| project | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | RW / OWN | NO | NO |
-| approval | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | RW / OWN | NO | NO |
-| site | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | R / OWN | NO | NO |
-| notice | RW / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | RW / OWN [^notice] | NO | NO |
-| link | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | NO | NO | NO |
-| consent | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | R / OWN | NO | NO |
-| export | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | NO | NO | NO |
-| import | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | R / OWN | NO | NO |
-| collection | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | R / OWN | NO | NO |
-| asset | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | R / OWN | NO | NO |
-| audit | R / ALL | R / ALL | NO | NO | NO | NO | NO | NO |
-| message_template | RW / ALL | RW / ALL | NO | NO | NO | NO | NO | NO |
-| me | NO | NO | NO | NO | NO | NO | RW / OWN | NO |
-| rights_request | RW / ALL | RW / SCOPED | NO | NO | NO | NO | NO | NO |
-| legal_hold | RW / ALL | NO | NO | NO | NO | NO | NO | NO |
-| breach | RW / ALL (others 404) | NO | NO | NO | NO | NO | NO | NO |
-| restricted_country | RW / ALL | R / ALL | NO | NO | NO | NO | NO | NO |
-| ticket | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | NO | RW / OWN |
-| breach_ticket | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | NO | RW / OWN |
+| Resource | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| user | R / ALL | RW / ALL | NO | NO | NO | NO | NO | NO | R / ALL | NO |
+| purpose | RW / ALL | R / ALL | R / ALL | R / ALL | R / ALL | R / ALL | NO | NO | RW / ALL | NO |
+| processor | RW / ALL | RW / ALL | R / ALL | R / ALL | R / ALL | R / ALL | NO | NO | R / ALL | NO |
+| data_source | RW / ALL | RW / ALL | RW / SCOPED | RW / ALL | RW / SCOPED | R / ALL | NO | NO | NO | NO |
+| project | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | RW / OWN | NO | NO | R / ALL | RW / SCOPED |
+| approval | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | RW / OWN | NO | NO | NO | NO |
+| site | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | R / OWN | NO | NO | R / ALL | R / SCOPED |
+| notice | RW / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | RW / OWN [^notice] | NO | NO | R / ALL | R / SCOPED |
+| link | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | NO | NO | NO | R / ALL | RW / SCOPED |
+| consent | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | R / OWN | NO | NO | R / ALL | R / SCOPED |
+| export | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | NO | NO | NO | RW / ALL | RW / SCOPED |
+| import | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | R / OWN | NO | NO | NO | NO |
+| collection | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | R / OWN | NO | NO | NO | NO |
+| asset | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | R / OWN | NO | NO | NO | NO |
+| audit | R / ALL | R / ALL | NO | NO | NO | NO | NO | NO | R / ALL | NO |
+| message_template | RW / ALL | RW / ALL | NO | NO | NO | NO | NO | NO | NO | NO |
+| me | NO | NO | NO | NO | NO | NO | RW / OWN | NO | NO | NO |
+| rights_request | RW / ALL | RW / SCOPED | NO | NO | NO | NO | NO | NO | RW / ALL | NO |
+| legal_hold | RW / ALL | NO | NO | NO | NO | NO | NO | NO | RW / ALL | NO |
+| breach | RW / ALL (others 404) | NO | NO | NO | NO | NO | NO | NO | RW / ALL (others 404) | NO |
+| restricted_country | RW / ALL | R / ALL | NO | NO | NO | NO | NO | NO | NO | NO |
+| notice_template | RW / ALL | NO | NO | NO | NO | NO | NO | NO | RW / ALL | NO |
+| hr_category | NO | R / ALL | NO | NO | NO | NO | NO | NO | RW / ALL | R / SCOPED |
+| ticket | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | NO | RW / OWN | RW / OWN | RW / OWN |
+| breach_ticket | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | NO | RW / OWN | RW / OWN | RW / OWN |
 
 ## What scopes mean in this code
+
+An officer's `ALL` is the office's all. The DPO and the Legal PoC hold the
+same grants on the same resources; which rows those grants reach is decided
+by the office on the account (`auth_user.office_id`), applied as the
+`app.office` setting on every connection and enforced by row-level security
+([offices-and-tenancy.md](../../architecture/offices-and-tenancy.md)). An HR
+PoC's scope within the HR office is the categories assigned to them
+(`hr_poc_category`), compiled into the query as a collection owner's sites
+are. A rights request in the shared intake (no office) is in both officers'
+scope until one claims it (0055).
 
 - **DPO:** generally all rows for granted resources; not a universal write role. For example, only R&D can create projects and only Admin can provision users.
 - **Admin:** account management, registry, messages and audit. No project resource grant. Rights reads are limited to `about_dpo = true`, not automatically to the assigned reviewer.

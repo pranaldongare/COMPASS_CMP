@@ -14,6 +14,8 @@ export const ROLES: RoleOption[] = [
   { value: "dco_admin", label: "DCO Admin" },
   { value: "dco", label: "DCO" },
   { value: "rco", label: "RCO" },
+  { value: "legal", label: "Legal PoC" },
+  { value: "hr_user", label: "HR PoC" },
   { value: "breach_holder", label: "Temporary ticket holder" },
 ];
 
@@ -39,6 +41,16 @@ export const SECTIONS: HelpSection[] = [
             term: "DPO",
             meaning:
               "The Data Protection Officer. Keeps purposes and processors, writes and approves notices, approves projects, answers rights requests, handles incidents and personal data breaches, and reads the audit trail.",
+          },
+          {
+            term: "Legal PoC",
+            meaning:
+              "The Legal office's officer, for the HR track: keeps its categories of HR activity, its purposes and notice templates, approves each template version, and answers the Legal office's rights requests, breaches and legal holds as the DPO does the DPO office's.",
+          },
+          {
+            term: "HR PoC",
+            meaning:
+              "Runs HR activities in the categories assigned to them: creates each from a template version Legal approved, and answers the tickets addressed to them.",
           },
           {
             term: "Administrator",
@@ -178,7 +190,7 @@ export const SECTIONS: HelpSection[] = [
     id: "purposes",
     title: "Purposes",
     summary: "What data is collected for, on what basis, and for how long.",
-    roles: ["dpo", "admin"],
+    roles: ["dpo", "admin", "legal"],
     blocks: [
       {
         kind: "steps",
@@ -202,7 +214,7 @@ export const SECTIONS: HelpSection[] = [
     title: "Processors and restricted countries",
     summary:
       "Who collects or handles data for you, where they are, and where data may not go.",
-    roles: ["dpo", "admin"],
+    roles: ["dpo", "admin", "legal"],
     blocks: [
       {
         kind: "steps",
@@ -398,7 +410,7 @@ export const SECTIONS: HelpSection[] = [
     id: "consents",
     title: "The consent register",
     summary: "Every decision people made, and the exact notice they were shown.",
-    roles: ["dpo", ...COLLECTORS],
+    roles: ["dpo", ...COLLECTORS, "legal", "hr_user"],
     blocks: [
       {
         kind: "list",
@@ -421,7 +433,7 @@ export const SECTIONS: HelpSection[] = [
     title: "Exports",
     summary:
       "The file of people whose consent covers a project, and the checks on where it goes.",
-    roles: ["dpo", ...COLLECTORS],
+    roles: ["dpo", ...COLLECTORS, "legal", "hr_user"],
     blocks: [
       {
         kind: "steps",
@@ -468,7 +480,7 @@ export const SECTIONS: HelpSection[] = [
     title: "Rights requests",
     summary:
       "Access, erasure and grievances - sections 11 to 13 - on a legal clock, each about everything held about the person.",
-    roles: ["dpo", "admin"],
+    roles: ["dpo", "admin", "legal"],
     blocks: [
       {
         kind: "p",
@@ -509,11 +521,105 @@ export const SECTIONS: HelpSection[] = [
     ],
   },
   {
+    id: "which-office",
+    title: "Which office answers a request",
+    summary:
+      "The DPO office and the Legal office each answer their own requests; one nobody could place waits in the shared intake.",
+    roles: ["dpo", "legal"],
+    blocks: [
+      {
+        kind: "p",
+        text: "A request goes to the office whose notices the person consented on: the research projects' to the DPO office, the HR activities' to the Legal office. When nobody can tell - the public form before its code, a stranger, or a person with consents in both - it waits in the shared intake, which both offices see. In the register it is marked [[shared intake]].",
+      },
+      {
+        kind: "steps",
+        title: "Take a request from the shared intake",
+        items: [
+          "On [[Rights requests]], choose [[In the shared intake]] under [[Office]], or follow [[Requests in the shared intake to claim]] from your dashboard.",
+          "Verify who it is as you would any request; then click [[Claim]] on its row, or [[Claim for my office]] on the request. Work cannot start until it is claimed.",
+          "Once one office has claimed it, the other is told it is not there.",
+        ],
+      },
+      {
+        kind: "steps",
+        title: "Send a request to the other office",
+        items: [
+          "On the request, click [[Transfer to the Legal office]] (or [[Transfer to the DPO office]]).",
+          "Say [[Why it belongs to the other office]], then [[Transfer]]. The received date and the due date stay as they are.",
+          "The other office's officers are emailed, and the request leaves your queue. It shows them where it came from and your reason.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "legal-office",
+    title: "The Legal office's registry",
+    summary:
+      "Categories of HR activity, the processors that hold their data, and the template versions an activity is made from.",
+    roles: ["legal"],
+    blocks: [
+      {
+        kind: "steps",
+        title: "A category",
+        items: [
+          "[[HR categories]] → [[New HR category]]: a [[Code]], a [[Name]], a [[Description]], and [[Who its links reach]] - employees, [[Candidates]], [[Vendors]] or [[Visitors]].",
+          "On the category, [[Add a processor]] for each system or vendor that holds its data: the [[Processor]], [[What it is to the category]] and [[Who answers for it]]. [[Save processors]]. A person who withdraws is answered by these, and a rights request about her finds them as holders.",
+          "An administrator assigns HR PoCs to the category on their account pages; the category lists them under [[HR PoCs]].",
+        ],
+      },
+      {
+        kind: "steps",
+        title: "A template, and the version an activity uses",
+        items: [
+          "Write the Legal office's purposes on [[Purposes]], and a notice template under the category on [[Notice templates]].",
+          "On the template, click [[Open version 1]] (later versions start as a copy of the last). Write the [[Locked text]] with its two slots - the purposes and the activity's description - and [[Save text]].",
+          "Under [[Purposes an activity may choose]], add each purpose, tick [[Mandatory]] for those every activity must ask, and [[Save purposes]]. Set the [[Guidance for the description]] and the [[Longest description]].",
+          "[[Preview]] the notice as an activity would publish it, then [[Approve]]. An approved version never changes; [[Retire]] stops new activities using it.",
+        ],
+      },
+      {
+        kind: "note",
+        title: "Your requests and breaches",
+        text: "[[Rights requests]] and [[Breaches]] work for the Legal office exactly as they do for the DPO, on the Legal office's own records. The DPO does not see them, and you do not see the DPO office's.",
+      },
+    ],
+  },
+  {
+    id: "hr-activities",
+    title: "HR activities",
+    summary:
+      "An activity - a wellness programme, a survey - made from an approved template version, live with its link the moment it is created.",
+    roles: ["hr_user", "legal"],
+    blocks: [
+      {
+        kind: "steps",
+        title: "Create an activity (HR PoC)",
+        items: [
+          "Click [[New activity]] on your dashboard or on [[HR activities]].",
+          "Choose the [[Category]] and the [[Template version]]. Its mandatory purposes are ticked and cannot be unticked; tick any others you need.",
+          "Give the [[Activity name]] and its [[Description]], within the length Legal set. Choose [[Who signs in through the link]] - the organisation's sign-in for employees, or a code by text or email - and the date [[The link works until]].",
+          "[[Create the activity]]. It is live: [[The activity is live]] shows its link to share. [[Open the activity]] for its consents.",
+        ],
+      },
+      {
+        kind: "list",
+        title: "While it runs",
+        items: [
+          "Its consents and exports are on the activity's page, and on [[Consents]] and [[Exports]].",
+          "When someone withdraws, you and each processor's named contact are emailed which purposes to stop, by employee ID - never the person's name.",
+          "[[Upgrade]] moves the activity to a newer approved version. If Legal marked the version as needing fresh consent, each participant is asked again; their consent stands until they answer.",
+          "[[Close the activity]] when it is over. Its link stops taking consent; what was given stays on record.",
+          "Your dashboard warns you when an activity's link ends within a week.",
+        ],
+      },
+    ],
+  },
+  {
     id: "breaches",
     title: "Incidents and personal data breaches",
     summary:
       "From an incident's first minutes to closing it: validation, the duties and their clocks, the notices, the tickets.",
-    roles: ["dpo"],
+    roles: ["dpo", "legal"],
     blocks: [
       {
         kind: "p",
@@ -634,7 +740,7 @@ export const SECTIONS: HelpSection[] = [
     id: "audit-trail",
     title: "The audit trail",
     summary: "The tamper-evident record of everything done on the platform.",
-    roles: ["dpo", "admin"],
+    roles: ["dpo", "admin", "legal"],
     blocks: [
       {
         kind: "list",

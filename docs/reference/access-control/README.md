@@ -2,6 +2,8 @@
 
 Reviewed on **2026-09-17** against commit **`1757d5069ba723f260c88c45419c1286261a127f`**, branch **`refactor/frontend-architecture`**; amended the same day at **`c7d3f6ba15a5cfdc6f9df6632c9c7e336c9936fa`** for the audit trail's four new endpoints (summary, vocabulary, lookup, export). **Re-reviewed on 2026-09-24 at `daca825864313166693c3f2973d50ec5c05d4170`:** no route, guard, matrix or scope change since `1757d50` apart from three that are now recorded: the staff notification feed is scoped by the project predicate (`79b7fac`), the audit lookup matches sealed people by keyed hash and name runs (`f5fffcc`), and `/ready` checks the key service (`ce9a984`). The OpenAPI path set is unchanged. Evidence links not touched by that review stay pinned to `1757d50` and their line numbers may have drifted.
 
+**Re-reviewed on 2026-10-28 for the HR track (increments 1-8, ADR 0032-0034), on branch `sprint-4/hr-track`:** every table gains the Legal PoC and HR PoC columns from `endpoint_permissions.json`; the two HR modules have pages of their own; the inventory now lists every OpenAPI operation, including eleven it had missed (`GET /offices`, the consent-record PDFs, the registry's Excel import). An officer's `ALL` is its office's all ([roles and scopes](roles_and_scopes.md#what-scopes-mean-in-this-code)). Evidence links for these entries point at `HEAD`.
+
 This tree is reviewed by hand, not generated. When a route's guard, scope or conditions change, update the module page, the two matrices and `endpoint_permissions.json` together; `api_docs/` (the request and response shapes) regenerates from `openapi.json` instead.
 
 This folder answers: **which role can call each API, on which records, and under what additional conditions?** It expands the existing `api_docs` using the actual route guards, permission matrix, service checks and repository scopes.
@@ -12,33 +14,35 @@ This folder answers: **which role can call each API, on which records, and under
 - [Implementation notes](implementation_notes.md): places where generic documentation and implemented controls differ.
 - [Machine-readable endpoint inventory](endpoint_permissions.json): guards, roles, conditions and source references.
 
-**Coverage: 21 modules, 326 documented operations over 286 OpenAPI paths, plus 3 registered system operations excluded from OpenAPI (329 total operations).** The breach module (S3-01 onward) is recorded in `endpoint_permissions.json`'s `amended` list; its evidence links point at `HEAD`. No framework-generated Swagger/ReDoc/OpenAPI routes or middleware-generated OPTIONS responses are counted.
+**Coverage: 23 modules, 369 documented operations over 321 OpenAPI paths, plus 3 registered system operations excluded from OpenAPI (372 total operations).** The breach module (S3-01 onward) is recorded in `endpoint_permissions.json`'s `amended` list; its evidence links point at `HEAD`. No framework-generated Swagger/ReDoc/OpenAPI routes or middleware-generated OPTIONS responses are counted.
 
 ## Module details
 
 | Module | Operations | Detailed access rules |
 | --- | --- | --- |
 | Audit | 7 | [Open module](modules/audit.md) |
-| Auth | 14 | [Open module](modules/auth.md) |
+| Auth | 15 | [Open module](modules/auth.md) |
 | Breach tickets | 6 | [Open module](modules/breach_tickets.md) |
 | Breaches | 37 | [Open module](modules/breaches.md) |
-| Consent | 12 | [Open module](modules/consent.md) |
+| Consent | 15 | [Open module](modules/consent.md) |
 | Cross-border transfers | 3 | [Open module](modules/cross_border_transfers.md) |
 | Dashboard | 3 | [Open module](modules/dashboard.md) |
 | Delegations | 6 | [Open module](modules/delegations.md) |
 | Exchange | 19 | [Open module](modules/exchange.md) |
+| HR activities | 6 | [Open module](modules/hr_activities.md) |
+| HR categories | 7 | [Open module](modules/hr_categories.md) |
 | Legal holds | 3 | [Open module](modules/legal_holds.md) |
-| Me | 28 | [Open module](modules/me.md) |
+| Me | 30 | [Open module](modules/me.md) |
 | Messages | 6 | [Open module](modules/messages.md) |
-| Notices | 34 | [Open module](modules/notices.md) |
+| Notices | 44 | [Open module](modules/notices.md) |
 | Projects | 27 | [Open module](modules/projects.md) |
-| Public Consent | 6 | [Open module](modules/public_consent.md) |
+| Public Consent | 9 | [Open module](modules/public_consent.md) |
 | Public Information | 18 | [Open module](modules/public_information.md) |
-| Registry | 23 | [Open module](modules/registry.md) |
-| Rights | 50 | [Open module](modules/rights.md) |
+| Registry | 29 | [Open module](modules/registry.md) |
+| Rights | 52 | [Open module](modules/rights.md) |
 | System | 8 | [Open module](modules/system.md) |
 | Tickets | 5 | [Open module](modules/tickets.md) |
-| Users | 14 | [Open module](modules/users.md) |
+| Users | 17 | [Open module](modules/users.md) |
 
 ## How to use this reference
 
@@ -46,13 +50,13 @@ This folder answers: **which role can call each API, on which records, and under
 2. Check the role row and read the conditions. A permitted role can still be refused for another owner’s record, expired capability, missing code or invalid lifecycle state.
 3. Follow the source links for the code that enforces the rule. Links are pinned to the commit each rule was reviewed at, so later branch changes do not silently change the evidence.
 
-Staff roles are DPO, Admin, DCO, DCO Admin, RCO and R&D. `data_subject` means the data principal. A staff account using a portal OTP session acts as `data_subject`; the session role determines access.
+Staff roles are DPO, Admin, DCO, DCO Admin, RCO, R&D, Legal PoC and HR PoC. `data_subject` means the data principal. A staff account using a portal OTP session acts as `data_subject`; the session role determines access.
 
 Paths here are backend paths as declared, without an invented `/v1` prefix. A frontend proxy may expose them under `/api`. Public access means no application role is required; token/code and business checks are still listed. All examples and role decisions are documentation only.
 
 ## Validation and maintenance
 
-The inventory was matched by method and path against every operation in `backend/api/openapi.json` and the registered router source. All 292 documented operations match exactly once; the three excluded system routes are separately identified. Role dependencies were resolved against `core/permissions.py`, explicit route-role denials were applied, and the service/repository exceptions in the notes were reviewed. This is static source validation, not execution against a live database or a complete security audit.
+The inventory was matched by method and path against every operation in `backend/api/openapi.json` and the registered router source. All 369 documented operations match exactly once; the three excluded system routes are separately identified. Role dependencies were resolved against `core/permissions.py`, explicit route-role denials were applied, and the service/repository exceptions in the notes were reviewed. This is static source validation, not execution against a live database or a complete security audit.
 
 The portals' own `POST /dkms/decrypt` is served by Next.js, not the API, and is outside this inventory; see [implementation notes](implementation_notes.md#the-portals-decrypt-route-is-not-an-api-operation).
 

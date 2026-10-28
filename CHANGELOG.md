@@ -81,6 +81,19 @@ as a release yet.
   office's requests, breaches and legal holds with the DPO's powers;
   alerts, the daily list and the dashboard's counts are per office. A legal
   hold names its office and stops erasure for both. Migration 0055.
+- **The Legal PoC's and the HR PoC's dashboards** (increment 8): the Legal
+  PoC's reads like the DPO's on the Legal office - its requests (with those
+  in the shared intake to claim) and breaches - plus live activities, their
+  consents and template versions waiting for approval; the Legal PoC logs
+  an incident from it. An HR PoC's shows the activities of their
+  categories, their consents and a link about to stop taking consent, and
+  starts a new activity. The request register filters on the shared intake
+  (`intake=true`). Help pages for both roles; the access-control reference
+  carries both roles' columns and two HR module pages; the HR track's UAT
+  run once against the seed.
+- **The shared intake is an office's to see**: a connection that names no
+  office no longer reads requests in the shared intake (found by the UAT
+  run). Migration 0056.
 - **Sign-in as "Light split"** (2026-10-11, chosen from three designs): the
   left 7/12 has COMPASS at the top left, the app's name as a kicker, the
   headline on two lines, the line under it, the dotted world map, and three

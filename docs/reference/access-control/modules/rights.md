@@ -2,87 +2,89 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-50 operations; 50 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
+52 operations; 52 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
-| GET | `/requests` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests` | `dpo`, `admin` | Full session; anonymous NO |
-| GET | `/requests/attention` | `dpo`, `admin` | Full session; anonymous NO |
-| GET | `/requests/{request_uuid}` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/acknowledge` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/classify` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/decide` | `dpo`, `admin` | Full session; anonymous NO |
-| GET | `/requests/{request_uuid}/download` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/escalate` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/event` | `dpo`, `admin` | Full session; anonymous NO |
-| GET | `/requests/{request_uuid}/event/evidence` | `dpo`, `admin` | Full session; anonymous NO |
-| GET | `/requests/{request_uuid}/files/{file_uuid}` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/holders` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/holders/derive` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/confirm` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/contact` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/escalate` | `dpo`, `admin` | Full session; anonymous NO |
-| GET | `/requests/{request_uuid}/holders/{holder_uuid}/evidence` | `dpo`, `admin` | Full session; anonymous NO |
-| GET | `/requests/{request_uuid}/holders/{holder_uuid}/messages/{message_uuid}/evidence` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/reassign` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/remind` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/return` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/send-back` | `dpo`, `admin` | Full session; anonymous NO |
-| GET | `/requests/{request_uuid}/holders/{holder_uuid}/thread` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/thread` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/withdraw` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/intent` | `dpo`, `admin` | Full session; anonymous NO |
-| GET | `/requests/{request_uuid}/linked/trail` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/refuse` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/respond` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/reviewer` | `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/scope/derive` | `dpo`, `admin` | Full session; anonymous NO |
-| PUT | `/requests/{request_uuid}/scope/{item_uuid}` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/scope/{item_uuid}/apply` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/scope/{item_uuid}/execute` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/tickets` | `dpo`, `admin` | Full session; anonymous NO |
-| GET | `/requests/{request_uuid}/trail` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/transition` | `dpo`, `admin` | Full session; anonymous NO |
-| GET | `/requests/{request_uuid}/transitions` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/verification/code` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/verification/confirm` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/verification/fail` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/verification/manual` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/withdrawal` | `dpo`, `admin` | Full session; anonymous NO |
-| GET | `/requests/{request_uuid}/attachments/{attachment_uuid}` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/accept` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/reopen` | `dpo`, `admin` | Full session; anonymous NO |
-| DELETE | `/requests/{request_uuid}/holders/{holder_uuid}` | `dpo`, `admin` | Full session; anonymous NO |
-| PUT | `/requests/{request_uuid}/holders/{holder_uuid}/instruction` | `dpo`, `admin` | Full session; anonymous NO |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/correct-contact` | `dpo`, `admin` | Full session; anonymous NO |
+| GET | `/requests` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/requests/attention` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/requests/{request_uuid}` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/acknowledge` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/classify` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/decide` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/requests/{request_uuid}/download` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/escalate` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/event` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/requests/{request_uuid}/event/evidence` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/requests/{request_uuid}/files/{file_uuid}` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/holders` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/holders/derive` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/confirm` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/contact` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/escalate` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/requests/{request_uuid}/holders/{holder_uuid}/evidence` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/requests/{request_uuid}/holders/{holder_uuid}/messages/{message_uuid}/evidence` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/reassign` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/remind` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/return` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/send-back` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/requests/{request_uuid}/holders/{holder_uuid}/thread` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/thread` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/withdraw` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/intent` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/requests/{request_uuid}/linked/trail` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/refuse` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/respond` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/reviewer` | `admin`, `dpo` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/scope/derive` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| PUT | `/requests/{request_uuid}/scope/{item_uuid}` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/scope/{item_uuid}/apply` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/scope/{item_uuid}/execute` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/tickets` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/requests/{request_uuid}/trail` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/transition` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/requests/{request_uuid}/transitions` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/verification/code` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/verification/confirm` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/verification/fail` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/verification/manual` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/withdrawal` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/requests/{request_uuid}/attachments/{attachment_uuid}` | `dpo`, `admin`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/accept` | `dpo`, `admin`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/reopen` | `dpo`, `admin`, `legal` | Full session; anonymous NO |
+| DELETE | `/requests/{request_uuid}/holders/{holder_uuid}` | `dpo`, `admin`, `legal` | Full session; anonymous NO |
+| PUT | `/requests/{request_uuid}/holders/{holder_uuid}/instruction` | `dpo`, `admin`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/correct-contact` | `dpo`, `admin`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/claim` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/transfer` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
 
 ## GET /requests
 
 Every request in scope.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsReader`.
 - **Resolved gate:** `RequireResource(rights_request, write=False)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L621), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests
 
 Log a request received by email.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| YES | YES | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| YES | YES | NO | NO | NO | NO | NO | NO | YES | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - Creation admits both DPO and Admin and does not apply an existing-row scope predicate. Admin can create an ordinary request it cannot subsequently read through the scoped register.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L654), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
@@ -90,70 +92,70 @@ Log a request received by email.
 
 What the office has not read.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsReader`.
 - **Resolved gate:** `RequireResource(rights_request, write=False)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L611), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## GET /requests/{request_uuid}
 
 Get Request.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsReader`.
 - **Resolved gate:** `RequireResource(rights_request, write=False)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L683), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/acknowledge
 
 Send (or re-send) the acknowledgement.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L743), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/classify
 
 Confirm, or reclassify, what this is.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L818), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/decide
 
 Decide a grievance.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| COND | COND | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| COND | COND | NO | NO | NO | NO | NO | NO | COND | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - DPO decides ordinary grievances. A grievance about the DPO requires Admin; if a reviewer is assigned, only that reviewer can decide it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1435), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/service.py#L2350).
 
@@ -161,333 +163,333 @@ Decide a grievance.
 
 The released response file.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsReader`.
 - **Resolved gate:** `RequireResource(rights_request, write=False)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1459), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/escalate
 
 The complaint is about the DPO.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L917), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/event
 
 Is the triggering event evidenced?.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L879), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## GET /requests/{request_uuid}/event/evidence
 
 Download the triggering-event evidence.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsReader`.
 - **Resolved gate:** `RequireResource(rights_request, write=False)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L897), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## GET /requests/{request_uuid}/files/{file_uuid}
 
 A file released with the response.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsReader`.
 - **Resolved gate:** `RequireResource(rights_request, write=False)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1410), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/holders
 
 A holder the records missed.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L982), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/holders/derive
 
 Holders derived from export_line and asset_consent.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L968), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/holders/{holder_uuid}/confirm
 
 Confirm Holder.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L998), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/holders/{holder_uuid}/contact
 
 Record a mail sent, a chase, or a reply - and optionally send the mail.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1204), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/holders/{holder_uuid}/escalate
 
 A holder missed its date - escalate once.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1306), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## GET /requests/{request_uuid}/holders/{holder_uuid}/evidence
 
 Download a holder's return evidence.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsReader`.
 - **Resolved gate:** `RequireResource(rights_request, write=False)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1274), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## GET /requests/{request_uuid}/holders/{holder_uuid}/messages/{message_uuid}/evidence
 
 Download a file attached to a message on the ticket.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsReader`.
 - **Resolved gate:** `RequireResource(rights_request, write=False)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1185), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/holders/{holder_uuid}/reassign
 
 Send an open ticket to a different respondent.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1145), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/holders/{holder_uuid}/remind
 
 Send the respondent a reminder now.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1167), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/holders/{holder_uuid}/return
 
 Record what the holder returned.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. A return must state `outcome` - done, partial or failed (422 otherwise); only done counts as the work done (review DPDP-1, 2026-10-01).
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. A return must state `outcome` - done, partial or failed (422 otherwise); only done counts as the work done (review DPDP-1, 2026-10-01). Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1248), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/holders/{holder_uuid}/send-back
 
 Send a returned ticket back to its holder.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1102), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## GET /requests/{request_uuid}/holders/{holder_uuid}/thread
 
 The ticket's thread, as the office reads it.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1020), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/holders/{holder_uuid}/thread
 
 Write to the holder on the ticket, with a file if it helps.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1072), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/holders/{holder_uuid}/withdraw
 
 Withdraw a ticket issued in error.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1125), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/intent
 
 She means erasure - confirmed.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L868), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## GET /requests/{request_uuid}/linked/trail
 
 Everything recorded about the request this one is about.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsReader`.
 - **Resolved gate:** `RequireResource(rights_request, write=False)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L695), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/refuse
 
 Not a rights request, or refused - with reasons.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L838), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/respond
 
 Release and close.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. `complete` is refused (response_partial_required) while a holder has not returned or a correction or erasure has not been carried out with evidence; the reason is served on the request as complete_blocked_by (S2-02).
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. `complete` is refused (response_partial_required) while a holder has not returned or a correction or erasure has not been carried out with evidence; the reason is served on the request as complete_blocked_by (S2-02). Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1370), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/reviewer
 
 Name the independent reviewer.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| NO | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| NO | SCOPED | NO | NO | NO | NO | NO | NO | NO | NO |
 
-- **Who:** `admin`.
+- **Who:** `admin`, `dpo`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
 - **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
@@ -498,98 +500,98 @@ Name the independent reviewer.
 
 Every appearance of her in a collected asset.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1322), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## PUT /requests/{request_uuid}/scope/{item_uuid}
 
 What can go, what must stay, and why.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1335), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/scope/{item_uuid}/apply
 
 Quarantine her appearance, then carry the decision out.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1358), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/scope/{item_uuid}/execute
 
 Try an applied item's stores again now.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** As for the rest of the request: DPO all, Admin where about_dpo. Retries an applied erasure or redaction's stores now (S2-03); anything else is 409 `item_not_executable`.
+- **Rules:** As for the rest of the request: DPO all, Admin where about_dpo. Retries an applied erasure or redaction's stores now (S2-03); anything else is 409 `item_not_executable`. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/erasure.py).
 
 ## POST /requests/{request_uuid}/tickets
 
 Issue a ticket to every confirmed holder.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1228), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## GET /requests/{request_uuid}/trail
 
 Everything recorded about this request.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsReader`.
 - **Resolved gate:** `RequireResource(rights_request, write=False)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L723), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/transition
 
 Transition.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - Available actions depend on request type, verification, intent, nominee evidence, reviewer, holder tickets and current state.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L945), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L1).
 
@@ -597,14 +599,14 @@ Transition.
 
 Get Transitions.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsReader`.
 - **Resolved gate:** `RequireResource(rights_request, write=False)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - Available actions depend on request type, verification, intent, nominee evidence, reviewer, holder tickets and current state.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L713), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L1).
 
@@ -612,152 +614,179 @@ Get Transitions.
 
 Send a code to the stored channel.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L754), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/verification/confirm
 
 Enter the code she read back.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L769), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/verification/fail
 
 No match, or verification not satisfied.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L801), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/verification/manual
 
 Verified by hand, with the reason recorded.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L784), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/withdrawal
 
 She meant withdrawal, not erasure.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`, `admin`.
+- **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L853), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## GET /requests/{request_uuid}/attachments/{attachment_uuid}
 
 A document the requester sent; every download is audited.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`; `admin` on a request about the DPO.
+- **Who:** `dpo`, `admin`, `legal`.
 - **Route guard:** `RightsReader`.
 - **Resolved gate:** `RequireResource(rights_request, write=False)`.
-- **Rules:** As every read of a request: the DPO all, the admin those about the DPO. A document of this request only (404 otherwise). The response carries `X-Recorded-SHA256` (as kept) and `X-Content-SHA256` (as read); every read is `rights.attachment_read` on the trail. (2026-10-07)
+- **Rules:** As every read of a request: the DPO all, the admin those about the DPO. A document of this request only (404 otherwise). The response carries `X-Recorded-SHA256` (as kept) and `X-Content-SHA256` (as read); every read is `rights.attachment_read` on the trail. (2026-10-07) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
 
 ## POST /requests/{request_uuid}/holders/{holder_uuid}/accept
 
 Accept a holder's answer, so it counts.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`; `admin` on a request about the DPO.
+- **Who:** `dpo`, `admin`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** Only an answer waiting for review (409 `nothing_to_review`). Only an accepted answer counts toward collating or an erasure being done. A holder in the console is told; the trail records `rights.ticket_accepted`. An answer the office records itself is accepted as it is recorded. (2026-10-08)
+- **Rules:** Only an answer waiting for review (409 `nothing_to_review`). Only an accepted answer counts toward collating or an erasure being done. A holder in the console is told; the trail records `rights.ticket_accepted`. An answer the office records itself is accepted as it is recorded. (2026-10-08) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
 
 ## POST /requests/{request_uuid}/holders/{holder_uuid}/reopen
 
 Reopen a withdrawn ticket with a new date.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`; `admin` on a request about the DPO.
+- **Who:** `dpo`, `admin`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** Only a withdrawn ticket (409 `ticket_not_withdrawn`); `due_on` not in the past (422), kept as the end of that day. The holder is told; a collating request goes back to awaiting holders. The trail records `rights.ticket_reopened`. (2026-10-08)
+- **Rules:** Only a withdrawn ticket (409 `ticket_not_withdrawn`); `due_on` not in the past (422), kept as the end of that day. The holder is told; a collating request goes back to awaiting holders. The trail records `rights.ticket_reopened`. (2026-10-08) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
 
 ## DELETE /requests/{request_uuid}/holders/{holder_uuid}
 
 Remove a holder found by mistake, before it is sent anything.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`; `admin` on a request about the DPO.
+- **Who:** `dpo`, `admin`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** Only a holder with no ticket sent, no message and no erasure item (409 `holder_in_use`): nothing about it has left the office, so nothing evidential is lost. 204. The trail records `rights.holder_removed`. (2026-10-08)
+- **Rules:** Only a holder with no ticket sent, no message and no erasure item (409 `holder_in_use`): nothing about it has left the office, so nothing evidential is lost. 204. The trail records `rights.holder_removed`. (2026-10-08) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
 
 ## PUT /requests/{request_uuid}/holders/{holder_uuid}/instruction
 
 What this holder's ticket will ask, before it is sent.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`; `admin` on a request about the DPO.
+- **Who:** `dpo`, `admin`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** Only before the ticket is sent (409 `ticket_already_sent`); empty or null goes back to the standard words. Sealed at rest, as every instruction. The trail records `rights.holder_instruction_set` with whether the words are the office's own, never the words. (2026-10-08)
+- **Rules:** Only before the ticket is sent (409 `ticket_already_sent`); empty or null goes back to the standard words. Sealed at rest, as every instruction. The trail records `rights.holder_instruction_set` with whether the words are the office's own, never the words. (2026-10-08) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py).
 
 ## POST /requests/{request_uuid}/holders/{holder_uuid}/correct-contact
 
 Correct a holder's email: the ticket goes again to the right address.
 
-| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | SCOPED | NO | NO | NO | NO | NO | NO |
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `dpo`; `admin` on a request about the DPO.
+- **Who:** `dpo`, `admin`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** Only an open ticket (409 `ticket_not_open`) reached by email or a temporary login; `responder_contact` must be an email address (422). Nobody at the wrong address is written to; the ticket is sent again to the right one, an outside holder with a new link (the old stops working), an internal address with no login given a temporary one. The trail records `rights.holder_contact_corrected`, never an address. (2026-10-08)
+- **Rules:** Only an open ticket (409 `ticket_not_open`) reached by email or a temporary login; `responder_contact` must be an email address (422). Nobody at the wrong address is written to; the ticket is sent again to the right one, an outside holder with a new link (the old stops working), an internal address with no login given a temporary one. The trail records `rights.holder_contact_corrected`, never an address. (2026-10-08) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py).
+## POST /requests/{request_uuid}/claim
+
+Take a request out of the shared intake into my office's queue.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `admin`, `dpo`, `legal`.
+- **Route guard:** `RightsWriter`.
+- **Resolved gate:** `RequireResource(rights_request, write=True)`.
+- **Rules:** Only a request in the shared intake (office_id IS NULL); the claiming officer's office takes it. A second claim is 409 already_claimed. The administrator holds no office and is refused.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py).
+
+## POST /requests/{request_uuid}/transfer
+
+Transfer a request to the other office, with the reason.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `admin`, `dpo`, `legal`.
+- **Route guard:** `RightsWriter`.
+- **Resolved gate:** `RequireResource(rights_request, write=True)`.
+- **Rules:** Only a request the caller's office holds; the reason is required and sealed; received_at and due_at do not change; the receiving office's officers are emailed. The response carries the reference and the new office only.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py).

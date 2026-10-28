@@ -223,6 +223,12 @@ tickets issued, halfway, collate - are computed from the two.
 **Holder.** A party that holds the person's data: derived from exports and
 assets, confirmed by the DPO. One ticket per holder.
 
+**Shared intake.** A rights request whose office is not yet known - the
+public form before its code, a stranger, a person with consents in both
+offices - visible to both offices until one claims it. **Transfer**: an
+office hands a request to the other with a reason; the clock does not move
+(migration 0055).
+
 **Ticket.** The instruction to a holder to return what it holds, and the
 **thread** on which the holder and the Privacy Office write to each other.
 Reaches a holder with a console login in My tasks, one inside the

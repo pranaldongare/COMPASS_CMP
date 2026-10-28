@@ -48,6 +48,14 @@ export const COUNT_LABELS: Record<string, string> = {
   grievances_about_dpo: "Grievances about the DPO",
   requests_closed: "Closed requests",
   tickets_for_me: "Tickets addressed to you",
+  // The Legal office and the HR PoC (increment 8).
+  requests_in_intake: "Requests in the shared intake",
+  open_breaches: "Open breaches",
+  activities_live: "Live activities",
+  activities_closed: "Closed activities",
+  versions_in_draft: "Template versions in draft",
+  links_expiring_7d: "Activity links ending within 7 days",
+  withdrawals_7d: "Withdrawals (7d)",
 };
 
 /**
@@ -90,6 +98,13 @@ export const COUNT_LINKS: Record<string, string> = {
   requests_unverified: "/requests?status=received",
   grievances_about_dpo: "/requests?type=grievance",
   tickets_for_me: "/tickets",
+  requests_in_intake: "/requests?intake=1",
+  open_breaches: "/breaches",
+  activities_live: "/hr-activities",
+  activities_closed: "/hr-activities",
+  versions_in_draft: "/templates",
+  links_expiring_7d: "/hr-activities",
+  withdrawals_7d: "/consents?status=withdrawn",
 };
 
 /** Counts that are a problem when non-zero, rather than a neutral statistic. */
@@ -99,6 +114,8 @@ export const WARNING_COUNTS = new Set([
   "access_denials_7d",
   "requests_overdue",
   "grievances_about_dpo",
+  "requests_in_intake",
+  "links_expiring_7d",
 ]);
 
 /** The project state machine, in the order it is walked.
