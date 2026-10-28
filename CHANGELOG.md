@@ -63,6 +63,13 @@ as a release yet.
   form no longer takes an employee ID. Candidates and visitors join the
   person types, and a category names the type its code links give new
   accounts. `SSO_*` settings; `/ready` checks the provider. Migration 0054.
+- **Withdrawal reaches the HR holders**: withdrawing on an HR activity emails
+  its HR PoC and the respondent of each processor holding the category's
+  data, once each, after the withdrawal commits, naming the participant by
+  employee ID or principal ID (`hr_withdrawal_notice`). A rights request
+  about an HR participant derives her activity's category processors as
+  holders (`activity_processor`), answered by the account the category names
+  for each, or the activity's HR PoC.
 - **Sign-in as "Light split"** (2026-10-11, chosen from three designs): the
   left 7/12 has COMPASS at the top left, the app's name as a kicker, the
   headline on two lines, the line under it, the dotted world map, and three

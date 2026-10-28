@@ -102,3 +102,54 @@ async def live_link(conn: Conn, project_id: int) -> Row | None:
             LIMIT 1""",
         (project_id,),
     )
+
+
+async def respondents_for_notice(conn: Conn, notice_id: int) -> list[Row]:
+    """Who answers for an HR activity's data, for the notice a consent was given
+    on (ADR 0033): its HR PoC, and the respondent of each live category
+    processor - the HR PoC where none is named (open point F-15) - once per
+    active account with an address. Empty for an R&D notice."""
+    return await fetch_all(
+        conn,
+        """
+        WITH a AS (
+          SELECT p.project_id, p.project_uuid, p.project_name, p.dco_user_id, p.category_id,
+                 c.name AS category_name
+            FROM notice n
+            JOIN project p ON p.project_id = n.project_id
+            JOIN hr_category c ON c.category_id = p.category_id
+           WHERE n.notice_id = %s
+        ), r AS (
+          SELECT a.dco_user_id AS user_id FROM a
+          UNION
+          SELECT coalesce(cp.respondent_user_id, a.dco_user_id)
+            FROM a JOIN category_processor cp
+              ON cp.category_id = a.category_id AND cp.removed_at IS NULL
+        )
+        SELECT u.id, u.email, a.project_uuid, a.project_name, a.category_name
+          FROM r CROSS JOIN a
+          JOIN auth_user u ON u.id = r.user_id
+         WHERE u.status = 'active' AND u.email IS NOT NULL
+         ORDER BY u.id
+        """,
+        (notice_id,),
+    )
+
+
+async def respondent_for_processor(
+    conn: Conn, *, processor_id: int, activity_uuids: list[str]
+) -> Row | None:
+    """The account that answers for a processor on these activities: the one
+    their category names, else the activity's HR PoC (open point F-15)."""
+    return await fetch_one(
+        conn,
+        """SELECT u.id, u.full_name, u.email
+             FROM project p
+             JOIN category_processor cp ON cp.category_id = p.category_id
+                                       AND cp.processor_id = %s AND cp.removed_at IS NULL
+             JOIN auth_user u ON u.id = coalesce(cp.respondent_user_id, p.dco_user_id)
+            WHERE p.project_uuid::text = ANY(%s) AND u.status = 'active'
+            ORDER BY p.created_at DESC
+            LIMIT 1""",
+        (processor_id, activity_uuids),
+    )

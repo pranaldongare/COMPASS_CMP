@@ -1,10 +1,13 @@
 """Who holds whose data: one relation, read from both ends.
 
-The platform knows two ways a processor comes to hold a person's data. An
+The platform knows three ways a processor comes to hold a person's data. An
 export carried her consent record to the processor running its site
-(`export_line`); and an asset a processor's data source captured has her in it
-(`asset_consent`). `_HOLDINGS` is that relation, one row per (person, processor,
-export or asset), and nothing else in the platform re-derives it.
+(`export_line`); an asset a processor's data source captured has her in it
+(`asset_consent`); and, on the HR track, she consents to an activity whose
+category names the processors that hold its data - the HRMS, the HR
+database, the vendors (`category_processor`, ADR 0033). `_HOLDINGS` is that
+relation, one row per (person, processor, export, asset or activity), and
+nothing else in the platform re-derives it.
 
 It is read from two directions:
 
@@ -45,6 +48,17 @@ _HOLDINGS = """
     JOIN data_asset da       ON da.asset_id = ac.asset_id
     JOIN data_source ds      ON ds.source_id = da.source_id
     JOIN processor pr        ON pr.processor_id = ds.processor_id
+  UNION ALL
+  -- An HR activity's participant: her current consent's activity, its
+  -- category's live processors. While the consent stands, not after.
+  SELECT v.auth_user_id, pr.processor_id, pr.legal_name,
+         'activity', p.project_uuid::text, NULL, NULL::int, v.consent_id, 'active'
+    FROM v_current_consent v
+    JOIN notice n             ON n.notice_id = v.notice_id
+    JOIN project p            ON p.project_id = n.project_id
+    JOIN category_processor cp ON cp.category_id = p.category_id AND cp.removed_at IS NULL
+    JOIN processor pr         ON pr.processor_id = cp.processor_id
+   WHERE NOT v.is_withdrawal
 """
 
 
@@ -68,7 +82,10 @@ async def holders_of_person(
                coalesce(array_agg(DISTINCT h.export_uuid)
                           FILTER (WHERE h.via = 'export'), ARRAY[]::text[]) AS exports,
                coalesce(array_agg(DISTINCT h.asset_uuid)
-                          FILTER (WHERE h.via = 'asset'), ARRAY[]::text[]) AS assets
+                          FILTER (WHERE h.via = 'asset'), ARRAY[]::text[]) AS assets,
+               -- The activity's uuid travels in the export column's place.
+               coalesce(array_agg(DISTINCT h.export_uuid)
+                          FILTER (WHERE h.via = 'activity'), ARRAY[]::text[]) AS activities
           FROM h
          WHERE h.person_id = %(u)s {confined}
            AND (h.via = 'export' OR h.disposition = 'active')

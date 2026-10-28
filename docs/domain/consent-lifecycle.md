@@ -185,6 +185,12 @@ history, and `v_current_consent` resolves it to the one in force for each
 (person, notice) pair. She withdraws from her portal page, with the frozen
 notice text beside the decision she is changing.
 
+On the HR track the activity's respondents are told: its HR PoC and the
+respondent of each live category processor, one email each
+(`hr_withdrawal_notice`), queued with the withdrawal and sent after it
+commits, naming her by employee ID or principal ID and never by name
+([ADR 0033](../decisions/0033-hr-consent-is-governed-by-an-approved-template-version.md)).
+
 ## 7. What follows a consent
 
 - **Exports** include only people whose current consent covers the purpose;

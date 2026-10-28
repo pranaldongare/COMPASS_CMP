@@ -115,6 +115,16 @@ _(date · increment · the call made · why · what would change it)_
 | E-13 | F-23 applied: `rights_holder_source` gains `activity_processor` in 0054's autocommit block | Increment 6 derives holders from a category's processors and needs the value, without a migration of its own | - |
 | E-12 | The ID token may be RS/ES/PS-signed; `none` and HMAC are refused; the key set is refetched once on an unknown key id; discovery and keys are cached an hour | A client secret is not the provider's signature; rotation must not need a restart | - |
 
+### Made during increment 6 (2026-10-28)
+
+| # | The call | Why | What would change it |
+|---|---|---|---|
+| G-1 | F-15 applied by Legal's default: an `activity_processor` holder is answered by the account the category names for that processor, else the activity's HR PoC, in the console (`channel = portal`); the processor's registry respondents are not consulted | The category's respondent is the one Legal chose for this kind of data | Legal preferring the registry's respondent |
+| G-2 | The withdrawal notice's recipients are the activity's HR PoC and each live category processor's respondent (the HR PoC where none), deduplicated by account; an account with no address, or not active, is skipped | One email per person, however many processors they answer for | - |
+| G-3 | `principal_ref` is the account's employee ID where one is on record (sealed until the message is written), else its principal ID (account uuid) | hr.md: never the name | - |
+| G-4 | An activity's holders are derived from her *current* consents only; a withdrawn activity's processors drop out of a later request's candidates (an export to them still counts) | Holding follows the consent the category's processors act on; what was exported is evidenced separately | Legal wanting withdrawn activities counted too |
+| G-5 | F-14 needs no change: the demo seed's categories already name separate processors per role (HR system, vendor) | Holders are per processor | - |
+
 ### Found in analysis, for later increments (owner to answer before that increment)
 
 | # | Increment | Finding | Owner | Until settled, the agent |
@@ -132,8 +142,8 @@ _(date · increment · the call made · why · what would change it)_
 | F-11 | 5 | **Applied in increment 5 (E-4).** `auth_user.sso_subject` (0054) is in no ADR, domain or plan text | Engineer | drops it unless increment 5 finds a need |
 | F-12 | 7 | Transfer: the policy refuses an `hr` session writing `office_id = rnd`, and the 0055 trigger's "with its four transfer columns" is vacuous after a first transfer | Engineer | runs the transfer statement as `'all'` inside the service, and checks the transfer columns changed |
 | F-13 | 6/7 | A ticket addressed to an account of the other office (an `rnd` DCO on an HR breach, AR-08's lead office) is invisible under the policy | Engineer | runs the ticket holder's routes as `'all'`, bounded by the ticket's addressee |
-| F-14 | 6 | The seed's one processor with two sources gives one holder, not "HRMS, HR database and vendor" (holders are per processor) | Engineer | seeds them as two processors |
-| F-15 | 6 | Who answers a category-processor holder: the processor's registry respondent (today's rule) or the category's default respondent | Legal | the category's respondent, falling back to the HR PoC |
+| F-14 | 6 | **No change needed (G-5).** The seed's one processor with two sources gives one holder, not "HRMS, HR database and vendor" (holders are per processor) | Engineer | seeds them as two processors |
+| F-15 | 6 | **Applied by default in increment 6 (G-1).** Who answers a category-processor holder: the processor's registry respondent (today's rule) or the category's default respondent | Legal | the category's respondent, falling back to the HR PoC |
 | F-16 | 6 | A vendor without an account cannot be a default respondent (`respondent_user_id` names an account) | Product owner | as stated |
 | F-17 | 2/7 | Rights requests and breaches are DPO-only in code, not only in the matrix (`db/repositories/rights.py::scope_predicate`, `domain/rights/state_machine.py::actors_for`, 38 routes on `RequireDPO`/`RequireDPOorAdmin`, alerts and digests to every DPO); increments 2 and 7 are larger than the plan reads | - | widens each by office as the increment lands |
 | F-18 | - | The branch `poc/option2-sqs-relay` carries its own ADR 0032 | Product owner | keeps 0032 for offices; the relay's record is renumbered when it lands |

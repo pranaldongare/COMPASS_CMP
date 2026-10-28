@@ -138,7 +138,7 @@ Key `consent_code` · channels: email, sms
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_consent_code` (`backend/api/src/cmp/tasks/authentication/otp.py:61`) |
-| Queued from | `backend/api/src/cmp/domain/consent/service.py:292` |
+| Queued from | `backend/api/src/cmp/auth/authentication/sso.py:233`, `backend/api/src/cmp/domain/consent/service.py:303` |
 | Variables | `code` (The six-digit one-time code.), `minutes` (How many minutes the code is valid for.), `project_name` (The project the notice belongs to.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{code} confirms your contact details`

@@ -1,9 +1,10 @@
 # HR track: the messages it sends
 
-[Notification strategy](README.md) · the format follows the generated
-per-module files; once `core/messages.py` holds these junctions,
-`docs/tools/generate-email-docs.py` regenerates this page and the hand
-version below is replaced.
+[Notification strategy](README.md) · the design these junctions were built
+from. `hr_reconsent_request` and `hr_withdrawal_notice` are in
+`core/messages.py` and generated into [consent.md](consent.md) (increments
+4 and 6); `rights_transfer_received` follows with increment 7. Where this
+page and the generated one differ, the generated one is what is sent.
 
 The HR track adds three junctions and widens two. Every one is email only
 unless stated, copyable by the office except where it carries a link, and

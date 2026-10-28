@@ -387,6 +387,8 @@ class RightsHolderSource(StrEnum):
     EXPORT_LINE = "export_line"
     ASSET_CONSENT = "asset_consent"
     MANUAL = "manual"
+    #: An HR activity's category processor (ADR 0033; the value is in 0054).
+    ACTIVITY_PROCESSOR = "activity_processor"
 
 
 class RightsTicketStatus(StrEnum):

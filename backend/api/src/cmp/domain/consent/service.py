@@ -650,6 +650,45 @@ async def capture(
     return {**artefact, "project_name": link["project_name"], "notice_uuid": link["notice_uuid"]}
 
 
+async def _tell_hr_respondents(
+    conn: Conn,
+    *,
+    notice_id: int,
+    user: dict[str, Any] | None,
+    consent_reference: str,
+    stopped: list[str],
+    continuing: list[str],
+) -> int:
+    """On an HR activity, each of its respondents is told to stop processing
+    (ADR 0033): one email per account, queued now and sent after commit, so a
+    withdrawal that rolls back tells nobody. The participant is named by her
+    employee ID - sealed here, opened only as the message is written - or her
+    principal ID, never by name."""
+    from cmp.db.repositories import hr_activities as activity_repo
+
+    respondents = await activity_repo.respondents_for_notice(conn, notice_id)
+    if not respondents or not user:
+        return 0
+    from cmp.tasks.dispatch import dispatch_optional
+    from cmp.tasks.notifications import send_hr_withdrawal_notice
+
+    principal_ref = str(user.get("organization_id") or user["uuid"])
+    for r in respondents:
+        dispatch_optional(
+            send_hr_withdrawal_notice,
+            str(r["email"]),
+            str(r["project_name"]),
+            str(r["category_name"]),
+            principal_ref,
+            stopped,
+            continuing,
+            consent_reference,
+            str(r["project_uuid"]),
+        )
+    log.info("consent.hr_respondents_told", count=len(respondents))
+    return len(respondents)
+
+
 async def withdraw(
     conn: Conn,
     *,
@@ -759,6 +798,14 @@ async def withdraw(
             stopped,
             continuing,
         )
+    await _tell_hr_respondents(
+        conn,
+        notice_id=int(current["notice_id"]),
+        user=user,
+        consent_reference=str(artefact["consent_uuid"]),
+        stopped=stopped,
+        continuing=continuing,
+    )
 
     return {
         "consent_uuid": artefact["consent_uuid"],

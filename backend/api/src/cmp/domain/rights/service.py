@@ -825,14 +825,34 @@ async def derive_holders(conn: Conn, row: Row, *, role: Role | str, actor_id: in
             int(row["request_id"]),
             processor_id=int(c["processor_id"]),
             label=str(c["legal_name"]),
-            derived_from="export_line" if c["exports"] else "asset_consent",
-            evidence={"exports": list(c["exports"]), "assets": list(c["assets"])},
+            derived_from=(
+                "export_line"
+                if c["exports"]
+                else "asset_consent"
+                if c["assets"]
+                else "activity_processor"
+            ),
+            evidence={
+                "exports": list(c["exports"]),
+                "assets": list(c["assets"]),
+                "activities": list(c.get("activities") or []),
+            },
         )
         if result.get("inserted"):
             added += 1
-            # Who answers for this processor, if the registry knows. The DPO
-            # can still pick another of its respondents when confirming.
-            await _apply_respondent(conn, int(result["holder_id"]), int(c["processor_id"]))
+            if c["exports"] or c["assets"]:
+                # Who answers for this processor, if the registry knows. The
+                # officer can still pick another of its respondents when confirming.
+                await _apply_respondent(conn, int(result["holder_id"]), int(c["processor_id"]))
+            else:
+                # An HR activity's: the category's respondent for it, else the
+                # activity's HR PoC (open point F-15).
+                await _apply_activity_respondent(
+                    conn,
+                    int(result["holder_id"]),
+                    int(c["processor_id"]),
+                    list(c.get("activities") or []),
+                )
     await _record(
         conn,
         row,
@@ -1554,6 +1574,29 @@ def _respondent_columns(rs: Row) -> dict[str, Any]:
         "responder_contact": str(rs["contact"]),
         "channel": "email",
     }
+
+
+async def _apply_activity_respondent(
+    conn: Conn, holder_id: int, processor_id: int, activity_uuids: list[str]
+) -> None:
+    """An HR activity's holder answers through the account its category names
+    for the processor, else the activity's HR PoC (F-15): in the console, as
+    every account respondent does."""
+    from cmp.db.repositories import hr_activities as activity_repo
+
+    account = await activity_repo.respondent_for_processor(
+        conn, processor_id=processor_id, activity_uuids=activity_uuids
+    )
+    if account:
+        await repo.update_holder(
+            conn,
+            holder_id,
+            respondent_id=None,
+            responder_user_id=int(account["id"]),
+            responder_name=str(account["full_name"]),
+            responder_contact=str(account["email"]),
+            channel="portal",
+        )
 
 
 async def _apply_respondent(conn: Conn, holder_id: int, processor_id: int) -> None:

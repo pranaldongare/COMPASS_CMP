@@ -47,7 +47,10 @@ from cmp.tasks.notifications.staff import (
     send_contact_added_for_you,
     send_staff_invitation,
 )
-from cmp.tasks.notifications.withdrawal import send_withdrawal_confirmation
+from cmp.tasks.notifications.withdrawal import (
+    send_hr_withdrawal_notice,
+    send_withdrawal_confirmation,
+)
 
 # A module not imported here is a task the worker never registers: the API
 # queues it by name, the worker answers "unregistered task", and the message is
@@ -62,6 +65,7 @@ __all__ = [
     "send_contact_added_for_you",
     "send_delegation_arranged",
     "send_holder_instruction",
+    "send_hr_withdrawal_notice",
     "send_nomination_accepted",
     "send_nomination_code",
     "send_nomination_invitation",

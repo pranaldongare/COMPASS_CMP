@@ -59,6 +59,9 @@ class Message(StrEnum):
     #: An HR activity moved to a version Legal flagged as a material change
     #: (ADR 0033): she is asked to decide again; her consent stands meanwhile.
     HR_RECONSENT_REQUEST = "hr_reconsent_request"
+    #: A participant withdrew on an HR activity: each of its respondents is
+    #: told to stop processing (ADR 0033). Names no participant.
+    HR_WITHDRAWAL_NOTICE = "hr_withdrawal_notice"
     # rights
     RIGHTS_ACKNOWLEDGEMENT = "rights_acknowledgement"
     RIGHTS_VERIFICATION_CODE = "rights_verification_code"
@@ -452,6 +455,61 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "until you decide; read and decide here: {link_url}"
         ),
         to="Each participant with a current consent on the activity, at her primary contact.",
+    ),
+    Junction(
+        key=Message.HR_WITHDRAWAL_NOTICE,
+        title="Withdrawal notice to an HR activity's respondents",
+        description=(
+            "Sent when a participant withdraws on an HR activity, to its HR PoC and the "
+            "respondent of each processor holding the category's data, so they stop "
+            "processing. Refers to the participant by employee ID or principal ID, never by "
+            "name."
+        ),
+        group="Consent",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("activity_name", "The activity's name.", "Wellness week, Pune"),
+            Variable("category_name", "The activity's category.", "Employee wellness"),
+            Variable(
+                "principal_ref",
+                "The participant's employee ID, or her principal ID when none is on record.",
+                "EMP-10442",
+            ),
+            Variable("stopped", "The purposes withdrawn, comma-separated.", "Follow-up survey"),
+            Variable(
+                "continuing",
+                "The purposes still in force, comma-separated, or 'none'.",
+                "Wellness sessions",
+            ),
+            Variable(
+                "consent_reference",
+                "The withdrawal record's reference.",
+                "9d1f0a6e-2c44-4d0e-8f7a-3b5e6c7d8e9f",
+            ),
+            Variable(
+                "register_url",
+                "The activity's register in the console.",
+                "https://console.example.org/hr-activities/4e1c…#consents",
+            ),
+            ORGANISATION,
+        ),
+        email_subject="Consent withdrawn on {activity_name} - stop processing for {principal_ref}",
+        email_body=(
+            "A participant in {activity_name} ({category_name}) has withdrawn consent.\n\n"
+            "Participant: {principal_ref}\n"
+            "Withdrawn: {stopped}\n"
+            "Still in force: {continuing}\n"
+            "Record: {consent_reference}\n\n"
+            "Stop processing the data collected under the withdrawn purposes. Withdrawal "
+            "does not by itself erase what was collected; an erasure, if she asks for one, "
+            "comes as a separate request.\n\n"
+            "The activity's register:\n{register_url}"
+        ),
+        sms_body=None,
+        to=(
+            "Each respondent of the activity: its HR PoC and the respondent of every live "
+            "category processor (the HR PoC where none is named), once per account."
+        ),
     ),
     Junction(
         key=Message.WITHDRAWAL_CONFIRMATION,
@@ -1537,6 +1595,7 @@ COPYABLE: Final[frozenset[Message]] = frozenset(
         Message.STAFF_ROLE_CHANGED,
         Message.STAFF_ACCESS_ENDED,
         Message.DELEGATION_ARRANGED,
+        Message.HR_WITHDRAWAL_NOTICE,
     }
 )
 
