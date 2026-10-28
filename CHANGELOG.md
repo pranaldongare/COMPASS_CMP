@@ -18,6 +18,15 @@ as a release yet.
   officer's trail is filtered on it. The API refuses to start outside
   local/test as a database user no policy binds. Sessions from before the
   change end; everyone signs in once more. Migration 0051.
+- **The Legal office's registry** (ADR 0033, part 1): the Legal PoC keeps
+  categories of HR activity (`/hr/categories`) and names the processors
+  that hold each one's data, what each is to it and who answers for it;
+  writes HR purposes and notice templates, each template under a category;
+  the administrator assigns HR PoCs to categories on their account pages,
+  and an HR PoC sees only those. Each office's purposes and templates are
+  its own, in the query as well as by the policies. Each role is held to
+  its track's office. The notification feed and a resend keep to the
+  reader's office. Migration 0052.
 - **Sign-in as "Light split"** (2026-10-11, chosen from three designs): the
   left 7/12 has COMPASS at the top left, the app's name as a kicker, the
   headline on two lines, the line under it, the dotted world map, and three

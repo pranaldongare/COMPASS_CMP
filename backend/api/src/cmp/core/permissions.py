@@ -25,6 +25,8 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import Final
 
+from cmp.core.offices import HR, RND
+
 
 class Role(StrEnum):
     """The ten roles. Values match the `user_role` PostgreSQL enum exactly.
@@ -94,6 +96,23 @@ OFFICE_ROLES: Final[frozenset[str]] = frozenset(
     }
 )
 
+#: The office each role of one track works in (open point F-20): the Legal
+#: PoC and the HR PoC the Legal office's, the R&D roles the DPO's. Every
+#: role in `OFFICE_ROLES` is here today; one that is not may be placed in
+#: any office, as a role of a third office would be.
+OFFICE_OF_ROLE: Final[dict[str, str]] = {
+    Role.DPO.value: RND,
+    Role.RND_USER.value: RND,
+    Role.DCO.value: RND,
+    Role.RCO.value: RND,
+    Role.DCO_ADMIN.value: RND,
+    Role.LEGAL.value: HR,
+    Role.HR_USER.value: HR,
+}
+
+#: How a sentence names an office.
+OFFICE_TITLES: Final[dict[str, str]] = {RND: "DPO office", HR: "Legal office"}
+
 
 class Scope(StrEnum):
     """How far a role can see within a resource it is permitted to call.
@@ -135,9 +154,13 @@ MATRIX: dict[str, dict[Role, Grant]] = {
     "user": {
         Role.ADMIN: Grant(Scope.ALL, write=True),
         Role.DPO: Grant(Scope.ALL),  # read-only: DPO sees the register, admin provisions
+        Role.LEGAL: Grant(Scope.ALL),  # the same, for the Legal office (ADR 0032)
     },
     "purpose": {
         Role.DPO: Grant(Scope.ALL, write=True),
+        # The Legal office's purposes, as the DPO keeps the DPO office's: the
+        # office on the session decides which rows (ADR 0032), not the grant.
+        Role.LEGAL: Grant(Scope.ALL, write=True),
         Role.ADMIN: Grant(Scope.ALL),
         Role.DCO: Grant(Scope.ALL),
         # Same powers as a DCO. The DCO Admin's reach is wider and the
@@ -150,6 +173,9 @@ MATRIX: dict[str, dict[Role, Grant]] = {
     "processor": {
         Role.DPO: Grant(Scope.ALL, write=True),
         Role.ADMIN: Grant(Scope.ALL, write=True),
+        # Reads the register to name a category's processors (ADR 0033); the
+        # register itself stays the DPO's and the administrator's.
+        Role.LEGAL: Grant(Scope.ALL),
         # Who collects is the R&D User's first decision, taken at creation
         # before any site exists - but naming a registered processor on a
         # project is not the same as keeping the register. The register is
@@ -339,6 +365,21 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         Role.DPO: Grant(Scope.ALL, write=True),
         Role.ADMIN: Grant(Scope.ALL),
     },
+    # A notice template (0044): the DPO office's, copied into a project's
+    # notice, and the Legal office's, which belongs to a category and is
+    # versioned (ADR 0033). The office on the session decides which.
+    "notice_template": {
+        Role.DPO: Grant(Scope.ALL, write=True),
+        Role.LEGAL: Grant(Scope.ALL, write=True),
+    },
+    # The Legal office's categories of HR activity (ADR 0033). An HR PoC reads
+    # the categories assigned to them; the administrator reads all, to assign
+    # them.
+    "hr_category": {
+        Role.LEGAL: Grant(Scope.ALL, write=True),
+        Role.HR_USER: Grant(Scope.SCOPED),
+        Role.ADMIN: Grant(Scope.ALL),
+    },
     # A ticket on a rights request, addressed to a member of staff because the
     # holder is one of our own teams. Every staff role: which team holds the
     # data is not a function of role. OWN: the tickets addressed to *you*, and
@@ -524,10 +565,21 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
     # Its tickets and its own account: nothing else (S3-09). It lands on
     # Tickets, which is first.
     Role.BREACH_HOLDER: PERSONAL,
-    # The HR track's two roles (ADR 0032). The dashboard and their tickets
-    # until their registers arrive with the increments that build them.
-    Role.LEGAL: ("dashboard", *PERSONAL),
-    Role.HR_USER: ("dashboard", *PERSONAL),
+    # The HR track's two roles (ADR 0032). Legal keeps the HR registry - its
+    # categories, templates and purposes, with the processors they name - and
+    # reads the user register as the DPO does; an HR PoC reads the categories
+    # assigned to them. Activities, consents and requests join as their
+    # increments land.
+    Role.LEGAL: (
+        "dashboard",
+        "hr-categories",
+        "templates",
+        "purposes",
+        "processors",
+        "users",
+        *PERSONAL,
+    ),
+    Role.HR_USER: ("dashboard", "hr-categories", *PERSONAL),
 }
 
 

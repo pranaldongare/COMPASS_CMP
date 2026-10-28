@@ -1,9 +1,10 @@
 """Notice templates (0044): the DPO's notices before there is a project.
 
-Nothing here is scoped by project, because a template has none: every route
-over these rows is the DPO's, except reading one by its code to attach it,
-which is the caller's to guard. Never served and never evidence, so the rows
-are edited in place; a template is retired, never deleted.
+Nothing here is scoped by project, because a template has none; every read is
+scoped by office (ADR 0032). The DPO office's templates carry no category; the
+Legal office's belong to one (0052, ADR 0033). Never served and never
+evidence, so the rows are edited in place; a template is retired, never
+deleted.
 """
 
 from __future__ import annotations
@@ -18,6 +19,8 @@ TEMPLATE_COLUMNS = """
   t.exercise_rights_url, t.board_complaint_url, t.dpo_contact, t.applicable_to,
   t.note, t.status, t.created_at, t.updated_at, t.retired_at,
   u.full_name AS created_by_name,
+  (SELECT o.office_code FROM office o WHERE o.office_id = t.office_id) AS office_code,
+  c.category_uuid, c.category_code, c.name AS category_name,
   (SELECT count(*) FROM notice_template_purpose tp WHERE tp.template_id = t.template_id)
     AS purpose_count,
   (SELECT count(*) FROM notice_template_language tl WHERE tl.template_id = t.template_id)
@@ -25,7 +28,11 @@ TEMPLATE_COLUMNS = """
   (SELECT count(*) FROM notice n WHERE n.template_id = t.template_id) AS used_count
   FROM notice_template t
   JOIN auth_user u ON u.id = t.created_by
+  LEFT JOIN hr_category c ON c.category_id = t.category_id
 """
+
+#: Every read a caller makes is within its office (ADR 0032).
+_IN_OFFICE = "cmp_office_visible(t.office_id)"
 
 
 async def create(
@@ -40,13 +47,14 @@ async def create(
     note: str | None,
     created_by: int,
     office: str,
+    category_id: int | None = None,
 ) -> Row:
     row = await fetch_one(
         conn,
         f"""INSERT INTO notice_template (title, withdraw_url, exercise_rights_url,
                                          board_complaint_url, dpo_contact, applicable_to,
-                                         note, created_by, office_id)
-           VALUES (%s, %s, %s, %s, %s, %s::notice_audience, %s, %s, {OFFICE_ID})
+                                         note, created_by, office_id, category_id)
+           VALUES (%s, %s, %s, %s, %s, %s::notice_audience, %s, %s, {OFFICE_ID}, %s)
            RETURNING template_id""",
         (
             title,
@@ -58,6 +66,7 @@ async def create(
             note,
             created_by,
             office,
+            category_id,
         ),
     )
     assert row is not None
@@ -74,7 +83,9 @@ async def by_id(conn: Conn, template_id: int) -> Row | None:
 
 async def by_uuid(conn: Conn, template_uuid: str) -> Row | None:
     return await fetch_one(
-        conn, f"SELECT {TEMPLATE_COLUMNS} WHERE t.template_uuid = %s", (template_uuid,)
+        conn,
+        f"SELECT {TEMPLATE_COLUMNS} WHERE t.template_uuid = %s AND {_IN_OFFICE}",
+        (template_uuid,),
     )
 
 
@@ -82,7 +93,7 @@ async def by_code(conn: Conn, template_code: str) -> Row | None:
     """By the ID the DPO hands out: case and spacing forgiven, as it is typed."""
     return await fetch_one(
         conn,
-        f"SELECT {TEMPLATE_COLUMNS} WHERE t.template_code = upper(btrim(%s))",
+        f"SELECT {TEMPLATE_COLUMNS} WHERE t.template_code = upper(btrim(%s)) AND {_IN_OFFICE}",
         (template_code,),
     )
 
@@ -93,10 +104,20 @@ async def lock(conn: Conn, template_id: int) -> None:
     )
 
 
-async def list_all(conn: Conn, *, status: str | None = None, q: str | None = None) -> list[Row]:
-    """Every template, newest first. A few dozen at most: the Privacy Office's."""
-    where: list[str] = []
+async def list_all(
+    conn: Conn,
+    *,
+    status: str | None = None,
+    q: str | None = None,
+    category_uuid: str | None = None,
+) -> list[Row]:
+    """Every template of the caller's office, newest first. A few dozen at
+    most; `category_uuid` keeps one category's."""
+    where: list[str] = [_IN_OFFICE]
     params: list[Any] = []
+    if category_uuid:
+        where.append("c.category_uuid = %s")
+        params.append(category_uuid)
     if status:
         where.append("t.status = %s")
         params.append(status)

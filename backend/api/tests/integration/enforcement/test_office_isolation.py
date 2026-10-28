@@ -43,6 +43,11 @@ KEYS: dict[str, str] = {
     "breach": "breach_id",
     "breach_status_history": "history_id",
     "rights_request": "request_id",
+    # The Legal office's registry (0052): a category names its office; its
+    # processors and HR PoCs are policed through it.
+    "hr_category": "category_id",
+    "category_processor": "category_processor_id",
+    "hr_poc_category": "assignment_id",
 }
 
 #: The tables that carry the office themselves.
@@ -55,6 +60,7 @@ OWN = (
     "export_log",
     "breach",
     "rights_request",
+    "hr_category",
 )
 
 
@@ -109,14 +115,46 @@ async def _world(conn: Any, seeded: dict[str, Any], office: str) -> dict[str, in
         )
     )["purpose_id"]
     p["purpose"] = ids["purpose"]
+    # A category in each office: the schema allows one anywhere, and only a
+    # template of the Legal office names one (0052).
+    ids["hr_category"] = (
+        await _one(
+            conn,
+            f"""INSERT INTO hr_category (category_code, name, office_id, created_by)
+                VALUES (upper(replace('C_' || %(tag)s, '-', '_')), 'Category', {o}, %(dpo)s)
+                RETURNING category_id""",
+            p,
+        )
+    )["category_id"]
+    p["category"] = ids["hr_category"]
+    ids["category_processor"] = (
+        await _one(
+            conn,
+            """INSERT INTO category_processor (category_id, processor_id, processor_role,
+                                               added_by)
+               VALUES (%(category)s, %(processor)s, 'vendor', %(dpo)s)
+               RETURNING category_processor_id""",
+            p,
+        )
+    )["category_processor_id"]
+    ids["hr_poc_category"] = (
+        await _one(
+            conn,
+            """INSERT INTO hr_poc_category (user_id, category_id, assigned_by)
+               VALUES (%(rnd)s, %(category)s, %(dpo)s) RETURNING assignment_id""",
+            p,
+        )
+    )["assignment_id"]
+    p["template_category"] = None if office == "rnd" else ids["hr_category"]
     ids["notice_template"] = (
         await _one(
             conn,
             f"""INSERT INTO notice_template (title, withdraw_url, exercise_rights_url,
                                              board_complaint_url, dpo_contact, created_by,
-                                             office_id)
+                                             office_id, category_id)
                 VALUES ('Template ' || %(tag)s, 'https://x/w', 'https://x/r',
-                        'https://dpb.gov.in', 'office@test.local', %(dpo)s, {o})
+                        'https://dpb.gov.in', 'office@test.local', %(dpo)s, {o},
+                        %(template_category)s)
                 RETURNING template_id""",
             p,
         )

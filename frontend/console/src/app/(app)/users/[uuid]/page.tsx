@@ -9,7 +9,8 @@
  *
  * Laid out as the other record pages (2026-10-10): a summary card over
  * underline tabs - the account, whom a collection owner collects for (their
- * roles only, as before), and the person type's history. The fragment names
+ * roles only, as before), an HR PoC's categories (0052), and the person
+ * type's history. The fragment names
  * the tab, so each can be linked to.
  */
 "use client";
@@ -24,6 +25,7 @@ import {
   IdCard,
   LayoutGrid,
   Pencil,
+  Tags,
   UserRound,
 } from "lucide-react";
 import Link from "next/link";
@@ -50,13 +52,14 @@ import {
 } from "@/components/ui/primitives";
 import { StatusBadge, statusLabel } from "@/components/ui/status";
 import { Tab, TabList, TabPanel, Tabs, useHashTab } from "@/components/ui/tabs";
+import { UserCategoriesForm } from "@/features/hr-categories/components/user-categories";
 import { UserForm } from "@/features/users/components/forms";
 import { ProcessorsForm } from "@/features/users/components/processors";
 import { usePersonTypeHistory, useUser } from "@/features/users";
 import { formatDate, formatDateTime, humanise } from "@/lib/format";
 import { useAuth } from "@/providers";
 
-const TABS = ["overview", "collects", "history"] as const;
+const TABS = ["overview", "collects", "categories", "history"] as const;
 
 export default function UserDetailPage() {
   const { uuid } = useParams<{ uuid: string }>();
@@ -65,6 +68,7 @@ export default function UserDetailPage() {
   const history = usePersonTypeHistory(uuid);
   const [editing, setEditing] = React.useState(false);
   const [settingProcessors, setSettingProcessors] = React.useState(false);
+  const [settingCategories, setSettingCategories] = React.useState(false);
   const [tab, setTab] = useHashTab(TABS, "overview");
   const isAdmin = me?.role === "admin";
 
@@ -96,7 +100,11 @@ export default function UserDetailPage() {
   const processors = u.processors ?? [];
   // The tab is for collection owners alone; an address naming it on any
   // other account opens the account instead of an empty panel.
-  const shown = tab === "collects" && !collects ? "overview" : tab;
+  // An HR PoC's categories (0052): the ones they may run activities in.
+  const runs = u.role === "hr_user";
+  const categories = u.categories ?? [];
+  const shown =
+    (tab === "collects" && !collects) || (tab === "categories" && !runs) ? "overview" : tab;
   return (
     <>
       <PageHeader heading={false} title={u.full_name} breadcrumb={<BackLink />} />
@@ -137,12 +145,20 @@ export default function UserDetailPage() {
                 tint: 2,
                 href: "#collects",
               }
-            : {
-                label: "Organisation id",
-                value: u.organization_id ?? "None",
-                icon: Hash,
-                tint: 2,
-              },
+            : runs
+              ? {
+                  label: "Categories",
+                  value: `${categories.length} ${categories.length === 1 ? "category" : "categories"}`,
+                  icon: Tags,
+                  tint: 2,
+                  href: "#categories",
+                }
+              : {
+                  label: "Organisation id",
+                  value: u.organization_id ?? "None",
+                  icon: Hash,
+                  tint: 2,
+                },
           {
             label: "Registered",
             value: formatDate(u.created_at),
@@ -165,6 +181,11 @@ export default function UserDetailPage() {
           {collects && (
             <Tab value="collects" icon={Building2} count={processors.length}>
               Collects for
+            </Tab>
+          )}
+          {runs && (
+            <Tab value="categories" icon={Tags} count={categories.length}>
+              Categories
             </Tab>
           )}
           <Tab value="history" icon={HistoryIcon} count={history.data?.length}>
@@ -266,6 +287,47 @@ export default function UserDetailPage() {
           </TabPanel>
         )}
 
+        {runs && (
+          <TabPanel value="categories">
+            <Card>
+              <CardHeader className="flex items-center justify-between gap-2">
+                <CardTitle>Runs activities in</CardTitle>
+                {isAdmin && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setSettingCategories(true)}
+                  >
+                    <Pencil className="size-4" />
+                    Change categories
+                  </Button>
+                )}
+              </CardHeader>
+              <CardBody>
+                {categories.length === 0 ? (
+                  <p className="text-sm text-warning-text">
+                    No category yet, so they see no HR activity.
+                    {isAdmin ? " Click Change categories to assign them." : ""}
+                  </p>
+                ) : (
+                  <ul className="flex flex-wrap gap-1.5">
+                    {categories.map((c) => (
+                      <li key={c.category_uuid}>
+                        <Link
+                          href={`/hr-categories/${c.category_uuid}`}
+                          className="inline-flex rounded-full border border-border px-2.5 py-0.5 text-sm text-accent-text hover:bg-surface-hover"
+                        >
+                          {c.category_code} · {c.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardBody>
+            </Card>
+          </TabPanel>
+        )}
+
         <TabPanel value="history">
           <Card>
             <CardHeader>
@@ -317,6 +379,17 @@ export default function UserDetailPage() {
         <DialogContent title="Processors they collect for" size="lg">
           {settingProcessors && (
             <ProcessorsForm user={u} onDone={() => setSettingProcessors(false)} />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={settingCategories}
+        onOpenChange={(o) => !o && setSettingCategories(false)}
+      >
+        <DialogContent title="Categories they run activities in" size="lg">
+          {settingCategories && (
+            <UserCategoriesForm user={u} onDone={() => setSettingCategories(false)} />
           )}
         </DialogContent>
       </Dialog>

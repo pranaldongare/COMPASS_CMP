@@ -1,4 +1,5 @@
-"""Notice templates: the DPO's notices before there is a project (0044).
+"""Notice templates: the DPO's notices before there is a project (0044), and
+the Legal office's for each category of HR activity (0052).
 
 The Privacy Office writes a notice when it knows what a kind of study will
 collect, which is usually before anybody has registered the study. A template
@@ -21,6 +22,7 @@ from typing import Any, Final
 from cmp.core import offices
 from cmp.core.enums import LanguageCode
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
+from cmp.db.repositories import hr_categories as hr_repo
 from cmp.db.repositories import notice_templates as repo
 from cmp.db.repositories import notices as notice_repo
 from cmp.db.repositories import projects as project_repo
@@ -83,8 +85,19 @@ async def create(
     note: str | None = None,
     language_code: str | None = None,
     rendered_text: str | None = None,
+    office: str = offices.RND,
+    category_uuid: str | None = None,
+    role: str | None = None,
 ) -> Row:
-    """A new template, with its first text if the DPO has it to hand."""
+    """A new template, with its first text if the officer has it to hand.
+
+    In the caller's office. The DPO's templates have no category (ADR 0028);
+    the Legal office's each belong to one of its active categories (ADR 0033),
+    and the database holds both rules too.
+    """
+    category_id = await _category_for(
+        conn, office=office, category_uuid=category_uuid, role=role, actor_id=actor_id
+    )
     made = await repo.create(
         conn,
         title=title.strip(),
@@ -95,9 +108,8 @@ async def create(
         applicable_to=applicable_to,
         note=note,
         created_by=actor_id,
-        # The DPO's templates (ADR 0028); the Legal office's are versioned
-        # under its categories (ADR 0033).
-        office=offices.RND,
+        office=office,
+        category_id=category_id,
     )
     await _record(conn, made, Event.NOTICE_TEMPLATE_CREATED)
     if rendered_text and rendered_text.strip():
@@ -109,6 +121,27 @@ async def create(
             actor_id=actor_id,
         )
     return await detail(conn, made)
+
+
+async def _category_for(
+    conn: Conn, *, office: str, category_uuid: str | None, role: str | None, actor_id: int
+) -> int | None:
+    if office == offices.RND:
+        if category_uuid:
+            raise ValidationFailed(
+                "A DPO office template belongs to no category", field="category_uuid"
+            )
+        return None
+    if not category_uuid:
+        raise ValidationFailed(
+            "A Legal office template belongs to a category; choose it", field="category_uuid"
+        )
+    category = await hr_repo.by_uuid(conn, category_uuid, role=role or "", user_id=actor_id)
+    if not category:
+        raise NotFound("Category")
+    if category["status"] != "active":
+        raise ValidationFailed(f"{category['category_code']} is retired", field="category_uuid")
+    return int(category["category_id"])
 
 
 async def update(conn: Conn, template: Row, *, actor_id: int, **fields: Any) -> Row:
@@ -136,7 +169,8 @@ async def attach_purpose(
     is_mandatory: bool = False,
 ) -> Row:
     purpose = await registry_repo.purpose_by_uuid(conn, purpose_uuid)
-    if not purpose:
+    if not purpose or purpose["office_code"] != template["office_code"]:
+        # Each office's templates carry its own purposes (ADR 0032).
         raise NotFound("Purpose")
     if purpose["status"] not in ATTACHABLE:
         raise ValidationFailed(
@@ -249,7 +283,9 @@ async def apply(
     """
     project = await project_repo.require(conn, project_uuid, role=role, user_id=actor_id)
     template = await repo.by_code(conn, template_code)
-    if not template:
+    if not template or template["office_code"] != offices.RND:
+        # A project is the R&D track's; the Legal office's templates are
+        # used by its activities (increment 3), never copied onto a project.
         raise NotFound("Notice template")
     if template["status"] != "active":
         raise Conflict(

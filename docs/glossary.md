@@ -86,6 +86,11 @@ processor and owned by one person. A site is a source standing somewhere.
 breach names its office, and an officer sees only its own, enforced by
 row-level security ([ADR 0032](decisions/0032-offices-are-logical-tenants-in-one-database.md)).
 
+**Category.** The Legal office's registry of kinds of HR activity (wellness,
+CSR, background verification, …), each with its templates, the processors
+that hold data collected under it, and the HR PoCs assigned to run its
+activities ([ADR 0033](decisions/0033-hr-consent-is-governed-by-an-approved-template-version.md)).
+
 **Project.** The unit of governance: a study or programme with purposes,
 processors, a notice and an approval. States: `in_draft`,
 `pending_approval`, `approved`, `closed` (`under_process` survives as a

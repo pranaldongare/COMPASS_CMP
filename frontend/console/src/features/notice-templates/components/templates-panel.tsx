@@ -1,9 +1,11 @@
 /**
- * The DPO's notice templates, on the Notices screen (0044).
+ * The DPO's notice templates, on the Notices screen (0044), and the Legal
+ * office's, on their own page (0052).
  *
  * As many as the office wants, written before any project exists. Each has
  * an ID - `TPL-0007` - to give the study's R&D User, who attaches it to their
- * project; that makes the project's own draft notice from it.
+ * project; that makes the project's own draft notice from it. The Legal
+ * office's each belong to a category of HR activity, and the list says which.
  */
 "use client";
 
@@ -28,6 +30,8 @@ import {
 } from "@/components/ui/primitives";
 import { TemplateForm } from "@/features/notice-templates/components/template-form";
 import { useNoticeTemplates } from "@/features/notice-templates/queries";
+import { useHrCategories } from "@/features/hr-categories";
+import { useAuth } from "@/providers";
 import { formatDateTime } from "@/lib/format";
 
 export function TemplateStatusBadge({ status }: { status: "active" | "retired" }) {
@@ -47,10 +51,14 @@ export function TemplateStatusBadge({ status }: { status: "active" | "retired" }
 export function NewTemplateButton({
   variant = "primary",
   size = "sm",
+  category,
 }: {
   variant?: "primary" | "secondary";
   size?: "sm" | "md";
+  /** A Legal office template started from its category's page. */
+  category?: string;
 }) {
+  const { me } = useAuth();
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
   return (
@@ -62,10 +70,15 @@ export function NewTemplateButton({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
           title="New notice template"
-          description="A notice written before any project exists. A project uses it by its ID, which makes that project's own draft notice from it."
+          description={
+            me?.office === "hr"
+              ? "A notice for one of your categories, written before the activities that will use it."
+              : "A notice written before any project exists. A project uses it by its ID, which makes that project's own draft notice from it."
+          }
           size="lg"
         >
           <TemplateForm
+            category={category}
             onDone={(saved) => {
               setOpen(false);
               if (saved) router.push(`/notices/templates/${saved.template_uuid}`);
@@ -77,25 +90,56 @@ export function NewTemplateButton({
   );
 }
 
-export function TemplatesPanel() {
+export function TemplatesPanel({ category: fixed }: { category?: string } = {}) {
+  const { me } = useAuth();
+  /** The Legal office's templates each belong to a category (0052). */
+  const byCategory = me?.office === "hr";
   const [status, setStatus] = React.useState("active");
   const [q, setQ] = React.useState("");
-  const templates = useNoticeTemplates({ status: status || undefined, q: q || undefined });
+  const [chosen, setChosen] = React.useState("");
+  const category = fixed ?? chosen;
+  const categories = useHrCategories({}, { enabled: byCategory && !fixed });
+  const templates = useNoticeTemplates({
+    status: status || undefined,
+    q: q || undefined,
+    category: category || undefined,
+  });
   const rows = templates.data ?? [];
 
   return (
     <div className="space-y-4">
-      <Alert tone="info">
-        <p className="text-sm">
-          Write a notice here before the project exists. Give its ID to the study&apos;s R&amp;D
-          User: on their project they choose <strong>Use a notice template</strong> and enter
-          it, and the project gets its own draft notice to approve and publish. A template is
-          never shown to anybody until a project uses it.
-        </p>
-      </Alert>
+      {fixed ? null : byCategory ? (
+        <Alert tone="info">
+          <p className="text-sm">
+            Write a notice here for one of your categories, before the activities that will
+            use it. A template is never shown to anybody until an activity uses it.
+          </p>
+        </Alert>
+      ) : (
+        <Alert tone="info">
+          <p className="text-sm">
+            Write a notice here before the project exists. Give its ID to the study&apos;s
+            R&amp;D User: on their project they choose <strong>Use a notice template</strong>{" "}
+            and enter it, and the project gets its own draft notice to approve and publish. A
+            template is never shown to anybody until a project uses it.
+          </p>
+        </Alert>
+      )}
 
       <FilterBar>
         <SearchBox label="Search" placeholder="ID or name" value={q} onSubmit={setQ} />
+        {byCategory && !fixed && (
+          <FilterSelect
+            label="Category"
+            value={chosen}
+            onChange={setChosen}
+            options={(categories.data ?? []).map((c) => ({
+              value: c.category_uuid,
+              label: `${c.category_code} · ${c.name}`,
+            }))}
+            allLabel="Every category"
+          />
+        )}
         <FilterSelect
           label="Status"
           value={status}
@@ -119,7 +163,7 @@ export function TemplatesPanel() {
           icon={<FileStack />}
           title={q || status !== "active" ? "No templates match" : "No templates yet"}
           description="A template is a notice written ahead of the projects that will use it."
-          action={<NewTemplateButton />}
+          action={<NewTemplateButton category={fixed} />}
         />
       ) : (
         <Table>
@@ -128,6 +172,7 @@ export function TemplatesPanel() {
             <tr>
               <Th>ID</Th>
               <Th>Name</Th>
+              {byCategory && !fixed && <Th>Category</Th>}
               <Th>Status</Th>
               <Th>Purposes</Th>
               <Th>Languages</Th>
@@ -147,13 +192,20 @@ export function TemplatesPanel() {
                   </Link>
                 </Td>
                 <Td>{t.title}</Td>
+                {byCategory && !fixed && (
+                  <Td>
+                    <Mono>{t.category_code ?? "—"}</Mono>
+                  </Td>
+                )}
                 <Td>
                   <TemplateStatusBadge status={t.status} />
                 </Td>
                 <Td className="tabular text-text-muted">{t.purpose_count}</Td>
                 <Td className="tabular text-text-muted">{t.language_count}</Td>
                 <Td className="tabular text-text-muted">
-                  {t.used_count} project{t.used_count === 1 ? "" : "s"}
+                  {byCategory
+                    ? "—"
+                    : `${t.used_count} project${t.used_count === 1 ? "" : "s"}`}
                 </Td>
                 <Td className="whitespace-nowrap text-text-muted">
                   {formatDateTime(t.updated_at)}

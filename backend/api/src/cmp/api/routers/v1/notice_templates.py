@@ -1,9 +1,12 @@
-"""Notice templates (0044): the DPO's notices before there is a project.
+"""Notice templates (0044): the DPO's notices before there is a project, and
+the Legal office's for each category of HR activity (0052).
 
-Writing a template is the Privacy Office's, like writing a notice, so every
-route that changes one is `RequireDPO`. Reading one by its ID is wider: the
-R&D User the DPO gave `TPL-0007` to looks it up before attaching it to their
-project, so that route takes the notice author's guard. Attaching itself is
+Writing a template is an officer's, like writing a notice: the DPO's in the
+DPO office, the Legal PoC's in the Legal office, each reading and writing only
+their own office's (ADR 0032), so every route that changes one is
+`TemplateWriter`. Reading one by its ID is wider: the R&D User the DPO gave
+`TPL-0007` to looks it up before attaching it to their project, so that route
+takes the notice author's guard. Attaching itself is
 `POST /projects/{project_uuid}/notices/from-template`, beside the other ways a
 notice reaches a project, in the notices router.
 """
@@ -17,7 +20,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query, Request, status
 from pydantic import Field
 
-from cmp.api.dependencies import RequireDPO, RequireResource, reject_unknown_filters
+from cmp.api.dependencies import (
+    RequireResource,
+    TemplateReader,
+    TemplateWriter,
+    reject_unknown_filters,
+)
 from cmp.core.enums import NoticeAudience
 from cmp.core.errors import ValidationFailed
 from cmp.db.pool import connection, transaction
@@ -44,6 +52,9 @@ class TemplateIn(Schema):
     #: The first text, if the DPO has it to hand. More languages are added after.
     rendered_text: NoticeText | None = None
     language_code: Annotated[str | None, Field(default=None, max_length=40)] = None
+    #: The category a Legal office template belongs to (0052); required there,
+    #: refused for a DPO office template.
+    category_uuid: UUID | None = None
 
 
 class TemplateUpdate(Schema):
@@ -90,6 +101,12 @@ class TemplateOut(Out):
     language_count: int
     #: How many project notices were made from it.
     used_count: int
+    #: The office it belongs to (ADR 0032) and, for the Legal office's, its
+    #: category (0052).
+    office_code: str
+    category_uuid: UUID | None = None
+    category_code: str | None = None
+    category_name: str | None = None
 
 
 class TemplatePurposeOut(Out):
@@ -139,19 +156,26 @@ class TemplateFound(TemplateOut):
 @router.get(
     "/notice-templates",
     response_model=list[TemplateOut],
-    summary="The DPO's notice templates, newest first",
+    summary="The office's notice templates, newest first",
 )
 async def list_templates(
     request: Request,
-    principal: RequireDPO,
+    principal: TemplateReader,
     template_status: Annotated[str | None, Query(alias="status")] = None,
     q: Annotated[str | None, Query(max_length=100)] = None,
+    category: Annotated[UUID | None, Query()] = None,
 ) -> list[dict[str, Any]]:
-    reject_unknown_filters(request, {"status", "q"})
+    """`category` keeps one category's: the Legal office's templates for it."""
+    reject_unknown_filters(request, {"status", "q", "category"})
     if template_status not in (None, "", *service.STATUSES):
         raise ValidationFailed("status must be active or retired", field="status")
     async with connection() as conn:
-        return await repo.list_all(conn, status=template_status or None, q=q)
+        return await repo.list_all(
+            conn,
+            status=template_status or None,
+            q=q,
+            category_uuid=str(category) if category else None,
+        )
 
 
 @router.post(
@@ -160,11 +184,17 @@ async def list_templates(
     status_code=status.HTTP_201_CREATED,
     summary="Write a notice template, before any project exists",
 )
-async def create_template(body: TemplateIn, principal: RequireDPO) -> dict[str, Any]:
+async def create_template(body: TemplateIn, principal: TemplateWriter) -> dict[str, Any]:
+    """In the caller's office; a Legal office template names its category."""
+    if not principal.office:
+        raise ValidationFailed("This account works in no office", field="office")
     async with transaction() as conn:
         return await service.create(
             conn,
             actor_id=principal.user_id,
+            office=str(principal.office),
+            category_uuid=str(body.category_uuid) if body.category_uuid else None,
+            role=principal.role,
             title=body.title,
             withdraw_url=body.withdraw_url,
             exercise_rights_url=body.exercise_rights_url,
@@ -188,14 +218,14 @@ async def find_template(template_code: str, principal: NoticeAuthor) -> dict[str
 
 
 @router.get("/notice-templates/{template_uuid}", response_model=TemplateDetail)
-async def get_template(template_uuid: UUID, principal: RequireDPO) -> dict[str, Any]:
+async def get_template(template_uuid: UUID, principal: TemplateReader) -> dict[str, Any]:
     async with connection() as conn:
         return await service.detail(conn, await service.require(conn, str(template_uuid)))
 
 
 @router.put("/notice-templates/{template_uuid}", response_model=TemplateDetail)
 async def update_template(
-    template_uuid: UUID, body: TemplateUpdate, principal: RequireDPO
+    template_uuid: UUID, body: TemplateUpdate, principal: TemplateWriter
 ) -> dict[str, Any]:
     async with transaction() as conn:
         template = await service.require(conn, str(template_uuid))
@@ -213,7 +243,7 @@ async def update_template(
     summary="Retire a template, or bring it back",
 )
 async def set_template_status(
-    template_uuid: UUID, body: TemplateStatusIn, principal: RequireDPO
+    template_uuid: UUID, body: TemplateStatusIn, principal: TemplateWriter
 ) -> dict[str, Any]:
     async with transaction() as conn:
         template = await service.require(conn, str(template_uuid))
@@ -226,7 +256,7 @@ async def set_template_status(
     status_code=status.HTTP_201_CREATED,
 )
 async def attach_template_purpose(
-    template_uuid: UUID, body: TemplatePurposeIn, principal: RequireDPO
+    template_uuid: UUID, body: TemplatePurposeIn, principal: TemplateWriter
 ) -> dict[str, Any]:
     async with transaction() as conn:
         template = await service.require(conn, str(template_uuid))
@@ -244,7 +274,7 @@ async def attach_template_purpose(
     response_model=TemplateDetail,
 )
 async def detach_template_purpose(
-    template_uuid: UUID, purpose_uuid: UUID, principal: RequireDPO
+    template_uuid: UUID, purpose_uuid: UUID, principal: TemplateWriter
 ) -> dict[str, Any]:
     async with transaction() as conn:
         template = await service.require(conn, str(template_uuid))
@@ -257,7 +287,7 @@ async def detach_template_purpose(
     summary="The template's text in one language, added or replaced",
 )
 async def set_template_language(
-    template_uuid: UUID, code: str, body: TemplateLanguageIn, principal: RequireDPO
+    template_uuid: UUID, code: str, body: TemplateLanguageIn, principal: TemplateWriter
 ) -> dict[str, Any]:
     async with transaction() as conn:
         template = await service.require(conn, str(template_uuid))
@@ -275,7 +305,7 @@ async def set_template_language(
     response_model=TemplateDetail,
 )
 async def remove_template_language(
-    template_uuid: UUID, code: str, principal: RequireDPO
+    template_uuid: UUID, code: str, principal: TemplateWriter
 ) -> dict[str, Any]:
     async with transaction() as conn:
         template = await service.require(conn, str(template_uuid))

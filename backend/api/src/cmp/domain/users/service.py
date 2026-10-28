@@ -17,8 +17,9 @@ from typing import Any
 from cmp.auth.authentication import service as auth_service
 from cmp.core.enums import UserStatus
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
-from cmp.core.permissions import OFFICE_ROLES, ROLE_TITLES, Role
+from cmp.core.permissions import OFFICE_OF_ROLE, OFFICE_ROLES, OFFICE_TITLES, ROLE_TITLES, Role
 from cmp.core.security import hash_password, new_token
+from cmp.db.repositories import hr_categories as hr_repo
 from cmp.db.repositories import offices as office_repo
 from cmp.db.repositories import registry as registry_repo
 from cmp.db.repositories import users as repo
@@ -56,6 +57,10 @@ async def _office_for(
     A role that works in an office needs one: the one named, else the one the
     account already has (`current`). Any other role works across both and is
     refused one, rather than given one it would never use.
+
+    A role of one track is held to that track's office (`OFFICE_OF_ROLE`,
+    open point F-20): a Legal PoC named into the DPO's office would read the
+    R&D track's records, and nothing else would stop it.
     """
     title = ROLE_TITLES.get(role, role)
     if role not in OFFICE_ROLES:
@@ -65,16 +70,24 @@ async def _office_for(
                 field="office_uuid",
             )
         return None
+    code: str | None = None
     if office_uuid:
         office = await office_repo.by_uuid(conn, office_uuid)
         if not office:
             raise NotFound("Office")
-        return str(office["office_code"])
-    if current:
-        return current
-    raise ValidationFailed(
-        f"{title}: this role works in one office; choose it", field="office_uuid"
-    )
+        code = str(office["office_code"])
+    elif current and current == OFFICE_OF_ROLE.get(role, current):
+        code = current
+    if code is None:
+        raise ValidationFailed(
+            f"{title}: this role works in one office; choose it", field="office_uuid"
+        )
+    pinned = OFFICE_OF_ROLE.get(role)
+    if pinned and code != pinned:
+        raise ValidationFailed(
+            f"{title}: this role works in the {OFFICE_TITLES[pinned]}", field="office_uuid"
+        )
+    return code
 
 
 async def _collector_processors(
@@ -376,7 +389,9 @@ async def change_role(
     await repo.set_role(conn, user["id"], role, office=office)
     # The processors were a DCO's third parties or an RCO's own teams; in any
     # other role, or the other of the two, they are the wrong kind or no kind.
+    # The categories were an HR PoC's, and no other role runs activities.
     cleared = await registry_repo.clear_collector_processors(conn, user["id"])
+    categories_cleared = await hr_repo.clear_user_categories(conn, user["id"])
     await audit.record(
         conn,
         event=Event.USER_ROLE_CHANGED,
@@ -388,6 +403,7 @@ async def change_role(
             "to": role,
             "reason_given": bool(reason),
             "processors_cleared": cleared,
+            "categories_cleared": categories_cleared,
             "account_office": {"from": user.get("office_code"), "to": office},
         },
     )
@@ -418,6 +434,7 @@ async def deactivate(conn: Conn, user_uuid: str, *, actor_id: int) -> tuple[dict
         return user, await access.remove(conn, user, actor_id=actor_id)
     if user["role"] != Role.DATA_SUBJECT.value:
         await registry_repo.clear_collector_processors(conn, user["id"])
+        await hr_repo.clear_user_categories(conn, user["id"])
         await auth_service.end_staff_access(conn, user=user, actor_user_id=actor_id)
         from cmp.domain import alerts
 

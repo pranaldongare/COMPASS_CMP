@@ -17,12 +17,14 @@ Navigation returned after sign-in: `dashboard`, `users`, `messages`, `processors
 | `consent` | No | No | `none` | Denied |
 | `data_source` | Yes | Yes | `all` | All rows |
 | `export` | No | No | `none` | Denied |
+| `hr_category` | Yes | No | `all` | All rows |
 | `import` | No | No | `none` | Denied |
 | `legal_hold` | No | No | `none` | Denied |
 | `link` | No | No | `none` | Denied |
 | `me` | No | No | `none` | Denied |
 | `message_template` | Yes | Yes | `all` | All rows |
 | `notice` | No | No | `none` | Denied |
+| `notice_template` | No | No | `none` | Denied |
 | `processor` | Yes | Yes | `all` | All rows |
 | `project` | No | No | `none` | Denied |
 | `purpose` | Yes | No | `all` | All rows |

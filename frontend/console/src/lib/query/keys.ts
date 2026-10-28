@@ -88,6 +88,13 @@ export const keys = {
     byCode: (code: string) => ["notice-template", "code", code] as const,
   },
 
+  /** The Legal office's categories of HR activity (0052). */
+  hrCategory: {
+    list: (params?: Params) => ["hr-categories", params ?? {}] as const,
+    detail: (uuid: Uuid) => ["hr-category", uuid] as const,
+    pocs: (params?: Params) => ["hr-pocs", params ?? {}] as const,
+  },
+
   registry: {
     purposes: (params?: Params) => ["purposes", params ?? {}] as const,
     purpose: (uuid: Uuid) => ["purpose", uuid] as const,

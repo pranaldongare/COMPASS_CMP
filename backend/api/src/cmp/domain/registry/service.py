@@ -28,10 +28,14 @@ from cmp.infrastructure.dkms import opened
 
 
 # =============================================================== purposes
-async def create_purpose(conn: Conn, *, fields: dict[str, Any], actor_id: int) -> dict[str, Any]:
+async def create_purpose(
+    conn: Conn, *, fields: dict[str, Any], actor_id: int, office: str = offices.RND
+) -> dict[str, Any]:
+    """A purpose in the caller's office: the DPO's catalogue for the R&D
+    track, the Legal PoC's for the HR track (ADR 0033). A notice imported for
+    an R&D project brings `rnd`, the default."""
     try:
-        # The DPO's catalogue; the Legal office keeps its own (ADR 0033).
-        purpose = await repo.create_purpose(conn, created_by=actor_id, office=offices.RND, **fields)
+        purpose = await repo.create_purpose(conn, created_by=actor_id, office=office, **fields)
     except Exception as exc:
         if unique_violation(exc):
             raise Conflict("That purpose code already exists", code="purpose_code_taken") from exc

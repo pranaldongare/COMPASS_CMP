@@ -17,12 +17,14 @@ Navigation returned after sign-in: `dashboard`, `projects`, `sites`, `sources`, 
 | `consent` | Yes | No | `scoped` | Assigned project/organisational rows |
 | `data_source` | Yes | Yes | `all` | All rows |
 | `export` | Yes | Yes | `scoped` | Assigned project/organisational rows |
+| `hr_category` | No | No | `none` | Denied |
 | `import` | Yes | Yes | `scoped` | Assigned project/organisational rows |
 | `legal_hold` | No | No | `none` | Denied |
 | `link` | Yes | Yes | `scoped` | Assigned project/organisational rows |
 | `me` | No | No | `none` | Denied |
 | `message_template` | No | No | `none` | Denied |
 | `notice` | Yes | No | `scoped` | Assigned project/organisational rows |
+| `notice_template` | No | No | `none` | Denied |
 | `processor` | Yes | No | `all` | All rows |
 | `project` | Yes | Yes | `scoped` | Assigned project/organisational rows |
 | `purpose` | Yes | No | `all` | All rows |

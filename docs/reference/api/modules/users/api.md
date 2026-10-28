@@ -1,6 +1,6 @@
 # Users API
 
-Generated from `backend/api/openapi.json`. **14 operations.**
+Generated from `backend/api/openapi.json`. **16 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -11,15 +11,17 @@ For each operation the information is deliberately ordered as **API → Validati
 3. [`GET /users`](#3_get_users)
 4. [`POST /users`](#4_post_users)
 5. [`POST /users/{user_uuid}/invite`](#5_post_users_user_uuid_invite)
-6. [`GET /users/{user_uuid}`](#6_get_users_user_uuid)
-7. [`PATCH /users/{user_uuid}`](#7_patch_users_user_uuid)
-8. [`PUT /users/{user_uuid}/processors`](#8_put_users_user_uuid_processors)
-9. [`POST /users/{user_uuid}/role`](#9_post_users_user_uuid_role)
-10. [`POST /users/{user_uuid}/deactivate`](#10_post_users_user_uuid_deactivate)
-11. [`POST /users/{user_uuid}/reactivate`](#11_post_users_user_uuid_reactivate)
-12. [`DELETE /users/{user_uuid}/sessions`](#12_delete_users_user_uuid_sessions)
-13. [`POST /users/{user_uuid}/mfa/reset`](#13_post_users_user_uuid_mfa_reset)
-14. [`GET /users/{user_uuid}/person-type-history`](#14_get_users_user_uuid_person_type_history)
+6. [`GET /users/hr-pocs`](#6_get_users_hr_pocs)
+7. [`GET /users/{user_uuid}`](#7_get_users_user_uuid)
+8. [`PATCH /users/{user_uuid}`](#8_patch_users_user_uuid)
+9. [`PUT /users/{user_uuid}/processors`](#9_put_users_user_uuid_processors)
+10. [`PUT /users/{user_uuid}/categories`](#10_put_users_user_uuid_categories)
+11. [`POST /users/{user_uuid}/role`](#11_post_users_user_uuid_role)
+12. [`POST /users/{user_uuid}/deactivate`](#12_post_users_user_uuid_deactivate)
+13. [`POST /users/{user_uuid}/reactivate`](#13_post_users_user_uuid_reactivate)
+14. [`DELETE /users/{user_uuid}/sessions`](#14_delete_users_user_uuid_sessions)
+15. [`POST /users/{user_uuid}/mfa/reset`](#15_post_users_user_uuid_mfa_reset)
+16. [`GET /users/{user_uuid}/person-type-history`](#16_get_users_user_uuid_person_type_history)
 
 <a id="1_get_users_staff"></a>
 ## 1. `GET /users/staff` — Active staff, for naming a processor's respondent
@@ -184,7 +186,8 @@ No request body.
       "created_at": "string",
       "updated_at": "string",
       "sources": "…",
-      "processors": "…"
+      "processors": "…",
+      "categories": "…"
     }
   ],
   "next_cursor": "string",
@@ -284,6 +287,14 @@ Request body required: **yes**.
       "is_in_house": "…",
       "status": "…"
     }
+  ],
+  "categories": [
+    {
+      "category_uuid": "…",
+      "category_code": "…",
+      "name": "…",
+      "status": "…"
+    }
   ]
 }
 ```
@@ -364,8 +375,66 @@ No request body.
 }
 ```
 
-<a id="6_get_users_user_uuid"></a>
-## 6. `GET /users/{user_uuid}` — Get User
+<a id="6_get_users_hr_pocs"></a>
+## 6. `GET /users/hr-pocs` — Active HR PoCs, for a picker
+
+### API
+
+- **Operation ID:** `hr_pocs_users_hr_pocs_get`
+- **Access:** Role-controlled `users` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+`category` keeps those assigned to it. Declared before `/{user_uuid}`,
+which would otherwise read `hr-pocs` as a uuid and refuse it.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `category` | query | No | `string` or `null` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | array of [`HrPoc`](#schema-hrpoc) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+[
+  {
+    "uuid": "00000000-0000-4000-8000-000000000000",
+    "full_name": "string",
+    "email": "string"
+  }
+]
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="7_get_users_user_uuid"></a>
+## 7. `GET /users/{user_uuid}` — Get User
 
 ### API
 
@@ -416,6 +485,14 @@ No request body.
       "is_in_house": "…",
       "status": "…"
     }
+  ],
+  "categories": [
+    {
+      "category_uuid": "…",
+      "category_code": "…",
+      "name": "…",
+      "status": "…"
+    }
   ]
 }
 ```
@@ -438,8 +515,8 @@ No request body.
 }
 ```
 
-<a id="7_patch_users_user_uuid"></a>
-## 7. `PATCH /users/{user_uuid}` — Update User
+<a id="8_patch_users_user_uuid"></a>
+## 8. `PATCH /users/{user_uuid}` — Update User
 
 ### API
 
@@ -503,6 +580,14 @@ Request body required: **yes**.
       "is_in_house": "…",
       "status": "…"
     }
+  ],
+  "categories": [
+    {
+      "category_uuid": "…",
+      "category_code": "…",
+      "name": "…",
+      "status": "…"
+    }
   ]
 }
 ```
@@ -525,8 +610,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="8_put_users_user_uuid_processors"></a>
-## 8. `PUT /users/{user_uuid}/processors` — Set the processors a DCO or an RCO collects for
+<a id="9_put_users_user_uuid_processors"></a>
+## 9. `PUT /users/{user_uuid}/processors` — Set the processors a DCO or an RCO collects for
 
 ### API
 
@@ -597,8 +682,78 @@ Request body required: **yes**.
 }
 ```
 
-<a id="9_post_users_user_uuid_role"></a>
-## 9. `POST /users/{user_uuid}/role` — Change a role
+<a id="10_put_users_user_uuid_categories"></a>
+## 10. `PUT /users/{user_uuid}/categories` — Set the categories an HR PoC runs activities in
+
+### API
+
+- **Operation ID:** `set_categories_users__user_uuid__categories_put`
+- **Access:** Role-controlled `users` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+The whole set (0052). An HR PoC sees the categories named here and the
+activities run under them, and no others.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `user_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`SetCategories`](#schema-setcategories)
+
+```json
+{
+  "category_uuids": [
+    "00000000-0000-4000-8000-000000000000"
+  ]
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | array of [`PocCategory`](#schema-poccategory) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+[
+  {
+    "category_uuid": "00000000-0000-4000-8000-000000000000",
+    "category_code": "string",
+    "name": "string",
+    "status": "string"
+  }
+]
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="11_post_users_user_uuid_role"></a>
+## 11. `POST /users/{user_uuid}/role` — Change a role
 
 ### API
 
@@ -660,8 +815,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="10_post_users_user_uuid_deactivate"></a>
-## 10. `POST /users/{user_uuid}/deactivate` — Deactivate
+<a id="12_post_users_user_uuid_deactivate"></a>
+## 12. `POST /users/{user_uuid}/deactivate` — Deactivate
 
 ### API
 
@@ -717,8 +872,8 @@ No request body.
 }
 ```
 
-<a id="11_post_users_user_uuid_reactivate"></a>
-## 11. `POST /users/{user_uuid}/reactivate` — Reactivate
+<a id="13_post_users_user_uuid_reactivate"></a>
+## 13. `POST /users/{user_uuid}/reactivate` — Reactivate
 
 ### API
 
@@ -769,8 +924,8 @@ No request body.
 }
 ```
 
-<a id="12_delete_users_user_uuid_sessions"></a>
-## 12. `DELETE /users/{user_uuid}/sessions` — Force logout
+<a id="14_delete_users_user_uuid_sessions"></a>
+## 14. `DELETE /users/{user_uuid}/sessions` — Force logout
 
 ### API
 
@@ -821,8 +976,8 @@ No request body.
 }
 ```
 
-<a id="13_post_users_user_uuid_mfa_reset"></a>
-## 13. `POST /users/{user_uuid}/mfa/reset` — Reset Mfa
+<a id="15_post_users_user_uuid_mfa_reset"></a>
+## 15. `POST /users/{user_uuid}/mfa/reset` — Reset Mfa
 
 ### API
 
@@ -873,8 +1028,8 @@ No request body.
 }
 ```
 
-<a id="14_get_users_user_uuid_person_type_history"></a>
-## 14. `GET /users/{user_uuid}/person-type-history` — Person Type History
+<a id="16_get_users_user_uuid_person_type_history"></a>
+## 16. `GET /users/{user_uuid}/person-type-history` — Person Type History
 
 ### API
 
@@ -990,6 +1145,13 @@ For state changes whose only interesting output is that they happened.
 | `reason` | `string` or `null` | No | max length: `500` | — |
 | `office_uuid` | `string` or `null` | No | format: `uuid` | — |
 
+<a id="schema-setcategories"></a>
+#### `SetCategories`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `category_uuids` | array of `string` | No | — | — |
+
 <a id="schema-setprocessors"></a>
 #### `SetProcessors`
 
@@ -1026,6 +1188,7 @@ For state changes whose only interesting output is that they happened.
 | `updated_at` | `object` | Yes | — | — |
 | `sources` | array of `string` or `null` | No | — | — |
 | `processors` | array of [`CollectorProcessor`](#schema-collectorprocessor) or `null` | No | — | — |
+| `categories` | array of [`PocCategory`](#schema-poccategory) or `null` | No | — | — |
 
 <a id="schema-validationerror"></a>
 #### `ValidationError`
@@ -1048,4 +1211,16 @@ A processor a DCO or an RCO collects for (0050).
 | `processor_uuid` | `string` | Yes | format: `uuid` | — |
 | `legal_name` | `string` | Yes | — | — |
 | `is_in_house` | `boolean` | Yes | — | — |
+| `status` | `string` | Yes | — | — |
+
+<a id="schema-poccategory"></a>
+#### `PocCategory`
+
+A category an HR PoC runs activities in (0052).
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `category_uuid` | `string` | Yes | format: `uuid` | — |
+| `category_code` | `string` | Yes | — | — |
+| `name` | `string` | Yes | — | — |
 | `status` | `string` | Yes | — | — |

@@ -20,7 +20,8 @@ import {
   useUpdateNoticeTemplate,
 } from "@/features/notice-templates/mutations";
 import { AUDIENCES } from "@/features/notices/components/notice-form";
-import { useToast } from "@/providers";
+import { useHrCategories } from "@/features/hr-categories";
+import { useAuth, useToast } from "@/providers";
 import { httpUrl, optional } from "@/schemas/primitives";
 import type { LanguageCode, NoticeAudience, NoticeTemplate, NoticeTemplateDetail } from "@/types";
 
@@ -42,18 +43,26 @@ const templateSchema = z.object({
   note: optional(z.string().trim().max(4000, "Keep the note under 4,000 characters")),
   language_code: z.string().optional(),
   rendered_text: z.string().optional(),
+  category_uuid: z.string().optional(),
 });
 
 export function TemplateForm({
   template,
+  category,
   onDone,
 }: {
   /** Editing this one; omitted for a new template. */
   template?: NoticeTemplate;
+  /** A new Legal office template's category, when started from its page. */
+  category?: string;
   onDone: (saved?: NoticeTemplateDetail) => void;
 }) {
   const toast = useToast();
+  const { me } = useAuth();
   const { data: enums } = useEnums();
+  /** A Legal office template belongs to a category (0052); a DPO's to none. */
+  const needsCategory = !template && me?.office === "hr";
+  const categories = useHrCategories({ status: "active" }, { enabled: needsCategory });
   const create = useCreateNoticeTemplate();
   const update = useUpdateNoticeTemplate(template?.template_uuid ?? "");
 
@@ -67,6 +76,7 @@ export function TemplateForm({
     note: template?.note ?? "",
     language_code: "english",
     rendered_text: "",
+    category_uuid: category ?? "",
   });
 
   const onSubmit = form.submit(async (values) => {
@@ -85,15 +95,24 @@ export function TemplateForm({
       onDone(saved);
       return;
     }
+    // A disabled select is not submitted: the page it was started from names it.
+    const categoryUuid = category || values.category_uuid;
+    if (needsCategory && !categoryUuid) {
+      form.setError("category_uuid", { message: "Choose the category it is for" });
+      return;
+    }
     const text = values.rendered_text?.trim();
     const saved = await create.mutateAsync({
+      category_uuid: needsCategory ? categoryUuid : null,
       ...fields,
       rendered_text: text ? values.rendered_text : null,
       language_code: text ? ((values.language_code || "english") as LanguageCode) : null,
     });
     toast.success(
       `Template ${saved.template_code} created`,
-      "Add its purposes and languages, then give the ID to the study's R&D User.",
+      needsCategory
+        ? "Add its purposes and languages."
+        : "Add its purposes and languages, then give the ID to the study's R&D User.",
     );
     onDone(saved);
   });
@@ -110,6 +129,30 @@ export function TemplateForm({
               changes here reach only notices made from now on.
             </p>
           </Alert>
+        )}
+
+        {needsCategory && (
+          <Field
+            label="Category"
+            hint="The kind of HR activity it is for. It stays with this category."
+            error={form.formState.errors.category_uuid?.message}
+            required
+          >
+            {(p) => (
+              <Select
+                {...p}
+                {...form.register("category_uuid")}
+                disabled={Boolean(category)}
+              >
+                <option value="">Choose a category</option>
+                {(categories.data ?? []).map((c) => (
+                  <option key={c.category_uuid} value={c.category_uuid}>
+                    {c.category_code} · {c.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
         )}
 
         <Field

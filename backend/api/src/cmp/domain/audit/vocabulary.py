@@ -33,6 +33,7 @@ GROUP_LABELS: Final[dict[str, str]] = {
     "subject": "Data principals",
     "notice": "Notices",
     "notice_template": "Notice templates",
+    "hr_category": "HR categories",
     "consent": "Consent",
     "export": "Exports",
     "import": "Imports",

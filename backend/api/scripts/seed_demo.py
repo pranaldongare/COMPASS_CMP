@@ -159,6 +159,60 @@ STAFF: list[dict[str, str]] = [
     },
 ]
 
+#: The Legal office's people (ADR 0032, 0052): its officer and two HR PoCs.
+HR_STAFF: list[dict[str, str]] = [
+    {
+        "key": "legal1",
+        "full_name": "Meera Nair",
+        "email": "meera.nair@cmp.local",
+        "role": "legal",
+        "org": "EMP-1601",
+        "office": "hr",
+    },
+    {
+        "key": "hr1",
+        "full_name": "Rahul Desai",
+        "email": "rahul.desai@cmp.local",
+        "role": "hr_user",
+        "org": "EMP-1701",
+        "office": "hr",
+    },
+    {
+        "key": "hr2",
+        "full_name": "Ananya Sen",
+        "email": "ananya.sen@cmp.local",
+        "role": "hr_user",
+        "org": "EMP-1702",
+        "office": "hr",
+    },
+]
+
+#: The Legal office's categories of HR activity (0052): the processors that
+#: hold each one's data, by key and what each is to it, and its HR PoCs.
+HR_CATEGORIES: list[dict[str, Any]] = [
+    {
+        "category_code": "WELLNESS",
+        "name": "Employee wellness",
+        "description": "Health camps, counselling and fitness programmes.",
+        "processors": [("aar", "hrms"), ("hdc", "vendor")],
+        "pocs": ["hr1"],
+    },
+    {
+        "category_code": "CSR",
+        "name": "Corporate social responsibility",
+        "description": "Volunteering drives and community programmes.",
+        "processors": [("aar", "hrms")],
+        "pocs": ["hr1", "hr2"],
+    },
+    {
+        "category_code": "BGV",
+        "name": "Background verification",
+        "description": "Pre-joining checks by an accredited agency.",
+        "processors": [("aar", "hrms"), ("kfr", "vendor")],
+        "pocs": ["hr2"],
+    },
+]
+
 # =============================================================================
 #  Processors and their sources
 # =============================================================================
@@ -795,14 +849,17 @@ async def refuse_if_seeded(api: Api, admin: Actor) -> None:
         )
 
 
-async def invite_staff(api: Api, admin: Actor) -> dict[str, Actor]:
+async def invite_staff(
+    api: Api, admin: Actor, people: list[dict[str, str]] | None = None
+) -> dict[str, Actor]:
     """The administrator invites each person; the invitation's code sets the
     password, which activates the account; then each signs in."""
     staff: dict[str, Actor] = {}
-    # Every one of them works in the DPO office (ADR 0032).
+    # Each in the office of their track (ADR 0032): the DPO's, or the Legal
+    # office for its people.
     offices = (await api.call("GET", "/offices", actor=admin)).json()
-    rnd = next(o["office_uuid"] for o in offices if o["office_code"] == "rnd")
-    for s in STAFF:
+    office_uuid = {o["office_code"]: o["office_uuid"] for o in offices}
+    for s in STAFF + HR_STAFF if people is None else people:
         await api.call(
             "POST",
             "/users",
@@ -814,7 +871,7 @@ async def invite_staff(api: Api, admin: Actor) -> dict[str, Actor]:
                 "role": s["role"],
                 "organization_id": s["org"],
                 "person_type": "employee",
-                "office_uuid": rnd,
+                "office_uuid": office_uuid[s.get("office", "rnd")],
             },
         )
         code = api.code(INVITATION, 4)
@@ -827,6 +884,94 @@ async def invite_staff(api: Api, admin: Actor) -> dict[str, Actor]:
         api.counts["staff accounts"] += 1
         log.info("seed_demo.staff", role=s["role"], email=s["email"])
     return staff
+
+
+async def hr_registry(
+    api: Api, staff: dict[str, Actor], admin: Actor, processors: dict[str, str]
+) -> None:
+    """The Legal office's registry (0052): its categories with their
+    processors, a purpose and a template, written by the Legal PoC; the HR
+    PoCs assigned to them by the administrator. `processors` maps a
+    processor key to its uuid."""
+    legal = staff["legal1"]
+    category_uuid: dict[str, str] = {}
+    for c in HR_CATEGORIES:
+        r = await api.call(
+            "POST",
+            "/hr/categories",
+            actor=legal,
+            expect=(201,),
+            json={k: c[k] for k in ("category_code", "name", "description")},
+        )
+        uuid = r.json()["category_uuid"]
+        category_uuid[c["category_code"]] = uuid
+        await api.call(
+            "PUT",
+            f"/hr/categories/{uuid}/processors",
+            actor=legal,
+            json={
+                "processors": [
+                    {
+                        "processor_uuid": processors[key],
+                        "processor_role": role,
+                        # The HR system answers through the Legal PoC; a
+                        # vendor through the activity's HR PoC.
+                        "respondent_user_uuid": legal.uuid if role == "hrms" else None,
+                    }
+                    for key, role in c["processors"]
+                ]
+            },
+        )
+        api.counts["HR categories"] += 1
+    purpose = await api.call(
+        "POST",
+        "/purposes",
+        actor=legal,
+        expect=(201,),
+        json={
+            "purpose_code": "PUR-HR-WELLNESS",
+            "name": "Wellness programme participation",
+            "description": "Running the wellness programmes an employee signs up for.",
+            "uses": "Scheduling sessions, arranging the provider, measuring take-up.",
+            "lawful_basis": "consent_s6",
+            "data_categories": ["name", "employee_id", "health_questionnaire"],
+            "retention_days": 365,
+            "retention_basis": "business_policy",
+            "erasure_trigger": "withdrawal",
+        },
+    )
+    await api.call("POST", f"/purposes/{purpose.json()['purpose_uuid']}/activate", actor=legal)
+    await api.call(
+        "POST",
+        "/notice-templates",
+        actor=legal,
+        expect=(201,),
+        json={
+            "title": "Wellness programme sign-up",
+            "withdraw_url": "https://hr.cmp.local/withdraw",
+            "exercise_rights_url": "https://hr.cmp.local/rights",
+            "board_complaint_url": "https://dpb.gov.in/complaint",
+            "dpo_contact": "legal.office@cmp.local",
+            "applicable_to": "data_subject",
+            "category_uuid": category_uuid["WELLNESS"],
+        },
+    )
+    for s in HR_STAFF:
+        if s["role"] != "hr_user":
+            continue
+        await api.call(
+            "PUT",
+            f"/users/{staff[s['key']].uuid}/categories",
+            actor=admin,
+            json={
+                "category_uuids": [
+                    category_uuid[c["category_code"]]
+                    for c in HR_CATEGORIES
+                    if s["key"] in c["pocs"]
+                ]
+            },
+        )
+    log.info("seed_demo.hr_registry", categories=len(HR_CATEGORIES))
 
 
 async def register(
@@ -1306,6 +1451,7 @@ async def seed_demo() -> None:
 
             staff = await invite_staff(api, admin)
             purposes, processors, sources = await register(api, staff, admin)
+            await hr_registry(api, staff, admin, {k: str(p["uuid"]) for k, p in processors.items()})
             projects = await build_projects(api, staff, purposes, processors, sources)
             people = await principals_arrive(api, redis, purposes, projects)
             await withdrawals(api, people)
@@ -1325,7 +1471,7 @@ async def seed_demo() -> None:
     for what, n in api.counts.items():
         print(f"  {what:24} {n}")
     print(f"\n  Staff sign in at the console with password {PASSWORD}:")
-    for s in STAFF:
+    for s in STAFF + HR_STAFF:
         print(f"    {s['role']:10} {s['full_name']:18} {s['email']}")
     print("\n  Data principals sign in at the portal with a code to their mobile or email:")
     for p in PRINCIPALS[:3]:

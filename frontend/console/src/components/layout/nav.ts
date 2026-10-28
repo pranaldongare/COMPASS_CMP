@@ -15,6 +15,7 @@ import {
   ClipboardCheck,
   Database,
   FileCheck,
+  FileStack,
   FileText,
   FolderKanban,
   Gauge,
@@ -28,6 +29,7 @@ import {
   ShieldAlert,
   ScrollText,
   ShieldCheck,
+  Tags,
   Upload,
   UserRound,
   Users,
@@ -90,6 +92,23 @@ export const SECTIONS: NavSection[] = [
         keywords: "privacy notice",
       },
       { key: "purposes", href: "/purposes", label: "Purposes", icon: ClipboardCheck },
+      // The Legal office's templates (0052). The DPO reaches theirs from the
+      // Notices tab; the Legal PoC has no Notices section of their own yet.
+      {
+        key: "templates",
+        href: "/notices/templates",
+        label: "Notice templates",
+        icon: FileStack,
+        keywords: "tpl hr",
+      },
+      // The kinds of HR activity the Legal office governs (ADR 0033).
+      {
+        key: "hr-categories",
+        href: "/hr-categories",
+        label: "HR categories",
+        icon: Tags,
+        keywords: "wellness csr bgv hr track",
+      },
     ],
   },
   {
@@ -241,8 +260,8 @@ const DAILY_WORK: Record<string, string[]> = {
   admin: ["dashboard", "users", "requests", "messages", "processors", "sources", "audit"],
   breach_holder: ["tickets"],
   // The HR track (ADR 0032): their registers join as the increments land.
-  legal: ["dashboard", "tickets"],
-  hr_user: ["dashboard", "tickets"],
+  legal: ["dashboard", "hr-categories", "templates", "purposes", "tickets"],
+  hr_user: ["dashboard", "hr-categories", "tickets"],
 };
 
 /** In the account menu and the header's bell, not the sidebar as well. */

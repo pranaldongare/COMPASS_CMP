@@ -53,6 +53,10 @@ MODULES: dict[str, list[str]] = {
         "processor_respondent",
         "data_source",
         "collection_owner_processor",
+        # The Legal office's registry (0052, ADR 0033).
+        "hr_category",
+        "category_processor",
+        "hr_poc_category",
     ],
     "projects": [
         "project",

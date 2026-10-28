@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 326,
-  "registered_business_and_system_operations": 329,
+  "documented_operations": 335,
+  "registered_business_and_system_operations": 338,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -31,7 +31,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO/Admin may inspect the audit trail and verify its chain. No API to edit audit entries is registered."
@@ -67,7 +69,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO/Admin may inspect the audit trail and verify its chain. No API to edit audit entries is registered."
@@ -103,7 +107,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO/Admin may inspect the audit trail and verify its chain. No API to edit audit entries is registered."
@@ -136,7 +142,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "No existing session. Only active staff accounts can complete password sign-in; data_subject accounts are refused. MFA is required for staff by default, subject to deployment configuration."
@@ -180,7 +188,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "OWN",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Ends the caller’s current session only."
@@ -224,7 +234,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "OWN",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Returns the caller’s effective session role and navigation; account_role may differ after OTP portal sign-in."
@@ -268,7 +280,9 @@
         "rco": "COND",
         "rnd_user": "COND",
         "data_subject": "COND",
-        "breach_holder": "COND"
+        "breach_holder": "COND",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "A valid session cookie and CSRF token are required. Despite its name, PartialUser does not enforce session.partial or restrict roles; the handler loads the current account and requests its MFA code."
@@ -312,7 +326,9 @@
         "rco": "COND",
         "rnd_user": "COND",
         "data_subject": "COND",
-        "breach_holder": "COND"
+        "breach_holder": "COND",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "A valid session cookie and CSRF token plus the account MFA code are required. PartialUser accepts partial or full sessions; it has no role filter. Successful promotion requires an issued code."
@@ -347,7 +363,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Public entry point. Codes go to registered contacts; an eligible staff account can also use the portal as a data principal."
@@ -382,7 +400,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "A valid contact code opens a session acting as data_subject, even when the underlying account is staff."
@@ -426,7 +446,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "OWN",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Own account only; the current password must verify. No staff-only role guard exists; passwordless accounts cannot satisfy the password check."
@@ -461,7 +483,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Public entry point; an account-specific reset/invitation code is required. This activates a pending invited account."
@@ -496,7 +520,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Public entry point; a reset code is issued only for eligible active/pending staff accounts. The response does not reveal account existence."
@@ -531,7 +557,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Public self-registration creates a data_subject account; callers cannot choose a staff role. Contact verification is required.",
@@ -567,7 +595,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Public entry point; valid registration contact codes are required to complete registration."
@@ -611,7 +641,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "OWN",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Lists sessions belonging to the signed-in account only."
@@ -655,7 +687,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "OWN",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The target session must belong to the caller; another account’s session is not selectable."
@@ -696,7 +730,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
@@ -737,7 +773,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
@@ -778,7 +816,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
@@ -819,7 +859,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
@@ -859,7 +901,9 @@
         "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only)."
@@ -898,7 +942,9 @@
         "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only)."
@@ -937,7 +983,9 @@
         "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
@@ -977,7 +1025,9 @@
         "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
@@ -1017,7 +1067,9 @@
         "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only)."
@@ -1057,7 +1109,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
@@ -1098,7 +1152,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only).",
@@ -1139,7 +1195,9 @@
         "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Links and individual consent rows are scoped to the collection site: DPO all; DCO/RCO sites they run or cover; DCO Admin non-in-house sites; R&D own-created projects (consent reads only)."
@@ -1182,7 +1240,9 @@
         "rco": "COND",
         "rnd_user": "COND",
         "data_subject": "COND",
-        "breach_holder": "COND"
+        "breach_holder": "COND",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "All eight roles have a dashboard branch; a temporary holder's is empty, with its tickets beside it. Results are role-specific aggregates; staff also see their assigned tickets. A data principal sees their own dashboard."
@@ -1224,7 +1284,9 @@
         "rco": "COND",
         "rnd_user": "COND",
         "data_subject": "COND",
-        "breach_holder": "COND"
+        "breach_holder": "COND",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Principal sees own audit events. Staff receive selected event types scoped as the project register is: an event about a project, or about a notice, import or export on one, is shown only to a role that could see that project; a lockout is shown to DPO and Admin; a consent withdrawal to DPO only. Plus own ticket events; DPO also gets office ticket events."
@@ -1267,7 +1329,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO/DCO only. Event and subject recipient must exist. The event lookup is by log UUID without a caller/project-scope predicate."
@@ -1303,7 +1367,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO/Admin list current cover arrangements. DPO cover records responsibility but adds no rows; DCO cover extends assignment scope while active."
@@ -1343,7 +1409,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Successful creation: DPO or DCO arranges own cover, or Admin arranges it for them. Delegator and delegate must have the same role, one of DPO/DCO; delegate must be active, not self, and dates must be valid. Other staff pass the route guard but fail service eligibility."
@@ -1386,7 +1454,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "OWN",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Any full session may list arrangements involving itself; data principals normally have none. Listing is not permission to create cover."
@@ -1428,7 +1498,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "OWN",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Any full session may list arrangements involving itself; data principals normally have none. Listing is not permission to create cover."
@@ -1468,7 +1540,9 @@
         "rco": "COND",
         "rnd_user": "COND",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Admin can revoke any arrangement; otherwise caller must be its named delegator or delegate. Role changes do not remove that participant check."
@@ -1508,7 +1582,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading."
@@ -1552,7 +1628,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.",
@@ -1593,7 +1671,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading."
@@ -1633,7 +1713,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading."
@@ -1673,7 +1755,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading."
@@ -1713,7 +1797,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading."
@@ -1752,7 +1838,9 @@
         "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading."
@@ -1791,7 +1879,9 @@
         "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading."
@@ -1830,7 +1920,9 @@
         "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading."
@@ -1869,7 +1961,9 @@
         "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading."
@@ -1911,7 +2005,9 @@
         "rco": "COND",
         "rnd_user": "COND",
         "data_subject": "COND",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.",
@@ -1953,7 +2049,9 @@
         "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.",
@@ -1994,7 +2092,9 @@
         "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading."
@@ -2033,7 +2133,9 @@
         "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.",
@@ -2077,7 +2179,9 @@
         "rco": "COND",
         "rnd_user": "COND",
         "data_subject": "COND",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.",
@@ -2122,7 +2226,9 @@
         "rco": "COND",
         "rnd_user": "COND",
         "data_subject": "COND",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.",
@@ -2165,7 +2271,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading."
@@ -2204,7 +2312,9 @@
         "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading."
@@ -2243,7 +2353,9 @@
         "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.",
@@ -2289,7 +2401,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "OWN",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -2332,7 +2446,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "OWN",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -2369,7 +2485,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -2405,7 +2523,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -2441,7 +2561,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -2477,7 +2599,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -2513,7 +2637,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -2549,7 +2675,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -2585,7 +2713,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -2628,7 +2758,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "OWN",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -2672,7 +2804,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "OWN",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -2709,7 +2843,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -2745,7 +2881,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -2781,7 +2919,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -2817,7 +2957,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -2853,7 +2995,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -2890,7 +3034,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -2934,7 +3080,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -2970,7 +3118,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -3006,7 +3156,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -3042,7 +3194,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -3078,7 +3232,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -3114,7 +3270,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -3150,7 +3308,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -3186,7 +3346,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -3229,7 +3391,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "OWN",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only the signed-in person’s record or their related records; an account UUID supplied by the client does not select a different principal.",
@@ -3266,7 +3430,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO/Admin manage message templates globally. Preview uses the read grant; saving/resetting a template uses the write grant."
@@ -3302,7 +3468,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO/Admin manage message templates globally. Preview uses the read grant; saving/resetting a template uses the write grant."
@@ -3338,7 +3506,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO/Admin manage message templates globally. Preview uses the read grant; saving/resetting a template uses the write grant."
@@ -3374,7 +3544,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO/Admin manage message templates globally. Preview uses the read grant; saving/resetting a template uses the write grant."
@@ -3410,7 +3582,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO/Admin manage message templates globally. Preview uses the read grant; saving/resetting a template uses the write grant."
@@ -3449,7 +3623,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing."
@@ -3485,7 +3661,9 @@
         "rco": "NO",
         "rnd_user": "ALL",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Every approved or published notice on the platform, whichever project it is on and whoever wrote it - deliberately wider than GET /notices for an R&D User, whose notice read is otherwise their own projects. Carries only what the copy picker shows (code, version, status, project name, counts). Drafts and superseded notices are never listed.",
@@ -3526,7 +3704,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing."
@@ -3565,7 +3745,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing."
@@ -3600,7 +3782,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.",
@@ -3641,7 +3825,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing."
@@ -3680,7 +3866,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing."
@@ -3715,7 +3903,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.",
@@ -3752,7 +3942,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.",
@@ -3789,7 +3981,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.",
@@ -3829,7 +4023,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing."
@@ -3864,7 +4060,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.",
@@ -3904,7 +4102,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing."
@@ -3939,7 +4139,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.",
@@ -3976,7 +4178,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.",
@@ -4012,7 +4216,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.",
@@ -4049,7 +4255,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.",
@@ -4090,7 +4298,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing."
@@ -4129,7 +4339,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing."
@@ -4164,7 +4376,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.",
@@ -4202,7 +4416,9 @@
         "rco": "NO",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.",
@@ -4241,7 +4457,9 @@
         "rco": "NO",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.",
@@ -4279,7 +4497,9 @@
         "rco": "NO",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Notice and parent project must be within project scope: DPO all; R&D own project; collection roles their permitted projects. Read permission alone does not permit editing.",
@@ -4320,7 +4540,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -4360,7 +4582,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -4402,7 +4626,9 @@
         "rco": "NO",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -4443,7 +4669,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -4487,7 +4715,9 @@
         "rco": "NO",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -4528,7 +4758,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -4572,7 +4804,9 @@
         "rco": "NO",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -4614,7 +4848,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -4658,7 +4894,9 @@
         "rco": "NO",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -4700,7 +4938,9 @@
         "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -4742,7 +4982,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -4782,7 +5024,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -4824,7 +5068,9 @@
         "rco": "NO",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -4868,7 +5114,9 @@
         "rco": "NO",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -4906,7 +5154,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -4946,7 +5196,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -4990,7 +5242,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -5036,7 +5290,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -5076,7 +5332,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -5120,7 +5378,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects."
@@ -5160,7 +5420,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -5202,7 +5464,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -5244,7 +5508,9 @@
         "rco": "SCOPED",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -5289,7 +5555,9 @@
         "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -5328,7 +5596,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -5374,7 +5644,9 @@
         "rco": "NO",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -5424,7 +5696,9 @@
         "rco": "NO",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Project scope: DPO all; R&D own-created projects; DCO/RCO assigned project or a project with a site they run (including active cover); DCO Admin third-party projects.",
@@ -5463,7 +5737,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Valid consent-link capability token required; link state, expiry and use limits are checked. No session required."
@@ -5498,7 +5774,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Requires a loaded session whose effective role is data_subject, a valid link, and a matching server-side notice-serving record. The subject is taken from the session. Staff must first sign in through the principal OTP flow; staff-role sessions are refused. This handler loads its cookie directly instead of using CurrentUser/its CSRF dependency.",
@@ -5534,7 +5812,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Valid link and legally approved language required. Reading is public; a loaded session binds the server-side notice-serving record to that person."
@@ -5569,7 +5849,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Valid link and registered contact required for code delivery; no prior session required."
@@ -5604,7 +5886,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Valid link and contact code(s) required. Completion opens a data_subject session, including for staff account holders."
@@ -5639,7 +5923,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Valid consent link required. Registration/contact verification does not grant a staff session.",
@@ -5675,7 +5961,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Published or superseded notice only; draft notices are not public."
@@ -5709,7 +5997,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Public information about exercising rights; no identity or role gate."
@@ -5743,7 +6033,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Valid nomination capability token required; no session required."
@@ -5777,7 +6069,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Valid nomination token plus contact code required to accept."
@@ -5811,7 +6105,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Valid nomination token; code is sent to a contact recorded on that nomination."
@@ -5845,7 +6141,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Valid nomination token plus contact code required to decline."
@@ -5879,7 +6177,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Accepted/usable nomination and nominee code required; trigger event is recorded and evidence is reviewed before substantive processing."
@@ -5913,7 +6213,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Nomination reference and a recorded nominee contact required for code delivery."
@@ -5947,7 +6249,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Anyone may submit without an account. Contact verification and subsequent office checks govern processing; submission is not access to another person’s records."
@@ -5981,7 +6285,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The request reference/contact verification code must match; no session required."
@@ -6022,7 +6328,9 @@
         "rco": "ALL",
         "rnd_user": "ALL",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
@@ -6059,7 +6367,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it."
@@ -6099,7 +6409,9 @@
         "rco": "ALL",
         "rnd_user": "ALL",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it."
@@ -6135,7 +6447,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it."
@@ -6175,7 +6489,9 @@
         "rco": "ALL",
         "rnd_user": "ALL",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it."
@@ -6211,7 +6527,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it."
@@ -6247,7 +6565,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it."
@@ -6283,7 +6603,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it."
@@ -6323,10 +6645,13 @@
         "rco": "ALL",
         "rnd_user": "ALL",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
       },
       "conditions": [
-        "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it."
+        "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
+        "Within the caller's office: each officer reads their own office's catalogue; the administrator both. (2026-10-28, 0052)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L134"
@@ -6342,13 +6667,14 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPO",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO))]",
+      "gate": "PurposeWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"purpose\", write=True))]",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
-      "resource": "",
+      "resource": "purpose",
       "write_gate": false,
       "access": {
         "dpo": "ALL",
@@ -6358,10 +6684,13 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
       },
       "conditions": [
-        "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it."
+        "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
+        "Either officer, in their own office (ADR 0032); the Legal PoC's purposes are the Legal office's. (2026-10-28, 0052)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L151"
@@ -6398,7 +6727,9 @@
         "rco": "ALL",
         "rnd_user": "ALL",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it."
@@ -6417,13 +6748,14 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPO",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO))]",
+      "gate": "PurposeWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"purpose\", write=True))]",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
-      "resource": "",
+      "resource": "purpose",
       "write_gate": false,
       "access": {
         "dpo": "ALL",
@@ -6433,10 +6765,13 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
       },
       "conditions": [
-        "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it."
+        "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
+        "Either officer, in their own office (ADR 0032); the Legal PoC's purposes are the Legal office's. (2026-10-28, 0052)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L183"
@@ -6452,13 +6787,14 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPO",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO))]",
+      "gate": "PurposeWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"purpose\", write=True))]",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
-      "resource": "",
+      "resource": "purpose",
       "write_gate": false,
       "access": {
         "dpo": "ALL",
@@ -6468,10 +6804,13 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
       },
       "conditions": [
-        "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it."
+        "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
+        "Either officer, in their own office (ADR 0032); the Legal PoC's purposes are the Legal office's. (2026-10-28, 0052)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L207"
@@ -6487,13 +6826,14 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPO",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO))]",
+      "gate": "PurposeWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"purpose\", write=True))]",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
-      "resource": "",
+      "resource": "purpose",
       "write_gate": false,
       "access": {
         "dpo": "ALL",
@@ -6503,10 +6843,13 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
       },
       "conditions": [
-        "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it."
+        "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
+        "Either officer, in their own office (ADR 0032); the Legal PoC's purposes are the Legal office's. (2026-10-28, 0052)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L225"
@@ -6522,11 +6865,12 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPOorAdmin",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]",
+      "gate": "RequireOfficerOrAdmin",
+      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO, Role.LEGAL, Role.ADMIN))]",
       "route_roles": [
-        "admin",
-        "dpo"
+        "dpo",
+        "legal",
+        "admin"
       ],
       "inline_role_checks": [],
       "resource": "",
@@ -6539,10 +6883,13 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
       },
       "conditions": [
-        "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it."
+        "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
+        "Either officer, within their own office. (2026-10-28, 0052)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L274"
@@ -6558,11 +6905,12 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPOorAdmin",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]",
+      "gate": "RequireOfficerOrAdmin",
+      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO, Role.LEGAL, Role.ADMIN))]",
       "route_roles": [
-        "admin",
-        "dpo"
+        "dpo",
+        "legal",
+        "admin"
       ],
       "inline_role_checks": [],
       "resource": "",
@@ -6575,10 +6923,13 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
       },
       "conditions": [
-        "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it."
+        "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
+        "Either officer, within their own office. (2026-10-28, 0052)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/registry.py#L263"
@@ -6615,7 +6966,9 @@
         "rco": "SCOPED",
         "rnd_user": "ALL",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
@@ -6655,7 +7008,9 @@
         "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
@@ -6698,7 +7053,9 @@
         "rco": "SCOPED",
         "rnd_user": "ALL",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
@@ -6738,7 +7095,9 @@
         "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
@@ -6781,7 +7140,9 @@
         "rco": "COND",
         "rnd_user": "COND",
         "data_subject": "COND",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
@@ -6824,7 +7185,9 @@
         "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
@@ -6867,7 +7230,9 @@
         "rco": "SCOPED",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Registry access is separate from project ownership. Listing/reading a registry entry does not grant access to the projects using it.",
@@ -6906,7 +7271,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -6944,7 +7311,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
@@ -6983,7 +7352,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7021,7 +7392,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7059,7 +7432,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7097,7 +7472,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7135,7 +7512,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
@@ -7175,7 +7554,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7213,7 +7594,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7251,7 +7634,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7289,7 +7674,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7327,7 +7714,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7365,7 +7754,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7403,7 +7794,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7441,7 +7834,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7479,7 +7874,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7517,7 +7914,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7555,7 +7954,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7593,7 +7994,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7631,7 +8034,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7669,7 +8074,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7707,7 +8114,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
@@ -7746,7 +8155,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7784,7 +8195,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7822,7 +8235,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7860,7 +8275,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7898,7 +8315,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7936,7 +8355,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -7974,7 +8395,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -8012,7 +8435,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
@@ -8051,7 +8476,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
@@ -8091,7 +8518,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -8129,7 +8558,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -8167,7 +8598,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -8205,7 +8638,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -8243,7 +8678,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -8281,7 +8718,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
@@ -8321,7 +8760,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
@@ -8361,7 +8802,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -8399,7 +8842,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -8437,7 +8882,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -8475,7 +8922,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -8513,7 +8962,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests."
@@ -8548,7 +8999,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "No application session or role is required. Availability can still depend on deployment/network configuration."
@@ -8581,7 +9034,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "No application session or role is required. Availability can still depend on deployment/network configuration."
@@ -8614,7 +9069,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "No application session or role is required. Availability can still depend on deployment/network configuration."
@@ -8647,7 +9104,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "No application session or role is required. Availability can still depend on deployment/network configuration."
@@ -8680,7 +9139,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "No application session or role is required. Availability can still depend on deployment/network configuration."
@@ -8713,7 +9174,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "No application session or role is required. Availability can still depend on deployment/network configuration."
@@ -8746,7 +9209,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "No application session or role is required. Availability can still depend on deployment/network configuration."
@@ -8779,7 +9244,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "No application session or role is required. Checks PostgreSQL, Redis, the migration head and, since ce9a984, the key service (`encryption`); a failing check's detail names the key service URL and the connection error to an unauthenticated caller. Availability can still depend on deployment/network configuration."
@@ -8820,7 +9287,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Any staff role can use tickets addressed to that account only (respondent_user_id). This does not grant the staff member the full rights-request register."
@@ -8862,7 +9331,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Any staff role can use tickets addressed to that account only (respondent_user_id). This does not grant the staff member the full rights-request register."
@@ -8904,7 +9375,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Any staff role can use tickets addressed to that account only (respondent_user_id). This does not grant the staff member the full rights-request register."
@@ -8946,7 +9419,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Any staff role can use tickets addressed to that account only (respondent_user_id). This does not grant the staff member the full rights-request register."
@@ -8988,7 +9463,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Any staff role can use tickets addressed to that account only (respondent_user_id). This does not grant the staff member the full rights-request register.",
@@ -9009,14 +9486,15 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPOorAdmin",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]",
+      "gate": "UserReader",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"user\"))]",
       "route_roles": [
-        "admin",
-        "dpo"
+        "dpo",
+        "legal",
+        "admin"
       ],
       "inline_role_checks": [],
-      "resource": "",
+      "resource": "user",
       "write_gate": false,
       "access": {
         "dpo": "ALL",
@@ -9026,10 +9504,13 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
       },
       "conditions": [
-        "Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff."
+        "Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff.",
+        "The Legal PoC reads the register as the DPO does; an HR PoC's page lists their categories. (2026-10-28, 0052)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/users.py#L165"
@@ -9061,7 +9542,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff.",
@@ -9102,7 +9585,9 @@
         "rco": "ALL",
         "rnd_user": "ALL",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff.",
@@ -9140,7 +9625,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff."
@@ -9159,14 +9646,15 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPOorAdmin",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]",
+      "gate": "UserReader",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"user\"))]",
       "route_roles": [
-        "admin",
-        "dpo"
+        "dpo",
+        "legal",
+        "admin"
       ],
       "inline_role_checks": [],
-      "resource": "",
+      "resource": "user",
       "write_gate": false,
       "access": {
         "dpo": "ALL",
@@ -9176,10 +9664,13 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
       },
       "conditions": [
-        "Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff."
+        "Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff.",
+        "The Legal PoC reads the register as the DPO does; an HR PoC's page lists their categories. (2026-10-28, 0052)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/users.py#L298"
@@ -9211,7 +9702,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff."
@@ -9246,7 +9739,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff.",
@@ -9282,7 +9777,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff.",
@@ -9318,7 +9815,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff."
@@ -9337,14 +9836,15 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPOorAdmin",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]",
+      "gate": "UserReader",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"user\"))]",
       "route_roles": [
-        "admin",
-        "dpo"
+        "dpo",
+        "legal",
+        "admin"
       ],
       "inline_role_checks": [],
-      "resource": "",
+      "resource": "user",
       "write_gate": false,
       "access": {
         "dpo": "ALL",
@@ -9354,10 +9854,13 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
       },
       "conditions": [
-        "Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff."
+        "Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff.",
+        "The Legal PoC reads the register as the DPO does; an HR PoC's page lists their categories. (2026-10-28, 0052)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/users.py#L466"
@@ -9389,7 +9892,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff."
@@ -9424,7 +9929,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff.",
@@ -9460,7 +9967,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff."
@@ -9496,7 +10005,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO/Admin only. Counts by event, area, actor role and day over exactly the rows the same filters would list; the filters are validated as on GET /audit (an unknown entity uuid matches nothing)."
@@ -9532,7 +10043,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO/Admin only. Static: every entity type and event type the trail may carry, with labels, and the pickers the console offers. No row data."
@@ -9568,7 +10081,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO/Admin only. Finds data principals, staff, consent records, processors, data sources, projects, notices, sites and rights requests, unscoped (the two supervising roles read every row). A person is matched by the whole email, mobile or username through its keyed hash, by uuid, or by three or more characters of a name through the hashed name runs; sealed labels and hints are returned for the console to open. `kind` must be a known lookup kind, else 422; at most ten answers."
@@ -9605,7 +10120,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "DPO/Admin only. Newest first, at most 10,000 rows, free-text cells neutralised against spreadsheet formulas. The download is itself recorded in the trail as `audit.exported`, with the filters used and the caller as actor."
@@ -9640,7 +10157,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource legal_hold, S2-03). A hold covers one asset or one person, stops the erasure executor on every item it covers, and is placed once and released once; the reason is sealed."
@@ -9677,7 +10196,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource legal_hold, S2-03). A hold covers one asset or one person, stops the erasure executor on every item it covers, and is placed once and released once; the reason is sealed."
@@ -9714,7 +10235,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource legal_hold, S2-03). A hold covers one asset or one person, stops the erasure executor on every item it covers, and is placed once and released once; the reason is sealed."
@@ -9752,7 +10275,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "As for the rest of the request: DPO all, Admin where about_dpo. Retries an applied erasure or redaction's stores now (S2-03); anything else is item_not_executable."
@@ -9789,7 +10314,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The Government's s.16 restricted-country list (resource `restricted_country`, S2-04): the DPO keeps it, the administrator reads it. Data, not code - a country, the notification that lists it, lifted once. Every export is checked against it."
@@ -9826,7 +10353,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The Government's s.16 restricted-country list (resource `restricted_country`, S2-04): the DPO keeps it, the administrator reads it. Data, not code - a country, the notification that lists it, lifted once. Every export is checked against it."
@@ -9863,7 +10392,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The Government's s.16 restricted-country list (resource `restricted_country`, S2-04): the DPO keeps it, the administrator reads it. Data, not code - a country, the notification that lists it, lifted once. Every export is checked against it."
@@ -9905,7 +10436,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The active accounts in the caller's own role, not the caller: who they may hand their work to. Answered here because the users register is the DPO's and the administrator's alone (fix for the cover form offering nobody)."
@@ -9941,7 +10474,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. `status` filters open or closed; each breach carries its duties and their clocks. (S3-01)"
@@ -9979,7 +10514,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Detection is entered, never defaulted; began must not follow it. A processor or source is named only for that kind of location. (S3-01)"
@@ -10017,7 +10554,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. (S3-01)"
@@ -10055,7 +10594,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Yes needs the time of awareness and creates the three DPDP duties; no sets aside those not done. Refused on a closed breach (409 `breach_closed`). (S3-01)"
@@ -10093,7 +10634,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. (S3-01)"
@@ -10131,7 +10674,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. A new revision; the previous stays. Every narrative field sealed. (S3-01)"
@@ -10169,7 +10714,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Once per breach (409 `cert_in_marked`); due six hours from detection. (S3-01)"
@@ -10207,7 +10754,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. An unknown duty is 422; `principals` is refused (409): it completes by delivery (S3-03). (S3-01)"
@@ -10245,7 +10794,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. The detailed report only; the date allowed must be later than its current due time. (S3-01)"
@@ -10283,7 +10834,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. (S3-01)"
@@ -10321,7 +10874,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Closing is refused while undetermined or while any duty is outstanding; reopening needs a reason. (S3-01)"
@@ -10359,7 +10914,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Every revision, and the listed people a page at a time (`cursor` is a listed person's uuid). (S3-02)"
@@ -10397,7 +10954,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. A read despite the method: derives from the scopes and writes nothing. An unknown table is 422 naming the choices. (S3-02)"
@@ -10435,7 +10994,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Every version, and the account of notices by version, channel and state (Rule 7(2)(b)(vi)). (S3-03)"
@@ -10473,7 +11034,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Starts the next version as a draft; one draft at a time (409 `notice_draft_open`). (S3-03)"
@@ -10511,7 +11074,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. A draft only: an approved notice does not change (409 `notice_approved`, and by trigger). (S3-03)"
@@ -10549,7 +11114,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Refused with any of the five Rule 7(1) contents empty (422 naming each). (S3-03)"
@@ -10587,7 +11154,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Refused before approval (409 `no_approved_notice`) or with nobody listed; writes each listed person's account at once and queues email and SMS; a resend adds only what is missing. (S3-03)"
@@ -10625,7 +11194,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Rule 7(2)(a), drafted from the register at any point; what it lacks is named in `missing`. Never submitted by the platform. (S3-04)"
@@ -10663,7 +11234,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Rule 7(2)(b)(i)-(vi); item (vi), the account of notices, is stated in words when nothing was sent. Never submitted by the platform. (S3-04)"
@@ -10701,7 +11274,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Re-derives from the scopes server-side, leaves out `exclude`, adds `add`; a new revision listing only people not already listed. Refused on a closed breach. (S3-02)"
@@ -10739,7 +11314,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Her own: the breach notices written to her account (S3-03), only versions actually sent to her."
@@ -10775,7 +11352,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403. Drafted from the register at any point, from the incident's first minutes; counts only for who it touched, no finding on who caused it, no name or contact. The platform never reports to the organisation's board. (S3-07, ADR 0022)"
@@ -10813,7 +11392,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08)"
@@ -10851,7 +11432,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08) Refused before the breach is recorded (409 `breach_not_recorded`); the assignee is active staff picked by `user_uuid`, or - S3-09 - anybody named by `full_name`, `email` and optionally `mobile`, whose address must be on `BREACH_TICKET_EMAIL_DOMAINS` (422, the address not echoed); somebody without a console login is given a breach-only login (`breach_holder`) for this breach; one ticket per person per breach (409 `ticket_exists`)."
@@ -10889,7 +11472,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08) Reading it marks the holder's messages read."
@@ -10927,7 +11512,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08)"
@@ -10965,7 +11552,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08) Every read is audited."
@@ -11003,7 +11592,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08)"
@@ -11041,7 +11632,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08) Only the DPO closes a ticket (BD-07)."
@@ -11079,7 +11672,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08)"
@@ -11117,7 +11712,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08)"
@@ -11161,7 +11758,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Resource `breach_ticket`, OWN for every staff role: the holder is this account, in the WHERE clause, so another person's ticket is 404. What a holder sees is the breach reference, their instruction, the thread, the state and the answer-by date (BD-13). A closed breach refuses every write. (S3-08)"
@@ -11205,7 +11804,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Resource `breach_ticket`, OWN for every staff role: the holder is this account, in the WHERE clause, so another person's ticket is 404. What a holder sees is the breach reference, their instruction, the thread, the state and the answer-by date (BD-13). A closed breach refuses every write. (S3-08) Reading it marks the office's messages read."
@@ -11249,7 +11850,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Resource `breach_ticket`, OWN for every staff role: the holder is this account, in the WHERE clause, so another person's ticket is 404. What a holder sees is the breach reference, their instruction, the thread, the state and the answer-by date (BD-13). A closed breach refuses every write. (S3-08)"
@@ -11293,7 +11896,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Resource `breach_ticket`, OWN for every staff role: the holder is this account, in the WHERE clause, so another person's ticket is 404. What a holder sees is the breach reference, their instruction, the thread, the state and the answer-by date (BD-13). A closed breach refuses every write. (S3-08) Every read is audited."
@@ -11337,7 +11942,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Resource `breach_ticket`, OWN for every staff role: the holder is this account, in the WHERE clause, so another person's ticket is 404. What a holder sees is the breach reference, their instruction, the thread, the state and the answer-by date (BD-13). A closed breach refuses every write. (S3-08) Outcome done, partial or failed; only while the ticket is issued."
@@ -11381,7 +11988,9 @@
         "rco": "OWN",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "OWN"
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Resource `breach_ticket`, OWN: the holder is this account, in the WHERE clause. Only while the ticket and the breach are open (409 `ticket_not_open`, `breach_closed`). The colleague follows the same flow as a DPO assignment by email (BD-05, BD-14): the address must be on `BREACH_TICKET_EMAIL_DOMAINS` (422); active staff get an ordinary ticket, anyone else a breach-only login. Their ticket opens with the adder's note, not the DPO's instruction, and records who added whom. The answer is the adder's own ticket whatever happened to the colleague's account; somebody who already holds a ticket on the breach is a neutral 409 `colleague_not_added`. (S3-09)"
@@ -11419,7 +12028,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone (resource `breach`, S3-01), hidden from every other role (404). Multipart: `file` (PDF, PNG, JPEG, text, CSV, .eml, .msg or .docx; at most 25 MB), `kind` (email, proof, chat, other), an optional `note`. Kept as evidence - never replaced or removed, by trigger and grant; the name and note sealed. Refused on a closed breach (409 `breach_closed`), checked before the file is stored. The trail records the kind, never the name. (2026-10-06)"
@@ -11457,7 +12068,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone, hidden from every other role (404). A file of this breach only (404 otherwise). The response carries `X-Recorded-SHA256` (as kept) and `X-Content-SHA256` (as read); every read is `breach.attachment_read` on the trail. (2026-10-06)"
@@ -11495,7 +12108,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "OWN",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only her own request (404 otherwise, including one a nominee raised for her), and only while it is open (409 `request_closed`), checked before the file is stored. Multipart `file`: PDF, PNG, JPEG, text or .docx, at most 25 MB; at most 10 on a request (409 `too_many_attachments`). Kept as it came - never replaced or removed, by trigger and grant; the name sealed. The trail records `rights.attachment_added`, never the name. (2026-10-07)"
@@ -11534,7 +12149,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "As every read of a request: the DPO all, the admin those about the DPO. A document of this request only (404 otherwise). The response carries `X-Recorded-SHA256` (as kept) and `X-Content-SHA256` (as read); every read is `rights.attachment_read` on the trail. (2026-10-07)"
@@ -11556,13 +12173,14 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPO",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO))]",
+      "gate": "TemplateReader",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"notice_template\"))]",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
-      "resource": "",
+      "resource": "notice_template",
       "write_gate": false,
       "access": {
         "dpo": "ALL",
@@ -11572,10 +12190,13 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
       },
       "conditions": [
-        "Every template; `status` (active, retired) and `q` (ID or name) filter. A template has no project, so there is no project scope. (2026-10-07)"
+        "Every template; `status` (active, retired) and `q` (ID or name) filter. A template has no project, so there is no project scope. (2026-10-07)",
+        "Either officer, each their own office's templates (ADR 0032); a Legal office template names its category (422 without one), a DPO office template none (422 with one). (2026-10-28, 0052)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py",
@@ -11594,13 +12215,14 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPO",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO))]",
+      "gate": "TemplateWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"notice_template\", write=True))]",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
-      "resource": "",
+      "resource": "notice_template",
       "write_gate": true,
       "access": {
         "dpo": "ALL",
@@ -11610,10 +12232,13 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
       },
       "conditions": [
-        "Title, the three Rule 3 links, the DPO contact, audience and note; optionally the first text. The ID (`TPL-0007`) is minted by the database. Never served to a data principal. (2026-10-07)"
+        "Title, the three Rule 3 links, the DPO contact, audience and note; optionally the first text. The ID (`TPL-0007`) is minted by the database. Never served to a data principal. (2026-10-07)",
+        "Either officer, each their own office's templates (ADR 0032); a Legal office template names its category (422 without one), a DPO office template none (422 with one). (2026-10-28, 0052)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py",
@@ -11632,13 +12257,14 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPO",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO))]",
+      "gate": "TemplateReader",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"notice_template\"))]",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
-      "resource": "",
+      "resource": "notice_template",
       "write_gate": false,
       "access": {
         "dpo": "ALL",
@@ -11648,10 +12274,13 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
       },
       "conditions": [
-        "The DPO's alone; 404 for an unknown template. (2026-10-07)"
+        "The DPO's alone; 404 for an unknown template. (2026-10-07)",
+        "Either officer, each their own office's templates (ADR 0032); a Legal office template names its category (422 without one), a DPO office template none (422 with one). (2026-10-28, 0052)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py",
@@ -11670,13 +12299,14 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPO",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO))]",
+      "gate": "TemplateWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"notice_template\", write=True))]",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
-      "resource": "",
+      "resource": "notice_template",
       "write_gate": true,
       "access": {
         "dpo": "ALL",
@@ -11686,10 +12316,13 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
       },
       "conditions": [
-        "Edited in place: a template is not evidence. Notices already made from it are copies and do not change. (2026-10-07)"
+        "Edited in place: a template is not evidence. Notices already made from it are copies and do not change. (2026-10-07)",
+        "Either officer, each their own office's templates (ADR 0032); a Legal office template names its category (422 without one), a DPO office template none (422 with one). (2026-10-28, 0052)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py",
@@ -11708,13 +12341,14 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPO",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO))]",
+      "gate": "TemplateWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"notice_template\", write=True))]",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
-      "resource": "",
+      "resource": "notice_template",
       "write_gate": true,
       "access": {
         "dpo": "ALL",
@@ -11724,10 +12358,13 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
       },
       "conditions": [
-        "`active` or `retired`. A retired template cannot be attached to a project; it is never deleted. (2026-10-07)"
+        "`active` or `retired`. A retired template cannot be attached to a project; it is never deleted. (2026-10-07)",
+        "Either officer, each their own office's templates (ADR 0032); a Legal office template names its category (422 without one), a DPO office template none (422 with one). (2026-10-28, 0052)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py",
@@ -11746,13 +12383,14 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPO",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO))]",
+      "gate": "TemplateWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"notice_template\", write=True))]",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
-      "resource": "",
+      "resource": "notice_template",
       "write_gate": true,
       "access": {
         "dpo": "ALL",
@@ -11762,10 +12400,13 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
       },
       "conditions": [
-        "An active or draft purpose from the register (a retired one is 422); a notice made from it cannot publish until each purpose is active. (2026-10-07)"
+        "An active or draft purpose from the register (a retired one is 422); a notice made from it cannot publish until each purpose is active. (2026-10-07)",
+        "Either officer, each their own office's templates (ADR 0032); a Legal office template names its category (422 without one), a DPO office template none (422 with one). (2026-10-28, 0052)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py",
@@ -11784,13 +12425,14 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPO",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO))]",
+      "gate": "TemplateWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"notice_template\", write=True))]",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
-      "resource": "",
+      "resource": "notice_template",
       "write_gate": true,
       "access": {
         "dpo": "ALL",
@@ -11800,10 +12442,13 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
       },
       "conditions": [
-        "404 when the purpose is not on it. (2026-10-07)"
+        "404 when the purpose is not on it. (2026-10-07)",
+        "Either officer, each their own office's templates (ADR 0032); a Legal office template names its category (422 without one), a DPO office template none (422 with one). (2026-10-28, 0052)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py",
@@ -11822,13 +12467,14 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPO",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO))]",
+      "gate": "TemplateWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"notice_template\", write=True))]",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
-      "resource": "",
+      "resource": "notice_template",
       "write_gate": true,
       "access": {
         "dpo": "ALL",
@@ -11838,10 +12484,13 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
       },
       "conditions": [
-        "A language the platform renders (422 otherwise). No approval on a template: each language is approved on the project notice made from it. (2026-10-07)"
+        "A language the platform renders (422 otherwise). No approval on a template: each language is approved on the project notice made from it. (2026-10-07)",
+        "Either officer, each their own office's templates (ADR 0032); a Legal office template names its category (422 without one), a DPO office template none (422 with one). (2026-10-28, 0052)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py",
@@ -11860,13 +12509,14 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "RequireDPO",
-      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.DPO))]",
+      "gate": "TemplateWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"notice_template\", write=True))]",
       "route_roles": [
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
-      "resource": "",
+      "resource": "notice_template",
       "write_gate": true,
       "access": {
         "dpo": "ALL",
@@ -11876,10 +12526,13 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
       },
       "conditions": [
-        "404 when the template has no text in that language. (2026-10-07)"
+        "404 when the template has no text in that language. (2026-10-07)",
+        "Either officer, each their own office's templates (ADR 0032); a Legal office template names its category (422 without one), a DPO office template none (422 with one). (2026-10-28, 0052)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/notice_templates.py",
@@ -11915,7 +12568,9 @@
         "rco": "NO",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Whoever may bring a notice to a project. Case and spacing in the ID are forgiven; 404 for an unknown one. Returns what the template carries - its fields, purposes and languages - never which projects used it. (2026-10-07)"
@@ -11954,7 +12609,9 @@
         "rco": "NO",
         "rnd_user": "OWN",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The project must be within the caller's scope (404 otherwise). Copies the template's links, contact, audience, note, purposes and every language into a fresh draft notice with the project's own code; `notice.template_id` records the template. Nothing is approved. A retired template is 409 `template_retired`. (2026-10-07)"
@@ -11992,7 +12649,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone, hidden from every other role (404). `kind` is contacts or assets; a header, guidance lines starting with #, and an example row. (2026-10-07)"
@@ -12030,7 +12689,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Multipart `kind` and `file` (a CSV, 25 MB, 50,000 rows; a spreadsheet is refused with how to save it as CSV). Counts what would be added and names each unreadable row by number. Writes nothing. (2026-10-07)"
@@ -12068,7 +12729,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Refused on a closed breach. A person whose email or mobile is an account's is listed as that account (`found_by` upload); anybody else is kept as a contact of this breach, name/email/mobile sealed, deduplicated by blind index. Assets: matched by platform asset ID or by `source_asset_ref` (with `source_code` when two sources share it); their consented people are listed, untraceable subjects counted. The file is not kept, only its sealed name, hash and counts. The trail records counts, never a name or contact. 409 `nothing_new` when everybody is already listed. (2026-10-07)"
@@ -12106,7 +12769,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The DPO's alone, hidden from every other role (404). Name, email and mobile sealed; paged by `cursor`. (2026-10-07)"
@@ -12145,7 +12810,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "As every write of a message's words. Only a message the catalogue marks copyable (`COPYABLE`) takes copies - never one with a code, a link or a person's own record (422 otherwise). At most 5 addresses; the set is replaced; addresses sealed with a blind index. The trail records the count, never an address. (2026-10-08)"
@@ -12184,7 +12851,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only an answer waiting for review (409 `nothing_to_review`). Only an accepted answer counts toward collating or an erasure being done. A holder in the console is told; the trail records `rights.ticket_accepted`. An answer the office records itself is accepted as it is recorded. (2026-10-08)"
@@ -12223,7 +12892,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only a withdrawn ticket (409 `ticket_not_withdrawn`); `due_on` not in the past (422), kept as the end of that day. The holder is told; a collating request goes back to awaiting holders. The trail records `rights.ticket_reopened`. (2026-10-08)"
@@ -12262,7 +12933,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only a holder with no ticket sent, no message and no erasure item (409 `holder_in_use`): nothing about it has left the office, so nothing evidential is lost. 204. The trail records `rights.holder_removed`. (2026-10-08)"
@@ -12307,7 +12980,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "A valid ticket link: the token's keyed fingerprint names an issued ticket, and the link is that ticket's current one (a ticket sent to somebody else has a new link). Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. Shows the reference, the holder's name, its state and date, and where the code goes - masked. Rate-limited per address (`holder_link_ip`). (0049, 2026-10-08)"
@@ -12350,7 +13025,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "A valid ticket link: the token's keyed fingerprint names an issued ticket, and the link is that ticket's current one (a ticket sent to somebody else has a new link). Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. The code goes to the address the ticket was sent to, never one typed. Rate-limited per ticket (`holder_ticket_code`, five an hour) and per address (`holder_link_act_ip`). (0049)"
@@ -12393,7 +13070,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "A valid ticket link: the token's keyed fingerprint names an issued ticket, and the link is that ticket's current one (a ticket sent to somebody else has a new link). Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. A right code (scope `holder_ticket`, five attempts) sets `cmp_ticket` for an hour (HOLDER_TICKET_SESSION_S). (0049)"
@@ -12436,7 +13115,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Ends the hour the cookie holds, if any, and clears the cookie. (0049)"
@@ -12479,7 +13160,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "A valid ticket link: the token's keyed fingerprint names an issued ticket, and the link is that ticket's current one (a ticket sent to somebody else has a new link). Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. And the hour the code opened: the HttpOnly, SameSite=Strict `cmp_ticket` cookie, whose fingerprint in Redis names this ticket and this link (401 `code_needed` otherwise). What is asked, the erasure items, and the messages - the platform's brief of what it holds about the person first; sealed values as stored, opened by the portal. Reading marks the office's messages read. (0049)"
@@ -12522,7 +13205,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "A valid ticket link: the token's keyed fingerprint names an issued ticket, and the link is that ticket's current one (a ticket sent to somebody else has a new link). Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. And the hour the code opened: the HttpOnly, SameSite=Strict `cmp_ticket` cookie, whose fingerprint in Redis names this ticket and this link (401 `code_needed` otherwise). Not on a closed request (409). A file up to 25 MB; every DPO is told. On the trail with no actor, side holder. (0049)"
@@ -12565,7 +13250,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "A valid ticket link: the token's keyed fingerprint names an issued ticket, and the link is that ticket's current one (a ticket sent to somebody else has a new link). Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. And the hour the code opened: the HttpOnly, SameSite=Strict `cmp_ticket` cookie, whose fingerprint in Redis names this ticket and this link (401 `code_needed` otherwise). Only an open ticket on an open request (409). What was done (done, partial, failed), what is held, and proof; it waits for the office to accept it or send it back. On the trail with no actor, channel `link`. (0049)"
@@ -12608,7 +13295,9 @@
         "rco": "PUBLIC",
         "rnd_user": "PUBLIC",
         "data_subject": "PUBLIC",
-        "breach_holder": "PUBLIC"
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "A valid ticket link: the token's keyed fingerprint names an issued ticket, and the link is that ticket's current one (a ticket sent to somebody else has a new link). Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. And the hour the code opened: the HttpOnly, SameSite=Strict `cmp_ticket` cookie, whose fingerprint in Redis names this ticket and this link (401 `code_needed` otherwise). A file on this ticket's thread only; every download is audited. (0049)"
@@ -12645,7 +13334,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only before the ticket is sent (409 `ticket_already_sent`); empty or null goes back to the standard words. Sealed at rest, as every instruction. The trail records `rights.holder_instruction_set` with whether the words are the office's own, never the words. (2026-10-08)"
@@ -12682,7 +13373,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "Only an open ticket (409 `ticket_not_open`) reached by email or a temporary login; `responder_contact` must be an email address (422). Nobody at the wrong address is written to; the ticket is sent again to the right one, an outside holder with a new link (the old stops working), an internal address with no login given a temporary one. The trail records `rights.holder_contact_corrected`, never an address. (2026-10-08)"
@@ -12718,7 +13411,9 @@
         "rco": "NO",
         "rnd_user": "NO",
         "data_subject": "NO",
-        "breach_holder": "NO"
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
       },
       "conditions": [
         "The whole set: what is not named is taken away. Only for a DCO (third-party processors) or an RCO (in-house), 422 otherwise; a processor whose sources they are still accountable for is not taken away (409 `processor_still_held`). The trail records `user.processors_set` with the processor uuids before and after. (2026-10-09)"
@@ -12726,6 +13421,376 @@
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/users.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/users/service.py"
+      ]
+    },
+    {
+      "module": "hr",
+      "method": "GET",
+      "path": "/hr/categories",
+      "summary": "The Legal office's categories",
+      "function": "list_categories",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "HrCategoryReader",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"hr_category\", hidden=True))]",
+      "route_roles": [
+        "legal",
+        "hr_user",
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "hr_category",
+      "write_gate": false,
+      "access": {
+        "dpo": "NO",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "SCOPED"
+      },
+      "conditions": [
+        "Within the caller's office (`cmp_office_visible`); an HR PoC's are those assigned to them. `status` and `q` filter. (2026-10-28, 0052)",
+        "A role with no grant (the DPO's) is answered 404, not 403, as for another office's records. (2026-10-28, 0052)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/hr_categories.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/hr/categories.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/hr_categories.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
+    },
+    {
+      "module": "hr",
+      "method": "POST",
+      "path": "/hr/categories",
+      "summary": "Create Category",
+      "function": "create_category",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "HrCategoryWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"hr_category\", write=True, hidden=True))]",
+      "route_roles": [
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "hr_category",
+      "write_gate": true,
+      "access": {
+        "dpo": "NO",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "In the caller's office. The code is upper case, 2-24 characters, unique (409 `category_code_taken`). (2026-10-28, 0052)",
+        "A role with no grant (the DPO's) is answered 404, not 403, as for another office's records. (2026-10-28, 0052)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/hr_categories.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/hr/categories.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/hr_categories.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
+    },
+    {
+      "module": "hr",
+      "method": "GET",
+      "path": "/hr/categories/{category_uuid}",
+      "summary": "Get Category",
+      "function": "get_category",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "HrCategoryReader",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"hr_category\", hidden=True))]",
+      "route_roles": [
+        "legal",
+        "hr_user",
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "hr_category",
+      "write_gate": false,
+      "access": {
+        "dpo": "NO",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "SCOPED"
+      },
+      "conditions": [
+        "With its live processors (respondent name and address sealed) and its HR PoCs. 404 outside the office or, for an HR PoC, outside their assignments. (2026-10-28, 0052)",
+        "A role with no grant (the DPO's) is answered 404, not 403, as for another office's records. (2026-10-28, 0052)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/hr_categories.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/hr/categories.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/hr_categories.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
+    },
+    {
+      "module": "hr",
+      "method": "PATCH",
+      "path": "/hr/categories/{category_uuid}",
+      "summary": "Update Category",
+      "function": "update_category",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "HrCategoryWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"hr_category\", write=True, hidden=True))]",
+      "route_roles": [
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "hr_category",
+      "write_gate": true,
+      "access": {
+        "dpo": "NO",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "Name and description; the code is fixed. (2026-10-28, 0052)",
+        "A role with no grant (the DPO's) is answered 404, not 403, as for another office's records. (2026-10-28, 0052)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/hr_categories.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/hr/categories.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/hr_categories.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
+    },
+    {
+      "module": "hr",
+      "method": "POST",
+      "path": "/hr/categories/{category_uuid}/status",
+      "summary": "Retire or reactivate",
+      "function": "set_category_status",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "HrCategoryWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"hr_category\", write=True, hidden=True))]",
+      "route_roles": [
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "hr_category",
+      "write_gate": true,
+      "access": {
+        "dpo": "NO",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "409 `category_status_unchanged` when already so. A retired category takes no new template. (2026-10-28, 0052)",
+        "A role with no grant (the DPO's) is answered 404, not 403, as for another office's records. (2026-10-28, 0052)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/hr_categories.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/hr/categories.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/hr_categories.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
+    },
+    {
+      "module": "hr",
+      "method": "GET",
+      "path": "/hr/categories/{category_uuid}/processors",
+      "summary": "List Category Processors",
+      "function": "list_category_processors",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "HrCategoryReader",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"hr_category\", hidden=True))]",
+      "route_roles": [
+        "legal",
+        "hr_user",
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "hr_category",
+      "write_gate": false,
+      "access": {
+        "dpo": "NO",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "SCOPED"
+      },
+      "conditions": [
+        "The live processors, as on the category. (2026-10-28, 0052)",
+        "A role with no grant (the DPO's) is answered 404, not 403, as for another office's records. (2026-10-28, 0052)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/hr_categories.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/hr/categories.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/hr_categories.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
+    },
+    {
+      "module": "hr",
+      "method": "PUT",
+      "path": "/hr/categories/{category_uuid}/processors",
+      "summary": "Set the processors that hold a category's data",
+      "function": "set_category_processors",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "HrCategoryWriter",
+      "resolved_gate": "Annotated[Principal, Depends(RequireResource(\"hr_category\", write=True, hidden=True))]",
+      "route_roles": [
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "hr_category",
+      "write_gate": true,
+      "access": {
+        "dpo": "NO",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "The whole set; one left out is marked removed, never deleted. Each processor active; a respondent an active member of staff of the category's office (422). 409 on a retired category. (2026-10-28, 0052)",
+        "A role with no grant (the DPO's) is answered 404, not 403, as for another office's records. (2026-10-28, 0052)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/hr_categories.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/hr/categories.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/hr_categories.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
+    },
+    {
+      "module": "users",
+      "method": "GET",
+      "path": "/users/hr-pocs",
+      "summary": "Active HR PoCs, for a picker",
+      "function": "hr_pocs",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireRole(LEGAL, ADMIN)",
+      "resolved_gate": "Annotated[Any, Depends(RequireRole(Role.LEGAL, Role.ADMIN))]",
+      "route_roles": [
+        "legal",
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "NO",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "Active `hr_user` accounts; `category` keeps those assigned to it (404 for a category the caller cannot read). (2026-10-28, 0052)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/users.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/hr_categories.py"
+      ]
+    },
+    {
+      "module": "users",
+      "method": "PUT",
+      "path": "/users/{user_uuid}/categories",
+      "summary": "Set the categories an HR PoC runs activities in",
+      "function": "set_categories",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireAdmin",
+      "resolved_gate": "Annotated[Principal, Depends(RequireRole(Role.ADMIN))]",
+      "route_roles": [
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "NO",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "The whole set. Only for an HR PoC (422 otherwise); a retired category is refused as a new assignment and kept as an existing one. The trail records `user.categories_set` with the codes before and after, on the Legal office's trail. (2026-10-28, 0052)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/users.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/hr/categories.py"
       ]
     }
   ],
@@ -12829,6 +13894,11 @@
       "on": "2026-10-09",
       "commit": "collector processors",
       "note": "A DCO or an RCO collects for named processors (0050): PUT /users/{user_uuid}/processors (admin) sets them; the data-source routes answer a DCO or an RCO for those processors' sources only (others 404), POST /sources only under them; GET /processors?mine and GET /users/collection-owners?processor narrow to them."
+    },
+    {
+      "on": "2026-10-28",
+      "commit": "HR track increment 2",
+      "note": "Columns `legal` and `hr_user` added to every row (NO unless stated). Nine operations added: the seven under /hr/categories, GET /users/hr-pocs and PUT /users/{user_uuid}/categories. Purposes' writes, the notice templates and the account register amended to the matrix guards that admit the Legal PoC. Evidence links point at HEAD."
     }
   ]
 }

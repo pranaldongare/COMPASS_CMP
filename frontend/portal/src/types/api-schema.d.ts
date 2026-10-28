@@ -920,6 +920,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users/hr-pocs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Active HR PoCs, for a picker
+         * @description `category` keeps those assigned to it. Declared before `/{user_uuid}`,
+         *     which would otherwise read `hr-pocs` as a uuid and refuse it.
+         */
+        get: operations["hr_pocs_users_hr_pocs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/{user_uuid}": {
         parameters: {
             query?: never;
@@ -957,6 +978,27 @@ export interface paths {
          *     hand the sources on first, on each source.
          */
         put: operations["set_processors_users__user_uuid__processors_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{user_uuid}/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set the categories an HR PoC runs activities in
+         * @description The whole set (0052). An HR PoC sees the categories named here and the
+         *     activities run under them, and no others.
+         */
+        put: operations["set_categories_users__user_uuid__categories_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -1754,7 +1796,11 @@ export interface paths {
         /** List Purposes */
         get: operations["list_purposes_purposes_get"];
         put?: never;
-        /** Create Purpose */
+        /**
+         * Create Purpose
+         * @description In the caller's office: the DPO's purposes are the DPO office's, the
+         *     Legal PoC's the Legal office's (ADR 0032).
+         */
         post: operations["create_purpose_purposes_post"];
         delete?: never;
         options?: never;
@@ -2178,6 +2224,90 @@ export interface paths {
         /** Source Batches */
         get: operations["source_batches_sources__source_uuid__batches_get"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/hr/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Legal office's categories
+         * @description An HR PoC's are the ones assigned to them.
+         */
+        get: operations["list_categories_hr_categories_get"];
+        put?: never;
+        /**
+         * Create Category
+         * @description In the caller's office: the Legal office's.
+         */
+        post: operations["create_category_hr_categories_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/hr/categories/{category_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Category */
+        get: operations["get_category_hr_categories__category_uuid__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Category */
+        patch: operations["update_category_hr_categories__category_uuid__patch"];
+        trace?: never;
+    };
+    "/hr/categories/{category_uuid}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retire or reactivate
+         * @description A retired category takes no new template; what was given under it stands.
+         */
+        post: operations["set_category_status_hr_categories__category_uuid__status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/hr/categories/{category_uuid}/processors": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Category Processors */
+        get: operations["list_category_processors_hr_categories__category_uuid__processors_get"];
+        /**
+         * Set the processors that hold a category's data
+         * @description The whole set. One dropped is marked removed, not deleted; a respondent
+         *     must be an active member of staff of the Legal office.
+         */
+        put: operations["set_category_processors_hr_categories__category_uuid__processors_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -3086,10 +3216,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The DPO's notice templates, newest first */
+        /**
+         * The office's notice templates, newest first
+         * @description `category` keeps one category's: the Legal office's templates for it.
+         */
         get: operations["list_templates_notice_templates_get"];
         put?: never;
-        /** Write a notice template, before any project exists */
+        /**
+         * Write a notice template, before any project exists
+         * @description In the caller's office; a Legal office template names its category.
+         */
         post: operations["create_template_notice_templates_post"];
         delete?: never;
         options?: never;
@@ -7496,6 +7632,176 @@ export interface components {
             /** Added By Name */
             added_by_name: string | null;
         };
+        /** CategoryDetailOut */
+        CategoryDetailOut: {
+            /**
+             * Category Uuid
+             * Format: uuid
+             */
+            category_uuid: string;
+            /** Category Code */
+            category_code: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string | null;
+            /** Status */
+            status: string;
+            /** Office Code */
+            office_code: string;
+            /** Processor Count */
+            processor_count: number;
+            /** Poc Count */
+            poc_count: number;
+            /** Template Count */
+            template_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Retired At */
+            retired_at: string | null;
+            /** Processors */
+            processors: components["schemas"]["CategoryProcessorOut"][];
+            /** Pocs */
+            pocs: components["schemas"]["CategoryPocOut"][];
+        };
+        /** CategoryIn */
+        CategoryIn: {
+            /** Category Code */
+            category_code: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+        };
+        /** CategoryOut */
+        CategoryOut: {
+            /**
+             * Category Uuid
+             * Format: uuid
+             */
+            category_uuid: string;
+            /** Category Code */
+            category_code: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string | null;
+            /** Status */
+            status: string;
+            /** Office Code */
+            office_code: string;
+            /** Processor Count */
+            processor_count: number;
+            /** Poc Count */
+            poc_count: number;
+            /** Template Count */
+            template_count: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Retired At */
+            retired_at: string | null;
+        };
+        /** CategoryPocOut */
+        CategoryPocOut: {
+            /**
+             * Uuid
+             * Format: uuid
+             */
+            uuid: string;
+            /** Full Name */
+            full_name: string;
+            /** Email */
+            email: string | null;
+            /** Status */
+            status: string;
+            /**
+             * Assigned At
+             * Format: date-time
+             */
+            assigned_at: string;
+        };
+        /** CategoryProcessorIn */
+        CategoryProcessorIn: {
+            /**
+             * Processor Uuid
+             * Format: uuid
+             */
+            processor_uuid: string;
+            /**
+             * Processor Role
+             * @enum {string}
+             */
+            processor_role: "hrms" | "database" | "vendor";
+            /** Respondent User Uuid */
+            respondent_user_uuid?: string | null;
+        };
+        /** CategoryProcessorOut */
+        CategoryProcessorOut: {
+            /**
+             * Processor Uuid
+             * Format: uuid
+             */
+            processor_uuid: string;
+            /** Legal Name */
+            legal_name: string;
+            /** Is In House */
+            is_in_house: boolean;
+            /** Processor Status */
+            processor_status: string;
+            /** Processor Role */
+            processor_role: string;
+            /** Respondent Uuid */
+            respondent_uuid: string | null;
+            /** Respondent Name */
+            respondent_name: string | null;
+            /** Respondent Email */
+            respondent_email: string | null;
+            /**
+             * Added At
+             * Format: date-time
+             */
+            added_at: string;
+        };
+        /** CategoryProcessorsIn */
+        CategoryProcessorsIn: {
+            /** Processors */
+            processors?: components["schemas"]["CategoryProcessorIn"][];
+        };
+        /** CategoryStatusIn */
+        CategoryStatusIn: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "retired";
+        };
+        /**
+         * CategoryUpdate
+         * @description Name and description. The code is how templates, activities and the
+         *     trail name the category, so it does not change.
+         */
+        CategoryUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+        };
         /** ChannelOut */
         ChannelOut: {
             /** Channel */
@@ -8653,6 +8959,21 @@ export interface components {
             moves?: {
                 [key: string]: unknown;
             }[];
+        };
+        /**
+         * HrPoc
+         * @description An HR PoC, for the Legal PoC's and the administrator's pickers.
+         */
+        HrPoc: {
+            /**
+             * Uuid
+             * Format: uuid
+             */
+            uuid: string;
+            /** Full Name */
+            full_name: string;
+            /** Email */
+            email: string | null;
         };
         /** ImportBatchOut */
         ImportBatchOut: {
@@ -9987,6 +10308,23 @@ export interface components {
             /** Changed By Name */
             changed_by_name: string;
         };
+        /**
+         * PocCategory
+         * @description A category an HR PoC runs activities in (0052).
+         */
+        PocCategory: {
+            /**
+             * Category Uuid
+             * Format: uuid
+             */
+            category_uuid: string;
+            /** Category Code */
+            category_code: string;
+            /** Name */
+            name: string;
+            /** Status */
+            status: string;
+        };
         /** PreviewOut */
         PreviewOut: {
             /** Channel */
@@ -10315,6 +10653,8 @@ export interface components {
             created_at: unknown;
             /** Updated At */
             updated_at: unknown;
+            /** Office Code */
+            office_code?: string | null;
         };
         /**
          * PurposeOverride
@@ -10952,6 +11292,11 @@ export interface components {
              */
             current: boolean;
         };
+        /** SetCategories */
+        SetCategories: {
+            /** Category Uuids */
+            category_uuids?: string[];
+        };
         /** SetProcessors */
         SetProcessors: {
             /** Processor Uuids */
@@ -11258,6 +11603,14 @@ export interface components {
             language_count: number;
             /** Used Count */
             used_count: number;
+            /** Office Code */
+            office_code: string;
+            /** Category Uuid */
+            category_uuid?: string | null;
+            /** Category Code */
+            category_code?: string | null;
+            /** Category Name */
+            category_name?: string | null;
             /** Purposes */
             purposes: components["schemas"]["TemplatePurposeOut"][];
             /** Languages */
@@ -11314,6 +11667,14 @@ export interface components {
             language_count: number;
             /** Used Count */
             used_count: number;
+            /** Office Code */
+            office_code: string;
+            /** Category Uuid */
+            category_uuid?: string | null;
+            /** Category Code */
+            category_code?: string | null;
+            /** Category Name */
+            category_name?: string | null;
             /** Purposes */
             purposes: components["schemas"]["TemplatePurposeOut"][];
             /** Languages */
@@ -11412,6 +11773,14 @@ export interface components {
             language_count: number;
             /** Used Count */
             used_count: number;
+            /** Office Code */
+            office_code: string;
+            /** Category Uuid */
+            category_uuid?: string | null;
+            /** Category Code */
+            category_code?: string | null;
+            /** Category Name */
+            category_name?: string | null;
         };
         /** TemplatePurposeIn */
         TemplatePurposeIn: {
@@ -11722,6 +12091,8 @@ export interface components {
             sources?: string[] | null;
             /** Processors */
             processors?: components["schemas"]["CollectorProcessor"][] | null;
+            /** Categories */
+            categories?: components["schemas"]["PocCategory"][] | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -11943,6 +12314,8 @@ export interface components {
             rendered_text?: string | null;
             /** Language Code */
             language_code?: string | null;
+            /** Category Uuid */
+            category_uuid?: string | null;
         };
         /**
          * TransitionsOut
@@ -13458,6 +13831,37 @@ export interface operations {
             };
         };
     };
+    hr_pocs_users_hr_pocs_get: {
+        parameters: {
+            query?: {
+                category?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HrPoc"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_user_users__user_uuid__get: {
         parameters: {
             query?: never;
@@ -13546,6 +13950,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CollectorProcessor"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_categories_users__user_uuid__categories_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetCategories"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PocCategory"][];
                 };
             };
             /** @description Validation Error */
@@ -15741,6 +16180,238 @@ export interface operations {
             };
         };
     };
+    list_categories_hr_categories_get: {
+        parameters: {
+            query?: {
+                status?: ("active" | "retired") | null;
+                q?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_category_hr_categories_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_category_hr_categories__category_uuid__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_category_hr_categories__category_uuid__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_category_status_hr_categories__category_uuid__status_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryStatusIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_category_processors_hr_categories__category_uuid__processors_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryProcessorOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_category_processors_hr_categories__category_uuid__processors_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryProcessorsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryProcessorOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_all_sites_sites_get: {
         parameters: {
             query?: {
@@ -17468,6 +18139,7 @@ export interface operations {
             query?: {
                 status?: string | null;
                 q?: string | null;
+                category?: string | null;
             };
             header?: never;
             path?: never;

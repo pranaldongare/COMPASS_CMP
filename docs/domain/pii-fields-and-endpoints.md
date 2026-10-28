@@ -87,7 +87,7 @@ hash and no email is written
 rows from before that change stand as written, because the trail is
 hash-chained and cannot be rewritten.
 
-## 2. API endpoints that carry PII — 230 endpoints in 22 modules
+## 2. API endpoints that carry PII — 235 endpoints in 23 modules
 
 Every GET, POST, PUT, PATCH and DELETE whose request or response includes a
 personal field. *In* is what the caller sends (body, path and query); *out* is
@@ -298,16 +298,18 @@ these need no session; they are marked **public**.
 | GET | `/projects/{project_uuid}/exports` | — | `exported_by_name` |
 | POST | `/projects/{project_uuid}/exports` | — | `exported_by_name` |
 
-### Users (`/users`) — 14 endpoints
+### Users (`/users`) — 16 endpoints
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
 | GET | `/users` | `person_type`, `role` | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` |
 | POST | `/users` | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` |
 | GET | `/users/collection-owners` | — | `email`, `full_name`, `role` |
+| GET | `/users/hr-pocs` | — | `email`, `full_name` |
 | GET | `/users/staff` | — | `email`, `full_name`, `role` |
 | GET | `/users/{user_uuid}` | `user_uuid` | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` |
 | PATCH | `/users/{user_uuid}` | `full_name`, `mobile`, `organization_id`, `user_uuid` | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` |
+| PUT | `/users/{user_uuid}/categories` | `user_uuid` | — |
 | POST | `/users/{user_uuid}/deactivate` | `user_uuid` | — |
 | POST | `/users/{user_uuid}/invite` | `user_uuid` | — |
 | POST | `/users/{user_uuid}/mfa/reset` | `user_uuid` | — |
@@ -421,6 +423,14 @@ these need no session; they are marked **public**.
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
 | POST | `/breach-tickets/{ticket_uuid}/colleagues` | `email`, `full_name`, `mobile` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
+
+### Hr — 3 endpoints
+
+| Method | Endpoint | PII in (request) | PII out (response) |
+|---|---|---|---|
+| GET | `/hr/categories/{category_uuid}` | — | `email`, `full_name`, `respondent_email`, `respondent_name` |
+| GET | `/hr/categories/{category_uuid}/processors` | — | `respondent_email`, `respondent_name` |
+| PUT | `/hr/categories/{category_uuid}/processors` | — | `respondent_email`, `respondent_name` |
 
 ### Public_information — 8 endpoints
 

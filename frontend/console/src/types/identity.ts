@@ -7,6 +7,7 @@
  */
 
 import type { PersonType, Role, UserStatus } from "@/types/enums";
+import type { PocCategory } from "@/types/hr";
 import type { Timestamp, Uuid } from "@/types/primitives";
 
 export interface Me {
@@ -118,6 +119,8 @@ export interface User {
   updated_at: Timestamp;
   /** A DCO's or an RCO's processors (0050), on one account's page only. */
   processors?: CollectorProcessor[] | null;
+  /** An HR PoC's categories (0052), on one account's page only. */
+  categories?: PocCategory[] | null;
 }
 
 /** A governance office (ADR 0032): the DPO office or the Legal office. Every

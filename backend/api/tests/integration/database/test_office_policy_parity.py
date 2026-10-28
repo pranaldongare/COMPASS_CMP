@@ -31,6 +31,7 @@ OWN = {
     "export_log",
     "breach",
     "rights_request",
+    "hr_category",
 }
 
 #: The children, policed through their parent.
@@ -72,6 +73,8 @@ CHILDREN = {
     "breach_ticket_event",
     "breach_ticket_message",
     "breach_upload",
+    "category_processor",
+    "hr_poc_category",
 }
 
 #: Tables with a key to a policed table that are deliberately not policed,

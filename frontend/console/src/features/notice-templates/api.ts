@@ -27,12 +27,14 @@ export interface NoticeTemplateInput {
   note?: string | null;
   rendered_text?: string | null;
   language_code?: LanguageCode | null;
+  /** The category of a Legal office template (0052); none for the DPO's. */
+  category_uuid?: Uuid | null;
 }
 
 const base = (uuid: Uuid) => `/notice-templates/${uuid}`;
 
 export function listNoticeTemplates(
-  filters: { status?: string; q?: string } = {},
+  filters: { status?: string; q?: string; category?: string } = {},
 ): Promise<NoticeTemplate[]> {
   return apiGet<NoticeTemplate[]>(`/notice-templates${queryString(filters)}`);
 }
@@ -54,7 +56,9 @@ export function createNoticeTemplate(body: NoticeTemplateInput): Promise<NoticeT
 
 export function updateNoticeTemplate(
   uuid: Uuid,
-  body: Partial<Omit<NoticeTemplateInput, "rendered_text" | "language_code">>,
+  body: Partial<
+    Omit<NoticeTemplateInput, "rendered_text" | "language_code" | "category_uuid">
+  >,
 ): Promise<NoticeTemplateDetail> {
   return apiPut<NoticeTemplateDetail>(base(uuid), body);
 }

@@ -16,17 +16,20 @@ from pydantic import Field
 from cmp.api.dependencies import (
     Paging,
     RequireAdmin,
-    RequireDPOorAdmin,
     RequireRole,
     RequireStaff,
+    UserReader,
     reject_unknown_filters,
 )
 from cmp.auth.sessions import service as sessions
+from cmp.core.errors import NotFound
 from cmp.core.pagination import PageRequest
 from cmp.core.permissions import Role
 from cmp.db.pool import connection, transaction
+from cmp.db.repositories import hr_categories as hr_repo
 from cmp.db.repositories import registry as registry_repo
 from cmp.db.repositories import users as repo
+from cmp.domain.hr import categories as hr_categories
 from cmp.domain.users import service as users
 from cmp.schemas.common import Acknowledged, Mobile, Out, Page, Schema, ShortText
 from cmp.validation import Email
@@ -71,6 +74,9 @@ class UserOut(Out):
     #: data sources and no others (0050). On one account's page only; `None`
     #: on the register and for every other role.
     processors: list[CollectorProcessor] | None = None
+    #: The categories an HR PoC runs activities in (0052). On one account's
+    #: page only; `None` on the register and for every other role.
+    categories: list[PocCategory] | None = None
 
 
 class CreateUser(Schema):
@@ -105,6 +111,28 @@ class CreateUser(Schema):
 class SetProcessors(Schema):
     #: The whole set, not a change to it: what is not named is taken away.
     processor_uuids: list[UUID] = Field(default_factory=list, max_length=50)
+
+
+class SetCategories(Schema):
+    #: The whole set, not a change to it: what is not named is taken away.
+    category_uuids: list[UUID] = Field(default_factory=list, max_length=50)
+
+
+class PocCategory(Out):
+    """A category an HR PoC runs activities in (0052)."""
+
+    category_uuid: UUID
+    category_code: str
+    name: str
+    status: str
+
+
+class HrPoc(Out):
+    """An HR PoC, for the Legal PoC's and the administrator's pickers."""
+
+    uuid: UUID
+    full_name: str
+    email: str | None
 
 
 class UpdateUser(Schema):
@@ -151,7 +179,7 @@ class CollectionOwner(Out):
     summary="Active staff, for naming a processor's respondent",
 )
 async def staff_directory(
-    principal: Annotated[Any, Depends(RequireRole(Role.DPO, Role.ADMIN))],
+    principal: Annotated[Any, Depends(RequireRole(Role.DPO, Role.LEGAL, Role.ADMIN))],
 ) -> list[dict[str, Any]]:
     """Naming who answers a rights-request ticket for an in-house processor
     means picking an account. Four fields, active staff only, and only for the
@@ -191,7 +219,7 @@ async def collection_owners(
 @router.get("", response_model=Page[UserOut], summary="The staff and subject register")
 async def list_users(
     request: Request,
-    principal: RequireDPOorAdmin,
+    principal: UserReader,
     page: Annotated[PageRequest, Depends(user_paging)],
     role: Annotated[str | None, Query()] = None,
     user_status: Annotated[str | None, Query(alias="status")] = None,
@@ -252,8 +280,31 @@ async def resend_invitation(user_uuid: UUID, principal: RequireAdmin) -> dict[st
     return {"ok": True, "message": f"A new invitation is on its way to {user['email']}."}
 
 
+@router.get(
+    "/hr-pocs",
+    response_model=list[HrPoc],
+    summary="Active HR PoCs, for a picker",
+)
+async def hr_pocs(
+    principal: Annotated[Any, Depends(RequireRole(Role.LEGAL, Role.ADMIN))],
+    category: Annotated[UUID | None, Query()] = None,
+) -> list[dict[str, Any]]:
+    """`category` keeps those assigned to it. Declared before `/{user_uuid}`,
+    which would otherwise read `hr-pocs` as a uuid and refuse it."""
+    async with connection() as conn:
+        category_id = None
+        if category:
+            found = await hr_repo.by_uuid(
+                conn, str(category), role=principal.role, user_id=principal.user_id
+            )
+            if not found:
+                raise NotFound("Category")
+            category_id = int(found["category_id"])
+        return await hr_repo.hr_pocs(conn, category_id=category_id)
+
+
 @router.get("/{user_uuid}", response_model=UserOut)
-async def get_user(user_uuid: UUID, principal: RequireDPOorAdmin) -> dict[str, Any]:
+async def get_user(user_uuid: UUID, principal: UserReader) -> dict[str, Any]:
     async with connection() as conn:
         user = await repo.require_by_uuid(conn, str(user_uuid))
         if user["role"] in users.SOURCE_OWNING_ROLES:
@@ -261,6 +312,8 @@ async def get_user(user_uuid: UUID, principal: RequireDPOorAdmin) -> dict[str, A
                 **user,
                 "processors": await registry_repo.processors_of_collector(conn, user["id"]),
             }
+        if user["role"] == Role.HR_USER.value:
+            user = {**user, "categories": await hr_repo.categories_of_user(conn, user["id"])}
         return user
 
 
@@ -282,6 +335,26 @@ async def set_processors(
             str(user_uuid),
             processor_uuids=[str(u) for u in body.processor_uuids],
             actor_id=principal.user_id,
+        )
+
+
+@router.put(
+    "/{user_uuid}/categories",
+    response_model=list[PocCategory],
+    summary="Set the categories an HR PoC runs activities in",
+)
+async def set_categories(
+    user_uuid: UUID, body: SetCategories, principal: RequireAdmin
+) -> list[dict[str, Any]]:
+    """The whole set (0052). An HR PoC sees the categories named here and the
+    activities run under them, and no others."""
+    async with transaction() as conn:
+        return await hr_categories.set_user_categories(
+            conn,
+            str(user_uuid),
+            category_uuids=[str(u) for u in body.category_uuids],
+            actor_id=principal.user_id,
+            actor_role=principal.role,
         )
 
 
@@ -361,9 +434,7 @@ async def reset_mfa(user_uuid: UUID, principal: RequireAdmin) -> dict[str, Any]:
 
 
 @router.get("/{user_uuid}/person-type-history", response_model=list[PersonTypeHistoryOut])
-async def person_type_history(
-    user_uuid: UUID, principal: RequireDPOorAdmin
-) -> list[dict[str, Any]]:
+async def person_type_history(user_uuid: UUID, principal: UserReader) -> list[dict[str, Any]]:
     """A type change never creates a second account.
 
     If an employee becomes a volunteer and gets a new row, her rights requests

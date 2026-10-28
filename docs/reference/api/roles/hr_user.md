@@ -2,7 +2,7 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `tickets`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `hr-categories`, `tickets`, `notifications`, `profile`.
 
 ## Resource access
 
@@ -17,12 +17,14 @@ Navigation returned after sign-in: `dashboard`, `tickets`, `notifications`, `pro
 | `consent` | No | No | `none` | Denied |
 | `data_source` | No | No | `none` | Denied |
 | `export` | No | No | `none` | Denied |
+| `hr_category` | Yes | No | `scoped` | Assigned project/organisational rows |
 | `import` | No | No | `none` | Denied |
 | `legal_hold` | No | No | `none` | Denied |
 | `link` | No | No | `none` | Denied |
 | `me` | No | No | `none` | Denied |
 | `message_template` | No | No | `none` | Denied |
 | `notice` | No | No | `none` | Denied |
+| `notice_template` | No | No | `none` | Denied |
 | `processor` | No | No | `none` | Denied |
 | `project` | No | No | `none` | Denied |
 | `purpose` | No | No | `none` | Denied |

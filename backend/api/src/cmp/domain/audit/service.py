@@ -84,6 +84,9 @@ ENTITY_TYPES: Final[frozenset[str]] = frozenset(
         "breach_ticket",
         # The office's replacement words for a message junction.
         "message_template",
+        # The Legal office's category of HR activity (0052, ADR 0033): its
+        # processors and its HR PoCs are recorded against it.
+        "hr_category",
     }
 )
 
@@ -116,6 +119,9 @@ class Event:
     #: The processors a DCO or an RCO collects for, set by the administrator
     #: (0050). Detail: the processor uuids before and after.
     USER_PROCESSORS_SET = "user.processors_set"
+    #: The categories an HR PoC runs activities in, set by the administrator
+    #: (0052). Detail: the category codes before and after; on Legal's trail.
+    USER_CATEGORIES_SET = "user.categories_set"
 
     # authentication
     LOGIN_SUCCEEDED = "auth.login_succeeded"
@@ -205,6 +211,13 @@ class Event:
     NOTICE_TEMPLATE_LANGUAGE_REMOVED = "notice_template.language_removed"
     NOTICE_TEMPLATE_RETIRED = "notice_template.retired"
     NOTICE_TEMPLATE_REACTIVATED = "notice_template.reactivated"
+    #: The Legal office's categories of HR activity (0052). Processors set is
+    #: the whole list, before and after, by processor uuid and role.
+    HR_CATEGORY_CREATED = "hr_category.created"
+    HR_CATEGORY_UPDATED = "hr_category.updated"
+    HR_CATEGORY_RETIRED = "hr_category.retired"
+    HR_CATEGORY_REACTIVATED = "hr_category.reactivated"
+    HR_CATEGORY_PROCESSORS_SET = "hr_category.processors_set"
 
     # consent
     LINK_CREATED = "link.created"
@@ -367,6 +380,7 @@ _OFFICE_ID_OF: Final[dict[str, str]] = {
     "project": "SELECT office_id FROM project WHERE project_id = %(id)s",
     "purpose": "SELECT office_id FROM purpose WHERE purpose_id = %(id)s",
     "notice_template": "SELECT office_id FROM notice_template WHERE template_id = %(id)s",
+    "hr_category": "SELECT office_id FROM hr_category WHERE category_id = %(id)s",
     "notice": "SELECT office_id FROM notice WHERE notice_id = %(id)s",
     "consent_link": "SELECT office_id FROM consent_link WHERE link_id = %(id)s",
     "export_log": "SELECT office_id FROM export_log WHERE export_id = %(id)s",

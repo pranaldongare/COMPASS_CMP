@@ -28,6 +28,9 @@ export interface Purpose {
   lapse_behaviour: string;
   created_at: Timestamp;
   updated_at: Timestamp;
+  /** The office whose catalogue it is (ADR 0032). Absent on a notice's
+   *  purpose list. */
+  office_code?: string | null;
   /** Present only on a notice's purpose list. */
   is_mandatory?: boolean;
   display_order?: number;

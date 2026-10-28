@@ -75,7 +75,12 @@ office is the wall between offices; the query is the wall within one.
 
 `POST /users` requires `office_uuid` for `dpo`, `legal`, `rnd_user`, `dco`,
 `rco`, `dco_admin`, `hr_user` and refuses it for the rest; a role change
-across offices clears category assignments as it clears processors today.
+keeps the account's office when the new role works in it, and otherwise
+needs one named. Each of those roles is held to its track's office
+(`OFFICE_OF_ROLE` in `core/permissions.py`, open point F-20): the Legal PoC
+and the HR PoC to `hr`, the rest to `rnd`; another is refused (422). Any role
+change clears an HR PoC's category assignments as it clears a collection
+owner's processors.
 
 ## Where the office is set
 
@@ -158,6 +163,34 @@ breach, is on Legal's trail. The trail's list query for an officer adds
 about no office-bearing record (history from before 0051, sign-ins, user
 administration) is read by both officers, since the Legal PoC holds the
 DPO's standing on its track. The administrator reads all.
+
+## In the query as well
+
+The policies do not bind a superuser, and locally everything connects as
+one (above). From 0052 the queries that read an office's registry carry the
+same test themselves, as `cmp_office_visible(office_id)`: a SQL function,
+`STABLE` and a single expression the planner inlines, true when
+`app.office` is `all` or names the row's office. Scope in the query stays
+the mechanism and the policies the backstop (ADR 0032), and the local
+console shows what production will:
+
+| Read | Where |
+|---|---|
+| Purposes: one, the list, versions, comparison | `db/repositories/registry.py` (`_PURPOSE_IN_OFFICE`) |
+| Notice templates: by uuid, by code, the list | `db/repositories/notice_templates.py` (`_IN_OFFICE`) |
+| Categories, and an HR PoC's own | `db/repositories/hr_categories.py` (`scope_predicate`, `categories_of_user`) |
+| The notification feed, a holder's tickets for the office, a resend | `office_clause()` on the trail (`dashboard.staff_feed`, `audit.ticket_events_for_office`, `audit.breach_ticket_events_for_office`, `audit.by_uuid`) |
+
+The R&D track's other registers - projects, notices, links, exports,
+requests, breaches - still rely on the policies alone; they hold no Legal
+office rows until the increments that write them, and each adds the
+predicate when it does.
+
+A write lands in the caller's office: the router passes `principal.office`
+to the service (a purpose, a template, a category), and a principal with
+no office is refused. A Legal office template names a category of its own
+office and a DPO office template none (`cmp_template_category_fits()`);
+a template is never copied onto a project unless it is the DPO office's.
 
 ## What it costs
 

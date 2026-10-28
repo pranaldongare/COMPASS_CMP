@@ -13,7 +13,7 @@ import { keys } from "@/lib/query";
 import type { NoticeTemplate, NoticeTemplateDetail, NoticeTemplateFound, Uuid } from "@/types";
 
 export function useNoticeTemplates(
-  filters: { status?: string; q?: string } = {},
+  filters: { status?: string; q?: string; category?: string } = {},
   { enabled = true }: { enabled?: boolean } = {},
 ) {
   return useQuery<NoticeTemplate[], ApiError>({

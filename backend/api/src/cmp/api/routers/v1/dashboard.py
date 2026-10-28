@@ -750,7 +750,7 @@ async def notifications(
             # no project - a lockout, a withdrawal - stay with the roles whose
             # section they belong to.
             rows = await dashboard_repo.staff_feed(
-                conn, principal.role, principal.user_id, limit=limit
+                conn, principal.role, principal.user_id, office=principal.office, limit=limit
             )
             # What happened on the tickets addressed to this person, and -
             # for the office - what holders did on theirs. Without these the
@@ -761,7 +761,9 @@ async def notifications(
                 conn, principal.user_id, limit=limit
             )
             office = (
-                await audit_repo.ticket_events_for_office(conn, limit=limit)
+                await audit_repo.ticket_events_for_office(
+                    conn, office=principal.office, limit=limit
+                )
                 if principal.role is Role.DPO
                 else []
             )
@@ -770,7 +772,9 @@ async def notifications(
                 conn, principal.user_id, limit=limit
             )
             answered = (
-                await audit_repo.breach_ticket_events_for_office(conn, limit=limit)
+                await audit_repo.breach_ticket_events_for_office(
+                    conn, office=principal.office, limit=limit
+                )
                 if principal.role is Role.DPO
                 else []
             )
@@ -822,7 +826,7 @@ async def resend(log_uuid: UUID, principal: CurrentUser) -> dict[str, Any]:
         raise Forbidden("Your role may not resend notifications")
 
     async with transaction() as conn:
-        entry = await audit_repo.by_uuid(conn, str(log_uuid))
+        entry = await audit_repo.by_uuid(conn, str(log_uuid), office=principal.office)
         if not entry:
             raise NotFound("Notification")
 

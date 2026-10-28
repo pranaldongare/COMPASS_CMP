@@ -61,7 +61,8 @@ function PurposesPageView() {
     limit: 25,
   });
 
-  const isDpo = me?.role === "dpo";
+  // Either office's officer: the DPO's purposes, or the Legal office's (ADR 0032).
+  const canWrite = me?.writes.includes("purpose") ?? false;
 
   return (
     <>
@@ -69,7 +70,7 @@ function PurposesPageView() {
         title="Purposes"
         description="What data may be collected, for what, on which lawful basis, and for how long. A notice offers a data subject a choice per purpose."
         actions={
-          isDpo ? (
+          canWrite ? (
             <Button variant="primary" onClick={() => setCreating(true)}>
               <Plus className="size-4" />
               New purpose
@@ -119,13 +120,13 @@ function PurposesPageView() {
           "Lawful basis",
           "Data collected",
           "Retention",
-          ...(isDpo ? [""] : []),
+          ...(canWrite ? [""] : []),
         ]}
         keyOf={(p) => p.purpose_uuid}
         empty={{
           illustration: <EmptyRecords />,
           title: status || basis || q ? "No purposes match" : "No purposes yet",
-          description: isDpo
+          description: canWrite
             ? "A project cannot publish a notice until at least one active purpose is attached to it."
             : "Purposes are defined by the Privacy Office.",
         }}
@@ -163,7 +164,7 @@ function PurposesPageView() {
             </Td>
             {/* Editing is permitted only while the purpose is a draft: once
                 it is active a notice may already reference it. */}
-            {isDpo && (
+            {canWrite && (
               <Td className="w-12 text-right">
                 <RowActions
                   label={`Actions for ${p.name}`}

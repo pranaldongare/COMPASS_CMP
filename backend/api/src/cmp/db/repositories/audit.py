@@ -444,9 +444,10 @@ async def ticket_events_for_responder(
     )
 
 
-async def ticket_events_for_office(conn: Conn, *, limit: int = 50) -> list[Row]:
+async def ticket_events_for_office(conn: Conn, *, office: str | None, limit: int = 50) -> list[Row]:
     """What holders did on their tickets, for the office: every return and
-    every message a holder wrote, most recent first."""
+    every message a holder wrote, most recent first. `office` is the reader's."""
+    clause, params = office_clause(office)
     return await fetch_all(
         conn,
         f"""
@@ -456,10 +457,11 @@ async def ticket_events_for_office(conn: Conn, *, limit: int = 50) -> list[Row]:
           AND (l.event_type = 'rights.ticket_returned'
                OR (l.event_type = 'rights.ticket_message'
                    AND l.detail_json->>'side' = 'holder'))
+          AND {clause}
         ORDER BY l.occurred_at DESC
         LIMIT %s
         """,
-        (limit,),
+        (*params, limit),
     )
 
 
@@ -498,9 +500,13 @@ async def breach_ticket_events_for_holder(
     )
 
 
-async def breach_ticket_events_for_office(conn: Conn, *, limit: int = 50) -> list[Row]:
+async def breach_ticket_events_for_office(
+    conn: Conn, *, office: str | None, limit: int = 50
+) -> list[Row]:
     """What holders did on breach tickets, for the DPO: every return, every
-    message a holder wrote, and - S3-09 - every colleague a holder added."""
+    message a holder wrote, and - S3-09 - every colleague a holder added.
+    `office` is the reader's."""
+    clause, params = office_clause(office)
     return await fetch_all(
         conn,
         f"""
@@ -510,10 +516,11 @@ async def breach_ticket_events_for_office(conn: Conn, *, limit: int = 50) -> lis
           AND (l.event_type IN ('breach_ticket.returned', 'breach_ticket.colleague_added')
                OR (l.event_type = 'breach_ticket.message'
                    AND l.detail_json->>'side' = 'holder'))
+          AND {clause}
         ORDER BY l.occurred_at DESC
         LIMIT %s
         """,
-        (limit,),
+        (*params, limit),
     )
 
 

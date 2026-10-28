@@ -20,6 +20,7 @@ export function makeTemplate(over: Partial<NoticeTemplateDetail> = {}): NoticeTe
     purpose_count: 1,
     language_count: 1,
     used_count: 0,
+    office_code: "rnd",
     purposes: [
       {
         purpose_uuid: "61616161-6161-4161-8161-616161616161",

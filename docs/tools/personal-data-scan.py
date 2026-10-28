@@ -55,6 +55,8 @@ IDENTITY = {
     "holder_name", "assigned_by_name", "added_by_name",
     # Rights tickets (2026-10-08): who accepted a holder's answer.
     "accepted_by_name",
+    # Who answers for a processor on an HR category (0052).
+    "respondent_name",
     "username",
 }
 CONTACT = {
@@ -68,6 +70,8 @@ CONTACT = {
     "has_email", "has_mobile",
     # Who the office copies a message to (0046): a mailbox, maybe a person's.
     "address", "addresses",
+    # Who answers for a processor on an HR category (0052).
+    "respondent_email",
 }
 DEMOGRAPHIC = {
     "dob", "is_minor", "person_type", "organization_id", "role", "user_role",
@@ -180,6 +184,8 @@ NOT_PERSONAL = {
     "source_name": "a data source",
     "contacts": "a count of a breach's people with no account, or the list holding them",
     "new_contacts": "how many people with no account a list added",
+    "office_name": "the DPO office or the Legal office (ADR 0032)",
+    "category_name": "a kind of HR activity, like wellness (0052)",
 }
 
 #: Shapes that suggest a person. Anything matching and unclassified is reported.
@@ -290,13 +296,13 @@ def unclassified(spec: dict, schema: dict) -> list[str]:
 # ---------------------------------------------------------------- rendering
 SHORT = {"dpo": "DPO", "admin": "Admin", "dco": "DCO", "dco_admin": "DCO Admin",
          "rco": "RCO", "rnd_user": "R&D", "data_subject": "Principal",
-         "breach_holder": "Temporary holder"}
+         "breach_holder": "Temporary holder", "legal": "Legal PoC", "hr_user": "HR PoC"}
 VALUE = {"ALL": "every row", "SCOPED": "rows in scope", "OWN": "own rows",
          "COND": "conditional"}
 ORDER = ["auth", "me", "public consent", "public information", "rights", "legal holds", "breaches",
          "breach tickets", "cross-border transfers", "tickets",
          "consent", "exchange", "users", "delegations", "projects", "notices",
-         "registry", "messages", "audit", "dashboard"]
+         "registry", "hr", "messages", "audit", "dashboard"]
 TITLE = {
     "auth": "Authentication — `/auth/*`",
     "me": "The data principal's own records — `/me/*`",
@@ -315,6 +321,7 @@ TITLE = {
     "projects": "Projects, approvals and sites",
     "notices": "Notices",
     "registry": "Purposes, processors and sources",
+    "hr": "The Legal office's categories — `/hr/categories/*`",
     "messages": "Message templates — `/messages/*`",
     "audit": "The audit trail — `/audit/*`",
     "dashboard": "Dashboard",

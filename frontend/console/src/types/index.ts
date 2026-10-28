@@ -27,3 +27,4 @@ export * from "@/types/public";
 export * from "@/types/rights";
 export * from "@/types/messaging";
 export * from "@/types/breach";
+export * from "@/types/hr";

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 82gCa3NKoDJN5G0f9KvYtA25nI38FNxwpm9afy9ZwRgPBJiwrY9FsxqNcfwt0wq
+\restrict jhZppLnMGHc3SvSL5PsaN4vkeEnpas0qiOoIwNGU24Crq2HPRJY4FQ0EzZdjKPr
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -1114,6 +1114,24 @@ $$;
 
 
 --
+-- Name: cmp_office_visible(integer); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cmp_office_visible(candidate integer) RETURNS boolean
+    LANGUAGE sql STABLE
+    AS $$
+  SELECT current_setting('app.office', true) = 'all' OR candidate = (SELECT o.office_id FROM office o WHERE o.office_code = current_setting('app.office', true))
+$$;
+
+
+--
+-- Name: FUNCTION cmp_office_visible(candidate integer); Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON FUNCTION public.cmp_office_visible(candidate integer) IS 'True when a row of this office is visible to the session''s app.office (ADR 0032)';
+
+
+--
 -- Name: cmp_primary_site_dco(integer); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -1296,6 +1314,38 @@ BEGIN
   IF NEW.role = 'data_subject' AND NEW.mobile IS NULL THEN
     RAISE EXCEPTION 'a data principal needs a mobile'
       USING ERRCODE = 'check_violation', CONSTRAINT = 'auth_user_subject_mobile_required';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+--
+-- Name: cmp_template_category_fits(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cmp_template_category_fits() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  rnd int := (SELECT office_id FROM office WHERE office_code = 'rnd');
+  category_office int;
+BEGIN
+  IF NEW.office_id = rnd THEN
+    IF NEW.category_id IS NOT NULL THEN
+      RAISE EXCEPTION 'notice_template: a DPO office template has no category'
+        USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+  END IF;
+  IF NEW.category_id IS NULL THEN
+    RAISE EXCEPTION 'notice_template: a Legal office template names its category'
+      USING ERRCODE = 'check_violation';
+  END IF;
+  SELECT office_id INTO category_office FROM hr_category WHERE category_id = NEW.category_id;
+  IF category_office IS DISTINCT FROM NEW.office_id THEN
+    RAISE EXCEPTION 'notice_template: its category belongs to another office'
+      USING ERRCODE = 'check_violation';
   END IF;
   RETURN NEW;
 END;
@@ -2620,6 +2670,62 @@ ALTER SEQUENCE public.breach_upload_upload_id_seq OWNED BY public.breach_upload.
 
 
 --
+-- Name: category_processor; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.category_processor (
+    category_processor_id integer NOT NULL,
+    category_processor_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    category_id integer NOT NULL,
+    processor_id integer NOT NULL,
+    processor_role character varying(12) NOT NULL,
+    respondent_user_id integer,
+    added_by integer NOT NULL,
+    added_at timestamp with time zone DEFAULT now() NOT NULL,
+    removed_at timestamp with time zone,
+    removed_by integer,
+    CONSTRAINT category_processor_removed CHECK (((removed_at IS NULL) = (removed_by IS NULL))),
+    CONSTRAINT category_processor_role CHECK (((processor_role)::text = ANY ((ARRAY['hrms'::character varying, 'database'::character varying, 'vendor'::character varying])::text[])))
+);
+
+ALTER TABLE ONLY public.category_processor FORCE ROW LEVEL SECURITY;
+
+
+--
+-- Name: TABLE category_processor; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.category_processor IS 'A processor holding data collected under a category, with the account that answers for it; removed by date, never deleted';
+
+
+--
+-- Name: COLUMN category_processor.respondent_user_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.category_processor.respondent_user_id IS 'Who answers for this processor on the category''s requests and withdrawals; NULL means the activity''s HR PoC';
+
+
+--
+-- Name: category_processor_category_processor_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.category_processor_category_processor_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: category_processor_category_processor_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.category_processor_category_processor_id_seq OWNED BY public.category_processor.category_processor_id;
+
+
+--
 -- Name: collection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3067,6 +3173,106 @@ ALTER SEQUENCE public.export_log_export_id_seq OWNED BY public.export_log.export
 
 
 --
+-- Name: hr_category; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.hr_category (
+    category_id integer NOT NULL,
+    category_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    office_id integer NOT NULL,
+    category_code character varying(24) NOT NULL,
+    name character varying(120) NOT NULL,
+    description text,
+    status character varying(12) DEFAULT 'active'::character varying NOT NULL,
+    created_by integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    retired_at timestamp with time zone,
+    CONSTRAINT hr_category_code_shape CHECK (((category_code)::text ~ '^[A-Z][A-Z0-9_]{1,23}$'::text)),
+    CONSTRAINT hr_category_retired_at CHECK ((((status)::text = 'retired'::text) = (retired_at IS NOT NULL))),
+    CONSTRAINT hr_category_status CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'retired'::character varying])::text[])))
+);
+
+ALTER TABLE ONLY public.hr_category FORCE ROW LEVEL SECURITY;
+
+
+--
+-- Name: TABLE hr_category; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.hr_category IS 'A kind of HR activity the Legal office governs (ADR 0033): its templates and the processors that hold its data';
+
+
+--
+-- Name: COLUMN hr_category.category_code; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.hr_category.category_code IS 'Short and stable: WELLNESS, CSR, BGV. Upper case, digits and underscores';
+
+
+--
+-- Name: hr_category_category_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.hr_category_category_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: hr_category_category_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.hr_category_category_id_seq OWNED BY public.hr_category.category_id;
+
+
+--
+-- Name: hr_poc_category; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.hr_poc_category (
+    assignment_id integer NOT NULL,
+    user_id integer NOT NULL,
+    category_id integer NOT NULL,
+    assigned_by integer NOT NULL,
+    assigned_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+ALTER TABLE ONLY public.hr_poc_category FORCE ROW LEVEL SECURITY;
+
+
+--
+-- Name: TABLE hr_poc_category; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.hr_poc_category IS 'An HR PoC assigned to a category: the categories they may run activities in';
+
+
+--
+-- Name: hr_poc_category_assignment_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.hr_poc_category_assignment_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: hr_poc_category_assignment_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.hr_poc_category_assignment_id_seq OWNED BY public.hr_poc_category.assignment_id;
+
+
+--
 -- Name: import_batch; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -3497,6 +3703,7 @@ CREATE TABLE public.notice_template (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     retired_at timestamp with time zone,
     office_id integer NOT NULL,
+    category_id integer,
     CONSTRAINT notice_template_retired_at CHECK ((((status)::text = 'retired'::text) = (retired_at IS NOT NULL))),
     CONSTRAINT notice_template_status CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'retired'::character varying])::text[])))
 );
@@ -3516,6 +3723,13 @@ COMMENT ON TABLE public.notice_template IS 'A notice the DPO writes before a pro
 --
 
 COMMENT ON COLUMN public.notice_template.template_code IS 'The ID the DPO gives an R&D User to attach it, minted by the database';
+
+
+--
+-- Name: COLUMN notice_template.category_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.notice_template.category_id IS 'The category of a Legal office template; NULL for every DPO office template';
 
 
 --
@@ -4800,6 +5014,13 @@ ALTER TABLE ONLY public.breach_upload ALTER COLUMN upload_id SET DEFAULT nextval
 
 
 --
+-- Name: category_processor category_processor_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.category_processor ALTER COLUMN category_processor_id SET DEFAULT nextval('public.category_processor_category_processor_id_seq'::regclass);
+
+
+--
 -- Name: collection collection_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -4860,6 +5081,20 @@ ALTER TABLE ONLY public.export_line ALTER COLUMN line_id SET DEFAULT nextval('pu
 --
 
 ALTER TABLE ONLY public.export_log ALTER COLUMN export_id SET DEFAULT nextval('public.export_log_export_id_seq'::regclass);
+
+
+--
+-- Name: hr_category category_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hr_category ALTER COLUMN category_id SET DEFAULT nextval('public.hr_category_category_id_seq'::regclass);
+
+
+--
+-- Name: hr_poc_category assignment_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hr_poc_category ALTER COLUMN assignment_id SET DEFAULT nextval('public.hr_poc_category_assignment_id_seq'::regclass);
 
 
 --
@@ -5497,6 +5732,22 @@ ALTER TABLE ONLY public.breach_upload
 
 
 --
+-- Name: category_processor category_processor_category_processor_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.category_processor
+    ADD CONSTRAINT category_processor_category_processor_uuid_key UNIQUE (category_processor_uuid);
+
+
+--
+-- Name: category_processor category_processor_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.category_processor
+    ADD CONSTRAINT category_processor_pkey PRIMARY KEY (category_processor_id);
+
+
+--
 -- Name: collection collection_collection_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -5670,6 +5921,46 @@ ALTER TABLE ONLY public.export_log
 
 ALTER TABLE ONLY public.export_log
     ADD CONSTRAINT export_log_pkey PRIMARY KEY (export_id);
+
+
+--
+-- Name: hr_category hr_category_category_code_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hr_category
+    ADD CONSTRAINT hr_category_category_code_key UNIQUE (category_code);
+
+
+--
+-- Name: hr_category hr_category_category_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hr_category
+    ADD CONSTRAINT hr_category_category_uuid_key UNIQUE (category_uuid);
+
+
+--
+-- Name: hr_category hr_category_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hr_category
+    ADD CONSTRAINT hr_category_pkey PRIMARY KEY (category_id);
+
+
+--
+-- Name: hr_poc_category hr_poc_category_once; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hr_poc_category
+    ADD CONSTRAINT hr_poc_category_once UNIQUE (user_id, category_id);
+
+
+--
+-- Name: hr_poc_category hr_poc_category_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hr_poc_category
+    ADD CONSTRAINT hr_poc_category_pkey PRIMARY KEY (assignment_id);
 
 
 --
@@ -6243,6 +6534,13 @@ CREATE UNIQUE INDEX breach_temporary_access_open ON public.breach_temporary_acce
 
 
 --
+-- Name: category_processor_live; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX category_processor_live ON public.category_processor USING btree (category_id, processor_id) WHERE (removed_at IS NULL);
+
+
+--
 -- Name: idx_approval_project; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6453,6 +6751,13 @@ CREATE INDEX idx_breach_upload ON public.breach_upload USING btree (breach_id, u
 
 
 --
+-- Name: idx_category_processor_category; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_category_processor_category ON public.category_processor USING btree (category_id);
+
+
+--
 -- Name: idx_collection_batch; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -6541,6 +6846,20 @@ CREATE INDEX idx_grant_consent ON public.consent_purpose_grant USING btree (cons
 --
 
 CREATE INDEX idx_grant_purpose ON public.consent_purpose_grant USING btree (purpose_id) WHERE granted;
+
+
+--
+-- Name: idx_hr_category_office; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_hr_category_office ON public.hr_category USING btree (office_id);
+
+
+--
+-- Name: idx_hr_poc_category_category; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_hr_poc_category_category ON public.hr_poc_category USING btree (category_id);
 
 
 --
@@ -6646,6 +6965,13 @@ CREATE INDEX idx_notice_purpose_notice ON public.notice_purpose USING btree (not
 --
 
 CREATE INDEX idx_notice_template ON public.notice USING btree (template_id) WHERE (template_id IS NOT NULL);
+
+
+--
+-- Name: idx_notice_template_category; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_notice_template_category ON public.notice_template USING btree (category_id) WHERE (category_id IS NOT NULL);
 
 
 --
@@ -7199,6 +7525,27 @@ CREATE TRIGGER trg_grant_append_only BEFORE DELETE OR UPDATE ON public.consent_p
 --
 
 CREATE TRIGGER trg_grant_in_notice BEFORE INSERT ON public.consent_purpose_grant FOR EACH ROW EXECUTE FUNCTION public.cmp_grant_in_notice();
+
+
+--
+-- Name: hr_category trg_hr_category_office_fixed; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_hr_category_office_fixed BEFORE UPDATE OF office_id ON public.hr_category FOR EACH ROW EXECUTE FUNCTION public.cmp_office_is_fixed();
+
+
+--
+-- Name: hr_category trg_hr_category_touch; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_hr_category_touch BEFORE UPDATE ON public.hr_category FOR EACH ROW EXECUTE FUNCTION public.cmp_touch_updated_at();
+
+
+--
+-- Name: notice_template trg_hr_template_has_category; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_hr_template_has_category BEFORE INSERT OR UPDATE OF category_id, office_id ON public.notice_template FOR EACH ROW EXECUTE FUNCTION public.cmp_template_category_fits();
 
 
 --
@@ -7817,6 +8164,46 @@ ALTER TABLE ONLY public.breach_upload
 
 
 --
+-- Name: category_processor category_processor_added_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.category_processor
+    ADD CONSTRAINT category_processor_added_by_fkey FOREIGN KEY (added_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: category_processor category_processor_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.category_processor
+    ADD CONSTRAINT category_processor_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.hr_category(category_id);
+
+
+--
+-- Name: category_processor category_processor_processor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.category_processor
+    ADD CONSTRAINT category_processor_processor_id_fkey FOREIGN KEY (processor_id) REFERENCES public.processor(processor_id);
+
+
+--
+-- Name: category_processor category_processor_removed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.category_processor
+    ADD CONSTRAINT category_processor_removed_by_fkey FOREIGN KEY (removed_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: category_processor category_processor_respondent_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.category_processor
+    ADD CONSTRAINT category_processor_respondent_user_id_fkey FOREIGN KEY (respondent_user_id) REFERENCES public.auth_user(id);
+
+
+--
 -- Name: collection collection_batch_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8121,6 +8508,46 @@ ALTER TABLE ONLY public.auth_user
 
 
 --
+-- Name: hr_category hr_category_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hr_category
+    ADD CONSTRAINT hr_category_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: hr_category hr_category_office_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hr_category
+    ADD CONSTRAINT hr_category_office_id_fkey FOREIGN KEY (office_id) REFERENCES public.office(office_id);
+
+
+--
+-- Name: hr_poc_category hr_poc_category_assigned_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hr_poc_category
+    ADD CONSTRAINT hr_poc_category_assigned_by_fkey FOREIGN KEY (assigned_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: hr_poc_category hr_poc_category_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hr_poc_category
+    ADD CONSTRAINT hr_poc_category_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.hr_category(category_id);
+
+
+--
+-- Name: hr_poc_category hr_poc_category_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.hr_poc_category
+    ADD CONSTRAINT hr_poc_category_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.auth_user(id);
+
+
+--
 -- Name: import_batch import_batch_imported_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8286,6 +8713,14 @@ ALTER TABLE ONLY public.notice_purpose
 
 ALTER TABLE ONLY public.notice_purpose
     ADD CONSTRAINT notice_purpose_purpose_id_fkey FOREIGN KEY (purpose_id) REFERENCES public.purpose(purpose_id);
+
+
+--
+-- Name: notice_template notice_template_category_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.notice_template
+    ADD CONSTRAINT notice_template_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.hr_category(category_id);
 
 
 --
@@ -8869,6 +9304,12 @@ ALTER TABLE public.breach_ticket_message ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.breach_upload ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: category_processor; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.category_processor ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: collection; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -8909,6 +9350,18 @@ ALTER TABLE public.export_line ENABLE ROW LEVEL SECURITY;
 --
 
 ALTER TABLE public.export_log ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: hr_category; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.hr_category ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: hr_poc_category; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.hr_poc_category ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: import_batch; Type: ROW SECURITY; Schema: public; Owner: -
@@ -9151,6 +9604,17 @@ CREATE POLICY office_isolation ON public.breach_upload USING (((current_setting(
 
 
 --
+-- Name: category_processor office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.category_processor USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.hr_category p
+  WHERE (p.category_id = category_processor.category_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.hr_category p
+  WHERE (p.category_id = category_processor.category_id)))));
+
+
+--
 -- Name: collection office_isolation; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -9225,6 +9689,28 @@ CREATE POLICY office_isolation ON public.export_log USING (((current_setting('ap
   WHERE ((o.office_code)::text = current_setting('app.office'::text, true)))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
    FROM public.office o
   WHERE ((o.office_code)::text = current_setting('app.office'::text, true))))));
+
+
+--
+-- Name: hr_category office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.hr_category USING (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true)))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true))))));
+
+
+--
+-- Name: hr_poc_category office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.hr_poc_category USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.hr_category p
+  WHERE (p.category_id = hr_poc_category.category_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.hr_category p
+  WHERE (p.category_id = hr_poc_category.category_id)))));
 
 
 --
@@ -9529,5 +10015,5 @@ ALTER TABLE public.rights_ticket_message ENABLE ROW LEVEL SECURITY;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 82gCa3NKoDJN5G0f9KvYtA25nI38FNxwpm9afy9ZwRgPBJiwrY9FsxqNcfwt0wq
+\unrestrict jhZppLnMGHc3SvSL5PsaN4vkeEnpas0qiOoIwNGU24Crq2HPRJY4FQ0EzZdjKPr
 

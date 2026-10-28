@@ -2137,6 +2137,61 @@
         }
       }
     },
+    "/users/hr-pocs": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Active HR PoCs, for a picker",
+        "description": "`category` keeps those assigned to it. Declared before `/{user_uuid}`,\nwhich would otherwise read `hr-pocs` as a uuid and refuse it.",
+        "operationId": "hr_pocs_users_hr_pocs_get",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/HrPoc"
+                  },
+                  "title": "Response Hr Pocs Users Hr Pocs Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users/{user_uuid}": {
       "get": {
         "tags": [
@@ -2273,6 +2328,64 @@
                     "$ref": "#/components/schemas/CollectorProcessor"
                   },
                   "title": "Response Set Processors Users  User Uuid  Processors Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{user_uuid}/categories": {
+      "put": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Set the categories an HR PoC runs activities in",
+        "description": "The whole set (0052). An HR PoC sees the categories named here and the\nactivities run under them, and no others.",
+        "operationId": "set_categories_users__user_uuid__categories_put",
+        "parameters": [
+          {
+            "name": "user_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetCategories"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PocCategory"
+                  },
+                  "title": "Response Set Categories Users  User Uuid  Categories Put"
                 }
               }
             }
@@ -4098,6 +4211,7 @@
           "registry"
         ],
         "summary": "Create Purpose",
+        "description": "In the caller's office: the DPO's purposes are the DPO office's, the\nLegal PoC's the Legal office's (ADR 0032).",
         "operationId": "create_purpose_purposes_post",
         "requestBody": {
           "required": true,
@@ -5613,6 +5727,372 @@
                   "type": "object",
                   "additionalProperties": true,
                   "title": "Response Source Batches Sources  Source Uuid  Batches Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hr/categories": {
+      "get": {
+        "tags": [
+          "hr"
+        ],
+        "summary": "The Legal office's categories",
+        "description": "An HR PoC's are the ones assigned to them.",
+        "operationId": "list_categories_hr_categories_get",
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "active",
+                    "retired"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryOut"
+                  },
+                  "title": "Response List Categories Hr Categories Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "hr"
+        ],
+        "summary": "Create Category",
+        "description": "In the caller's office: the Legal office's.",
+        "operationId": "create_category_hr_categories_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hr/categories/{category_uuid}": {
+      "get": {
+        "tags": [
+          "hr"
+        ],
+        "summary": "Get Category",
+        "operationId": "get_category_hr_categories__category_uuid__get",
+        "parameters": [
+          {
+            "name": "category_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Category Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "hr"
+        ],
+        "summary": "Update Category",
+        "operationId": "update_category_hr_categories__category_uuid__patch",
+        "parameters": [
+          {
+            "name": "category_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Category Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hr/categories/{category_uuid}/status": {
+      "post": {
+        "tags": [
+          "hr"
+        ],
+        "summary": "Retire or reactivate",
+        "description": "A retired category takes no new template; what was given under it stands.",
+        "operationId": "set_category_status_hr_categories__category_uuid__status_post",
+        "parameters": [
+          {
+            "name": "category_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Category Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryStatusIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hr/categories/{category_uuid}/processors": {
+      "get": {
+        "tags": [
+          "hr"
+        ],
+        "summary": "List Category Processors",
+        "operationId": "list_category_processors_hr_categories__category_uuid__processors_get",
+        "parameters": [
+          {
+            "name": "category_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Category Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryProcessorOut"
+                  },
+                  "title": "Response List Category Processors Hr Categories  Category Uuid  Processors Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "hr"
+        ],
+        "summary": "Set the processors that hold a category's data",
+        "description": "The whole set. One dropped is marked removed, not deleted; a respondent\nmust be an active member of staff of the Legal office.",
+        "operationId": "set_category_processors_hr_categories__category_uuid__processors_put",
+        "parameters": [
+          {
+            "name": "category_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Category Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CategoryProcessorsIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoryProcessorOut"
+                  },
+                  "title": "Response Set Category Processors Hr Categories  Category Uuid  Processors Put"
                 }
               }
             }
@@ -8445,7 +8925,8 @@
         "tags": [
           "notice templates"
         ],
-        "summary": "The DPO's notice templates, newest first",
+        "summary": "The office's notice templates, newest first",
+        "description": "`category` keeps one category's: the Legal office's templates for it.",
         "operationId": "list_templates_notice_templates_get",
         "parameters": [
           {
@@ -8479,6 +8960,23 @@
                 }
               ],
               "title": "Q"
+            }
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
             }
           }
         ],
@@ -8514,6 +9012,7 @@
           "notice templates"
         ],
         "summary": "Write a notice template, before any project exists",
+        "description": "In the caller's office; a Legal office template names its category.",
         "operationId": "create_template_notice_templates_post",
         "requestBody": {
           "required": true,
@@ -22660,6 +23159,452 @@
         ],
         "title": "BreachUploadOut"
       },
+      "CategoryDetailOut": {
+        "properties": {
+          "category_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Category Uuid"
+          },
+          "category_code": {
+            "type": "string",
+            "title": "Category Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "office_code": {
+            "type": "string",
+            "title": "Office Code"
+          },
+          "processor_count": {
+            "type": "integer",
+            "title": "Processor Count"
+          },
+          "poc_count": {
+            "type": "integer",
+            "title": "Poc Count"
+          },
+          "template_count": {
+            "type": "integer",
+            "title": "Template Count"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "retired_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retired At"
+          },
+          "processors": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryProcessorOut"
+            },
+            "type": "array",
+            "title": "Processors"
+          },
+          "pocs": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryPocOut"
+            },
+            "type": "array",
+            "title": "Pocs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category_uuid",
+          "category_code",
+          "name",
+          "description",
+          "status",
+          "office_code",
+          "processor_count",
+          "poc_count",
+          "template_count",
+          "created_at",
+          "updated_at",
+          "retired_at",
+          "processors",
+          "pocs"
+        ],
+        "title": "CategoryDetailOut"
+      },
+      "CategoryIn": {
+        "properties": {
+          "category_code": {
+            "type": "string",
+            "pattern": "^[A-Z][A-Z0-9_]{1,23}$",
+            "title": "Category Code"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "category_code",
+          "name"
+        ],
+        "title": "CategoryIn"
+      },
+      "CategoryOut": {
+        "properties": {
+          "category_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Category Uuid"
+          },
+          "category_code": {
+            "type": "string",
+            "title": "Category Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "office_code": {
+            "type": "string",
+            "title": "Office Code"
+          },
+          "processor_count": {
+            "type": "integer",
+            "title": "Processor Count"
+          },
+          "poc_count": {
+            "type": "integer",
+            "title": "Poc Count"
+          },
+          "template_count": {
+            "type": "integer",
+            "title": "Template Count"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "retired_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retired At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category_uuid",
+          "category_code",
+          "name",
+          "description",
+          "status",
+          "office_code",
+          "processor_count",
+          "poc_count",
+          "template_count",
+          "created_at",
+          "updated_at",
+          "retired_at"
+        ],
+        "title": "CategoryOut"
+      },
+      "CategoryPocOut": {
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uuid"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "assigned_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Assigned At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uuid",
+          "full_name",
+          "email",
+          "status",
+          "assigned_at"
+        ],
+        "title": "CategoryPocOut"
+      },
+      "CategoryProcessorIn": {
+        "properties": {
+          "processor_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Processor Uuid"
+          },
+          "processor_role": {
+            "type": "string",
+            "enum": [
+              "hrms",
+              "database",
+              "vendor"
+            ],
+            "title": "Processor Role"
+          },
+          "respondent_user_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Respondent User Uuid"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "processor_uuid",
+          "processor_role"
+        ],
+        "title": "CategoryProcessorIn"
+      },
+      "CategoryProcessorOut": {
+        "properties": {
+          "processor_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Processor Uuid"
+          },
+          "legal_name": {
+            "type": "string",
+            "title": "Legal Name"
+          },
+          "is_in_house": {
+            "type": "boolean",
+            "title": "Is In House"
+          },
+          "processor_status": {
+            "type": "string",
+            "title": "Processor Status"
+          },
+          "processor_role": {
+            "type": "string",
+            "title": "Processor Role"
+          },
+          "respondent_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Respondent Uuid"
+          },
+          "respondent_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Respondent Name"
+          },
+          "respondent_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Respondent Email"
+          },
+          "added_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Added At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "processor_uuid",
+          "legal_name",
+          "is_in_house",
+          "processor_status",
+          "processor_role",
+          "respondent_uuid",
+          "respondent_name",
+          "respondent_email",
+          "added_at"
+        ],
+        "title": "CategoryProcessorOut"
+      },
+      "CategoryProcessorsIn": {
+        "properties": {
+          "processors": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryProcessorIn"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Processors"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CategoryProcessorsIn"
+      },
+      "CategoryStatusIn": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "retired"
+            ],
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "CategoryStatusIn"
+      },
+      "CategoryUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 20000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "CategoryUpdate",
+        "description": "Name and description. The code is how templates, activities and the\ntrail name the category, so it does not change."
+      },
       "ChannelOut": {
         "properties": {
           "channel": {
@@ -25597,6 +26542,38 @@
           "created_at"
         ],
         "title": "HolderOut"
+      },
+      "HrPoc": {
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Uuid"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          }
+        },
+        "type": "object",
+        "required": [
+          "uuid",
+          "full_name",
+          "email"
+        ],
+        "title": "HrPoc",
+        "description": "An HR PoC, for the Legal PoC's and the administrator's pickers."
       },
       "ImportBatchOut": {
         "properties": {
@@ -29581,6 +30558,36 @@
         ],
         "title": "PersonTypeHistoryOut"
       },
+      "PocCategory": {
+        "properties": {
+          "category_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Category Uuid"
+          },
+          "category_code": {
+            "type": "string",
+            "title": "Category Code"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category_uuid",
+          "category_code",
+          "name",
+          "status"
+        ],
+        "title": "PocCategory",
+        "description": "A category an HR PoC runs activities in (0052)."
+      },
       "PreviewOut": {
         "properties": {
           "channel": {
@@ -30519,6 +31526,17 @@
           },
           "updated_at": {
             "title": "Updated At"
+          },
+          "office_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Office Code"
           }
         },
         "type": "object",
@@ -32916,6 +33934,22 @@
         ],
         "title": "SessionInfo"
       },
+      "SetCategories": {
+        "properties": {
+          "category_uuids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "title": "Category Uuids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "SetCategories"
+      },
       "SetProcessors": {
         "properties": {
           "processor_uuids": {
@@ -33804,6 +34838,44 @@
             "type": "integer",
             "title": "Used Count"
           },
+          "office_code": {
+            "type": "string",
+            "title": "Office Code"
+          },
+          "category_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Uuid"
+          },
+          "category_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Code"
+          },
+          "category_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Name"
+          },
           "purposes": {
             "items": {
               "$ref": "#/components/schemas/TemplatePurposeOut"
@@ -33845,6 +34917,7 @@
           "purpose_count",
           "language_count",
           "used_count",
+          "office_code",
           "purposes",
           "languages",
           "notices"
@@ -33946,6 +35019,44 @@
             "type": "integer",
             "title": "Used Count"
           },
+          "office_code": {
+            "type": "string",
+            "title": "Office Code"
+          },
+          "category_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Uuid"
+          },
+          "category_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Code"
+          },
+          "category_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Name"
+          },
           "purposes": {
             "items": {
               "$ref": "#/components/schemas/TemplatePurposeOut"
@@ -33980,6 +35091,7 @@
           "purpose_count",
           "language_count",
           "used_count",
+          "office_code",
           "purposes",
           "languages"
         ],
@@ -34171,6 +35283,44 @@
           "used_count": {
             "type": "integer",
             "title": "Used Count"
+          },
+          "office_code": {
+            "type": "string",
+            "title": "Office Code"
+          },
+          "category_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Uuid"
+          },
+          "category_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Code"
+          },
+          "category_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Name"
           }
         },
         "type": "object",
@@ -34191,7 +35341,8 @@
           "retired_at",
           "purpose_count",
           "language_count",
-          "used_count"
+          "used_count",
+          "office_code"
         ],
         "title": "TemplateOut"
       },
@@ -35171,6 +36322,20 @@
               }
             ],
             "title": "Processors"
+          },
+          "categories": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/PocCategory"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categories"
           }
         },
         "type": "object",
@@ -35800,6 +36965,18 @@
               }
             ],
             "title": "Language Code"
+          },
+          "category_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Uuid"
           }
         },
         "additionalProperties": false,

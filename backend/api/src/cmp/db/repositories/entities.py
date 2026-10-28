@@ -84,6 +84,13 @@ _SPECS: dict[str, _Spec] = {
         href="/notices/templates/{uuid}",
         noun="Notice template",
     ),
+    "hr_category": _Spec(
+        sql="""SELECT category_id AS id, category_uuid::text AS uuid,
+                      category_code || ' — ' || name AS label
+               FROM hr_category WHERE category_id = ANY(%s)""",
+        href="/hr-categories/{uuid}",
+        noun="HR category",
+    ),
     "notice_language": _Spec(
         # The language rendition has no page of its own; it lives on the notice,
         # so that is where the link points.
@@ -347,8 +354,14 @@ def _openable(href: str | None, reader_role: Role | str | None) -> str | None:
     """
     if href is None or reader_role is None:
         return href
-    section = href.strip("/").split("/")[0]
-    if section in _SECTIONS and section not in nav_for(reader_role):
+    parts = href.strip("/").split("/")
+    section = parts[0]
+    nav = nav_for(reader_role)
+    # A template is either office's: the DPO's under Notices, the Legal
+    # PoC's a section of its own (0052). The console's guard says the same.
+    if parts[:2] == ["notices", "templates"] and "templates" in nav:
+        return href
+    if section in _SECTIONS and section not in nav:
         return None
     return href
 

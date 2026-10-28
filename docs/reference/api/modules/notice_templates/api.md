@@ -18,12 +18,14 @@ For each operation the information is deliberately ordered as **API → Validati
 10. [`DELETE /notice-templates/{template_uuid}/languages/{code}`](#10_delete_notice_templates_template_uuid_languages_code)
 
 <a id="1_get_notice_templates"></a>
-## 1. `GET /notice-templates` — The DPO's notice templates, newest first
+## 1. `GET /notice-templates` — The office's notice templates, newest first
 
 ### API
 
 - **Operation ID:** `list_templates_notice_templates_get`
 - **Access:** Role-controlled `notice templates` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+`category` keeps one category's: the Legal office's templates for it.
 
 ### Validation
 
@@ -31,6 +33,7 @@ For each operation the information is deliberately ordered as **API → Validati
 |---|---|---:|---|---|---|
 | `status` | query | No | `string` or `null` | — | — |
 | `q` | query | No | `string` or `null` | max length: `100` | — |
+| `category` | query | No | `string` or `null` | format: `uuid` | — |
 
 ### Payload
 
@@ -64,7 +67,11 @@ No request body.
     "retired_at": "2026-09-17T12:00:00Z",
     "purpose_count": 1,
     "language_count": 1,
-    "used_count": 1
+    "used_count": 1,
+    "office_code": "string",
+    "category_uuid": "00000000-0000-4000-8000-000000000000",
+    "category_code": "string",
+    "category_name": "string"
   }
 ]
 ```
@@ -95,6 +102,8 @@ No request body.
 - **Operation ID:** `create_template_notice_templates_post`
 - **Access:** Role-controlled `notice templates` operation. See [`../../roles/README.md`](../../roles/README.md).
 
+In the caller's office; a Legal office template names its category.
+
 ### Validation
 
 No path, query, header, or cookie parameters are declared for this operation.
@@ -116,7 +125,8 @@ Request body required: **yes**.
   "applicable_to": "data_subject",
   "note": "string",
   "rendered_text": "string",
-  "language_code": "string"
+  "language_code": "string",
+  "category_uuid": "00000000-0000-4000-8000-000000000000"
 }
 ```
 
@@ -148,6 +158,10 @@ Request body required: **yes**.
   "purpose_count": 1,
   "language_count": 1,
   "used_count": 1,
+  "office_code": "string",
+  "category_uuid": "00000000-0000-4000-8000-000000000000",
+  "category_code": "string",
+  "category_name": "string",
   "purposes": [
     {
       "purpose_uuid": "00000000-0000-4000-8000-000000000000",
@@ -248,6 +262,10 @@ No request body.
   "purpose_count": 1,
   "language_count": 1,
   "used_count": 1,
+  "office_code": "string",
+  "category_uuid": "00000000-0000-4000-8000-000000000000",
+  "category_code": "string",
+  "category_name": "string",
   "purposes": [
     {
       "purpose_uuid": "00000000-0000-4000-8000-000000000000",
@@ -337,6 +355,10 @@ No request body.
   "purpose_count": 1,
   "language_count": 1,
   "used_count": 1,
+  "office_code": "string",
+  "category_uuid": "00000000-0000-4000-8000-000000000000",
+  "category_code": "string",
+  "category_name": "string",
   "purposes": [
     {
       "purpose_uuid": "00000000-0000-4000-8000-000000000000",
@@ -452,6 +474,10 @@ Request body required: **yes**.
   "purpose_count": 1,
   "language_count": 1,
   "used_count": 1,
+  "office_code": "string",
+  "category_uuid": "00000000-0000-4000-8000-000000000000",
+  "category_code": "string",
+  "category_name": "string",
   "purposes": [
     {
       "purpose_uuid": "00000000-0000-4000-8000-000000000000",
@@ -561,6 +587,10 @@ Request body required: **yes**.
   "purpose_count": 1,
   "language_count": 1,
   "used_count": 1,
+  "office_code": "string",
+  "category_uuid": "00000000-0000-4000-8000-000000000000",
+  "category_code": "string",
+  "category_name": "string",
   "purposes": [
     {
       "purpose_uuid": "00000000-0000-4000-8000-000000000000",
@@ -672,6 +702,10 @@ Request body required: **yes**.
   "purpose_count": 1,
   "language_count": 1,
   "used_count": 1,
+  "office_code": "string",
+  "category_uuid": "00000000-0000-4000-8000-000000000000",
+  "category_code": "string",
+  "category_name": "string",
   "purposes": [
     {
       "purpose_uuid": "00000000-0000-4000-8000-000000000000",
@@ -773,6 +807,10 @@ No request body.
   "purpose_count": 1,
   "language_count": 1,
   "used_count": 1,
+  "office_code": "string",
+  "category_uuid": "00000000-0000-4000-8000-000000000000",
+  "category_code": "string",
+  "category_name": "string",
   "purposes": [
     {
       "purpose_uuid": "00000000-0000-4000-8000-000000000000",
@@ -883,6 +921,10 @@ Request body required: **yes**.
   "purpose_count": 1,
   "language_count": 1,
   "used_count": 1,
+  "office_code": "string",
+  "category_uuid": "00000000-0000-4000-8000-000000000000",
+  "category_code": "string",
+  "category_name": "string",
   "purposes": [
     {
       "purpose_uuid": "00000000-0000-4000-8000-000000000000",
@@ -984,6 +1026,10 @@ No request body.
   "purpose_count": 1,
   "language_count": 1,
   "used_count": 1,
+  "office_code": "string",
+  "category_uuid": "00000000-0000-4000-8000-000000000000",
+  "category_code": "string",
+  "category_name": "string",
   "purposes": [
     {
       "purpose_uuid": "00000000-0000-4000-8000-000000000000",
@@ -1069,6 +1115,10 @@ No request body.
 | `purpose_count` | `integer` | Yes | — | — |
 | `language_count` | `integer` | Yes | — | — |
 | `used_count` | `integer` | Yes | — | — |
+| `office_code` | `string` | Yes | — | — |
+| `category_uuid` | `string` or `null` | No | format: `uuid` | — |
+| `category_code` | `string` or `null` | No | — | — |
+| `category_name` | `string` or `null` | No | — | — |
 | `purposes` | array of [`TemplatePurposeOut`](#schema-templatepurposeout) | Yes | — | — |
 | `languages` | array of [`TemplateLanguageOut`](#schema-templatelanguageout) | Yes | — | — |
 | `notices` | array of [`TemplateNoticeOut`](#schema-templatenoticeout) | Yes | — | — |
@@ -1098,6 +1148,10 @@ else it was used.
 | `purpose_count` | `integer` | Yes | — | — |
 | `language_count` | `integer` | Yes | — | — |
 | `used_count` | `integer` | Yes | — | — |
+| `office_code` | `string` | Yes | — | — |
+| `category_uuid` | `string` or `null` | No | format: `uuid` | — |
+| `category_code` | `string` or `null` | No | — | — |
+| `category_name` | `string` or `null` | No | — | — |
 | `purposes` | array of [`TemplatePurposeOut`](#schema-templatepurposeout) | Yes | — | — |
 | `languages` | array of [`TemplateLanguageOut`](#schema-templatelanguageout) | Yes | — | — |
 
@@ -1151,6 +1205,7 @@ else it was used.
 | `note` | `string` or `null` | No | max length: `4000` | — |
 | `rendered_text` | `string` or `null` | No | min length: `1` | — |
 | `language_code` | `string` or `null` | No | max length: `40` | — |
+| `category_uuid` | `string` or `null` | No | format: `uuid` | — |
 
 <a id="schema-validationerror"></a>
 #### `ValidationError`

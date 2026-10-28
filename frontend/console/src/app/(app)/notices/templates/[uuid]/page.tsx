@@ -1,5 +1,6 @@
 /**
- * One notice template (0044), the DPO's.
+ * One notice template (0044): the DPO's, or the Legal office's under one of
+ * its categories (0052).
  *
  * It leads with its ID, because handing that to a study's R&D User is what a
  * template is for: on the summary card, with Copy ID beside it (2026-10-10).
@@ -115,7 +116,7 @@ export default function NoticeTemplatePage() {
         heading={false}
         breadcrumb={
           <Link
-            href="/notices?tab=templates"
+            href={t.office_code === "rnd" ? "/notices?tab=templates" : "/notices/templates"}
             className="inline-flex items-center gap-1 hover:underline"
           >
             <ArrowLeft className="size-3.5" aria-hidden="true" />
@@ -193,9 +194,13 @@ export default function NoticeTemplatePage() {
               project uses it.
             </p>
             <p className="max-w-3xl">
-              {t.status === "active"
-                ? "Give its ID to the study's R&D User. On their project they choose Use a notice template and enter it; the project gets its own draft notice from it, to approve and publish."
-                : "Retired: it can no longer be used. Notices already made from it are unaffected. Bring it back to use it again."}
+              {t.office_code !== "rnd"
+                ? t.status === "active"
+                  ? `For the ${t.category_name ?? "category"}'s activities: an HR PoC uses it when they start one.`
+                  : "Retired: no new activity can use it. Bring it back to use it again."
+                : t.status === "active"
+                  ? "Give its ID to the study's R&D User. On their project they choose Use a notice template and enter it; the project gets its own draft notice from it, to approve and publish."
+                  : "Retired: it can no longer be used. Notices already made from it are unaffected. Bring it back to use it again."}
             </p>
           </div>
           <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
@@ -285,6 +290,16 @@ function Details({ template: t }: { template: NoticeTemplateDetail }) {
       </CardHeader>
       <CardBody>
         <DescriptionList>
+          {t.category_uuid && (
+            <DescriptionItem term="Category">
+              <Link
+                href={`/hr-categories/${t.category_uuid}`}
+                className="hover:text-accent-text hover:underline"
+              >
+                <Mono>{t.category_code}</Mono> · {t.category_name}
+              </Link>
+            </DescriptionItem>
+          )}
           <DescriptionItem term="Applies to">
             {audience ?? "Not decided yet"}
           </DescriptionItem>

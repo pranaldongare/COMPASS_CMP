@@ -126,10 +126,23 @@ matrix, the account or the ticket. An HR PoC's scope within the HR office is
 the categories assigned to them (`hr_poc_category`), compiled into the query
 as a collection owner's sites are.
 
-Both new roles hold, for now, what every staff role holds: `ticket` and
-`breach_ticket`, OWN + write. Their registers' grants arrive with the
-increments that build them
+Both new roles hold what every staff role holds - `ticket` and
+`breach_ticket`, OWN + write - and, since increment 2 (0052), the Legal
+office's registry: the Legal PoC `hr_category` ALL + write, `purpose` and
+`notice_template` ALL + write (their office's rows, as the DPO's are the DPO
+office's), `processor` ALL read and `user` ALL read; the HR PoC `hr_category`
+SCOPED, the categories assigned to them. The administrator reads every
+category, to assign HR PoCs on the account's page (`PUT /users/{uuid}/categories`).
+A role without a grant - the DPO's - is answered 404 on a category, as on
+another office's record. The matrix above gains the two columns when
+increment 4 completes their grants
 ([hr-track-implementation-plan.md](../plans/hr-track-implementation-plan.md)).
+
+Each role of one track works in that track's office (`OFFICE_OF_ROLE`, open
+point F-20): the Legal PoC and the HR PoC in the Legal office, the DPO and
+the R&D roles in the DPO office. The administrator's choice of office is
+checked against it, so a Legal PoC cannot be placed where they would read
+the R&D track's records.
 
 ## Navigation
 
@@ -145,7 +158,8 @@ matrix, so it cannot drift into showing a button that answers 403.
 | R&D User | dashboard, projects, notices, processors, approvals, imports, collections, tickets, notifications, profile |
 | Data principal | consents, requests, notifications, profile |
 | Temporary ticket holder | tickets, notifications, profile |
-| Legal PoC, HR PoC | dashboard, tickets, notifications, profile |
+| Legal PoC | dashboard, hr-categories, templates, purposes, processors, users, tickets, notifications, profile |
+| HR PoC | dashboard, hr-categories, tickets, notifications, profile |
 
 A temporary ticket holder has no dashboard: the console sends it from
 `/dashboard` to **My tasks**, reading `nav` rather than its role.
@@ -166,7 +180,8 @@ daily destinations in the order the work runs (`DAILY_WORK` in
 | DCO Admin | Dashboard, Collection sites, Data sources, My tasks, Consent links, Projects |
 | DCO, RCO | Dashboard, My projects, Collection sites, Consent links, My tasks, Collections |
 | Administrator | Dashboard, Users, Grievances about the DPO, Message templates, Processors, Data sources, Audit trail |
-| Legal PoC, HR PoC | Dashboard, My tasks |
+| Legal PoC | Dashboard, HR categories, Notice templates, Purposes, My tasks |
+| HR PoC | Dashboard, HR categories, My tasks |
 
 Profile and notifications are not in the sidebar: the account menu holds
 **My profile** and sign-out, and the bell opens notifications. Pages are

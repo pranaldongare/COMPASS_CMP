@@ -69,6 +69,12 @@ export interface NoticeTemplate {
   language_count: number;
   /** How many project notices were made from it. */
   used_count: number;
+  /** The office it belongs to (ADR 0032) and, for the Legal office's, its
+   *  category (0052). */
+  office_code: string;
+  category_uuid?: Uuid | null;
+  category_code?: string | null;
+  category_name?: string | null;
 }
 
 export interface NoticeTemplatePurpose {

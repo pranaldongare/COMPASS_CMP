@@ -92,7 +92,8 @@ No request body.
       "permitted_for_minors": true,
       "lapse_behaviour": "string",
       "created_at": "string",
-      "updated_at": "string"
+      "updated_at": "string",
+      "office_code": "…"
     }
   ],
   "next_cursor": "string",
@@ -125,6 +126,9 @@ No request body.
 
 - **Operation ID:** `create_purpose_purposes_post`
 - **Access:** Role-controlled `registry` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+In the caller's office: the DPO's purposes are the DPO office's, the
+Legal PoC's the Legal office's (ADR 0032).
 
 ### Validation
 
@@ -189,7 +193,8 @@ Request body required: **yes**.
   "permitted_for_minors": true,
   "lapse_behaviour": "string",
   "created_at": "string",
-  "updated_at": "string"
+  "updated_at": "string",
+  "office_code": "string"
 }
 ```
 
@@ -260,7 +265,8 @@ No request body.
   "permitted_for_minors": true,
   "lapse_behaviour": "string",
   "created_at": "string",
-  "updated_at": "string"
+  "updated_at": "string",
+  "office_code": "string"
 }
 ```
 
@@ -354,7 +360,8 @@ Request body required: **yes**.
   "permitted_for_minors": true,
   "lapse_behaviour": "string",
   "created_at": "string",
-  "updated_at": "string"
+  "updated_at": "string",
+  "office_code": "string"
 }
 ```
 
@@ -532,7 +539,8 @@ No request body.
     "permitted_for_minors": true,
     "lapse_behaviour": "string",
     "created_at": "string",
-    "updated_at": "string"
+    "updated_at": "string",
+    "office_code": "string"
   }
 ]
 ```
@@ -2198,6 +2206,7 @@ For state changes whose only interesting output is that they happened.
 | `lapse_behaviour` | `string` | Yes | — | — |
 | `created_at` | `object` | Yes | — | — |
 | `updated_at` | `object` | Yes | — | — |
+| `office_code` | `string` or `null` | No | — | — |
 
 <a id="schema-purposeupdate"></a>
 #### `PurposeUpdate`

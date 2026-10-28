@@ -9,6 +9,7 @@ sees which, and shapes the response.
 from __future__ import annotations
 
 from cmp.core.permissions import Role
+from cmp.db.repositories.audit import office_clause
 from cmp.db.repositories.projects import scope_predicate
 from cmp.db.sql import Conn, Params, Row, fetch_all, fetch_one
 
@@ -294,15 +295,20 @@ async def subject_counts(conn: Conn, user_id: int) -> Row | None:
     )
 
 
-async def staff_feed(conn: Conn, role: Role, user_id: int, *, limit: int) -> list[Row]:
+async def staff_feed(
+    conn: Conn, role: Role, user_id: int, *, office: str | None, limit: int
+) -> list[Row]:
     """The staff notification feed: platform events the reader could open.
 
     The same predicate the project register uses decides: an event about a
     project, or about a notice on one, is shown to the people who could see
     that project in the register. Events with no project - a lockout, a
-    withdrawal - stay with the roles whose section they belong to.
+    withdrawal - stay with the roles whose section they belong to. Every
+    event is within the reader's office (`office`, ADR 0032): a withdrawal
+    from the Legal office's link is Legal's, not the DPO's.
     """
     scope, scope_params = scope_predicate(role, user_id)
+    in_office, office_params = office_clause(office)
     return await fetch_all(
         conn,
         f"""SELECT l.log_uuid, l.event_type, l.entity_type, l.entity_id,
@@ -334,6 +340,7 @@ async def staff_feed(conn: Conn, role: Role, user_id: int, *, limit: int) -> lis
                      -- which only the DPO's role reads.
                      ELSE (l.event_type <> 'consent.withdrawn' AND %s) OR %s
                    END)
+                 AND {in_office}
                ORDER BY l.occurred_at DESC LIMIT %s""",
         (
             *scope_params,
@@ -342,6 +349,7 @@ async def staff_feed(conn: Conn, role: Role, user_id: int, *, limit: int) -> lis
             *scope_params,
             role in (Role.DPO, Role.ADMIN),
             role is Role.DPO,
+            *office_params,
             limit,
         ),
     )

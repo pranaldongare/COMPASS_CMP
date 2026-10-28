@@ -62,6 +62,12 @@ BREACH_TICKET: Final = "breach_ticket"
 #: The words of a message the platform sends, per junction and channel.
 MESSAGE_TEMPLATE: Final = "message_template"
 
+# ------------------------------------------------------------------ the HR track
+#: A notice template: the DPO office's (0044) and the Legal office's (ADR 0033).
+NOTICE_TEMPLATE: Final = "notice_template"
+#: A category of HR activity, the Legal office's registry (ADR 0033).
+HR_CATEGORY: Final = "hr_category"
+
 #: Every resource this system knows about. `verify_resources()` asserts the
 #: matrix and this set agree, so a resource named in one and not the other is an
 #: import-time failure rather than a silent deny in production.
@@ -90,5 +96,7 @@ ALL: Final[frozenset[str]] = frozenset(
         RESTRICTED_COUNTRY,
         BREACH,
         BREACH_TICKET,
+        NOTICE_TEMPLATE,
+        HR_CATEGORY,
     }
 )

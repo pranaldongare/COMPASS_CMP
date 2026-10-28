@@ -16,14 +16,14 @@ from pydantic import Field, field_validator, model_validator
 from cmp.api.dependencies import (
     CurrentUser,
     Paging,
+    PurposeWriter,
     RequireAdmin,
-    RequireDPO,
-    RequireDPOorAdmin,
+    RequireOfficerOrAdmin,
     RequireResource,
     RequireRole,
     reject_unknown_filters,
 )
-from cmp.core.errors import NotFound
+from cmp.core.errors import NotFound, ValidationFailed
 from cmp.core.pagination import PageRequest
 from cmp.core.permissions import Role
 from cmp.db.pool import connection, transaction
@@ -52,6 +52,15 @@ source_paging = Paging(repo.SOURCE_SORTS, "-created_at")
 ReadRegistry = Annotated[Any, Depends(RequireResource("purpose"))]
 
 
+def _office_of(principal: Any) -> str:
+    """The office a write lands in: the caller's own (ADR 0032). Every role that
+    may write a purpose works in one."""
+    office = principal.office
+    if not office:
+        raise ValidationFailed("This account works in no office", field="office")
+    return str(office)
+
+
 # =============================================================== purposes
 class PurposeOut(Out):
     purpose_uuid: UUID
@@ -73,6 +82,8 @@ class PurposeOut(Out):
     lapse_behaviour: str
     created_at: Any
     updated_at: Any
+    #: The office the purpose belongs to (ADR 0032): `rnd` or `hr`.
+    office_code: str | None = None
 
 
 class PurposeIn(Schema):
@@ -157,10 +168,15 @@ async def list_purposes(
 
 
 @router.post("/purposes", response_model=PurposeOut, status_code=status.HTTP_201_CREATED)
-async def create_purpose(body: PurposeIn, principal: RequireDPO) -> dict[str, Any]:
+async def create_purpose(body: PurposeIn, principal: PurposeWriter) -> dict[str, Any]:
+    """In the caller's office: the DPO's purposes are the DPO office's, the
+    Legal PoC's the Legal office's (ADR 0032)."""
     async with transaction() as conn:
         return await registry.create_purpose(
-            conn, fields=_purpose_fields(body), actor_id=principal.user_id
+            conn,
+            fields=_purpose_fields(body),
+            actor_id=principal.user_id,
+            office=_office_of(principal),
         )
 
 
@@ -175,21 +191,21 @@ async def get_purpose(purpose_uuid: UUID, principal: ReadRegistry) -> dict[str, 
 
 @router.put("/purposes/{purpose_uuid}", response_model=PurposeOut, summary="Draft only")
 async def update_purpose(
-    purpose_uuid: UUID, body: PurposeUpdate, principal: RequireDPO
+    purpose_uuid: UUID, body: PurposeUpdate, principal: PurposeWriter
 ) -> dict[str, Any]:
     async with transaction() as conn:
         return await registry.update_purpose(conn, str(purpose_uuid), fields=_purpose_fields(body))
 
 
 @router.post("/purposes/{purpose_uuid}/activate", response_model=Acknowledged)
-async def activate_purpose(purpose_uuid: UUID, principal: RequireDPO) -> dict[str, Any]:
+async def activate_purpose(purpose_uuid: UUID, principal: PurposeWriter) -> dict[str, Any]:
     async with transaction() as conn:
         await registry.activate_purpose(conn, str(purpose_uuid))
     return {"ok": True, "message": "Purpose activated and available to notices."}
 
 
 @router.post("/purposes/{purpose_uuid}/retire", response_model=Acknowledged)
-async def retire_purpose(purpose_uuid: UUID, principal: RequireDPO) -> dict[str, Any]:
+async def retire_purpose(purpose_uuid: UUID, principal: PurposeWriter) -> dict[str, Any]:
     """Blocked while the purpose is attached to a published notice (409 `purpose_in_use`)."""
     async with transaction() as conn:
         await registry.retire_purpose(conn, str(purpose_uuid))
@@ -198,7 +214,7 @@ async def retire_purpose(purpose_uuid: UUID, principal: RequireDPO) -> dict[str,
 
 @router.get("/purposes/{purpose_uuid}/versions", response_model=list[PurposeOut])
 async def purpose_versions(
-    purpose_uuid: UUID, principal: RequireDPOorAdmin
+    purpose_uuid: UUID, principal: RequireOfficerOrAdmin
 ) -> list[dict[str, Any]]:
     async with connection() as conn:
         purpose = await repo.purpose_by_uuid(conn, str(purpose_uuid))
@@ -208,7 +224,7 @@ async def purpose_versions(
 
 
 @router.get("/purposes/{purpose_uuid}/usage", summary="Notices referencing this purpose")
-async def purpose_usage(purpose_uuid: UUID, principal: RequireDPOorAdmin) -> dict[str, Any]:
+async def purpose_usage(purpose_uuid: UUID, principal: RequireOfficerOrAdmin) -> dict[str, Any]:
     """How the UI knows retirement is blocked before the user tries."""
     async with connection() as conn:
         purpose = await repo.purpose_by_uuid(conn, str(purpose_uuid))

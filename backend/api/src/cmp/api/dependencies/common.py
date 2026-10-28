@@ -41,6 +41,10 @@ MaybeUser = Annotated[Principal | None, Depends(optional_principal)]
 RequireDPO = Annotated[Principal, Depends(RequireRole(Role.DPO))]
 RequireAdmin = Annotated[Principal, Depends(RequireRole(Role.ADMIN))]
 RequireDPOorAdmin = Annotated[Principal, Depends(RequireRole(Role.DPO, Role.ADMIN))]
+#: The Legal office's officer (ADR 0032).
+RequireLegal = Annotated[Principal, Depends(RequireRole(Role.LEGAL))]
+#: Either office's officer, or the administrator who reads across both.
+RequireOfficerOrAdmin = Annotated[Principal, Depends(RequireRole(Role.DPO, Role.LEGAL, Role.ADMIN))]
 #: Everyone who is not a data principal.
 #:
 #: Defined by exclusion, and that direction matters. Listing the staff roles by
@@ -81,6 +85,20 @@ BreachWriter = Annotated[Principal, Depends(RequireResource("breach", write=True
 #: holder's own ticket, and a ticket that is not theirs is 404 by its WHERE.
 BreachTicketReader = Annotated[Principal, Depends(RequireResource("breach_ticket"))]
 BreachTicketWriter = Annotated[Principal, Depends(RequireResource("breach_ticket", write=True))]
+#: The account register: the administrator, and each office's officer.
+UserReader = Annotated[Principal, Depends(RequireResource("user"))]
+#: Purposes: every collection role reads them, the two officers write them.
+PurposeWriter = Annotated[Principal, Depends(RequireResource("purpose", write=True))]
+#: Notice templates: the DPO's and the Legal PoC's, each in their own office.
+TemplateReader = Annotated[Principal, Depends(RequireResource("notice_template"))]
+TemplateWriter = Annotated[Principal, Depends(RequireResource("notice_template", write=True))]
+#: The Legal office's categories (ADR 0033). Hidden, as another office's
+#: records are (ADR 0032): a role with no grant - the DPO's - is told there is
+#: nothing there, not that it may not look.
+HrCategoryReader = Annotated[Principal, Depends(RequireResource("hr_category", hidden=True))]
+HrCategoryWriter = Annotated[
+    Principal, Depends(RequireResource("hr_category", write=True, hidden=True))
+]
 TransferListReader = Annotated[Principal, Depends(RequireResource("restricted_country"))]
 TransferListWriter = Annotated[
     Principal, Depends(RequireResource("restricted_country", write=True))

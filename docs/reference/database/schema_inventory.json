@@ -1,6 +1,6 @@
 {
-  "commit": "c34823869aa41f8e0d254367b9afb5fb6d30e68e",
-  "migration_head": "0051",
+  "commit": "9dbb1f9c9b5ee932f93d1e007c91ada3aff455ee",
+  "migration_head": "0052",
   "migrations": [
     {
       "revision": "0001",
@@ -205,6 +205,10 @@
     {
       "revision": "0051",
       "source": "backend/api/migrations/versions/0051_offices_and_row_level_security.py"
+    },
+    {
+      "revision": "0052",
+      "source": "backend/api/migrations/versions/0052_hr_categories.py"
     }
   ],
   "postgres_version": "16.15",
@@ -325,6 +329,11 @@
       "comment": "A list of the people a breach touched, or of its assets, as sent to us. The file is not kept"
     },
     {
+      "name": "category_processor",
+      "kind": "r",
+      "comment": "A processor holding data collected under a category, with the account that answers for it; removed by date, never deleted"
+    },
+    {
       "name": "collection",
       "kind": "r",
       "comment": null
@@ -373,6 +382,16 @@
       "name": "export_log",
       "kind": "r",
       "comment": null
+    },
+    {
+      "name": "hr_category",
+      "kind": "r",
+      "comment": "A kind of HR activity the Legal office governs (ADR 0033): its templates and the processors that hold its data"
+    },
+    {
+      "name": "hr_poc_category",
+      "kind": "r",
+      "comment": "An HR PoC assigned to a category: the categories they may run activities in"
     },
     {
       "name": "import_batch",
@@ -1037,7 +1056,7 @@
     {
       "table_name": "breach",
       "name": "origin",
-      "position": 25,
+      "position": 14,
       "type": "text",
       "not_null": false,
       "default_value": null,
@@ -1046,7 +1065,7 @@
     {
       "table_name": "breach",
       "name": "discovery",
-      "position": 26,
+      "position": 15,
       "type": "text",
       "not_null": false,
       "default_value": null,
@@ -1055,7 +1074,7 @@
     {
       "table_name": "breach",
       "name": "affected_systems",
-      "position": 27,
+      "position": 16,
       "type": "text",
       "not_null": false,
       "default_value": null,
@@ -1064,7 +1083,7 @@
     {
       "table_name": "breach",
       "name": "incident_details",
-      "position": 28,
+      "position": 17,
       "type": "text",
       "not_null": false,
       "default_value": null,
@@ -1073,7 +1092,7 @@
     {
       "table_name": "breach",
       "name": "impact_scale",
-      "position": 29,
+      "position": 18,
       "type": "text",
       "not_null": false,
       "default_value": null,
@@ -1082,7 +1101,7 @@
     {
       "table_name": "breach",
       "name": "countries_involved",
-      "position": 30,
+      "position": 19,
       "type": "text",
       "not_null": false,
       "default_value": null,
@@ -1091,7 +1110,7 @@
     {
       "table_name": "breach",
       "name": "data_nature",
-      "position": 31,
+      "position": 20,
       "type": "text",
       "not_null": false,
       "default_value": null,
@@ -1100,7 +1119,7 @@
     {
       "table_name": "breach",
       "name": "subject_types",
-      "position": 32,
+      "position": 21,
       "type": "text",
       "not_null": false,
       "default_value": null,
@@ -1109,7 +1128,7 @@
     {
       "table_name": "breach",
       "name": "entities_involved",
-      "position": 33,
+      "position": 22,
       "type": "text",
       "not_null": false,
       "default_value": null,
@@ -1118,7 +1137,7 @@
     {
       "table_name": "breach",
       "name": "third_parties",
-      "position": 34,
+      "position": 23,
       "type": "text",
       "not_null": false,
       "default_value": null,
@@ -1127,7 +1146,7 @@
     {
       "table_name": "breach",
       "name": "cyber_attack",
-      "position": 35,
+      "position": 24,
       "type": "character varying(8)",
       "not_null": false,
       "default_value": null,
@@ -1136,7 +1155,7 @@
     {
       "table_name": "breach",
       "name": "office_id",
-      "position": 36,
+      "position": 25,
       "type": "integer",
       "not_null": true,
       "default_value": null,
@@ -1946,7 +1965,7 @@
     {
       "table_name": "breach_notice_delivery",
       "name": "contact_id",
-      "position": 11,
+      "position": 10,
       "type": "integer",
       "not_null": false,
       "default_value": null,
@@ -2396,7 +2415,7 @@
     {
       "table_name": "breach_temporary_access",
       "name": "holder_id",
-      "position": 14,
+      "position": 13,
       "type": "integer",
       "not_null": false,
       "default_value": null,
@@ -2805,6 +2824,96 @@
       "type": "timestamp with time zone",
       "not_null": true,
       "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "category_processor",
+      "name": "category_processor_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('category_processor_category_processor_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "category_processor",
+      "name": "category_processor_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "category_processor",
+      "name": "category_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "category_processor",
+      "name": "processor_id",
+      "position": 4,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "category_processor",
+      "name": "processor_role",
+      "position": 5,
+      "type": "character varying(12)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "category_processor",
+      "name": "respondent_user_id",
+      "position": 6,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Who answers for this processor on the category's requests and withdrawals; NULL means the activity's HR PoC"
+    },
+    {
+      "table_name": "category_processor",
+      "name": "added_by",
+      "position": 7,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "category_processor",
+      "name": "added_at",
+      "position": 8,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "category_processor",
+      "name": "removed_at",
+      "position": 9,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "category_processor",
+      "name": "removed_by",
+      "position": 10,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
       "comment": null
     },
     {
@@ -3699,6 +3808,150 @@
       "comment": null
     },
     {
+      "table_name": "hr_category",
+      "name": "category_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('hr_category_category_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "hr_category",
+      "name": "category_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "hr_category",
+      "name": "office_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "hr_category",
+      "name": "category_code",
+      "position": 4,
+      "type": "character varying(24)",
+      "not_null": true,
+      "default_value": null,
+      "comment": "Short and stable: WELLNESS, CSR, BGV. Upper case, digits and underscores"
+    },
+    {
+      "table_name": "hr_category",
+      "name": "name",
+      "position": 5,
+      "type": "character varying(120)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "hr_category",
+      "name": "description",
+      "position": 6,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "hr_category",
+      "name": "status",
+      "position": 7,
+      "type": "character varying(12)",
+      "not_null": true,
+      "default_value": "'active'::character varying",
+      "comment": null
+    },
+    {
+      "table_name": "hr_category",
+      "name": "created_by",
+      "position": 8,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "hr_category",
+      "name": "created_at",
+      "position": 9,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "hr_category",
+      "name": "updated_at",
+      "position": 10,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "hr_category",
+      "name": "retired_at",
+      "position": 11,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "hr_poc_category",
+      "name": "assignment_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('hr_poc_category_assignment_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "hr_poc_category",
+      "name": "user_id",
+      "position": 2,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "hr_poc_category",
+      "name": "category_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "hr_poc_category",
+      "name": "assigned_by",
+      "position": 4,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "hr_poc_category",
+      "name": "assigned_at",
+      "position": 5,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
       "table_name": "import_batch",
       "name": "batch_id",
       "position": 1,
@@ -4367,7 +4620,7 @@
     {
       "table_name": "notice",
       "name": "template_id",
-      "position": 20,
+      "position": 19,
       "type": "integer",
       "not_null": false,
       "default_value": null,
@@ -4376,7 +4629,7 @@
     {
       "table_name": "notice",
       "name": "office_id",
-      "position": 21,
+      "position": 20,
       "type": "integer",
       "not_null": true,
       "default_value": null,
@@ -4705,6 +4958,15 @@
       "not_null": true,
       "default_value": null,
       "comment": null
+    },
+    {
+      "table_name": "notice_template",
+      "name": "category_id",
+      "position": 17,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The category of a Legal office template; NULL for every DPO office template"
     },
     {
       "table_name": "notice_template_language",
@@ -6761,7 +7023,7 @@
     {
       "table_name": "rights_request_holder",
       "name": "accepted_at",
-      "position": 38,
+      "position": 36,
       "type": "timestamp with time zone",
       "not_null": false,
       "default_value": null,
@@ -6770,7 +7032,7 @@
     {
       "table_name": "rights_request_holder",
       "name": "accepted_by",
-      "position": 39,
+      "position": 37,
       "type": "integer",
       "not_null": false,
       "default_value": null,
@@ -6779,7 +7041,7 @@
     {
       "table_name": "rights_request_holder",
       "name": "link_token",
-      "position": 43,
+      "position": 38,
       "type": "character varying(64)",
       "not_null": false,
       "default_value": null,
@@ -6788,7 +7050,7 @@
     {
       "table_name": "rights_request_holder",
       "name": "link_token_sealed",
-      "position": 44,
+      "position": 39,
       "type": "bytea",
       "not_null": false,
       "default_value": null,
@@ -6797,7 +7059,7 @@
     {
       "table_name": "rights_request_holder",
       "name": "link_issued_at",
-      "position": 45,
+      "position": 40,
       "type": "timestamp with time zone",
       "not_null": false,
       "default_value": null,
@@ -9771,6 +10033,152 @@
       "initially_deferred": false
     },
     {
+      "table_name": "category_processor",
+      "name": "category_processor_added_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (added_by) REFERENCES auth_user(id)",
+      "columns": [
+        "added_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "category_processor",
+      "name": "category_processor_category_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (category_id) REFERENCES hr_category(category_id)",
+      "columns": [
+        "category_id"
+      ],
+      "referenced_table": "hr_category",
+      "referenced_columns": [
+        "category_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "category_processor",
+      "name": "category_processor_category_processor_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (category_processor_uuid)",
+      "columns": [
+        "category_processor_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "category_processor",
+      "name": "category_processor_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (category_processor_id)",
+      "columns": [
+        "category_processor_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "category_processor",
+      "name": "category_processor_processor_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (processor_id) REFERENCES processor(processor_id)",
+      "columns": [
+        "processor_id"
+      ],
+      "referenced_table": "processor",
+      "referenced_columns": [
+        "processor_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "category_processor",
+      "name": "category_processor_removed",
+      "kind": "c",
+      "definition": "CHECK (((removed_at IS NULL) = (removed_by IS NULL)))",
+      "columns": [
+        "removed_at",
+        "removed_by"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "category_processor",
+      "name": "category_processor_removed_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (removed_by) REFERENCES auth_user(id)",
+      "columns": [
+        "removed_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "category_processor",
+      "name": "category_processor_respondent_user_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (respondent_user_id) REFERENCES auth_user(id)",
+      "columns": [
+        "respondent_user_id"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "category_processor",
+      "name": "category_processor_role",
+      "kind": "c",
+      "definition": "CHECK (((processor_role)::text = ANY ((ARRAY['hrms'::character varying, 'database'::character varying, 'vendor'::character varying])::text[])))",
+      "columns": [
+        "processor_role"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "collection",
       "name": "collection_batch_id_fkey",
       "kind": "f",
@@ -10781,6 +11189,213 @@
       "initially_deferred": false
     },
     {
+      "table_name": "hr_category",
+      "name": "hr_category_category_code_key",
+      "kind": "u",
+      "definition": "UNIQUE (category_code)",
+      "columns": [
+        "category_code"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "hr_category",
+      "name": "hr_category_category_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (category_uuid)",
+      "columns": [
+        "category_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "hr_category",
+      "name": "hr_category_code_shape",
+      "kind": "c",
+      "definition": "CHECK (((category_code)::text ~ '^[A-Z][A-Z0-9_]{1,23}$'::text))",
+      "columns": [
+        "category_code"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "hr_category",
+      "name": "hr_category_created_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (created_by) REFERENCES auth_user(id)",
+      "columns": [
+        "created_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "hr_category",
+      "name": "hr_category_office_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (office_id) REFERENCES office(office_id)",
+      "columns": [
+        "office_id"
+      ],
+      "referenced_table": "office",
+      "referenced_columns": [
+        "office_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "hr_category",
+      "name": "hr_category_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (category_id)",
+      "columns": [
+        "category_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "hr_category",
+      "name": "hr_category_retired_at",
+      "kind": "c",
+      "definition": "CHECK ((((status)::text = 'retired'::text) = (retired_at IS NOT NULL)))",
+      "columns": [
+        "status",
+        "retired_at"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "hr_category",
+      "name": "hr_category_status",
+      "kind": "c",
+      "definition": "CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'retired'::character varying])::text[])))",
+      "columns": [
+        "status"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "hr_poc_category",
+      "name": "hr_poc_category_assigned_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (assigned_by) REFERENCES auth_user(id)",
+      "columns": [
+        "assigned_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "hr_poc_category",
+      "name": "hr_poc_category_category_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (category_id) REFERENCES hr_category(category_id)",
+      "columns": [
+        "category_id"
+      ],
+      "referenced_table": "hr_category",
+      "referenced_columns": [
+        "category_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "hr_poc_category",
+      "name": "hr_poc_category_once",
+      "kind": "u",
+      "definition": "UNIQUE (user_id, category_id)",
+      "columns": [
+        "user_id",
+        "category_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "hr_poc_category",
+      "name": "hr_poc_category_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (assignment_id)",
+      "columns": [
+        "assignment_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "hr_poc_category",
+      "name": "hr_poc_category_user_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth_user(id)",
+      "columns": [
+        "user_id"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "import_batch",
       "name": "import_batch_batch_uuid_key",
       "kind": "u",
@@ -11619,6 +12234,23 @@
       "referenced_columns": [],
       "delete_action": " ",
       "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "notice_template",
+      "name": "notice_template_category_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (category_id) REFERENCES hr_category(category_id)",
+      "columns": [
+        "category_id"
+      ],
+      "referenced_table": "hr_category",
+      "referenced_columns": [
+        "category_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
       "deferrable": false,
       "initially_deferred": false
     },
@@ -14288,6 +14920,26 @@
       "definition": "CREATE INDEX idx_breach_upload ON public.breach_upload USING btree (breach_id, upload_id)"
     },
     {
+      "table_name": "category_processor",
+      "name": "category_processor_category_processor_uuid_key",
+      "definition": "CREATE UNIQUE INDEX category_processor_category_processor_uuid_key ON public.category_processor USING btree (category_processor_uuid)"
+    },
+    {
+      "table_name": "category_processor",
+      "name": "category_processor_live",
+      "definition": "CREATE UNIQUE INDEX category_processor_live ON public.category_processor USING btree (category_id, processor_id) WHERE (removed_at IS NULL)"
+    },
+    {
+      "table_name": "category_processor",
+      "name": "category_processor_pkey",
+      "definition": "CREATE UNIQUE INDEX category_processor_pkey ON public.category_processor USING btree (category_processor_id)"
+    },
+    {
+      "table_name": "category_processor",
+      "name": "idx_category_processor_category",
+      "definition": "CREATE INDEX idx_category_processor_category ON public.category_processor USING btree (category_id)"
+    },
+    {
       "table_name": "collection",
       "name": "collection_collection_uuid_key",
       "definition": "CREATE UNIQUE INDEX collection_collection_uuid_key ON public.collection USING btree (collection_uuid)"
@@ -14513,6 +15165,41 @@
       "definition": "CREATE INDEX idx_export_project ON public.export_log USING btree (project_id, exported_at DESC)"
     },
     {
+      "table_name": "hr_category",
+      "name": "hr_category_category_code_key",
+      "definition": "CREATE UNIQUE INDEX hr_category_category_code_key ON public.hr_category USING btree (category_code)"
+    },
+    {
+      "table_name": "hr_category",
+      "name": "hr_category_category_uuid_key",
+      "definition": "CREATE UNIQUE INDEX hr_category_category_uuid_key ON public.hr_category USING btree (category_uuid)"
+    },
+    {
+      "table_name": "hr_category",
+      "name": "hr_category_pkey",
+      "definition": "CREATE UNIQUE INDEX hr_category_pkey ON public.hr_category USING btree (category_id)"
+    },
+    {
+      "table_name": "hr_category",
+      "name": "idx_hr_category_office",
+      "definition": "CREATE INDEX idx_hr_category_office ON public.hr_category USING btree (office_id)"
+    },
+    {
+      "table_name": "hr_poc_category",
+      "name": "hr_poc_category_once",
+      "definition": "CREATE UNIQUE INDEX hr_poc_category_once ON public.hr_poc_category USING btree (user_id, category_id)"
+    },
+    {
+      "table_name": "hr_poc_category",
+      "name": "hr_poc_category_pkey",
+      "definition": "CREATE UNIQUE INDEX hr_poc_category_pkey ON public.hr_poc_category USING btree (assignment_id)"
+    },
+    {
+      "table_name": "hr_poc_category",
+      "name": "idx_hr_poc_category_category",
+      "definition": "CREATE INDEX idx_hr_poc_category_category ON public.hr_poc_category USING btree (category_id)"
+    },
+    {
       "table_name": "import_batch",
       "name": "idx_batch_project",
       "definition": "CREATE INDEX idx_batch_project ON public.import_batch USING btree (project_id, received_at DESC)"
@@ -14686,6 +15373,11 @@
       "table_name": "notice_purpose",
       "name": "notice_purpose_pkey",
       "definition": "CREATE UNIQUE INDEX notice_purpose_pkey ON public.notice_purpose USING btree (notice_purpose_id)"
+    },
+    {
+      "table_name": "notice_template",
+      "name": "idx_notice_template_category",
+      "definition": "CREATE INDEX idx_notice_template_category ON public.notice_template USING btree (category_id) WHERE (category_id IS NOT NULL)"
     },
     {
       "table_name": "notice_template",
@@ -15643,6 +16335,16 @@
       "definition": "CREATE TRIGGER trg_export_log_office_from_parent BEFORE INSERT ON public.export_log FOR EACH ROW EXECUTE FUNCTION cmp_office_from_parent('project', 'project_id', 'project_id')"
     },
     {
+      "table_name": "hr_category",
+      "name": "trg_hr_category_office_fixed",
+      "definition": "CREATE TRIGGER trg_hr_category_office_fixed BEFORE UPDATE OF office_id ON public.hr_category FOR EACH ROW EXECUTE FUNCTION cmp_office_is_fixed()"
+    },
+    {
+      "table_name": "hr_category",
+      "name": "trg_hr_category_touch",
+      "definition": "CREATE TRIGGER trg_hr_category_touch BEFORE UPDATE ON public.hr_category FOR EACH ROW EXECUTE FUNCTION cmp_touch_updated_at()"
+    },
+    {
       "table_name": "legal_hold",
       "name": "trg_legal_hold_release_only",
       "definition": "CREATE TRIGGER trg_legal_hold_release_only BEFORE DELETE OR UPDATE ON public.legal_hold FOR EACH ROW EXECUTE FUNCTION cmp_legal_hold_release_only()"
@@ -15686,6 +16388,11 @@
       "table_name": "notice_purpose",
       "name": "trg_notice_purpose_freeze",
       "definition": "CREATE TRIGGER trg_notice_purpose_freeze BEFORE INSERT OR DELETE OR UPDATE ON public.notice_purpose FOR EACH ROW EXECUTE FUNCTION cmp_notice_purpose_freeze()"
+    },
+    {
+      "table_name": "notice_template",
+      "name": "trg_hr_template_has_category",
+      "definition": "CREATE TRIGGER trg_hr_template_has_category BEFORE INSERT OR UPDATE OF category_id, office_id ON public.notice_template FOR EACH ROW EXECUTE FUNCTION cmp_template_category_fits()"
     },
     {
       "table_name": "notice_template",
@@ -15841,6 +16548,9 @@
       "name": "breach_upload_upload_id_seq"
     },
     {
+      "name": "category_processor_category_processor_id_seq"
+    },
+    {
       "name": "collection_collection_id_seq"
     },
     {
@@ -15866,6 +16576,12 @@
     },
     {
       "name": "export_log_export_id_seq"
+    },
+    {
+      "name": "hr_category_category_id_seq"
+    },
+    {
+      "name": "hr_poc_category_assignment_id_seq"
     },
     {
       "name": "import_batch_batch_id_seq"
@@ -16029,6 +16745,9 @@
       "name": "cmp_office_is_fixed"
     },
     {
+      "name": "cmp_office_visible"
+    },
+    {
       "name": "cmp_primary_site_dco"
     },
     {
@@ -16047,17 +16766,20 @@
       "name": "cmp_subject_needs_mobile"
     },
     {
+      "name": "cmp_template_category_fits"
+    },
+    {
       "name": "cmp_touch_updated_at"
     }
   ],
   "counts": {
-    "application_tables": 60,
+    "application_tables": 63,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 734,
-    "foreign_keys": 173,
+    "table_columns": 761,
+    "foreign_keys": 184,
     "enums": 39,
-    "triggers": 60,
-    "checks": 95
+    "triggers": 63,
+    "checks": 100
   }
 }

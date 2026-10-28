@@ -40,9 +40,15 @@ import { useAuth } from "@/providers";
  * covered by its prefix — because a guard that had to be told about every new
  * page would be one somebody forgets to tell.
  */
-const SECTION_OF: ReadonlyArray<readonly [prefix: string, key: string]> = [
+const SECTION_OF: ReadonlyArray<
+  readonly [prefix: string, key: string | readonly string[]]
+> = [
   ["/projects", "projects"],
   ["/notices", "notices"],
+  // Either office's templates: the DPO's under Notices, the Legal PoC's
+  // as a section of their own (0052).
+  ["/notices/templates", ["notices", "templates"]],
+  ["/hr-categories", "hr-categories"],
   ["/purposes", "purposes"],
   ["/processors", "processors"],
   ["/sources", "sources"],
@@ -75,7 +81,8 @@ export function RequireSection({ children }: { children: React.ReactNode }) {
   // already held the render until it did, so this is the un-guarded case.
   if (!match || !me) return <>{children}</>;
 
-  if (me.nav.includes(match[1])) return <>{children}</>;
+  const keys: readonly string[] = typeof match[1] === "string" ? [match[1]] : match[1];
+  if (keys.some((key) => me.nav.includes(key))) return <>{children}</>;
 
   return (
     <div className="mx-auto max-w-lg py-16">

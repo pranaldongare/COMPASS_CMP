@@ -46,6 +46,12 @@ class Principal:
         return scope_of(resource, self.role)
 
     @property
+    def office(self) -> str | None:
+        """The office this session works in (ADR 0032): an office code, or None
+        for a caller who works across both."""
+        return self.session.office
+
+    @property
     def is_staff(self) -> bool:
         """Anyone who is not a data subject.
 

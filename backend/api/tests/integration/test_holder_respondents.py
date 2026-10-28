@@ -856,7 +856,7 @@ class TestSendBack:
         assert all((e["detail"] or {}).get("side") != "holder" for e in mine), (
             "their own words are not news to them"
         )
-        office = await audit_repo.ticket_events_for_office(conn)
+        office = await audit_repo.ticket_events_for_office(conn, office="rnd")
         assert any((e["detail"] or {}).get("side") == "holder" for e in office), (
             "the office hears what the holder wrote"
         )

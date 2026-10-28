@@ -435,8 +435,13 @@ PURPOSE_COLUMNS = """
   p.uses, p.lawful_basis, p.s7_clause, p.data_categories,
   p.retention_period, p.retention_basis, p.erasure_trigger,
   p.consent_validity_period, p.cross_border_permitted, p.permitted_for_minors,
-  p.lapse_behaviour, p.created_at, p.updated_at
+  p.lapse_behaviour, p.created_at, p.updated_at,
+  (SELECT o.office_code FROM office o WHERE o.office_id = p.office_id) AS office_code
 """
+
+#: A purpose is its office's (ADR 0032): every read a caller makes by uuid,
+#: code or list carries the office, as the policy does behind it.
+_PURPOSE_IN_OFFICE = "cmp_office_visible(p.office_id)"
 
 PURPOSE_SORTS = ("created_at", "name", "purpose_code", "status")
 
@@ -444,7 +449,8 @@ PURPOSE_SORTS = ("created_at", "name", "purpose_code", "status")
 async def purpose_by_uuid(conn: Conn, purpose_uuid: str) -> Row | None:
     return await fetch_one(
         conn,
-        f"SELECT p.purpose_id, {PURPOSE_COLUMNS} FROM purpose p WHERE p.purpose_uuid = %s",
+        f"SELECT p.purpose_id, {PURPOSE_COLUMNS} FROM purpose p"
+        f" WHERE p.purpose_uuid = %s AND {_PURPOSE_IN_OFFICE}",
         (purpose_uuid,),
     )
 
@@ -476,7 +482,7 @@ async def create_purpose(conn: Conn, *, created_by: int, office: str, **f: Any) 
                   uses, lawful_basis, s7_clause, data_categories, retention_period,
                   retention_basis, erasure_trigger, consent_validity_period,
                   cross_border_permitted, permitted_for_minors, lapse_behaviour,
-                  created_at, updated_at
+                  created_at, updated_at, %(office)s AS office_code
         """,
         {**f, "created_by": created_by, "office": office},
     )
@@ -534,7 +540,7 @@ async def list_purposes(
     lawful_basis: str | None = None,
     q: str | None = None,
 ) -> tuple[list[Row], str | None, int]:
-    where, params = ["1 = 1"], []
+    where, params = [_PURPOSE_IN_OFFICE], []
     if status:
         where.append("p.status = %s::purpose_status")
         params.append(status)
@@ -561,7 +567,7 @@ async def purpose_versions(conn: Conn, purpose_code: str) -> list[Row]:
     return await fetch_all(
         conn,
         f"""SELECT p.purpose_id, {PURPOSE_COLUMNS} FROM purpose p
-            WHERE p.purpose_code = %s ORDER BY p.version DESC""",
+            WHERE p.purpose_code = %s AND {_PURPOSE_IN_OFFICE} ORDER BY p.version DESC""",
         (purpose_code,),
     )
 
@@ -665,7 +671,7 @@ async def purposes_for_comparison(conn: Conn) -> list[Row]:
     return await fetch_all(
         conn,
         """SELECT purpose_code, name, uses FROM purpose
-            WHERE status IN ('active', 'draft')
+            WHERE status IN ('active', 'draft') AND cmp_office_visible(office_id)
             ORDER BY purpose_id DESC LIMIT 2000""",
     )
 

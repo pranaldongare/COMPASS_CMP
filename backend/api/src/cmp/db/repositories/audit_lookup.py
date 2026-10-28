@@ -51,6 +51,7 @@ _KEYS: Final[dict[str, _Key]] = {
     "nomination": _Key("nomination", "nomination_id", "nomination_uuid"),
     "breach": _Key("breach", "breach_id", "breach_uuid"),
     "breach_ticket": _Key("breach_ticket", "ticket_id", "ticket_uuid"),
+    "hr_category": _Key("hr_category", "category_id", "category_uuid"),
 }
 
 FILTERABLE_BY_UUID: Final[frozenset[str]] = frozenset(_KEYS)
