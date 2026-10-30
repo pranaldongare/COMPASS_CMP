@@ -63,6 +63,7 @@ import {
   STATUS_COPY,
 } from "@/features/rights/components/copy";
 import { HoldersCard } from "@/features/rights/components/holders-card";
+import { NextBar } from "@/features/rights/components/next-bar";
 import { OfficeCard } from "@/features/rights/components/office-card";
 import {
   LinkedFrom,
@@ -288,6 +289,10 @@ export default function RequestDetailPage() {
         }
         facts={facts}
       />
+      {/* The move open now, on every tab (2026-10-30): after identity and
+          classification nothing said the claim, the start and the holders
+          came next. */}
+      <NextBar request={r} tab={tab} onGo={setTab} />
 
       <Tabs value={tab} onValueChange={setTab} label="Request sections" layout="underline">
         <TabList>

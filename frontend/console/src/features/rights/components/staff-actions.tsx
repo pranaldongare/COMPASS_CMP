@@ -43,7 +43,10 @@ import {
   useTreatAsWithdrawal,
   useVerifyManually,
 } from "@/features/rights/mutations";
-import { AUTOMATIC } from "@/features/rights/components/request-summary";
+import {
+  AUTOMATIC,
+  holdersNotYetFound,
+} from "@/features/rights/components/request-summary";
 import { useUsers } from "@/features/users";
 import { formatDateTime } from "@/lib/format";
 import { useAuth, useToast } from "@/providers";
@@ -443,6 +446,9 @@ export function RequestTransitions({ request: r }: { request: RightsRequestDetai
     );
   }
   if (generic.length === 0) return null;
+  // Started with nobody asked yet: finding the holders comes first, and
+  // collating straight away is the exception for nothing to ask anyone.
+  const notFound = holdersNotYetFound(r);
 
   async function run(to: string, reason?: string) {
     try {
@@ -462,13 +468,39 @@ export function RequestTransitions({ request: r }: { request: RightsRequestDetai
         </p>
       </CardHeader>
       <CardBody className="space-y-3">
+        {notFound && (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-accent-border bg-accent-subtle px-4 py-3">
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Find who holds the data</p>
+              <p className="mt-1 text-xs text-text-muted">
+                From the records, or add one you know of; then confirm who answers and send the
+                tickets.
+              </p>
+            </div>
+            <Button asChild variant="primary" size="sm">
+              <a href="#holders">
+                Go to Holders
+                <ArrowRight className="size-4" />
+              </a>
+            </Button>
+          </div>
+        )}
         {generic.map((option) =>
           option.reason_required ? (
             <GoBack key={option.to} to={option.to} pending={move.isPending} onGo={(reason) => run(option.to, reason)} />
           ) : (
           <div key={option.to} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border px-4 py-3">
             <div className="min-w-0">
-              <p className="text-sm font-medium">Move to {STATUS_COPY[option.to].label.toLowerCase()}</p>
+              <p className="text-sm font-medium">
+                {notFound && option.to === "collating" && "Nothing to ask anyone? "}
+                Move to {STATUS_COPY[option.to].label.toLowerCase()}
+              </p>
+              {notFound && option.to === "collating" && (
+                <p className="mt-1 text-xs text-text-muted">
+                  Only when nobody outside the CMP holds this person&apos;s data: its own records
+                  answer the request.
+                </p>
+              )}
               {option.blocked_by && (
                 <p className="mt-1 flex items-center gap-1.5 text-xs text-warning-text">
                   <AlertTriangle className="size-3.5 shrink-0" aria-hidden="true" />
@@ -477,7 +509,7 @@ export function RequestTransitions({ request: r }: { request: RightsRequestDetai
               )}
             </div>
             <Button
-              variant={option.allowed ? "primary" : "secondary"}
+              variant={option.allowed && !notFound ? "primary" : "secondary"}
               size="sm"
               disabled={!option.allowed}
               loading={move.isPending}

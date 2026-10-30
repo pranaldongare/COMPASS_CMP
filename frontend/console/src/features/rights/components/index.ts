@@ -8,6 +8,7 @@ export * from "@/features/rights/components/copy";
 export * from "@/features/rights/components/holders-card";
 export * from "@/features/rights/components/linked-request-card";
 export * from "@/features/rights/components/log-request-form";
+export * from "@/features/rights/components/next-bar";
 export * from "@/features/rights/components/office-card";
 export * from "@/features/rights/components/path";
 export * from "@/features/rights/components/respond-card";

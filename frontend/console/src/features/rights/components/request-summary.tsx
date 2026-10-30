@@ -20,8 +20,19 @@ import { stepsFor } from "@/features/rights/components/path";
 import { cn, formatDate, formatDateTime } from "@/lib/format";
 import type { RightsRequestDetail } from "@/types";
 
+/**
+ * Started, and nobody asked yet: the holders are looked for before anything
+ * else. The server also allows collating straight away - for a request with
+ * nothing to ask anyone - but that is the exception, not the next step
+ * (2026-10-30: the page offered it as the next step beside "Go to Holders").
+ */
+export function holdersNotYetFound(r: RightsRequestDetail): boolean {
+  return r.status === "in_progress" && r.request_type !== "grievance" && r.holders.length === 0;
+}
+
 /** What the office does next on the holders card, if anything. */
 function holdersMove(r: RightsRequestDetail): string | null {
+  if (holdersNotYetFound(r)) return "Find who holds the data";
   if (!["in_progress", "awaiting_holders", "collating"].includes(r.status)) return null;
   const n = (state: string) => r.holders.filter((h) => h.state === state).length;
   // Holders are confirmed and sent tickets only before collating.

@@ -6,6 +6,7 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it, vi } from "vitest";
 
+import { NextBar } from "@/features/rights/components/next-bar";
 import { RequestSummary } from "@/features/rights/components/request-summary";
 import { RequestTransitions } from "@/features/rights/components/staff-actions";
 import { makeRequestDetail } from "@/test/fixtures";
@@ -47,5 +48,47 @@ describe("Back from collating", () => {
     render(<RequestSummary request={collating} actionsHref="#actions" />);
     expect(screen.getByRole("link", { name: /respond and close/i })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /awaiting holders/i })).not.toBeInTheDocument();
+  });
+});
+
+// Started, nobody asked yet (2026-10-30): the server allows collating at once,
+// for nothing to ask anyone, and the page offered that as the next step while
+// the bar above said Go to Holders. Finding the holders comes first,
+// everywhere; collating stays, as the exception.
+const started = makeRequestDetail({
+  status: "in_progress",
+  holders: [],
+  transitions: [
+    {
+      to: "awaiting_holders",
+      allowed: false,
+      via: "transition",
+      blocked_by: "No tickets have been issued yet",
+    },
+    { to: "collating", allowed: true, via: "transition" },
+  ],
+});
+
+describe("Started, with nobody asked yet", () => {
+  it("leads with the holders everywhere, and keeps collating as the exception", () => {
+    render(
+      <>
+        <NextBar request={started} tab="overview" onGo={vi.fn()} />
+        <RequestSummary request={started} actionsHref="#actions" />
+        <RequestTransitions request={started} />
+      </>,
+    );
+    // The bar, the summary's Next and the card agree.
+    expect(screen.getAllByText("Find who holds the data").length).toBe(3);
+    expect(screen.getByRole("link", { name: /find who holds the data/i })).toHaveAttribute(
+      "href",
+      "#holders",
+    );
+    expect(screen.getByRole("link", { name: /go to holders/i })).toHaveAttribute(
+      "href",
+      "#holders",
+    );
+    expect(screen.getByText(/nothing to ask anyone\? move to collating/i)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /move to collating/i })).not.toBeInTheDocument();
   });
 });
