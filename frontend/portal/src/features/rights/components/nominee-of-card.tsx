@@ -37,7 +37,7 @@ import {
   Skeleton,
 } from "@/components/ui/primitives";
 import { REQUEST_TYPE_COPY, RequestStatusBadge } from "@/features/rights/components/copy";
-import { RequestCard } from "@/features/rights/components/request-card";
+import { RequestDetail } from "@/features/rights/components/request-detail";
 import { useMyRequest, useNominationsNamingMe } from "@/features/rights/queries";
 import { formatDate } from "@/lib/format";
 import type { NominationStatus, NomineeOf } from "@/types";
@@ -215,16 +215,17 @@ function RaisedRequest({ uuid }: { uuid: string }) {
 
   return (
     <div className="space-y-2">
-      <RequestCard
-        request={request.data}
-        about={null}
-        followedBy={[]}
-        expanded
-        highlighted={false}
-        canDispute={false}
-        onToggle={() => setOpen(false)}
-        onJump={() => {}}
-      />
+      <Card>
+        <CardBody>
+          <RequestDetail
+            request={request.data}
+            about={null}
+            followedBy={[]}
+            canDispute={false}
+            onJump={() => {}}
+          />
+        </CardBody>
+      </Card>
       <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
         Hide the request
       </Button>

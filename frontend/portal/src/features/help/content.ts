@@ -175,7 +175,8 @@ export const SECTIONS: HelpSection[] = [
       {
         kind: "list",
         items: [
-          "Each request is a short summary until you click [[Show details]], which shows our response, its clock and each step of its path. A response ready to download is shown either way.",
+          "Your requests are listed on the left; click one to see it beside the list - our answer first when there is one, then [[Where it is]] in four steps with the date you will hear by, then what you asked. On a phone it opens on its own screen; [[All requests]] goes back.",
+          "An answer waiting for you is marked [[Ready to download]] in the list.",
           "[[Show what was recorded]] lists everything that happened to it.",
           "With several requests, [[All]], [[Open]] and [[Closed]] and the search box above the list narrow it down.",
         ],
@@ -190,7 +191,7 @@ export const SECTIONS: HelpSection[] = [
       {
         kind: "list",
         items: [
-          "When a request is answered you are told, and the card shows [[Our response]]. [[Download the file]] saves it; the download is available for a limited time, so keep a copy.",
+          "When a request is answered you are told, and the request shows [[Your answer]]. [[Download your data]] saves it; the download is available for a limited time, so keep a copy.",
           "An answer is [[Complete]] only when everything you asked for was done. Otherwise it is [[Partial]] and says what remains.",
         ],
       },
@@ -198,7 +199,7 @@ export const SECTIONS: HelpSection[] = [
         kind: "steps",
         title: "Disputing a response",
         items: [
-          "Click [[Dispute this response]] on the answered request.",
+          "Click [[Dispute this answer]] on the answered request.",
           "Say what was wrong - late, incomplete, sent the wrong way, or the outcome itself.",
           "Tick [[This is about the Data Protection Officer's own decision]] if it is; it then goes to someone other than the DPO.",
           "Click [[Raise the grievance]]. It is linked to the original request.",

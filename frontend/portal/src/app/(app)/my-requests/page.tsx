@@ -1,22 +1,24 @@
 /**
  * The data principal's requests - sections 11 to 14, from her side.
  *
- * What she sees of a request is what she is entitled to: the reference, the
- * clock, where it is on the path, and the response when there is one. The
- * verification notes and the holder tickets are ours and are not here; the
- * holders themselves are in the response, which is where they belong.
+ * A short list and the chosen request beside it (2026-10-30, mock-up B): the
+ * list says what each is, where it stands and its one date; the request on
+ * the right says the rest (`RequestDetail`). Opening one used to unfold it in
+ * the list with the office's clock and flow diagram, pushing every other
+ * request down the page. On a phone the list and the request are one screen
+ * each, with a way back.
  *
  * Two things are one click away because the Act says they should be: making
  * a request, and disputing a response. A grievance is not an appeal against
  * the outcome alone - late, incomplete, or sent the wrong way all count.
  *
  * A grievance and the request it disputes are both hers, so they are both on
- * this page: the grievance card says what she disputed and jumps to it, and
- * the original says it was disputed and jumps back. No second page to find.
+ * this page: the grievance says what she disputed and opens it, and the
+ * original says it was disputed and opens that. No second page to find.
  */
 "use client";
 
-import { Plus } from "lucide-react";
+import { ArrowLeft, Download, Plus } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import * as React from "react";
@@ -24,25 +26,34 @@ import * as React from "react";
 import { PageHeader } from "@/components/layout/app-shell";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmptyRecords } from "@/components/ui/graphics";
-import { Alert, Button, Card, EmptyState, Skeleton } from "@/components/ui/primitives";
+import {
+  Alert,
+  Button,
+  Card,
+  EmptyState,
+  Mono,
+  Skeleton,
+} from "@/components/ui/primitives";
+import { REQUEST_TYPE_COPY, RequestStatusBadge } from "@/features/rights/components/copy";
 import { MyRequestForm } from "@/features/rights/components/request-form";
-import { useMyRequests } from "@/features/rights/queries";
-import { RequestCard, cardId } from "@/features/rights/components/request-card";
+import { RequestDetail } from "@/features/rights/components/request-detail";
 import {
   FILTER_FROM,
   RequestFilter,
   useRequestFilter,
 } from "@/features/rights/components/request-filter";
+import { useMyRequests } from "@/features/rights/queries";
 import { relate } from "@/features/rights/relate";
+import { cn, formatDate } from "@/lib/format";
+import type { MyRequest } from "@/types";
 
 export default function MyRequestsPage() {
   const requests = useMyRequests();
   // A link may name a request (`?request=`) or the responses ready to download
   // (`?view=ready`) - "our response to RR-… is ready" used to open the top of
-  // this page at a different request with nothing expanded (UX review). Read
-  // once, as where the page starts; after that the person is in charge.
+  // this page at a different request (UX review). Read once, as where the page
+  // starts; after that the person is in charge.
   const params = useSearchParams();
-  const named = params.get("request");
   const router = useRouter();
   // `?new=1` opens the form: the home page's "Make a request" lands here.
   // Read once, like `?request=`; closing the form drops it from the address
@@ -52,37 +63,23 @@ export default function MyRequestsPage() {
     setAsking(false);
     if (params.get("new")) router.replace("/my-requests", { scroll: false });
   }
-  const [open, setOpen] = React.useState<string | null>(named);
-  const [flash, setFlash] = React.useState<string | null>(named);
-  const { byUuid, followers } = relate(requests.data ?? []);
-  const filter = useRequestFilter(
-    requests.data ?? [],
-    params.get("view") === "ready" ? "ready" : "all",
-  );
-  const filtering = (requests.data?.length ?? 0) >= FILTER_FROM || filter.view !== "all";
-  // A card to bring into view once it is rendered: after a jump that had to
-  // widen the filter, or on arrival before the list has loaded, the card does
-  // not exist yet. Kept until it does.
-  const scrollTo = React.useRef<string | null>(named);
-  React.useEffect(() => {
-    if (!scrollTo.current) return;
-    const card = document.getElementById(cardId(scrollTo.current));
-    if (!card) return;
-    card.scrollIntoView({ behavior: "smooth", block: "start" });
-    scrollTo.current = null;
-  });
+  // The request she chose. None chosen, a wide screen shows the first in the
+  // list beside it; a phone shows the list.
+  const [chosen, setChosen] = React.useState<string | null>(params.get("request"));
+  const all = requests.data ?? [];
+  const { byUuid, followers } = relate(all);
+  const filter = useRequestFilter(all, params.get("view") === "ready" ? "ready" : "all");
+  const filtering = all.length >= FILTER_FROM || filter.view !== "all";
+  const shown = filtering ? filter.shown : all;
+  const current = (chosen ? byUuid.get(chosen) : undefined) ?? shown[0] ?? null;
 
-  React.useEffect(() => {
-    if (!flash) return;
-    const timer = window.setTimeout(() => setFlash(null), 1800);
-    return () => window.clearTimeout(timer);
-  }, [flash]);
-
-  function jump(uuid: string) {
-    setOpen(uuid);
-    setFlash(uuid);
+  function choose(uuid: string) {
+    setChosen(uuid);
     if (!filter.isShown(uuid)) filter.reset();
-    scrollTo.current = uuid;
+    // The address names it, so a reload or a shared link opens the same one.
+    router.replace(`/my-requests?request=${uuid}`, { scroll: false });
+    // On a phone the request replaces the list: start it at its top.
+    if (window.matchMedia?.("(max-width: 1023px)").matches) window.scrollTo({ top: 0 });
   }
 
   return (
@@ -114,9 +111,13 @@ export default function MyRequestsPage() {
         </Card>
       )}
 
-      {filtering && <RequestFilter filter={filter} />}
+      {filtering && (
+        <div className={cn(chosen && "hidden lg:block")}>
+          <RequestFilter filter={filter} />
+        </div>
+      )}
 
-      {filtering && filter.shown.length === 0 && (
+      {filtering && shown.length === 0 && (
         <Card>
           <EmptyState
             title="No requests match"
@@ -130,22 +131,52 @@ export default function MyRequestsPage() {
         </Card>
       )}
 
-      <div className="space-y-4">
-        {(filtering ? filter.shown : (requests.data ?? [])).map((r) => (
-          <RequestCard
-            key={r.request_uuid}
-            request={r}
-            about={
-              r.linked_request_uuid ? (byUuid.get(r.linked_request_uuid) ?? null) : null
-            }
-            followedBy={followers.get(r.request_uuid) ?? []}
-            expanded={open === r.request_uuid}
-            highlighted={flash === r.request_uuid}
-            onToggle={() => setOpen(open === r.request_uuid ? null : r.request_uuid)}
-            onJump={jump}
-          />
-        ))}
-      </div>
+      {shown.length > 0 && current && (
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)]">
+          <Card className={cn("overflow-hidden", chosen && "hidden lg:block")}>
+            <ul aria-label="Your requests">
+              {shown.map((r) => (
+                <li key={r.request_uuid} className="border-b border-border last:border-b-0">
+                  <RequestRow
+                    request={r}
+                    selected={r.request_uuid === current.request_uuid}
+                    onChoose={() => choose(r.request_uuid)}
+                  />
+                </li>
+              ))}
+            </ul>
+          </Card>
+
+          <Card
+            id="request-detail"
+            className={cn(
+              "scroll-mt-24 p-5 lg:sticky lg:top-6",
+              !chosen && "hidden lg:block",
+            )}
+          >
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mb-3 lg:hidden"
+              onClick={() => setChosen(null)}
+            >
+              <ArrowLeft className="size-4" />
+              All requests
+            </Button>
+            <RequestDetail
+              key={current.request_uuid}
+              request={current}
+              about={
+                current.linked_request_uuid
+                  ? (byUuid.get(current.linked_request_uuid) ?? null)
+                  : null
+              }
+              followedBy={followers.get(current.request_uuid) ?? []}
+              onJump={choose}
+            />
+          </Card>
+        </div>
+      )}
 
       {/* Nominations have their own page (UX review): below every request
           was the last place anybody looked for them. */}
@@ -168,11 +199,62 @@ export default function MyRequestsPage() {
           <MyRequestForm
             onDone={(created) => {
               stopAsking();
-              setOpen(created.request_uuid);
+              choose(created.request_uuid);
             }}
           />
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+/** One request in the list: what it is, where it stands, its one date, and
+ *  what needs her - a code to confirm, an answer to download. */
+function RequestRow({
+  request: r,
+  selected,
+  onChoose,
+}: {
+  request: MyRequest;
+  selected: boolean;
+  onChoose: () => void;
+}) {
+  const closed = r.status === "closed";
+  const answered = r.responded_at ?? r.closed_at;
+  return (
+    <button
+      type="button"
+      aria-current={selected ? "true" : undefined}
+      onClick={onChoose}
+      className={cn(
+        "block w-full px-4 py-3 text-left transition-colors hover:bg-surface-hover",
+        selected &&
+          "bg-accent-subtle shadow-[inset_3px_0_0_var(--accent)] hover:bg-accent-subtle",
+      )}
+    >
+      <span className="flex items-center justify-between gap-2">
+        <Mono className="text-sm font-semibold">{r.reference}</Mono>
+        <RequestStatusBadge status={r.status} outcome={r.outcome} voice="self" />
+      </span>
+      <span className="mt-0.5 block text-xs text-text-muted">
+        {REQUEST_TYPE_COPY[r.request_type].label} ·{" "}
+        {closed && answered
+          ? `answered ${formatDate(answered)}`
+          : `answer by ${formatDate(r.due_at)}`}
+      </span>
+      <span className="mt-0.5 line-clamp-1 text-xs text-text-subtle">{r.request_text}</span>
+      {r.download_available && (
+        <span className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-accent-text">
+          <Download className="size-3" aria-hidden="true" />
+          Ready to download
+          {r.download_expires_at && ` until ${formatDate(r.download_expires_at)}`}
+        </span>
+      )}
+      {r.verification_status === "pending" && !closed && (
+        <span className="mt-1 block text-xs font-medium text-warning-text">
+          Confirm it was you
+        </span>
+      )}
+    </button>
   );
 }
