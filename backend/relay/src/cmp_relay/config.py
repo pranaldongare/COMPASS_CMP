@@ -10,9 +10,11 @@ Shared by both sides:
     RELAY_ENDPOINT_URL         local emulator only (moto, LocalStack); unset on AWS
     RELAY_REQUEST_QUEUE_URL    the request queue
     RELAY_BUCKET               the bucket for bodies too large for a message
-    RELAY_COOKIE_NAMES         cookies that may cross (cmp_session,cmp_csrf,cmp_ticket)
+    RELAY_COOKIE_NAMES         cookies that may cross (cmp_session,cmp_csrf,cmp_ticket,
+                               cmp_sso_pending)
     RELAY_CSRF_HEADER          the CSRF header's name (X-CSRF-Token)
-    RELAY_ALLOW_DEV_ROUTES     true only with RELAY_ENVIRONMENT=local: /dev/codes
+    RELAY_ALLOW_DEV_ROUTES     true only with RELAY_ENVIRONMENT=local: /dev/codes,
+                               /dev/seed-accounts and the SSO stand-in's /dev/sso/*
 
 The bridge (AWS side):
 
@@ -155,7 +157,9 @@ def _common(env: Mapping[str, str]) -> Common:
         endpoint_url=endpoint_url,
         request_queue_url=_str(env, "RELAY_REQUEST_QUEUE_URL"),
         bucket=_str(env, "RELAY_BUCKET"),
-        cookie_names=frozenset(_list(env, "RELAY_COOKIE_NAMES", "cmp_session,cmp_csrf,cmp_ticket")),
+        cookie_names=frozenset(
+            _list(env, "RELAY_COOKIE_NAMES", "cmp_session,cmp_csrf,cmp_ticket,cmp_sso_pending")
+        ),
         csrf_header=_str(env, "RELAY_CSRF_HEADER", "X-CSRF-Token"),
         allow_dev_routes=allow_dev,
     )

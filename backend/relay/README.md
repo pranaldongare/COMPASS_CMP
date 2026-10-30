@@ -77,11 +77,11 @@ for a reply that cannot come.
 
 | | Crosses | Refused |
 |---|---|---|
-| **Routes** | The 58 method-and-path pairs the portal calls (`allowlist.PUBLIC_ROUTES`): sign-up and code sign-in, the consent link, her own records, rights requests and nominations, an outside holder's ticket, reference data. `GET /dev/codes` and `/dev/seed-accounts` only with `RELAY_ENVIRONMENT=local` and `RELAY_ALLOW_DEV_ROUTES=true`. | Everything else, with 404 `not_found`: every staff route, `/auth/login`, the second factor, `/metrics`, `/docs`, `/openapi.json`, `/health`. Also any path with `//`, `..`, a backslash, or an encoded `/`, `\` or `.`. |
-| **Sessions** | A data principal's session, or none where a route needs none. A member of staff who signs in on the portal with a code holds a data principal's session, and it crosses like anyone's. | A staff session (signed in at the console with a password and a second factor): 401 from the API, on every route that crosses. |
+| **Routes** | The 64 method-and-path pairs the portal calls (`allowlist.PUBLIC_ROUTES`): sign-up and code sign-in, the consent link and an employee link's organisation sign-in (ADR 0034), her own records, rights requests and nominations, an outside holder's ticket, reference data. `GET /dev/codes`, `/dev/seed-accounts` and the SSO stand-in's `POST /dev/sso/*` only with `RELAY_ENVIRONMENT=local` and `RELAY_ALLOW_DEV_ROUTES=true`. `tests/test_allowlist_drift.py` fails when the portal calls a route that is not here. | Everything else, with 404 `not_found`: every staff route, `/auth/login`, the second factor, `/metrics`, `/docs`, `/openapi.json`, `/health`. Also any path with `//`, `..`, a backslash, or an encoded `/`, `\` or `.`. |
+| **Sessions** | A data principal's session, or none where a route needs none. A member of staff who signs in on the portal with a code holds a data principal's session, and it crosses like anyone's; so does an employee's session from an `sso` link. | A staff session (signed in at the console with a password and a second factor): 401 from the API, on every route that crosses. |
 | **Request headers** | `Accept`, `Accept-Language`, `Content-Type`, `User-Agent`, `X-Request-ID`, the CSRF header. | Everything else, including `Authorization`, `Host`, any `X-Forwarded-*`, and `X-CMP-*`. |
-| **Cookies** | `cmp_session`, `cmp_csrf`, `cmp_ticket` (`RELAY_COOKIE_NAMES`). | Every other cookie, such as analytics. |
-| **Reply headers** | `Content-Type`, `Content-Disposition`, `Content-Language`, cache headers, every `Set-Cookie`, `Retry-After`, `X-Request-ID` and the API's own hash and export headers. | Everything else, including `Location`, `Server` and CORS headers. |
+| **Cookies** | `cmp_session`, `cmp_csrf`, `cmp_ticket`, `cmp_sso_pending` (`RELAY_COOKIE_NAMES`). | Every other cookie, such as analytics. |
+| **Reply headers** | `Content-Type`, `Content-Disposition`, `Content-Language`, cache headers, every `Set-Cookie`, `Retry-After`, `X-Request-ID` and the API's own hash and export headers. | Everything else, including `Server`, CORS headers and `Location`: no redirect crosses, except the one from `GET /auth/sso/callback` to `/c/{token}?sso=…`, which crosses as that path on the portal's own origin (`allowlist.REDIRECT_ROUTES`). |
 | **Sealed values** | The bytes of an uploaded file, which are not searched. | `SE::` in any other input: 422 `sealed_value_refused` ([below](#no-sealed-values-in)). |
 
 The collector sets these itself: one `X-Forwarded-For` holding the visitor's
@@ -487,11 +487,11 @@ malformed setting stops the process with a sentence naming it.
 |---|---|---|---|
 | `RELAY_ENVIRONMENT` | both | `production` | `local`, `test`, `staging` or `production`. Only `local` and `test` allow the two settings below. |
 | `RELAY_ENDPOINT_URL` | both | unset | A local emulator. Refused outside local and test. |
-| `RELAY_ALLOW_DEV_ROUTES` | both | `false` | Lets `/dev/codes` and `/dev/seed-accounts` cross. Local only. |
+| `RELAY_ALLOW_DEV_ROUTES` | both | `false` | Lets `/dev/codes`, `/dev/seed-accounts` and `/dev/sso/*` cross. Local only. |
 | `RELAY_REGION` | both | `ap-south-1` | |
 | `RELAY_REQUEST_QUEUE_URL` | both | required | Stack output `RequestQueueUrl`. |
 | `RELAY_BUCKET` | both | required | Stack output `BodiesBucketName`. |
-| `RELAY_COOKIE_NAMES` | both | `cmp_session,cmp_csrf,cmp_ticket` | Must match the API's cookie names. |
+| `RELAY_COOKIE_NAMES` | both | `cmp_session,cmp_csrf,cmp_ticket,cmp_sso_pending` | Must match the API's cookie names. |
 | `RELAY_CSRF_HEADER` | both | `X-CSRF-Token` | |
 | `RELAY_BRIDGE_HOST` / `_PORT` | bridge | `127.0.0.1` / `8080` | The portal's `API_ORIGIN` points here. |
 | `RELAY_REPLY_QUEUE_URL` | bridge | required | This instance's own reply queue. Never the same as another running instance's. |

@@ -549,7 +549,7 @@ class Collector:
                 self._discard_body(request)
                 return
 
-        answer = self._call(request, method, url, headers, body, unsafe)
+        answer = self._call(request, method, route, url, headers, body, unsafe)
         note.status, note.reason = answer.status, answer.reason
         note.outcome = "executed"
         self._reply(request, keys, answer, unsafe)
@@ -630,6 +630,7 @@ class Collector:
         self,
         request: RelayRequest,
         method: str,
+        route: str,
         url: httpx.URL,
         headers: list[tuple[str, str]],
         body: bytes | None,
@@ -665,7 +666,9 @@ class Collector:
             return _error_answer(502, "api_error", _FAILED_WRITE if unsafe else _FAILED_READ, rid)
         return _Answer(
             status=response.status_code,
-            headers=allowlist.response_headers(response.headers.multi_items()),
+            headers=allowlist.response_headers(
+                response.headers.multi_items(), route=route, status=response.status_code
+            ),
             content=content,
         )
 

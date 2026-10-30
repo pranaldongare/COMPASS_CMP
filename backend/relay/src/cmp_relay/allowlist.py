@@ -1,6 +1,6 @@
 """What may cross: the public routes, the headers and cookies, and one input rule.
 
-**Routes.** The public portal calls 58 of the API's ~340 operations. Those, and
+**Routes.** The public portal calls 64 of the API's ~370 operations. Those, and
 nothing else, may cross: every staff route, `/auth/login`, the second factor,
 `/metrics`, `/docs` - all refused. The collector enforces the list (it is the
 side that matters); the bridge checks the same list first so a refused request
@@ -12,8 +12,10 @@ The list was read off the portal's own API calls (`frontend/portal/src/features/
 A new portal call needs a new row here, or it answers 404 through the relay.
 
 **Headers and cookies.** Requests carry only what the API reads; replies carry
-only what the browser needs. Of the cookies, only the session, CSRF and ticket
-cookies cross.
+only what the browser needs. Of the cookies, only the session, CSRF, ticket and
+pending-SSO cookies cross. No redirect crosses, with one exception: the
+organisation's sign-in returns the browser to `GET /auth/sso/callback`, and
+that reply's `Location` crosses as the consent link's own path (ADR 0034).
 
 **No sealed values in.** The API opens the sealed values in a relayed response
 (`cmp.api.middleware.relay_open_sealed`), and `seal()` passes an already-sealed
@@ -56,7 +58,7 @@ import re
 from collections.abc import Iterable
 from email.message import Message
 from email.utils import collapse_rfc2231_value
-from urllib.parse import unquote_plus
+from urllib.parse import unquote_plus, urlsplit
 
 #: One URL path segment: a token, a uuid, a percent-encoded value. No slash.
 _SEG = r"[A-Za-z0-9._~%-]+"
@@ -78,6 +80,13 @@ PUBLIC_ROUTES: tuple[tuple[str, str], ...] = (
     ("POST", "/c/{token}/otp/verify"),
     ("GET", "/c/{token}/notice"),
     ("POST", "/c/{token}/consent"),
+    # An employee's `sso` link: the organisation's sign-in (ADR 0034). The
+    # provider returns the browser to the callback, which sends it on to the
+    # link (`REDIRECT_ROUTES`); a new employee then confirms a mobile.
+    ("GET", "/c/{token}/sso/start"),
+    ("GET", "/auth/sso/callback"),
+    ("POST", "/c/{token}/sso/mobile"),
+    ("POST", "/c/{token}/sso/mobile/verify"),
     # Her own records (v1/me)
     ("PATCH", "/me"),
     ("POST", "/me/person-type"),
@@ -96,6 +105,8 @@ PUBLIC_ROUTES: tuple[tuple[str, str], ...] = (
     # Her rights requests and nominations (v1/rights subject router)
     ("GET", "/me/requests"),
     ("POST", "/me/requests"),
+    # Before `{request}`, which would also match it: the first match is logged.
+    ("GET", "/me/requests/offices"),
     ("GET", "/me/requests/{request}"),
     ("GET", "/me/requests/{request}/trail"),
     ("GET", "/me/requests/{request}/download"),
@@ -117,6 +128,7 @@ PUBLIC_ROUTES: tuple[tuple[str, str], ...] = (
     ("POST", "/rights/nominations/{token}/accept"),
     ("POST", "/rights/nominations/{token}/decline"),
     # An outside holder's ticket (public/holder_tickets)
+    ("GET", "/holder-tickets/{token}"),
     ("POST", "/holder-tickets/{token}/code"),
     ("POST", "/holder-tickets/{token}/verify"),
     ("GET", "/holder-tickets/{token}/ticket"),
@@ -130,11 +142,15 @@ PUBLIC_ROUTES: tuple[tuple[str, str], ...] = (
     ("GET", "/notifications"),
 )
 
-#: Development only (DEV_SHOW_CODES): the one-time-code popup. Refused unless
-#: the relay runs with RELAY_ENVIRONMENT=local and RELAY_ALLOW_DEV_ROUTES=true.
+#: Development only: the one-time-code popup (DEV_SHOW_CODES) and the stand-in
+#: for the organisation's sign-in (SSO_MOCK). Refused unless the relay runs
+#: with RELAY_ENVIRONMENT=local and RELAY_ALLOW_DEV_ROUTES=true.
 DEV_ROUTES: tuple[tuple[str, str], ...] = (
     ("GET", "/dev/codes"),
     ("GET", "/dev/seed-accounts"),
+    ("POST", "/dev/sso/code"),
+    ("POST", "/dev/sso/confirm"),
+    ("POST", "/dev/sso/cancel"),
 )
 
 #: An encoded slash, backslash or dot inside a segment: a token never needs one,
@@ -143,6 +159,13 @@ _ENCODED_SEPARATOR = re.compile(r"%(2f|5c|2e)", re.IGNORECASE)
 
 #: Methods whose replay could change something. Everything else is a read.
 UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
+
+#: The one route whose redirect crosses (ADR 0034): the organisation's sign-in
+#: returns the browser to it, and the API sends the browser on to the link the
+#: sign-in started from. It stays a read: the sign-in it continues is taken in
+#: one step, so a repeat finds nothing, and a redelivered message is past its
+#: deadline before a collector could run it again.
+REDIRECT_ROUTES = frozenset({"/auth/sso/callback"})
 
 
 def _compile(template: str) -> re.Pattern[str]:
@@ -239,9 +262,44 @@ def request_headers(
     return out
 
 
-def response_headers(headers: Iterable[tuple[str, str]]) -> list[tuple[str, str]]:
-    """The reply headers that may cross back, names lower-cased."""
-    return [(n.lower(), v) for n, v in headers if n.lower() in _RESPONSE_HEADERS]
+#: Where the callback may send the browser: a consent link and the outcome word.
+_LINK_PATH = re.compile(rf"/c/{_SEG}")
+_LINK_OUTCOME = re.compile(r"sso=[a-z]+")
+
+
+def _link_return(location: str) -> str | None:
+    """The callback's `Location` as the consent link's path, `/c/{token}?sso=ok`,
+    or None for anything else. The host is dropped: the API names the inside's
+    idea of the portal, and the browser belongs on the portal it came from."""
+    try:
+        parts = urlsplit(location)
+    except ValueError:
+        return None
+    if (
+        parts.fragment
+        or _ENCODED_SEPARATOR.search(parts.path)
+        or not _LINK_PATH.fullmatch(parts.path)
+        or parts.path in ("/c/.", "/c/..")
+        or not _LINK_OUTCOME.fullmatch(parts.query)
+    ):
+        return None
+    return f"{parts.path}?{parts.query}"
+
+
+def response_headers(
+    headers: Iterable[tuple[str, str]], *, route: str | None = None, status: int | None = None
+) -> list[tuple[str, str]]:
+    """The reply headers that may cross back, names lower-cased. `route` and
+    `status` say whether this is the one redirect that crosses."""
+    redirect = route in REDIRECT_ROUTES and status is not None and 300 <= status < 400
+    out: list[tuple[str, str]] = []
+    for name, value in headers:
+        lower = name.lower()
+        if lower in _RESPONSE_HEADERS:
+            out.append((lower, value))
+        elif lower == "location" and redirect and (link := _link_return(value)):
+            out.append(("location", link))
+    return out
 
 
 # --------------------------------------------------------------- input rule

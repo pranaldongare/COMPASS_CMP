@@ -66,6 +66,8 @@ WRITE_BUDGET_S = 1.5
 #: When the bridge gives up on an ordinary request.
 GIVE_UP_S = DEADLINE_S + GRACE_S
 
+SSO_PENDING = "cmp_sso_pending=pending-4c1"
+
 SET_COOKIES = [
     "cmp_session=s-9f2; Path=/; HttpOnly; Secure; SameSite=Lax",
     "cmp_csrf=c-77a; Path=/; Secure; SameSite=Lax",
@@ -110,6 +112,8 @@ class FakeAPI:
     * `GET /me/consents` - stalls `stall_s` before answering at all;
     * `GET /me/disclosures` - answers at once, then trickles the body for
       `trickle_s`;
+    * `GET /auth/sso/callback` and `GET /c/{token}/sso/start` - a 303 to the
+      link, on the inside's idea of the portal, with the pending-SSO cookie;
     * anything else - `{"ok": true}`.
     """
 
@@ -168,6 +172,14 @@ class FakeAPI:
             payload = json.dumps({"token": parts[2], "query": call.query}).encode()
             await _answer(
                 send, 200, payload, ("x-request-id", "api-req-1"), ("x-internal-note", "inside")
+            )
+        elif call.method == "GET" and call.path in ("/auth/sso/callback", f"/c/{TOKEN}/sso/start"):
+            await _answer(
+                send,
+                303,
+                b"",
+                ("location", f"http://portal.inside.example:3001/c/{TOKEN}?sso=mobile"),
+                ("set-cookie", f"{SSO_PENDING}; Path=/; HttpOnly; SameSite=lax"),
             )
         elif call.method == "POST" and call.path == "/auth/otp/verify":
             await _answer(
@@ -755,6 +767,42 @@ def test_one_visitors_session_never_rides_on_the_next_visitors_request(world: Wo
     assert verify.path == "/auth/otp/verify"
     assert me.path == "/auth/me"
     assert me.values("cookie") == [], "visitor B arrived carrying visitor A's cookie"
+
+
+def test_the_sso_callback_sends_the_browser_on_to_the_link(world: World) -> None:
+    """The organisation's sign-in returns the browser to the callback, whose
+    303 is the one redirect that crosses (ADR 0034): as the link's own path,
+    never the inside's host. The pending employee's cookie it sets comes back
+    on the mobile step."""
+    with running(world) as relay:
+        back = relay.client.get(
+            "/auth/sso/callback?state=" + "s" * 43 + "&code=c-1", follow_redirects=False
+        )
+        assert back.status_code == 303
+        assert back.headers["location"] == f"/c/{TOKEN}?sso=mobile"
+        assert back.headers.get_list("set-cookie") == [
+            f"{SSO_PENDING}; Path=/; HttpOnly; SameSite=lax"
+        ]
+
+        mobile = relay.client.post(
+            f"/c/{TOKEN}/sso/mobile",
+            json={"mobile": "+919800000001"},
+            headers={"cookie": f"cmp_session=s-1; {SSO_PENDING}; _ga=1"},
+        )
+        assert mobile.status_code == 200
+
+        # The same 303 from any other route loses its Location.
+        start = relay.client.get(f"/c/{TOKEN}/sso/start", follow_redirects=False)
+        assert start.status_code == 303
+        assert "location" not in start.headers
+
+    callback, step, other = world.api.calls
+    assert (callback.path, step.path, other.path) == (
+        "/auth/sso/callback",
+        f"/c/{TOKEN}/sso/mobile",
+        f"/c/{TOKEN}/sso/start",
+    )
+    assert step.values("cookie") == [f"cmp_session=s-1; {SSO_PENDING}"]
 
 
 def test_concurrent_requests_each_get_their_own_answer(world: World) -> None:

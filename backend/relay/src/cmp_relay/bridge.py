@@ -634,7 +634,7 @@ class Bridge:
         if reply.status in (204, 304):
             content = b""
         response = Response(content=content, status_code=reply.status)
-        for name, value in response_headers(reply.headers):
+        for name, value in response_headers(reply.headers, route=template, status=reply.status):
             raw = _safe_header(name, value)
             if raw is not None:
                 response.raw_headers.append(raw)

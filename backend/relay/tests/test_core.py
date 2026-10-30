@@ -588,6 +588,85 @@ class TestAllowlist:
             ("x-recorded-sha256", "h"),
         ]
 
+    def test_the_offices_question_is_its_own_row_not_a_request(self) -> None:
+        assert RouteTable().match("GET", "/me/requests/offices") == "/me/requests/offices"
+        assert RouteTable().match("GET", "/me/requests/abc") == "/me/requests/{request}"
+
+    def test_the_sso_pending_cookie_crosses_with_the_default_names(
+        self, key_files: dict[str, Path]
+    ) -> None:
+        names = config.bridge_settings(_bridge_env(key_files)).common.cookie_names
+        kept = request_headers(
+            [("Cookie", "cmp_session=s; cmp_csrf=c; cmp_sso_pending=P; _ga=1")],
+            csrf_header="X-CSRF-Token",
+            cookie_names=names,
+        )
+        assert kept == [("cookie", "cmp_session=s; cmp_csrf=c; cmp_sso_pending=P")]
+
+    @pytest.mark.parametrize(
+        ("location", "crosses_as"),
+        [
+            ("https://portal.example.in/c/Ab3_x-Y.z~9?sso=ok", "/c/Ab3_x-Y.z~9?sso=ok"),
+            ("http://localhost:3001/c/tok?sso=mobile", "/c/tok?sso=mobile"),
+            ("/c/tok?sso=cancelled", "/c/tok?sso=cancelled"),
+            # Whatever host it names, the browser stays on the portal it came from.
+            ("https://evil.example/c/tok?sso=ok", "/c/tok?sso=ok"),
+            ("//evil.example/c/tok?sso=ok", "/c/tok?sso=ok"),
+        ],
+    )
+    def test_the_sso_callbacks_redirect_crosses_as_the_links_path(
+        self, location: str, crosses_as: str
+    ) -> None:
+        kept = response_headers(
+            [
+                ("Location", location),
+                ("Set-Cookie", "cmp_sso_pending=P; Path=/; HttpOnly"),
+                ("Referrer-Policy", "no-referrer"),
+            ],
+            route="/auth/sso/callback",
+            status=303,
+        )
+        assert kept == [
+            ("location", crosses_as),
+            ("set-cookie", "cmp_sso_pending=P; Path=/; HttpOnly"),
+        ]
+
+    @pytest.mark.parametrize(
+        "location",
+        [
+            "https://portal.example.in/me/consents",
+            "https://portal.example.in/c/tok",
+            "https://portal.example.in/c/tok/notice?sso=ok",
+            "https://portal.example.in/c/tok?sso=ok&next=/users",
+            "https://portal.example.in/c/tok?sso=OK",
+            "https://portal.example.in/c/tok?sso=ok#x",
+            "https://portal.example.in/c/a%2fb?sso=ok",
+            "https://portal.example.in/c/..?sso=ok",
+            "https://portal.example.in/c/.?sso=ok",
+            "http://[::1/c/tok?sso=ok",
+            "",
+        ],
+    )
+    def test_the_callback_may_send_the_browser_only_to_a_link(self, location: str) -> None:
+        kept = response_headers([("Location", location)], route="/auth/sso/callback", status=303)
+        assert kept == []
+
+    @pytest.mark.parametrize(
+        ("route", "status"),
+        [
+            ("/auth/sso/callback", 200),
+            ("/auth/sso/callback", None),
+            ("/c/{token}", 303),
+            ("/c/{token}/sso/start", 302),
+            (None, 303),
+        ],
+    )
+    def test_no_other_redirect_crosses(self, route: str | None, status: int | None) -> None:
+        kept = response_headers(
+            [("Location", "https://portal.example.in/c/tok?sso=ok")], route=route, status=status
+        )
+        assert kept == []
+
     # ------------------------------------------------------ carries_sealed_value
 
     @pytest.mark.parametrize(
@@ -927,7 +1006,9 @@ class TestConfig:
         assert not s.common.is_local
         assert s.common.region == "ap-south-1"
         assert s.common.endpoint_url is None
-        assert s.common.cookie_names == frozenset({"cmp_session", "cmp_csrf", "cmp_ticket"})
+        assert s.common.cookie_names == frozenset(
+            {"cmp_session", "cmp_csrf", "cmp_ticket", "cmp_sso_pending"}
+        )
         assert s.common.csrf_header == "X-CSRF-Token"
         assert not s.common.allow_dev_routes
         assert (s.host, s.port) == ("127.0.0.1", 8080)
