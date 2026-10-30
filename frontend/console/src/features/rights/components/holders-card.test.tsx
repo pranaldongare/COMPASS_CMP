@@ -90,13 +90,15 @@ function thread() {
 }
 
 describe("HoldersCard", () => {
-  it("shows each holder's state in words and offers the server's main move on its row", () => {
+  it("shows each holder's state in words, and an answer to review before anything else", () => {
     render(<HoldersCard request={request([holder()])} />);
 
     const row = screen.getByText("Samsung R&D Bangalore").closest("tr") as HTMLElement;
     // Partly done is not a success: the badge says so.
     expect(within(row).getByText(/answered - review · /i)).toBeInTheDocument();
-    expect(within(row).getByRole("button", { name: "Accept the answer" })).toBeInTheDocument();
+    // Read before accepted (2026-10-30): the row opens the answer, it does not accept it.
+    expect(within(row).getByRole("button", { name: /review the answer/i })).toBeInTheDocument();
+    expect(within(row).queryByRole("button", { name: "Accept the answer" })).not.toBeInTheDocument();
     expect(screen.getByText("Review answers").closest("[aria-current]")).toHaveAttribute("aria-current", "step");
   });
 
@@ -111,12 +113,25 @@ describe("HoldersCard", () => {
     );
     const { user } = render(<HoldersCard request={request([holder()])} />);
 
-    await user.click(screen.getByRole("button", { name: "Accept the answer" }));
+    await user.click(screen.getByRole("button", { name: /review the answer/i }));
     const dialog = await screen.findByRole("dialog");
+    // The answer first, then the move.
+    const answer = within(dialog).getByText("Some rows are under a legal hold");
+    const accept = within(dialog).getByRole("button", { name: "Accept the answer" });
+    expect(answer.compareDocumentPosition(accept) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    await user.click(accept);
     expect(within(dialog).getByText(/the response will say what was not done/i)).toBeInTheDocument();
     expect(accepted).toBe(false);
     await user.click(within(dialog).getByRole("button", { name: "Accept the answer" }));
     await vi.waitFor(() => expect(accepted).toBe(true));
+  });
+
+  it("opens the ticket's messages from the new-messages badge", async () => {
+    thread();
+    const { user } = render(<HoldersCard request={request([holder({ unread_for_office: 2 })])} />);
+    await user.click(screen.getByRole("button", { name: /read 2 new messages from samsung/i }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Messages")).toBeInTheDocument();
   });
 
   it("puts the other moves under More, and none the server did not send", async () => {

@@ -138,6 +138,9 @@ function stateBadge(h: RightsHolder) {
 
 const WORKING = ["in_progress", "awaiting_holders"];
 
+/** Where an opened ticket starts: its top, or its messages. */
+type TicketFocus = "messages" | null;
+
 const STEPS: { key: string; label: string }[] = [
   { key: "find", label: "Find who holds the data" },
   { key: "choose", label: "Choose who answers" },
@@ -207,13 +210,19 @@ export function HoldersCard({ request: r }: { request: RightsRequestDetail }) {
   const [adding, setAdding] = React.useState(false);
   const [openUuid, setOpenUuid] = React.useState<string | null>(null);
   const [startWith, setStartWith] = React.useState<TicketMoveName | null>(null);
+  const [focus, setFocus] = React.useState<TicketFocus>(null);
 
   const working = WORKING.includes(r.status);
   const unsent = r.holders.filter((h) => h.state === "not_sent");
   const opened = r.holders.find((h) => h.holder_uuid === openUuid) ?? null;
 
-  function open(h: RightsHolder, move: TicketMoveName | null = null) {
+  function open(
+    h: RightsHolder,
+    move: TicketMoveName | null = null,
+    at: TicketFocus = null,
+  ) {
     setStartWith(move);
+    setFocus(at);
     setOpenUuid(h.holder_uuid);
   }
 
@@ -297,7 +306,18 @@ export function HoldersCard({ request: r }: { request: RightsRequestDetail }) {
                           <span className="font-medium text-danger-text"> · No email - add one before sending</span>
                         )}
                         {h.responder_user_name || h.responder_name ? ` · ${h.responder_user_name ?? h.responder_name}` : ""}
-                        <UnreadBadge count={h.unread_for_office} />
+                        {/* Opens the ticket at its messages: a badge that only
+                            counted them could not be read (2026-10-30). */}
+                        {h.unread_for_office > 0 && (
+                          <button
+                            type="button"
+                            className="rounded-full hover:brightness-95 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+                            aria-label={`Read ${h.unread_for_office} new message${h.unread_for_office === 1 ? "" : "s"} from ${h.label}`}
+                            onClick={() => open(h, null, "messages")}
+                          >
+                            <UnreadBadge count={h.unread_for_office} />
+                          </button>
+                        )}
                       </span>
                     </Td>
                     <Td>{stateBadge(h)}</Td>
@@ -309,12 +329,26 @@ export function HoldersCard({ request: r }: { request: RightsRequestDetail }) {
                       {h.last_activity_at ? formatDateTime(h.last_activity_at) : "-"}
                     </Td>
                     <Td className="text-right">
+                      {/* Outlined when there is nothing to do but look: a
+                          borderless "Open" read as text, not a button
+                          (2026-10-30). */}
+                      {/* An answer is read before it is accepted: the row
+                          opens it, and Accept waits under it (2026-10-30). */}
                       <Button
-                        variant={main ? "primary" : "ghost"}
+                        variant={main ? "primary" : "secondary"}
                         size="sm"
-                        onClick={() => open(h, main?.move ?? null)}
+                        onClick={() =>
+                          open(h, main && main.move !== "accept" ? main.move : null)
+                        }
                       >
-                        {main ? main.label : "Open"}
+                        {main?.move === "accept"
+                          ? "Review the answer"
+                          : main
+                            ? main.label
+                            : "Open"}
+                        {(!main || main.move === "accept") && (
+                          <ChevronRight className="size-4" />
+                        )}
                       </Button>
                     </Td>
                   </Tr>
@@ -344,6 +378,7 @@ export function HoldersCard({ request: r }: { request: RightsRequestDetail }) {
               request={r}
               holder={opened}
               startWith={startWith}
+              focus={focus}
               onClose={() => setOpenUuid(null)}
             />
           </DialogContent>
@@ -453,11 +488,13 @@ function TicketPanel({
   request: r,
   holder: h,
   startWith,
+  focus = null,
   onClose,
 }: {
   request: RightsRequestDetail;
   holder: RightsHolder;
   startWith: TicketMoveName | null;
+  focus?: TicketFocus;
   onClose: () => void;
 }) {
   // Moves that open a form start on it; the rest (accept, remind, ...) wait
@@ -468,42 +505,59 @@ function TicketPanel({
   const actingMove = h.moves.find((m) => m.move === acting) ?? null;
   const unsent = h.state === "not_confirmed" || h.state === "not_sent";
   const items = r.items.filter((i) => i.holder_uuid === h.holder_uuid);
+  // An answer comes before what may be done about it: read, then accept or
+  // send back (2026-10-30 - Accept used to sit above the answer).
+  const answered = Boolean(h.return_summary);
+  const messages = React.useRef<HTMLDivElement | null>(null);
+  React.useEffect(() => {
+    if (focus === "messages") messages.current?.scrollIntoView?.({ block: "start" });
+  }, [focus]);
+
+  const actions = actingMove ? (
+    <MoveForm
+      request={r}
+      holder={h}
+      move={actingMove}
+      onDone={() => setActing(null)}
+      onClose={onClose}
+    />
+  ) : h.moves.length > 0 ? (
+    <div className="flex flex-wrap items-center gap-2">
+      {main && (
+        <Button variant="primary" size="sm" onClick={() => setActing(main.move)}>
+          {main.label}
+        </Button>
+      )}
+      {rest.length > 0 && (
+        <Menu
+          label="More actions"
+          trigger={
+            <span className="inline-flex items-center gap-1 text-sm">
+              <MoreHorizontal className="size-4" aria-hidden="true" /> More
+            </span>
+          }
+          align="start"
+        >
+          {rest.map((m) => (
+            <MenuItem key={m.move} onSelect={() => setActing(m.move)}>
+              {m.label}
+            </MenuItem>
+          ))}
+        </Menu>
+      )}
+    </div>
+  ) : null;
 
   return (
     <div className="space-y-5">
-      {actingMove ? (
-        <MoveForm request={r} holder={h} move={actingMove} onDone={() => setActing(null)} onClose={onClose} />
-      ) : (
-        h.moves.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2">
-            {main && (
-              <Button variant="primary" size="sm" onClick={() => setActing(main.move)}>
-                {main.label}
-              </Button>
-            )}
-            {rest.length > 0 && (
-              <Menu
-                label="More actions"
-                trigger={
-                  <span className="inline-flex items-center gap-1 text-sm">
-                    <MoreHorizontal className="size-4" aria-hidden="true" /> More
-                  </span>
-                }
-                align="start"
-              >
-                {rest.map((m) => (
-                  <MenuItem key={m.move} onSelect={() => setActing(m.move)}>
-                    {m.label}
-                  </MenuItem>
-                ))}
-              </Menu>
-            )}
-          </div>
-        )
-      )}
-
-      {h.return_summary && (
-        <section className="rounded-md border border-border p-3">
+      {answered && (
+        <section
+          className={
+            h.state === "review"
+              ? "rounded-md border border-accent-border bg-accent-subtle p-3"
+              : "rounded-md border border-border p-3"
+          }
+        >
           <h3 className="text-xs font-semibold tracking-wide text-text-subtle uppercase">Their answer</h3>
           <p className="mt-1 text-sm">
             {stateBadge(h)}
@@ -518,6 +572,12 @@ function TicketPanel({
               {h.return_evidence_name ?? "Their proof"} <ExternalLink className="size-3" aria-hidden="true" />
             </a>
           )}
+          {h.state === "review" && (
+            <p className="mt-2 text-xs text-text-muted">
+              Read it, and their messages below; then accept it, or send it back with what is
+              missing.
+            </p>
+          )}
           {h.accepted_at && (
             <p className="mt-2 text-xs text-text-muted">
               Accepted {formatDateTime(h.accepted_at)}
@@ -526,6 +586,8 @@ function TicketPanel({
           )}
         </section>
       )}
+
+      {actions}
 
       {unsent && h.moves.length > 0 && <InstructionEditor request={r} holder={h} />}
 
@@ -548,7 +610,11 @@ function TicketPanel({
         <TicketItems items={items} title={unsent ? "Items their ticket will list" : "Items on their ticket"} />
       )}
 
-      {h.issued_at && <ThreadSection request={r} holder={h} />}
+      {h.issued_at && (
+        <div ref={messages} className="scroll-mt-4">
+          <ThreadSection request={r} holder={h} />
+        </div>
+      )}
 
       {h.contact_log.length > 0 && (
         <details className="text-xs">
