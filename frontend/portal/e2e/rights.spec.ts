@@ -136,36 +136,25 @@ test.describe("data principal", () => {
       );
     await dialog.getByRole("button", { name: /send the request/i }).click();
 
-    // The card for *this* request: the innermost box holding both the text just
-    // typed and a reference. Her page keeps every request she has ever made, so
-    // "the first reference on the page" is somebody else's run once the
-    // database is no longer fresh.
-    const card = page
-      .locator("div")
-      .filter({ hasText: `E2E ${stamp}` })
-      .filter({ has: page.getByText(/^RR-\d{4}-\d{6}$/) })
-      .last();
-    const referenceOnCard = card.getByText(/^RR-\d{4}-\d{6}$/).first();
-    await expect(referenceOnCard).toBeVisible({ timeout: 10_000 });
-    const reference = await referenceOnCard.textContent();
+    // Made, it opens beside the list (on a phone, in its place): this request,
+    // the text just typed under its own reference. Her page keeps every request
+    // she has ever made, so "the first reference on the page" is somebody
+    // else's run once the database is no longer fresh.
+    const detail = page.locator("#request-detail");
+    await expect(detail.getByText(`E2E ${stamp}`)).toBeVisible({ timeout: 10_000 });
+    const referenceOnDetail = detail
+      .getByRole("heading")
+      .getByText(/^RR-\d{4}-\d{6}$/)
+      .first();
+    const reference = await referenceOnDetail.textContent();
     shared.reference = reference?.trim() ?? null;
     expect(shared.reference).toMatch(/^RR-\d{4}-\d{6}$/);
 
-    // The session verified her, so the clock started and the path shows it.
-    // A request opens expanded the moment it is made; open it only if it is not.
-    await expect(card.getByText(/received/i).first()).toBeVisible();
-    const collapsed = page.getByRole("button", { name: /show details/i }).first();
-    if (
-      !(await page
-        .getByRole("button", { name: /hide details/i })
-        .first()
-        .isVisible()
-        .catch(() => false))
-    ) {
-      await collapsed.click();
-    }
-    await expect(page.getByText(/days? to respond/i).first()).toBeVisible();
-    await expect(page.getByText(/the CMP answers its own records/i).first()).toBeVisible();
+    // The session verified her, so the clock started: received, and answered
+    // by its due date.
+    const progress = detail.getByRole("list", { name: /where it is/i });
+    await expect(progress.getByText("Received")).toBeVisible();
+    await expect(progress.getByText(/^by /)).toBeVisible();
     await shot(page, "my-requests");
   });
 
