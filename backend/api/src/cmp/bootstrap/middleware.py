@@ -1,14 +1,15 @@
 """Installing the middleware stack.
 
 Two groups, registered in this order: Starlette's own (host allow-listing,
-CORS, compression), then ours - `cmp.api.middleware.install` registers the four
+CORS, compression), then ours - `cmp.api.middleware.install` registers the five
 that need application knowledge: correlation id, security headers, body limit,
-access log.
+access log, and the public relay's opening of sealed values.
 
 Starlette runs middleware in reverse registration order, so a request enters
 ours first and Starlette's after: RequestContext, SecurityHeaders, BodyLimit,
-AccessLog, then GZip, CORS, TrustedHost. A request for a host we do not serve
-is therefore given a request id and an access-log line before it is refused -
+AccessLog, RelayOpenSealed, then GZip, CORS, TrustedHost. A request for a host
+we do not serve is therefore given a request id and an access-log line before
+it is refused -
 the opposite of what this module once said it did. Harmless (nothing is
 allocated beyond the id), but noted in docs/backend/06-known-gaps.md.
 

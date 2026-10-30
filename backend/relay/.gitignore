@@ -1,0 +1,22 @@
+# The relay's own ignores. The root .gitignore covers secrets and tool state
+# for the whole tree too; this keeps the package safe if it is ever moved.
+
+# The collector's private key and the ingress secret (keys generate,
+# keys ingress-key). Never committed, from anywhere.
+keys/
+*.key
+*.pem
+.env
+.env.*
+!.env.example
+
+# Development
+.venv/
+var/
+*.log
+__pycache__/
+*.py[cod]
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/

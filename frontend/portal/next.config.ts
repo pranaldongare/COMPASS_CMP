@@ -87,6 +87,30 @@ const nextConfig: NextConfig = {
     return [{ source: "/api/:path*", destination: `${API_ORIGIN}/:path*` }];
   },
 
+  /**
+   * The rewrite proxy above, sized for the uploads the forms allow.
+   *
+   * Next buffers a proxied request body up to `proxyClientMaxBodySize`, 10 MB
+   * by default, and forwards only the first 10 MB of anything larger - while
+   * the Content-Length still promises the rest. The API waits for bytes that
+   * never come, and the proxy gives up at its own 30-second default with a
+   * 500. The forms accept 25 MB (`MAX_UPLOAD_BYTES`), so everything between 10
+   * and 25 MB failed that way. 26 MB leaves room for the multipart framing.
+   * (Both defaults verified against next 16.3.2: `config-shared.js` and
+   * `router-utils/proxy-request.js` in node_modules/next/dist/server.)
+   *
+   * The timeout covers a 25 MB upload relayed through the queue when this
+   * portal runs on AWS (API_ORIGIN is then the relay bridge): the bridge
+   * allows an upload 50 s by default (`RELAY_UPLOAD_DEADLINE_S`, kept under
+   * the front door's 60 s) plus its grace, so the proxy must not hang up
+   * first. It is a ceiling, not a wait: every other
+   * request still answers as soon as the API does.
+   */
+  experimental: {
+    proxyClientMaxBodySize: "26mb",
+    proxyTimeout: 180_000,
+  },
+
   async headers() {
     return [
       {

@@ -41,6 +41,7 @@ one stays and points forward.
 | [0032](0032-offices-are-logical-tenants-in-one-database.md) | Offices are logical tenants in one database, enforced by row-level security | proposed 2026-10-26 |
 | [0033](0033-hr-consent-is-governed-by-an-approved-template-version.md) | HR consent is governed by a template version Legal approves once; an activity inherits it and needs no approval of its own | proposed 2026-10-27 |
 | [0034](0034-an-employee-link-signs-in-through-the-organisations-sso.md) | An employee consent link signs in through the organisation's SSO, and the account is matched on the employee ID | proposed 2026-10-27 |
+| [0035](0035-a-public-request-reaches-the-inside-only-when-the-inside-collects-it.md) | A public request reaches the inside only when the inside collects it from a queue, sealed | proposed 2026-10-23 |
 
 ## Writing one
 
