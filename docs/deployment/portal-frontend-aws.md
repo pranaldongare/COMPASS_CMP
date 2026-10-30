@@ -373,8 +373,8 @@ disabling it everywhere. The callback must not be cached by CloudFront
 `https://portal.<domain>/api/auth/sso/callback` with the provider and set
 `SSO_REDIRECT_URL` to it. Behind the public relay the same URL holds: the
 bridge carries the callback, its redirect crosses as the link's own path,
-and `SSO_TIMEOUT_S` is kept at 6 s or less so the callback finishes inside
-the relay's deadline. The API's calls to the provider leave from inside, so
+and `SSO_TIMEOUT_S` is kept at 5 s or less so the callback, which the relay
+starts only with 18 s left, finishes inside its deadline. The API's calls to the provider leave from inside, so
 the organisation's proxy must allow them ([ADR 0035](../decisions/0035-a-public-request-reaches-the-inside-only-when-the-inside-collects-it.md)).
 
 Then create the Route 53 alias `portal.<domain>` → the distribution.

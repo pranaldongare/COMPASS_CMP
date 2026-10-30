@@ -243,7 +243,10 @@ the allow-list, the deadline and the API's own authorisation are what decide.
   API. The API is called with a timeout of the time left at that moment,
   minus 0.5 s. The difference between `RELAY_DEADLINE_S` and the write budget
   (7 s by default, 32 s for an upload) is all the time a write has to be
-  collected.
+  collected. One GET is handled as a write: the SSO callback, which spends
+  the sign-in's one-time state before it calls the identity provider
+  (`allowlist.ONE_TIME_ROUTES`). Refused before the API for want of time,
+  the sign-in is still there and a reload finishes it.
 - **Writes are at most once; reads are not retried either.** A write's
   message is deleted *before* the API is called, so a crash cannot replay it.
   A read's message is deleted after its reply is sent, but a read whose

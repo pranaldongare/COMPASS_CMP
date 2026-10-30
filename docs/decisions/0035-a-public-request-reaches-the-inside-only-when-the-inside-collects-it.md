@@ -203,11 +203,16 @@ The options considered were these:
   token comes back. Whether the provider sits outside the network, and
   whether that route is allowed, is for the network team to confirm before
   SSO is switched on behind the relay.
-- **The SSO callback must finish inside the relay's deadline.** On a cold
-  cache it makes three calls to the provider in a row (discovery, token, key
-  set), each allowed `SSO_TIMEOUT_S`; behind the relay that setting is kept
-  at 6 s or less. A callback cut off has used its one-time state, and the
-  person starts the sign-in again from the link.
+- **The SSO callback is handled as a write.** It is a GET, but it spends the
+  sign-in's one-time state before it calls the provider. So the collector
+  deletes its message before the call and starts it only with the write
+  budget (18 s) left (`allowlist.ONE_TIME_ROUTES`): started late, it is
+  refused before the API, and a reload finishes the sign-in. On a cold cache
+  it makes three calls to the provider in a row (discovery, token, key set),
+  each allowed `SSO_TIMEOUT_S`, so behind the relay that setting is kept at
+  5 s or less, which fits the three inside the budget. A callback cut off
+  even so has used its one-time state, and the person starts the sign-in
+  again from the link.
 - **Both hosts must keep their clocks by NTP:** the bridge on Amazon Time
   Sync, the collector on the organisation's internal time server (no new
   egress). Measuring on AWS's clock absorbs a steady offset on the collector,

@@ -95,7 +95,7 @@ one-time-code path.
   `/api/auth/sso/callback`. The API's own calls to the provider then need an
   outbound route from inside the network, and a claim carrying a sealed
   value is refused like an assertion that does not validate, because the
-  relay opens sealed values in its replies.
+  API opens the sealed values in every reply it serves through the relay.
 
 ## Revisit when
 

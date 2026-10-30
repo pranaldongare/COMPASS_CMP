@@ -162,10 +162,15 @@ UNSAFE_METHODS = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 
 #: The one route whose redirect crosses (ADR 0034): the organisation's sign-in
 #: returns the browser to it, and the API sends the browser on to the link the
-#: sign-in started from. It stays a read: the sign-in it continues is taken in
-#: one step, so a repeat finds nothing, and a redelivered message is past its
-#: deadline before a collector could run it again.
+#: sign-in started from.
 REDIRECT_ROUTES = frozenset({"/auth/sso/callback"})
+
+#: Reads that use up one-time state, handled as writes: deleted before the
+#: call, and started only with the write budget left. The SSO callback takes
+#: the sign-in it continues in one step, then calls the provider; started late
+#: and cut off, it would have spent the sign-in for nothing. Refused before the
+#: call instead, the sign-in is still there and a reload finishes it.
+ONE_TIME_ROUTES = frozenset({"/auth/sso/callback"})
 
 
 def _compile(template: str) -> re.Pattern[str]:

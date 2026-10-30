@@ -561,6 +561,35 @@ def test_a_write_without_enough_time_left_is_503_and_never_starts(world: World) 
     assert world.depth(world.request_q) == 0
 
 
+def test_the_sso_callback_without_enough_time_left_is_503_and_never_starts(
+    world: World,
+) -> None:
+    # A read that spends the sign-in's one-time state: refused before the API,
+    # so the state is still there and a reload can finish the sign-in.
+    rid, keys = world.send(path="/auth/sso/callback", query="state=s&code=c", deadline_s=10)
+    world.pump()
+    assert world.api.calls == []
+    response = world.reply(rid, keys)
+    assert response.status == 503
+    assert _error(response, world, keys)["code"] == "deadline_too_close"
+
+
+def test_the_sso_callbacks_message_is_deleted_before_the_api_is_called(world: World) -> None:
+    depth_during_call: list[int] = []
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        depth_during_call.append(world.depth(world.request_q))
+        return httpx.Response(303, headers={"location": f"https://p.example/c/{TOKEN}?sso=ok"})
+
+    world.api.respond = respond
+    rid, keys = world.send(path="/auth/sso/callback", query="state=s&code=c")
+    world.pump()
+    assert depth_during_call == [0]
+    reply = world.reply(rid, keys)
+    assert reply.status == 303
+    assert ("location", f"/c/{TOKEN}?sso=ok") in reply.headers
+
+
 def test_a_read_with_little_time_left_still_runs(world: World) -> None:
     rid, keys = world.send(deadline_s=3)
     world.pump()

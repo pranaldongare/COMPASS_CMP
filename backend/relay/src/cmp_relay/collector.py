@@ -526,7 +526,7 @@ class Collector:
         if time_left <= MIN_TIME_LEFT_S:
             self._expire(received, request, note)
             return
-        unsafe = method in allowlist.UNSAFE_METHODS
+        unsafe = method in allowlist.UNSAFE_METHODS or route in allowlist.ONE_TIME_ROUTES
         if unsafe:
             budget = self._settings.write_budget_s
             if time_left < budget:
