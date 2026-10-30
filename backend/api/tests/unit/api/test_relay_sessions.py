@@ -38,7 +38,13 @@ KEY = "k" * 40
 CSRF = "csrf-token-of-this-session"
 
 
-def _session(role: str, account_role: str | None = None, *, partial: bool = False) -> Session:
+def _session(
+    role: str,
+    account_role: str | None = None,
+    *,
+    partial: bool = False,
+    office: str | None = None,
+) -> Session:
     now = time.time()
     return Session(
         sid=f"sid-{role}-{account_role}",
@@ -46,6 +52,7 @@ def _session(role: str, account_role: str | None = None, *, partial: bool = Fals
         user_uuid="7e57-u5er",
         role=role,
         account_role=account_role or role,
+        office=office,
         created_at=now,
         last_seen_at=now,
         expires_at=now + 3600,
@@ -59,12 +66,20 @@ def _session(role: str, account_role: str | None = None, *, partial: bool = Fals
 
 #: Cookie token -> the session it resolves to.
 SESSIONS = {
-    "staff": _session("dpo"),
+    # A console session carries its account's office (ADR 0032).
+    "staff": _session("dpo", office="rnd"),
+    # The administrator works across both offices: no office.
     "staff-partial": _session("admin", partial=True),
+    "legal": _session("legal", office="hr"),
+    "hr-user": _session("hr_user", office="hr"),
+    "breach-holder": _session("breach_holder"),
+    # A data principal's session never carries an office (open_principal_session).
     "subject": _session("data_subject"),
-    # A staff member signed in on the portal with a code: a data principal's
-    # session on a staff account (staff-as-principal).
+    # A staff member signed in on the portal with a code, or by SSO on an
+    # employee link: a data principal's session on a staff account
+    # (staff-as-principal). No office, whatever the account's.
     "staff-as-principal": _session("data_subject", "dpo"),
+    "hr-user-as-principal": _session("data_subject", "hr_user"),
 }
 
 
@@ -107,6 +122,14 @@ def _app() -> FastAPI:
     ) -> dict[str, Any]:
         return {"role": principal.role.value}
 
+    @app.get("/office")
+    async def office(
+        principal: Annotated[Principal, Depends(current_principal)],
+    ) -> dict[str, Any]:
+        from cmp.core.context import current_context
+
+        return {"office": current_context().office}
+
     @app.post("/auth/logout")
     async def logout(session: Annotated[Session, Depends(session_from_request)]) -> dict[str, Any]:
         return {"sid": session.sid}
@@ -130,11 +153,12 @@ def _headers(token: str, *, relayed: bool, **extra: str) -> dict[str, str]:
 
 
 class TestAStaffSessionThroughTheRelay:
-    @pytest.mark.parametrize("path", ["/auth/me", "/notifications"])
+    @pytest.mark.parametrize("token", ["staff", "legal", "hr-user", "breach-holder"])
+    @pytest.mark.parametrize("path", ["/auth/me", "/notifications", "/office"])
     async def test_is_refused_as_unauthenticated(
-        self, http: httpx.AsyncClient, store: Store, path: str
+        self, http: httpx.AsyncClient, store: Store, path: str, token: str
     ) -> None:
-        response = await http.get(path, headers=_headers("staff", relayed=True))
+        response = await http.get(path, headers=_headers(token, relayed=True))
 
         assert response.status_code == 401
         assert response.json()["error"]["code"] == "unauthenticated"
@@ -190,7 +214,7 @@ class TestTheSameStaffSessionInside:
 
 
 class TestADataPrincipalThroughTheRelay:
-    @pytest.mark.parametrize("token", ["subject", "staff-as-principal"])
+    @pytest.mark.parametrize("token", ["subject", "staff-as-principal", "hr-user-as-principal"])
     @pytest.mark.parametrize("path", ["/auth/me", "/notifications"])
     async def test_is_served(
         self, http: httpx.AsyncClient, store: Store, token: str, path: str
@@ -235,3 +259,22 @@ class TestADataPrincipalThroughTheRelay:
         response = await http.get("/auth/me", headers=_headers("gone", relayed=True))
 
         assert response.status_code == 401
+
+
+class TestTheOfficeARelayedRequestActsIn:
+    @pytest.mark.parametrize("token", ["subject", "staff-as-principal", "hr-user-as-principal"])
+    async def test_a_data_principal_binds_no_office(
+        self, http: httpx.AsyncClient, store: Store, token: str
+    ) -> None:
+        """None: the pool sets app.office = 'all'; her rows are bounded by the account."""
+        response = await http.get("/office", headers=_headers(token, relayed=True))
+
+        assert response.status_code == 200
+        assert response.json() == {"office": None}
+
+    async def test_the_same_staff_session_inside_binds_its_office(
+        self, http: httpx.AsyncClient, store: Store
+    ) -> None:
+        response = await http.get("/office", headers=_headers("legal", relayed=False))
+
+        assert response.json() == {"office": "hr"}
