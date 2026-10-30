@@ -134,6 +134,14 @@ on the same parser with its own error. Otherwise the body is replayed to the
 route unchanged. Because the check is on the input, not per route, a new input
 that a route stores or echoes is covered without a change here.
 
+That covers what the browser sends, not what the API fetches for itself. The
+organisation's sign-in (ADR 0034) is one such input: a new employee's name and
+employee ID are written from the identity provider's claims, which arrive on
+the API's own call to the provider. So `sso.callback` refuses an assertion
+with the prefix in any claim, as one that does not validate. Any later input
+the API fetches itself, such as an HR system's events, needs the same check
+where it enters.
+
 Only the bytes of an uploaded file are not searched. They are the person's own
 document, and they come back only as a download, never inside JSON, which is
 the only kind of reply the API opens.

@@ -42,6 +42,7 @@ from cmp.db.sql import Conn, unique_violation
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.domain.consent.service import resolve_link
+from cmp.infrastructure.dkms.fields import PREFIX as SEALED_PREFIX
 from cmp.infrastructure.identity import mock, oidc
 from cmp.infrastructure.identity import state as sso_state
 from cmp.validation import normalise_mobile
@@ -126,6 +127,7 @@ async def callback(
         provider = _provider()
         id_token = await provider.exchange(code=code, verifier=str(started["verifier"]))
         claims = await provider.validate(id_token, nonce=str(started["nonce"]))
+        _refuse_sealed(claims)
     except oidc.ProviderUnavailable:
         return Outcome("unavailable", token)
     except oidc.AssertionInvalid as exc:
@@ -166,6 +168,18 @@ async def callback(
     )
     await _signed_in(conn, link, account["id"], created=False)
     return Outcome("signed_in", token, session_token=raw, session=session)
+
+
+def _refuse_sealed(claims: oidc.Claims) -> None:
+    """A sealed value in a claim refuses the assertion. A new account's name
+    and employee ID are written from the claims, `seal()` passes a value that
+    is already sealed through as it is, and a relayed reply opens every
+    sealed value it carries (ADR 0035): someone who can set their own
+    directory name to another person's ciphertext would read it back opened.
+    The relay checks what the browser sends; this is what the API fetches."""
+    for value in (claims.subject, claims.employee_id, claims.email, claims.name):
+        if value and SEALED_PREFIX in value:
+            raise oidc.AssertionInvalid("a claim carries a sealed value")
 
 
 async def _conflict(conn: Conn, link: dict[str, Any], user_id: int, cause: str) -> None:

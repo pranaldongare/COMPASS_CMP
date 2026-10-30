@@ -204,6 +204,26 @@ class TestRefusals:
         assert outcome.kind == "invalid"
         assert await user_repo.by_employee_id(conn, _employee("A1004")) is None
 
+    @pytest.mark.parametrize(
+        "claim",
+        [
+            {"name": "SE::v1:k-1:ciphertext-of-someone-else"},
+            {"employee_id": "SE::v1:k-1:ciphertext-of-someone-else"},
+        ],
+    )
+    async def test_a_sealed_value_in_a_claim_writes_no_account(
+        self, conn: Any, stub: StubProvider, link: str, claim: dict[str, str]
+    ) -> None:
+        # Stored as given (seal passes it through), it would come back opened
+        # in a relayed reply (ADR 0035).
+        employee = _employee("A1005")
+        outcome = await _through_provider(
+            conn, stub, link, **{"employee_id": employee, "email": None, **claim}
+        )
+        assert outcome.kind == "invalid"
+        assert outcome.pending_id is None and outcome.session_token is None
+        assert await user_repo.by_employee_id(conn, employee) is None
+
     async def test_a_provider_that_does_not_answer_is_reported_as_such(
         self, conn: Any, stub: StubProvider, link: str
     ) -> None:
