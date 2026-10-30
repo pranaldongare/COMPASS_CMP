@@ -133,6 +133,12 @@ class Settings(BaseSettings):
     #: How long the provider has to answer one call before the person is told
     #: it did not answer (never that the link is invalid; review UX-3).
     sso_timeout_s: float = 8.0
+    #: Development only: a stand-in for the provider, so an `sso` link can be
+    #: followed with none (2026-10-30). Its sign-in page takes any email
+    #: address and sends a code to it; the assertion carries that address, a
+    #: name made from it and an employee ID derived from it (`MOCK-…`).
+    #: Refused outside local and test: it signs anybody in as anybody.
+    sso_mock: bool = False
 
     # ---------------------------------------------------------------- CORS
     cors_origins: Annotated[tuple[str, ...], NoDecode] = ("http://localhost:3000",)
@@ -185,6 +191,9 @@ class Settings(BaseSettings):
         "neha.gupta@cmp.local",
         "siddharth.rao@cmp.local",
         "pooja.bhat@cmp.local",
+        "meera.nair@cmp.local",
+        "rahul.desai@cmp.local",
+        "ananya.sen@cmp.local",
     )
     #: The key the blind indexes are computed under. Separate from SECRET_KEY on
     #: purpose: rotating the session secret must not change every index, and
@@ -434,6 +443,8 @@ class Settings(BaseSettings):
             # Not production-only: a staging deployment real people sign in
             # to must not print their codes on the screen either.
             raise ValueError("DEV_SHOW_CODES is for local development only")
+        if self.sso_mock and self.environment not in ("local", "test"):
+            raise ValueError("SSO_MOCK is for local development only")
         if self.storage_backend == "object":
             # Any environment: `ObjectStorage` is a stub that raises on the
             # first save, so a deployment set this way started, said it was

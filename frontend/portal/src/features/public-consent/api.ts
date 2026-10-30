@@ -125,3 +125,25 @@ export function ssoMobileVerify(
 ): Promise<Acknowledged> {
   return apiPost<Acknowledged>(`/c/${token}/sso/mobile/verify`, body);
 }
+
+// Development only: the stand-in for the organisation's sign-in page
+// (`SSO_MOCK` on the API, which mounts these routes nowhere else). Any
+// address, a code sent to it, then the browser goes where the API says.
+
+/** A code to whatever address was typed. */
+export function ssoMockCode(state: string, email: string): Promise<Acknowledged> {
+  return apiPost<Acknowledged>("/dev/sso/code", { state, email });
+}
+
+/** The code back: where to send the browser - the sign-in's callback. */
+export function ssoMockConfirm(
+  state: string,
+  body: { email: string; code: string },
+): Promise<{ redirect_url: string }> {
+  return apiPost<{ redirect_url: string }>("/dev/sso/confirm", { state, ...body });
+}
+
+/** Turned back: the callback, told the sign-in was cancelled. */
+export function ssoMockCancel(state: string): Promise<{ redirect_url: string }> {
+  return apiPost<{ redirect_url: string }>("/dev/sso/cancel", { state });
+}

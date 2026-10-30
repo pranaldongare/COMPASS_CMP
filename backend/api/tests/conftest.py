@@ -35,6 +35,10 @@ if sys.platform == "win32":
 os.environ.setdefault("ENVIRONMENT", "test")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-at-least-32-bytes-long!!")
 os.environ.setdefault("COOKIE_SECURE", "false")
+# A developer's .env may put the stand-in provider in front of `sso` links;
+# the suites test the real one against a stub, and the stand-in where it is
+# switched on for the test (`test_sso_mock`).
+os.environ.setdefault("SSO_MOCK", "false")
 
 
 @pytest.fixture(autouse=True)

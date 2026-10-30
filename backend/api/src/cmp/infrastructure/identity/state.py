@@ -48,6 +48,13 @@ async def take(state: str) -> dict[str, Any] | None:
     return _open(raw)
 
 
+async def peek(state: str) -> dict[str, Any] | None:
+    """The sign-in for `state`, left for the callback: the stand-in provider's
+    page reads it while the person is still there (`mock`)."""
+    raw = await get_redis().get(key(K_SSO, "state", state))
+    return _open(raw)
+
+
 async def hold(claims: dict[str, Any], *, link_token: str) -> str:
     """An assertion that matched nobody, kept until a mobile is confirmed."""
     pending = secrets.token_urlsafe(32)

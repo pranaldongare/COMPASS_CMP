@@ -64,13 +64,19 @@ __all__ = ["ROUTERS"]
 
 def _development_routers() -> tuple[APIRouter, ...]:
     """Routers that exist only on a developer's machine, and only when asked."""
+    from cmp.core.config import settings
     from cmp.infrastructure import devcodes
 
-    if not devcodes.enabled():
-        return ()
-    from cmp.api.routers.public.devcodes import router as devcodes_router
+    routers: list[APIRouter] = []
+    if devcodes.enabled():
+        from cmp.api.routers.public.devcodes import router as devcodes_router
 
-    return (devcodes_router,)
+        routers.append(devcodes_router)
+    if settings.sso_mock and settings.environment in ("local", "test"):
+        from cmp.api.routers.public.devsso import router as devsso_router
+
+        routers.append(devsso_router)
+    return tuple(routers)
 
 
 ROUTERS = (*ROUTERS, *_development_routers())

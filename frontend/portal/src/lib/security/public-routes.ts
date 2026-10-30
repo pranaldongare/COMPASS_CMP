@@ -14,7 +14,16 @@
 
 /** Path prefixes reachable with no session at all. */
 /** `/ticket/` is an outside holder's ticket, opened by its link and a code (0049). */
-export const PUBLIC_PREFIXES = ["/sign-in", "/sign-up", "/rights", "/c/", "/ticket/", "/help"] as const;
+/** `/sso-mock` is the development stand-in for an organisation's sign-in (`SSO_MOCK`). */
+export const PUBLIC_PREFIXES = [
+  "/sign-in",
+  "/sign-up",
+  "/rights",
+  "/c/",
+  "/ticket/",
+  "/help",
+  "/sso-mock",
+] as const;
 
 /**
  * Is this path public?

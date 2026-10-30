@@ -58,6 +58,9 @@ class Scope:
     #: the account will be created with (ADR 0034, F-7). Keyed on the pending
     #: sign-in and the number: "<pending>:<mobile>".
     SSO_MOBILE = "sso_mobile"
+    #: Development only: the stand-in provider's sign-in, proving the address
+    #: typed on its page (`SSO_MOCK`). Keyed "<state>:<email>".
+    SSO_MOCK = "sso_mock"
 
 
 @dataclass(frozen=True, slots=True)

@@ -149,8 +149,9 @@ project and the notice are the DPO's to open, not the administrator's.
 
 **A populated platform, optionally.** `scripts/seed_demo.py`, run after
 `seed.py`, fills the database the way a deployment fills up - through the API,
-each row written by the person whose job it is: twelve staff (password
-`SeedPassw0rd!2026`, e.g. `kavitha.raman@cmp.local` as a DPO), and ten or more
+each row written by the person whose job it is: fifteen staff (password
+`SeedPassw0rd!2026`, e.g. `kavitha.raman@cmp.local` as a DPO and
+`meera.nair@cmp.local` as the Legal office's PoC), and ten or more
 processors, sources, purposes, projects with notices, sites, consent links,
 data principals and their consents (a few partial, declined or withdrawn),
 exports, imports and rights requests. It runs once per database and stops
@@ -203,7 +204,7 @@ deployment.
 **The seed accounts, on the sign-in page.** With the same switch on, the
 console's sign-in page has a **Development accounts** panel: the seed's own
 logins - `admin@`, `dpo@`, `dcoadmin@`, `dco@`, `rco@`, `rnd@cmp.local` and
-`seed_demo.py`'s twelve staff - that are active and still have the seed
+`seed_demo.py`'s fifteen staff - that are active and still have the seed
 password, with the password and a **Use** button that fills the form. Each is
 checked against the password it has now (`GET /dev/seed-accounts`), so one
 whose password was changed disappears from the list, and an account the seed
@@ -219,6 +220,27 @@ counters:
 redis-cli --scan --pattern 'rate:*' | xargs -r redis-cli del
 # or, if Redis is the container: docker exec compass-redis-1 redis-cli --scan --pattern 'rate:*' | xargs -r docker exec -i compass-redis-1 redis-cli del
 ```
+
+**Employee links without an identity provider.** A consent link minted
+`sso` (ADR 0034) signs in only through the organisation's provider, so with
+none configured it says the sign-in is not available. For local testing,
+switch on the stand-in:
+
+```bash
+# backend/api/.env - then restart the API
+SSO_MOCK=true
+```
+
+"Continue with your organisation account" then opens the portal's
+`/sso-mock` page: type any email address, and a code is sent to it (the
+development popup shows it). From there the sign-in is the real one - the
+callback, the match on the employee ID, the mobile and date-of-birth steps,
+the notice. The employee ID is derived from the address (`MOCK-` and eight
+hex digits), so the same address is the same employee every time. An
+address already on an account that has no employee ID - a registered data
+principal, a member of staff - is refused as a conflict, as it would be
+from a real provider. The setting takes the provider's place while it is on,
+and the API refuses to start with it outside `local` and `test`.
 
 ## Looking at the database
 

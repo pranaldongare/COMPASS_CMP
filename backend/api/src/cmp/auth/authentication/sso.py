@@ -42,7 +42,7 @@ from cmp.db.sql import Conn, unique_violation
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.domain.consent.service import resolve_link
-from cmp.infrastructure.identity import oidc
+from cmp.infrastructure.identity import mock, oidc
 from cmp.infrastructure.identity import state as sso_state
 from cmp.validation import normalise_mobile
 
@@ -74,6 +74,12 @@ class Outcome:
     extra: dict[str, Any] = field(default_factory=dict)
 
 
+def _provider() -> Any:
+    """The organisation's provider; in local development, when asked for, the
+    stand-in (`SSO_MOCK`), which answers the same calls."""
+    return mock if settings.sso_mock else oidc
+
+
 async def _sso_link(conn: Conn, token: str) -> dict[str, Any]:
     link = await resolve_link(conn, token)
     if link.get("audience_mode") != "sso":
@@ -86,13 +92,15 @@ async def start(conn: Conn, *, token: str) -> str:
     """Where to send the browser: the provider's sign-in, with this sign-in's
     state, nonce and PKCE challenge, which the server keeps."""
     await _sso_link(conn, token)
-    if not oidc.configured():
+    provider = _provider()
+    if not provider.configured():
         raise SsoUnavailable("not configured")
     verifier, challenge = oidc.pkce_pair()
     nonce = secrets.token_urlsafe(32)
     state = await sso_state.begin(link_token=token, nonce=nonce, verifier=verifier)
     try:
-        return await oidc.authorize_url(state=state, nonce=nonce, challenge=challenge)
+        url: str = await provider.authorize_url(state=state, nonce=nonce, challenge=challenge)
+        return url
     except oidc.ProviderUnavailable as exc:
         raise SsoUnavailable(str(exc)) from exc
 
@@ -115,8 +123,9 @@ async def callback(
         # The person cancelled at the provider, or the provider refused.
         return Outcome("cancelled", token)
     try:
-        id_token = await oidc.exchange(code=code, verifier=str(started["verifier"]))
-        claims = await oidc.validate(id_token, nonce=str(started["nonce"]))
+        provider = _provider()
+        id_token = await provider.exchange(code=code, verifier=str(started["verifier"]))
+        claims = await provider.validate(id_token, nonce=str(started["nonce"]))
     except oidc.ProviderUnavailable:
         return Outcome("unavailable", token)
     except oidc.AssertionInvalid as exc:
