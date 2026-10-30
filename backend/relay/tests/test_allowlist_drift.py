@@ -47,6 +47,19 @@ PASS_THROUGH: frozenset[tuple[str, str]] = frozenset(
     }
 )
 
+#: The helpers whose callers `_CALL` reads. A new helper that takes a path must
+#: be added to `_CALL` and here, or its callers are never checked.
+SCANNED_HELPERS = frozenset(
+    {"apiGet", "apiPost", "apiPut", "apiPatch", "apiDelete", "apiDownload", "useApiMutation"}
+)
+#: Where the helpers live.
+HELPER_FILES = ("lib/api", "lib/query")
+#: A function or arrow whose first parameter is a path.
+_TAKES_A_PATH = re.compile(
+    r"export\s+(?:async\s+)?(?:function\s+(?P<fn>\w+)|const\s+(?P<const>\w+)\s*=\s*(?:async\s*)?)"
+    r"\s*(?:<(?:[^<>]|<[^<>]*>)*>)?\s*\(\s*(?:url|path|endpoint|route)\b"
+)
+
 #: The ways the portal calls the API: the api* helpers, the axios instance
 #: itself, and useApiMutation (a POST unless its second argument is "put").
 _CALL = re.compile(
@@ -56,7 +69,6 @@ _CALL = re.compile(
     r"\s*(?:<(?:[^<>]|<[^<>]*>)*>)?\s*\(\s*"
 )
 _DEFINITION = re.compile(r"function\s+$")
-_METHOD = {"Download": "GET"}
 
 
 @dataclass(frozen=True)
@@ -108,8 +120,11 @@ def _calls() -> list[Call]:
             if _DEFINITION.search(text[: m.start()][-40:]):
                 continue  # the helper's own definition, not a call
             written, literal, end = _argument(text, m.end())
-            if m["api"]:
-                method = _METHOD.get(m["api"], m["api"].upper())
+            if m["api"] == "Download":
+                # A download with a body is a POST (the records by ID).
+                method = "POST" if re.match(r"\s*,\s*[^)\s]", text[end:]) else "GET"
+            elif m["api"]:
+                method = m["api"].upper()
             elif m["http"]:
                 method = m["http"].upper()
             else:
@@ -156,6 +171,32 @@ def test_every_call_the_portal_makes_crosses_the_relay() -> None:
     assert not missing, "portal calls with no row in allowlist.PUBLIC_ROUTES:\n" + "\n".join(
         missing
     )
+
+
+def test_every_helper_that_takes_a_path_is_scanned() -> None:
+    # PASS_THROUGH lets a helper's body pass on `url`; that is only safe while
+    # the helper's own callers are read. A helper copied from apiPost under a
+    # new name would otherwise hide every call made through it.
+    unknown = []
+    for folder in HELPER_FILES:
+        for path in sorted((PORTAL / folder).rglob("*.ts*")):
+            if ".test." in path.name:
+                continue
+            for m in _TAKES_A_PATH.finditer(path.read_text(encoding="utf-8")):
+                name = m["fn"] or m["const"]
+                if name not in SCANNED_HELPERS:
+                    unknown.append(f"{path.relative_to(PORTAL).as_posix()}: {name}")
+    assert not unknown, "helpers taking a path that this test does not read:\n" + "\n".join(unknown)
+    assert {"apiGet", "apiPost", "apiDownload", "useApiMutation"} <= _helpers_found()
+
+
+def _helpers_found() -> set[str]:
+    found: set[str] = set()
+    for folder in HELPER_FILES:
+        for path in (PORTAL / folder).rglob("*.ts*"):
+            for m in _TAKES_A_PATH.finditer(path.read_text(encoding="utf-8")):
+                found.add(m["fn"] or m["const"])
+    return found
 
 
 def test_every_named_exception_is_still_used() -> None:

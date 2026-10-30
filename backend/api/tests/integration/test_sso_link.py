@@ -215,14 +215,23 @@ class TestRefusals:
         self, conn: Any, stub: StubProvider, link: str, claim: dict[str, str]
     ) -> None:
         # Stored as given (seal passes it through), it would come back opened
-        # in a relayed reply (ADR 0035).
-        employee = _employee("A1005")
+        # in a relayed reply (ADR 0035). A plain subject, so the refusal is the
+        # named claim's own: the stub otherwise derives `sub` from the employee ID.
+        refused = (
+            "SELECT count(*) AS n FROM audit_log WHERE event_type = 'auth.sso_assertion_refused'"
+        )
+        before = await fetch_one(conn, refused)
         outcome = await _through_provider(
-            conn, stub, link, **{"employee_id": employee, "email": None, **claim}
+            conn,
+            stub,
+            link,
+            **{"employee_id": _employee("A1005"), "email": None, "sub": "sub-plain", **claim},
         )
         assert outcome.kind == "invalid"
         assert outcome.pending_id is None and outcome.session_token is None
-        assert await user_repo.by_employee_id(conn, employee) is None
+        after = await fetch_one(conn, refused)
+        assert before is not None and after is not None
+        assert after["n"] == before["n"] + 1
 
     async def test_a_provider_that_does_not_answer_is_reported_as_such(
         self, conn: Any, stub: StubProvider, link: str

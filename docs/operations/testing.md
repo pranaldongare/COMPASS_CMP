@@ -200,6 +200,7 @@ It closes the breach it made. The worker must have been restarted since
 | `E2E_API_URL` | console | `NEXT_PUBLIC_API_URL`, then `http://localhost:8000` | `controls.spec.ts` calls the API directly with the saved session, whose cookie is scoped to `127.0.0.1`; on `localhost` the DCO test fails. Set `http://127.0.0.1:8000` |
 | `E2E_PASSWORD` | console | `SeedPassw0rd!2026` | the seed's staff password is used by `auth.setup.ts` |
 | `E2E_CONSENT_TOKEN` | portal | none | the consent journey in `consent-flow.spec.ts` skips. The token is the last segment of an active link's `url_path` from `GET /links` |
+| `E2E_SSO_TOKEN` | portal | none | `sso-link.spec.ts` skips. The raw token of an HR activity's `sso` link (the last segment of its `url_path`). The API must run with `SSO_MOCK=true`, and `PUBLIC_BASE_URL` and `SSO_REDIRECT_URL` must name the portal under test, because the stand-in sends the browser there. Each run creates an employee account |
 | `E2E_OUTBOX` | both | `backend/api/var/outbox.log` | |
 | `E2E_BASE_URL` | both | `http://127.0.0.1:<E2E_PORT>` | set, the suite uses that server and builds nothing |
 | `E2E_SHOTS` | portal | empty | `rights.spec.ts` takes no screenshots |

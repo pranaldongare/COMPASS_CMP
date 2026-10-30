@@ -63,9 +63,11 @@ test.describe("an employee's sso link", () => {
     const verified = page.waitForResponse((r) => r.url().includes("/sso/mobile/verify"));
     await page.getByRole("button", { name: /^confirm$/i }).click();
     expect((await verified).ok()).toBe(true);
-    await expect(
-      page.getByRole("heading", { name: /your contact is confirmed/i }),
-    ).toBeVisible();
+    // The account is new and has no date of birth, so the link asks for one
+    // before the notice: the step it settles on, signed in.
+    await expect(page.getByRole("heading", { name: /your date of birth/i })).toBeVisible({
+      timeout: 10_000,
+    });
 
     // Signed in as a data principal, in no office, on an employee account.
     const origin = new URL(page.url()).origin;
