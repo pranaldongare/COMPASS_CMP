@@ -129,6 +129,10 @@ security for its tenants.
   runs as a role the policies bind.
 - The database role the API runs as in production must not be a superuser
   and must not hold `BYPASSRLS`; the startup check enforces it.
+- A request through the public relay
+  ([ADR 0035](0035-a-public-request-reaches-the-inside-only-when-the-inside-collects-it.md))
+  is anonymous or a data principal's, so it binds no office; the relay
+  refuses every session that carries one.
 - The DCT and the CMP now isolate tenants the same way, so one explanation
   serves both and the SQL can be shared.
 - Templates on the HR track are versioned, approved by Legal and scoped to a

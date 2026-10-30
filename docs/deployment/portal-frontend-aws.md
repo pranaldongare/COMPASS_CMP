@@ -20,13 +20,14 @@ used anywhere in this design.
 > connections), the portal reaches it through the public relay instead of a
 > private network path: [backend/relay](../../backend/relay/README.md) and
 > [ADR 0035](../decisions/0035-a-public-request-reaches-the-inside-only-when-the-inside-collects-it.md)
-> (proof of concept, 2026-10-23). Three things below change in that shape:
+> (proof of concept, 2026-10-23). Four things below change in that shape:
 > `API_ORIGIN` is the bridge on each instance (`http://127.0.0.1:8080`) and
 > neither the API nor DKMS is reachable from AWS; the front door's timeouts
 > must exceed the relay's upload deadline plus 5 s, and behind CloudFront the
-> bridge needs `RELAY_CLIENT_IP_HOP=2`; and each portal instance needs a reply
+> bridge needs `RELAY_CLIENT_IP_HOP=2`; each portal instance needs a reply
 > queue of its own, so the Auto Scaling group cannot simply scale out until a
-> queue per instance is created at boot.
+> queue per instance is created at boot; and SSO on employee links (7.8)
+> needs the API, inside, to reach the identity provider outbound.
 
 **Status:** proposal, 2026-10-14. Nothing here is provisioned yet. The facts
 about how the portal builds and runs were checked against a production build
@@ -370,7 +371,11 @@ set that rule to Count for the path `/api/auth/sso/callback` rather than
 disabling it everywhere. The callback must not be cached by CloudFront
 (it is under `/api/*`, which is not). Register exactly
 `https://portal.<domain>/api/auth/sso/callback` with the provider and set
-`SSO_REDIRECT_URL` to it.
+`SSO_REDIRECT_URL` to it. Behind the public relay the same URL holds: the
+bridge carries the callback, its redirect crosses as the link's own path,
+and `SSO_TIMEOUT_S` is kept at 6 s or less so the callback finishes inside
+the relay's deadline. The API's calls to the provider leave from inside, so
+the organisation's proxy must allow them ([ADR 0035](../decisions/0035-a-public-request-reaches-the-inside-only-when-the-inside-collects-it.md)).
 
 Then create the Route 53 alias `portal.<domain>` → the distribution.
 

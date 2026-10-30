@@ -426,6 +426,15 @@ logs and generated files go in `var/` (gitignored).
     serving a portal of its own. The specs read sign-in codes from the API's
     development outbox, so they need the seeded accounts.
 
+    **An employee's `sso` link through the relay** uses the API's stand-in
+    for the organisation's sign-in. The API needs `SSO_MOCK=true`, and
+    `PUBLIC_BASE_URL=http://localhost:3005` with
+    `SSO_REDIRECT_URL=http://localhost:3005/api/auth/sso/callback`, because
+    the stand-in sends the browser to those two. Otherwise it lands on the
+    portal on 3001, which is not relayed, and the check proves nothing. The
+    stand-in's `/dev/sso/*` cross because `provision` writes
+    `RELAY_ALLOW_DEV_ROUTES=true` for local.
+
 **To try a second bridge** (the multi-instance case), start a second bridge on
 8081 with `var/bridge-b.env`, which names the other reply queue. Then run a
 third portal copy with `API_ORIGIN=http://127.0.0.1:8081`. Never start two
@@ -729,6 +738,13 @@ default) through EventBridge and AWS Health. Route those to the on-call topic.
   warning.
 - **A fixed egress address.** The collector role refuses every call from
   outside `OrgEgressCidrs`. Behind Zscaler, that means a dedicated egress IP.
+- **Not the collector's, but the API's: the organisation's sign-in.** With
+  `SSO_ENABLED` (ADR 0034) the API itself calls the identity provider
+  (discovery, token, key set), on 443 through the proxy, with the client
+  secret going out and employees' ID tokens coming back: no TLS inspection
+  for those hosts either. The API reads `HTTPS_PROXY` from its environment,
+  so its `NO_PROXY` must name every inside host it calls directly (the key
+  service, PostgreSQL, Redis).
 - **Not yet confirmed (test in staging):**
   - whether S3 refuses a request whose `Host` differs from its SNI;
   - whether the `aws:SourceIp` condition on the collector role sees the

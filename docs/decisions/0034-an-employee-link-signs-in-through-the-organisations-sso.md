@@ -87,6 +87,15 @@ one-time-code path.
 - ADR 0013 is amended: a sign-in by the organisation's SSO on a consent
   link mints a `data_subject` session, like a code; the assertion never
   carries a staff role.
+- Where the portal reaches the API through the public relay
+  ([ADR 0035](0035-a-public-request-reaches-the-inside-only-when-the-inside-collects-it.md)),
+  the sign-in crosses it: its routes are on the relay's allow-list, the
+  callback's redirect crosses as the link's own path, and the pending
+  employee's cookie crosses. `SSO_REDIRECT_URL` stays the public portal's
+  `/api/auth/sso/callback`. The API's own calls to the provider then need an
+  outbound route from inside the network, and a claim carrying a sealed
+  value is refused like an assertion that does not validate, because the
+  relay opens sealed values in its replies.
 
 ## Revisit when
 

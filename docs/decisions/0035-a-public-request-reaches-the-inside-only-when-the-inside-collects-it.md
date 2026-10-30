@@ -5,7 +5,12 @@
 `cmp.api.middleware.relay_open_sealed`, the relayed-session rule in
 `cmp.api.dependencies.sessions`, `RELAY_INGRESS_KEY`. If accepted, it
 amends [ADR 0016](0016-personal-data-sealed-by-a-separate-key-service.md)
-(see *Decision*). ADR 0016 has not been edited yet.
+(see *Decision*). ADR 0016 has not been edited yet. Numbered 0032 on that
+branch (48b0a43); renumbered 0035 when it was merged with the HR track,
+whose [ADR 0032](0032-offices-are-logical-tenants-in-one-database.md)
+(offices) kept the number. The HR track's employee sign-in
+([ADR 0034](0034-an-employee-link-signs-in-through-the-organisations-sso.md))
+crosses the relay; see *Decision*.
 
 ## Context
 
@@ -53,8 +58,14 @@ The options considered were these:
 - **The collector enforces the relay's rules.** Anyone allowed to send to the
   request queue can seal a request, so the collector treats every message as
   untrusted. It re-applies the bridge's checks and adds its own:
-  - the public route allow-list: 58 routes, and every staff route refused;
-  - the header and cookie filter;
+  - the public route allow-list: 64 routes, and every staff route refused.
+    A test reads the portal's calls and the API's OpenAPI document, so a
+    portal call with no row, or a row with no operation, fails the relay's
+    suite;
+  - the header and cookie filter. No redirect crosses but one: the
+    organisation's sign-in returns the browser to `GET /auth/sso/callback`
+    (ADR 0034), whose `Location` crosses only as `/c/{token}?sso=<word>`, a
+    path on the portal's own origin, never the host the API named;
   - the deadline;
   - replies only to a configured reply queue;
   - a first check for sealed values in the query and the body.
@@ -76,7 +87,10 @@ The options considered were these:
   already-sealed value through untouched, which internal copies rely on. So
   any input the API stores or echoes back (a name, an attachment's file name,
   the User-Agent kept with a session, a message's body) would let someone
-  submit another person's ciphertext and read it back opened. When the relay
+  submit another person's ciphertext and read it back opened. An input the
+  API fetches itself is checked where it enters: the SSO callback refuses an
+  assertion with the prefix in any claim (ADR 0034), because a new employee's
+  name and employee ID are written from the claims. When the relay
   key matches, the API therefore reads the request with its own parser before
   the route runs, and refuses with 422 `sealed_value_refused` any request
   with `SE::` in:
@@ -102,8 +116,15 @@ The options considered were these:
   every relayed request, and its session lookup refuses with 401 a session
   whose effective role is not `data_subject`. The check is on the session's
   role, not the account's: a member of staff signed in on the portal with a
-  code holds a data principal's session and keeps working. Staff routes are
-  also not on the allow-list.
+  code holds a data principal's session and keeps working, as does an
+  employee signed in through the organisation's SSO (ADR 0034). Staff routes
+  are also not on the allow-list.
+- **A relayed request acts in no office.** A data principal's session carries
+  no office ([ADR 0032](0032-offices-are-logical-tenants-in-one-database.md)),
+  so the pool binds `app.office` to `all` and what a relayed request reaches
+  is bounded by the person's own account. The sessions that do carry an
+  office (the DPO's, Legal's, an HR PoC's) are staff sessions, refused above.
+  The wall between the offices is never what protects data on this path.
 - **A deadline on every request, and writes at most once.**
   - **The deadline.** The bridge gives each request 25 s, or 50 s for any
     `multipart/form-data` request. After that plus 2 s, it answers 504.
@@ -175,6 +196,18 @@ The options considered were these:
   secrecy, not of breakage: the credential helper trusts the operating
   system's store, where an inspecting proxy's root sits, so an inspected call
   still succeeds and the proxy reads the role's credentials in the response.
+- **With the organisation's sign-in on (ADR 0034), the API needs an outbound
+  route of its own:** to the identity provider's issuer, token and key hosts,
+  on 443, through the proxy. Not TLS-inspected either, for the same reason
+  as `rolesanywhere`: the client secret goes out and every employee's ID
+  token comes back. Whether the provider sits outside the network, and
+  whether that route is allowed, is for the network team to confirm before
+  SSO is switched on behind the relay.
+- **The SSO callback must finish inside the relay's deadline.** On a cold
+  cache it makes three calls to the provider in a row (discovery, token, key
+  set), each allowed `SSO_TIMEOUT_S`; behind the relay that setting is kept
+  at 6 s or less. A callback cut off has used its one-time state, and the
+  person starts the sign-in again from the link.
 - **Both hosts must keep their clocks by NTP:** the bridge on Amazon Time
   Sync, the collector on the organisation's internal time server (no new
   egress). Measuring on AWS's clock absorbs a steady offset on the collector,
@@ -248,6 +281,10 @@ The options considered were these:
 - traffic outgrows a static reply queue per instance (a queue per instance,
   created at boot, is the next step), or the portal needs streaming;
 - writes need exactly-once delivery (FIFO, or idempotency keys in the API);
+- calls other than a person's are to cross, such as the HR track's planned
+  HRMS feed (OP-6): this record allows only the portal's public routes and
+  data principals' sessions, so machine credentials over the relay need a
+  decision of their own;
 - the staging tests of the proxy (S3 `Host` against SNI, `aws:SourceIp` seen
   through the proxy, no inspection of `rolesanywhere`) or of the client
   address (a header echo through the real front door) fail.
