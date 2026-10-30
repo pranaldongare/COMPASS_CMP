@@ -13,6 +13,13 @@
  * and this poll is answered with this tab's codes alone. Another window - on
  * this machine or another - sees nothing.
  *
+ * And only on the page that asked: moving to another page puts away every
+ * code the person has had - clicked or typed since it appeared - because this
+ * corner is where every page keeps its main action, and a spent sign-in code
+ * left there hid the Legal PoC's "New notice template" (2026-10-30). A code
+ * not yet had goes with the move: the request that sent it is what moved the
+ * page (sign-in to verify).
+ *
  * Never in a real deployment: the API refuses the setting outside local and
  * test, and without it `/dev/codes` does not exist - a 404 here stops the
  * polling for good. A code shown on the screen that asks for it proves
@@ -21,6 +28,7 @@
 "use client";
 
 import { Copy, KeyRound, X } from "lucide-react";
+import { usePathname } from "next/navigation";
 import * as React from "react";
 
 import { reachableApiBase } from "@/lib/api/client";
@@ -33,6 +41,8 @@ interface SentCode {
   channel: string;
   code: string;
   at: number;
+  /** The person has clicked or typed since it appeared. */
+  had?: boolean;
 }
 
 const ON = DEV_CODES_ON;
@@ -42,6 +52,25 @@ const SHOW_MS = 120_000;
 export function DevCodePopup() {
   const [shown, setShown] = React.useState<SentCode[]>([]);
   const [copied, setCopied] = React.useState<string | null>(null);
+  const pathname = usePathname() ?? "";
+  // The page the codes on screen were shown on. A new page keeps only the
+  // codes not yet had.
+  const [page, setPage] = React.useState(pathname);
+  if (page !== pathname) {
+    setPage(pathname);
+    setShown((now) => now.filter((c) => !c.had));
+  }
+  const waiting = shown.some((c) => !c.had);
+  React.useEffect(() => {
+    if (!waiting) return;
+    const had = () => setShown((now) => now.map((c) => (c.had ? c : { ...c, had: true })));
+    document.addEventListener("pointerdown", had, true);
+    document.addEventListener("keydown", had, true);
+    return () => {
+      document.removeEventListener("pointerdown", had, true);
+      document.removeEventListener("keydown", had, true);
+    };
+  }, [waiting]);
   const seen = React.useRef<Set<string>>(new Set());
   // When this page started listening; set in the effect, not during render.
   const since = React.useRef<number>(0);
