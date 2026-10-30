@@ -1,13 +1,14 @@
 """Template versions: what Legal approves once, for every activity made from it (ADR 0033).
 
 A Legal office template is versioned. Version *n* opens as a draft carrying
-what version *n-1* said (or, for the first, the template's links, contact
-and audience); Legal edits it in place - the locked text per language with
-its two slots, the purposes an activity may choose with the ones it must
-carry, the description slot's guidance and limit, whether moving to it needs
-consent again - and approves it. Approval is the legal sign-off: it checks
-the version can be composed, hashes each language's text and freezes the
-lot (`cmp_template_version_freeze`). A later change is version *n+1*.
+what version *n-1* said (or, for the first, the template's links, contact,
+audience and any text written with it); Legal edits it in place - the
+locked text per language with its two slots, the purposes an activity may
+choose with the ones it must carry, the description slot's guidance and
+limit, whether moving to it needs consent again - and approves it. Approval
+is the legal sign-off: it checks the version can be composed, hashes each
+language's text and freezes the lot (`cmp_template_version_freeze`). A
+later change is version *n+1*.
 
 A retired version starts no new activity; the activities already on it go
 on. A DPO office template is not versioned (ADR 0028).
@@ -19,6 +20,7 @@ from typing import Any, Final
 
 from cmp.core.enums import LanguageCode
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
+from cmp.db.repositories import notice_templates as templates_repo
 from cmp.db.repositories import registry as registry_repo
 from cmp.db.repositories import template_versions as repo
 from cmp.db.sql import Conn
@@ -130,6 +132,17 @@ async def open_version(conn: Conn, template: Row, *, actor_id: int) -> Row:
             version_id,
             [dict(p) for p in await repo.purposes_of(conn, int(last["version_id"]))],
         )
+    else:
+        # The text written with the template: a Legal template's own text is
+        # never served or shown, only a version's, so it would be lost.
+        for language in await templates_repo.languages_of(conn, template_id):
+            await repo.set_language(
+                conn,
+                version_id=version_id,
+                language_code=language["language_code"],
+                locked_text=language["rendered_text"],
+                updated_by=actor_id,
+            )
     version = await repo.by_id(conn, version_id)
     assert version is not None
     await _record(

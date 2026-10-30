@@ -60,7 +60,10 @@ import {
   useSetTemplateLanguage,
 } from "@/features/notice-templates/mutations";
 import { useNoticeTemplate } from "@/features/notice-templates/queries";
-import { VersionsPanel } from "@/features/notice-templates/components/versions-panel";
+import {
+  CurrentText,
+  VersionsPanel,
+} from "@/features/notice-templates/components/versions-panel";
 import { AUDIENCES } from "@/features/notices/components/notice-form";
 import { usePurposes } from "@/features/registry";
 import { copyText } from "@/lib/browser";
@@ -218,8 +221,9 @@ export default function NoticeTemplatePage() {
           {/* What the ID card said, now that the ID sits on the summary card. */}
           <div className="space-y-1 text-sm text-text-muted">
             <p>
-              A notice written before any project exists. Never shown to anybody until a
-              project uses it.
+              {versioned
+                ? "A notice written before any activity exists. Never shown to anybody until an activity uses it."
+                : "A notice written before any project exists. Never shown to anybody until a project uses it."}
             </p>
             <p className="max-w-3xl">
               {t.office_code !== "rnd"
@@ -233,7 +237,9 @@ export default function NoticeTemplatePage() {
           </div>
           <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
             <Details template={t} />
-            {!versioned && (
+            {versioned ? (
+              <CurrentText template={t} onVersions={() => setTab("versions")} />
+            ) : (
               <div id="purposes" className="scroll-mt-20">
                 <Purposes template={t} />
               </div>

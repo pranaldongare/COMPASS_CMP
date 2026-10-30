@@ -206,6 +206,65 @@ export function VersionsPanel({
   );
 }
 
+/**
+ * The text an activity made from the template now gets, on its Details tab:
+ * the approved version's, else the draft's (2026-10-30 - it was only under
+ * Versions, and not found there). Before version 1 is opened, the text written
+ * with the template, which version 1 starts from.
+ */
+export function CurrentText({
+  template,
+  onVersions,
+}: {
+  template: NoticeTemplateDetail;
+  onVersions: () => void;
+}) {
+  const versions = useTemplateVersions(template.template_uuid);
+  const rows = versions.data ?? [];
+  const current =
+    rows.find((v) => v.status === "approved") ?? rows.find((v) => v.status === "draft");
+  const version = useTemplateVersion(template.template_uuid, current?.version ?? null);
+  const languages = current
+    ? (version.data?.languages ?? []).map((l) => ({
+        code: l.language_code,
+        text: l.locked_text,
+      }))
+    : template.languages.map((l) => ({ code: l.language_code, text: l.rendered_text }));
+  const text = languages.find((l) => l.code === "english") ?? languages[0];
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-start justify-between gap-3">
+        <div>
+          <CardTitle>Notice text</CardTitle>
+          <p className="mt-1 text-xs text-text-muted">
+            {current
+              ? `Version ${current.version}${current.status === "draft" ? ", not yet approved" : ""}.`
+              : text
+                ? "Written with the template. Version 1 starts from it when you open it."
+                : "Written in a version, and approved with it."}
+          </p>
+        </div>
+        <Button variant="secondary" size="sm" onClick={onVersions}>
+          {current ? "All versions" : "Versions"}
+        </Button>
+      </CardHeader>
+      <CardBody className="space-y-2">
+        {current && <VersionStatusBadge status={current.status} />}
+        {versions.isLoading || (current && version.isLoading) ? (
+          <Skeleton className="h-32" />
+        ) : text ? (
+          <pre className="max-h-96 overflow-auto rounded-md border border-border bg-bg-inset p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap">
+            {text.text}
+          </pre>
+        ) : (
+          <p className="text-sm text-text-muted">No text yet.</p>
+        )}
+      </CardBody>
+    </Card>
+  );
+}
+
 function VersionView({
   templateUuid,
   n,

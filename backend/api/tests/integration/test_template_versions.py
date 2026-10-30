@@ -183,6 +183,25 @@ class TestTheNextVersion:
         assert first["dpo_contact"] == world["template"]["dpo_contact"]
         assert first["applicable_to"] == "data_subject"
 
+    async def test_the_first_version_takes_the_text_written_with_the_template(
+        self, conn: Any, world: dict[str, Any]
+    ) -> None:
+        # The New template form takes a first text. A Legal template's own
+        # text is never shown or served, so version 1 must carry it.
+        legal = int(world["legal"]["id"])
+        await templates.set_language(
+            conn,
+            await _template(conn, world),
+            language_code="english",
+            rendered_text=LOCKED,
+            actor_id=legal,
+        )
+        first = await versions.open_version(conn, await _template(conn, world), actor_id=legal)
+        assert [(lang["language_code"], lang["locked_text"]) for lang in first["languages"]] == [
+            ("english", LOCKED)
+        ]
+        assert [lang["content_hash"] for lang in first["languages"]] == [None]
+
 
 class TestRetirement:
     async def test_only_an_approved_version_is_retired_and_then_stays_so(

@@ -6,7 +6,10 @@
 import { HttpResponse, http } from "msw";
 import { describe, expect, it, vi } from "vitest";
 
-import { VersionsPanel } from "@/features/notice-templates/components/versions-panel";
+import {
+  CurrentText,
+  VersionsPanel,
+} from "@/features/notice-templates/components/versions-panel";
 import { makePurpose } from "@/test/fixtures";
 import { makeTemplate } from "@/test/notice-templates";
 import { render, screen, within } from "@/test/render";
@@ -133,5 +136,37 @@ describe("VersionsPanel", () => {
     expect(await screen.findByRole("heading", { name: "Version 2" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Save text" })).not.toBeInTheDocument();
+  });
+});
+
+describe("CurrentText", () => {
+  it("shows the approved version's text, not the newer draft's", async () => {
+    serve();
+    const onVersions = vi.fn();
+    const { user } = render(<CurrentText template={TEMPLATE} onVersions={onVersions} />);
+    expect(await screen.findByText(/About: \{\{description\}\}/)).toBeInTheDocument();
+    expect(screen.getByText("Version 1.")).toBeInTheDocument();
+    expect(screen.queryByText(/No description slot yet/)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "All versions" }));
+    expect(onVersions).toHaveBeenCalled();
+  });
+
+  it("before version 1, shows the text written with the template", async () => {
+    server.use(http.get(BASE, () => HttpResponse.json([])));
+    const written = {
+      ...TEMPLATE,
+      version_count: 0,
+      languages: [
+        {
+          language_code: "english" as const,
+          rendered_text: "Written at creation: {{purposes}} {{description}}",
+          updated_at: "2026-10-30T09:00:00Z",
+          updated_by_name: "Meera Nair",
+        },
+      ],
+    };
+    render(<CurrentText template={written} onVersions={vi.fn()} />);
+    expect(await screen.findByText(/Written at creation/)).toBeInTheDocument();
+    expect(screen.getByText(/Version 1 starts from it/)).toBeInTheDocument();
   });
 });

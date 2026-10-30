@@ -249,7 +249,11 @@ export function TemplateForm({
             </Field>
             <Field
               label="Notice text"
-              hint="What a data principal will read once a project uses it. Optional now; it can be added on the template's page."
+              hint={
+                me?.office === "hr"
+                  ? "Optional now. Version 1 starts from it when you open it on the template's page; it needs {{purposes}} and {{description}} before that version can be approved."
+                  : "What a data principal will read once a project uses it. Optional now; it can be added on the template's page."
+              }
               error={form.formState.errors.rendered_text?.message}
             >
               {(p) => (
