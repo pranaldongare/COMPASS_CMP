@@ -12,6 +12,7 @@ request, calls the API, and sends the sealed reply back. Nothing on AWS knows
 an inside address. Every connection across the boundary is opened from
 inside. SQS and S3 hold only ciphertext.
 
+- [Where each part runs](#where-each-part-runs)
 - [How a request travels](#how-a-request-travels)
 - [What crosses, and what is refused](#what-crosses-and-what-is-refused)
 - [Sealing](#sealing)
@@ -24,6 +25,35 @@ inside. SQS and S3 hold only ciphertext.
 - [Revoking or replacing the collector certificate](#revoking-or-replacing-the-collector-certificate)
 - [Network requirements for the collector](#network-requirements-for-the-collector)
 - [Known limits of the proof of concept](#known-limits-of-the-proof-of-concept)
+
+## Where each part runs
+
+The code is split by where it runs. A folder holds what runs in one place and
+nothing else:
+
+| Folder | Runs | Holds |
+|---|---|---|
+| [`common/`](common) | both sides | `sealing` (what makes SQS and S3 hold only ciphertext), `envelope` (the request and reply as they travel), `allowlist` (the routes, headers and cookies that may cross, and the sealed-value rule), `transport` (the SQS and S3 calls), `logs`, `config` (the settings both sides read) |
+| [`bridge/`](bridge) | **AWS**, on each portal instance | `bridge` (the process), `bridge_config` (its settings), its `.env.example`, its systemd unit in `deploy/` |
+| [`collector/`](collector) | **inside** | `collector` (the process), `collector_config` (its settings), `keys` (the collector's key pair and the ingress secret, made inside), its `.env.example`, its systemd unit and Roles Anywhere config in `deploy/` |
+| [`aws/`](aws) | **AWS**, as a CloudFormation stack | `cloudformation.yaml`: the queues, the bucket, the roles, the trust anchor, the alarms |
+| [`dev/`](dev) | this machine only, never deployed | `provision` (the emulator's queues and bucket), the end-to-end test, and the test that keeps the parts apart |
+
+Each of `common`, `bridge`, `collector` and `dev` has its own `pyproject.toml`,
+and the first three their own pinned `requirements.txt`. A host installs two:
+a portal instance installs `common` and `bridge`, the collector's host
+`common` and `collector`. So the bridge's host has no collector code, no key
+tool and no httpx, and the collector's host has no bridge code and no
+starlette or uvicorn. All four are portions of one namespace package,
+`cmp_relay`, with no `__init__.py`, so a module is `cmp_relay.bridge` or
+`cmp_relay.sealing` wherever it is installed, and every `python -m cmp_relay.…`
+below is the same on each host.
+
+[`dev/tests/test_parts.py`](dev/tests/test_parts.py) keeps it that way. A part
+may import only itself and `common` (`dev` may import anything). Every library
+a part imports must be in its own requirements or in `common`'s. No module may
+be in two parts. Here every part is installed at once, so a bridge importing
+the collector would otherwise pass every other test and fail only on its host.
 
 ## How a request travels
 
@@ -77,7 +107,7 @@ for a reply that cannot come.
 
 | | Crosses | Refused |
 |---|---|---|
-| **Routes** | The 64 method-and-path pairs the portal calls (`allowlist.PUBLIC_ROUTES`): sign-up and code sign-in, the consent link and an employee link's organisation sign-in (ADR 0034), her own records, rights requests and nominations, an outside holder's ticket, reference data. `GET /dev/codes`, `/dev/seed-accounts` and the SSO stand-in's `POST /dev/sso/*` only with `RELAY_ENVIRONMENT=local` and `RELAY_ALLOW_DEV_ROUTES=true`. `tests/test_allowlist_drift.py` fails when the portal calls a route that is not here. | Everything else, with 404 `not_found`: every staff route, `/auth/login`, the second factor, `/metrics`, `/docs`, `/openapi.json`, `/health`. Also any path with `//`, `..`, a backslash, or an encoded `/`, `\` or `.`. |
+| **Routes** | The 64 method-and-path pairs the portal calls (`allowlist.PUBLIC_ROUTES`): sign-up and code sign-in, the consent link and an employee link's organisation sign-in (ADR 0034), her own records, rights requests and nominations, an outside holder's ticket, reference data. `GET /dev/codes`, `/dev/seed-accounts` and the SSO stand-in's `POST /dev/sso/*` only with `RELAY_ENVIRONMENT=local` and `RELAY_ALLOW_DEV_ROUTES=true`. `common/tests/test_allowlist_drift.py` fails when the portal calls a route that is not here. | Everything else, with 404 `not_found`: every staff route, `/auth/login`, the second factor, `/metrics`, `/docs`, `/openapi.json`, `/health`. Also any path with `//`, `..`, a backslash, or an encoded `/`, `\` or `.`. |
 | **Sessions** | A data principal's session, or none where a route needs none. A member of staff who signs in on the portal with a code holds a data principal's session, and it crosses like anyone's; so does an employee's session from an `sso` link. | A staff session (signed in at the console with a password and a second factor): 401 from the API, on every route that crosses. |
 | **Request headers** | `Accept`, `Accept-Language`, `Content-Type`, `User-Agent`, `X-Request-ID`, the CSRF header. | Everything else, including `Authorization`, `Host`, any `X-Forwarded-*`, and `X-CMP-*`. |
 | **Cookies** | `cmp_session`, `cmp_csrf`, `cmp_ticket`, `cmp_sso_pending` (`RELAY_COOKIE_NAMES`). | Every other cookie, such as analytics. |
@@ -447,25 +477,32 @@ bridges with the same env file: they would share a reply queue
 ## Tests
 
 ```sh
-.venv/bin/python -m pytest                   # everything
-.venv/bin/python -m pytest tests/test_core.py
+.venv/bin/python -m pytest                   # everything, every part
+.venv/bin/python -m pytest collector/tests   # one part
 .venv/bin/python -m ruff check . && .venv/bin/python -m ruff format --check .
-.venv/bin/python -m mypy --strict src tests
+.venv/bin/python -m mypy --strict common/src bridge/src collector/src dev/src \
+    common/tests bridge/tests collector/tests dev/tests
 ```
 
-Five files, no network beyond loopback and no AWS: moto stands in for SQS and
-S3, in process.
+Each part's tests sit in its own `tests/`, and import only that part and
+`common`. There is no network beyond loopback and no AWS: moto stands in for
+SQS and S3, in process.
 
-- **`test_core.py`**: the shared core and the two command-line tools. For
-  sealing: round trips, binding to the request id and kind, wrong keys,
-  tampering, rotation and redaction. For the envelope: round trips and
-  strict refusals. For the allow-list: every public route, staff routes,
-  traversal and encoded separators, dev routes, header and cookie filtering,
-  and the collector's sealed-value check for query, JSON, form and multipart
-  bodies. For configuration: required settings, local-only settings, key
-  files and ranges. For `keys`: modes, refusing to overwrite or follow
-  symlinks. For `provision`: it runs against moto twice, to check it is
-  idempotent.
+**`common/tests`**
+
+- **`test_core.py`**: the shared code. For sealing: round trips, binding to
+  the request id and kind, wrong keys, tampering, rotation and redaction. For
+  the envelope: round trips and strict refusals. For the allow-list: every
+  public route, staff routes, traversal and encoded separators, dev routes,
+  header and cookie filtering, and the collector's sealed-value check for
+  query, JSON, form and multipart bodies. For the shared settings: the
+  local-only ones and the environment.
+- **`test_allowlist_drift.py`**: the allow-list against the portal's calls and
+  the API's OpenAPI document. Skipped when the relay is checked out without
+  the rest of the repository.
+
+**`bridge/tests`**
+
 - **`test_bridge.py`**: the bridge against moto, with a small fake collector
   in a thread. Round trips with status, headers and every `Set-Cookie`;
   routes refused before SQS; the body limit; large bodies through S3, sealed;
@@ -473,6 +510,12 @@ S3, in process.
   and the 503 while the inside is down; the health endpoint; the client
   address from `X-Forwarded-For`; header and cookie filtering both ways; dev
   routes; the log line.
+- **`test_bridge_config.py`**: the bridge's settings: defaults, what is
+  required, ranges, the collector's public key, and the local-only settings
+  refused outside local.
+
+**`collector/tests`**
+
 - **`test_collector.py`**: the collector against moto and a fake API, with
   the test playing the bridge. What reaches the API and what never does (404
   off the list, 422 for a sealed value); expiry and the write budget; when a
@@ -484,6 +527,12 @@ S3, in process.
 - **`test_collector_cookies.py`**: the collector's HTTP client keeps no
   cookie between requests. It is the regression test for the cookie jar that
   signed anonymous visitors in as whoever had signed in last.
+- **`test_collector_config.py`**: the collector's settings (required, key
+  files and rotation, the API origin, ranges, the local-only settings) and
+  `keys`: modes, refusing to overwrite or follow symlinks.
+
+**`dev/tests`**
+
 - **`test_end_to_end.py`**: the real bridge and the real collector joined by
   moto, with a small API served by uvicorn on loopback and shortened clocks.
   Every message and object handed to AWS is recorded, to check that AWS only
@@ -491,6 +540,10 @@ S3, in process.
   S3, each visitor's own cookies, concurrent requests, refusals before the
   API, a write too close to its deadline, the 503 when the collector or the
   API is down, and an API slower than the deadline being cut off.
+- **`test_provision.py`**: `provision` against moto, run twice to check it is
+  idempotent, and its env files accepted by each side.
+- **`test_parts.py`**: the parts stay apart ([where each part
+  runs](#where-each-part-runs)).
 
 The API's side (the sealed-value check, the session rule and the opening) is
 tested in `backend/api`, in `tests/unit/api/test_relay_open_sealed.py`. The
@@ -499,9 +552,14 @@ portal's browser checks through the relay are step 10 of
 
 ## Configuration
 
-Every setting is read once at start (`src/cmp_relay/config.py`). A missing or
-malformed setting stops the process with a sentence naming it.
-[`.env.example`](.env.example) lists them all with their local values.
+Every setting is read once at start: the shared ones by
+[`common/src/cmp_relay/config.py`](common/src/cmp_relay/config.py), each
+side's own by [`bridge_config`](bridge/src/cmp_relay/bridge_config.py) and
+[`collector_config`](collector/src/cmp_relay/collector_config.py). A missing
+or malformed setting stops the process with a sentence naming it. Each side's
+[`bridge/.env.example`](bridge/.env.example) and
+[`collector/.env.example`](collector/.env.example) lists its settings, the
+shared ones included, with their local values.
 
 | Setting | Side | Default | What it is |
 |---|---|---|---|
@@ -539,7 +597,7 @@ AWS credentials come from the standard chain:
 ## Deploying
 
 The AWS side is one CloudFormation stack,
-[`deploy/cloudformation.yaml`](deploy/cloudformation.yaml) (cfn-lint clean).
+[`aws/cloudformation.yaml`](aws/cloudformation.yaml) (cfn-lint clean).
 It creates:
 
 - the request queue and two reply queues;
@@ -563,7 +621,7 @@ outcome.
 ```sh
 aws cloudformation deploy --region ap-south-1 \
   --stack-name cmp-relay-production \
-  --template-file deploy/cloudformation.yaml \
+  --template-file aws/cloudformation.yaml \
   --capabilities CAPABILITY_IAM \
   --parameter-overrides \
     EnvironmentName=production \
@@ -610,13 +668,15 @@ and the issuer CN.
 
 ### On each portal instance (the bridge)
 
-- Install the relay into `/opt/compass/relay/.venv`
-  (`pip install -r requirements.txt` and `pip install --no-deps .`).
+- Install `common` and `bridge`, and nothing else, into
+  `/opt/compass/relay/.venv`:
+  `pip install -r common/requirements.txt -r bridge/requirements.txt`, then
+  `pip install --no-deps ./common ./bridge`.
 - Write `/etc/compass/relay-bridge.env` with that instance's own
   `RELAY_REPLY_QUEUE_URL`, never another running instance's
   ([one bridge each](#reply-queues-one-bridge-each)), and
   `RELAY_CLIENT_IP_HOP=2` if CloudFront is in front.
-- Install [`deploy/systemd/cmp-relay-bridge.service`](deploy/systemd/cmp-relay-bridge.service).
+- Install [`bridge/deploy/cmp-relay-bridge.service`](bridge/deploy/cmp-relay-bridge.service).
 - Keep the clock on Amazon Time Sync (chrony's default on Amazon Linux 2023).
   The bridge's clock stamps every deadline.
 - Give the instance the bridge's permissions. An instance has one role, so
@@ -635,12 +695,14 @@ and the issuer CN.
 
 ### Inside (the collector)
 
-- Install the relay the same way, plus `aws_signing_helper` (IAM Roles
-  Anywhere credential helper) at `/usr/local/bin/`.
+- Install `common` and `collector`, and nothing else, the same way:
+  `pip install -r common/requirements.txt -r collector/requirements.txt`, then
+  `pip install --no-deps ./common ./collector`. Add `aws_signing_helper`
+  (IAM Roles Anywhere credential helper) at `/usr/local/bin/`.
 - Have the organisation's CA issue a client certificate whose CN equals
   `CollectorCertificateCN` (and whose issuer CN equals `CollectorIssuerCN`,
   if set).
-- Copy [`deploy/aws-config.collector.example`](deploy/aws-config.collector.example)
+- Copy [`collector/deploy/aws-config.collector.example`](collector/deploy/aws-config.collector.example)
   to `/etc/compass/relay/aws-config` and fill in the three ARNs from the stack
   outputs. With the key in a TPM, the unit also needs `/dev/tpmrm0` and the
   `tss` group (`SupplementaryGroups=tss`): see the comment on `PrivateDevices`
@@ -648,7 +710,7 @@ and the issuer CN.
 - Put `collector.key` and `ingress.key` from `python -m cmp_relay.keys` in
   `/etc/compass/relay/`, owned by `compass-relay`, mode 0600.
 - Write `/etc/compass/relay-collector.env`.
-- Install [`deploy/systemd/cmp-relay-collector.service`](deploy/systemd/cmp-relay-collector.service),
+- Install [`collector/deploy/cmp-relay-collector.service`](collector/deploy/cmp-relay-collector.service),
   with the real proxy in `HTTPS_PROXY`. Its `TimeoutStopSec=120` is the drain
   ([Stopping the collector](#deadlines-writes-and-duplicates)); keep it above
   `RELAY_UPLOAD_DEADLINE_S` + 60 s.

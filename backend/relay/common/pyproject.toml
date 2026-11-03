@@ -1,0 +1,21 @@
+# The relay's shared code, installed on both sides (README, "Where each part runs").
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cmp-relay-common"
+version = "0.1.0"
+description = "COMPASS public-ingress relay: the code the bridge and the collector both run"
+requires-python = ">=3.12"
+dynamic = ["dependencies"]
+
+[tool.setuptools.dynamic]
+dependencies = { file = ["requirements.txt"] }
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+# One portion of the cmp_relay namespace (no __init__.py): the parts installed
+# on a host merge into one package, so `python -m cmp_relay.bridge` and
+# `from cmp_relay import sealing` read the same wherever they run.
+packages = ["cmp_relay"]

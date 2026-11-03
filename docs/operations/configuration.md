@@ -163,7 +163,8 @@ a restart.
 When the data principal's portal runs on AWS and reaches the API only through
 Amazon SQS (`backend/relay`: a bridge beside the portal, a collector inside
 the network that accepts no inbound connection), two settings on the API's
-side matter. The relay's own settings are in `backend/relay/.env.example`.
+side matter. The relay's own settings are in `backend/relay/bridge/.env.example`
+(AWS) and `backend/relay/collector/.env.example` (inside).
 With the organisation's sign-in on employee links (ADR 0034), `SSO_REDIRECT_URL`
 stays the public portal's `/api/auth/sso/callback`, which the relay carries,
 `SSO_TIMEOUT_S` is 5 or less, and the API needs its own outbound route to the
@@ -246,7 +247,7 @@ What the API records from the collector's header:
 
 **Timeouts on the way in.** The bridge waits for a reply until the deadline
 plus 2 s: 25 s for a request, 50 s for any `multipart/form-data` request
-(`RELAY_DEADLINE_S`, `RELAY_UPLOAD_DEADLINE_S` in `backend/relay/.env.example`).
+(`RELAY_DEADLINE_S`, `RELAY_UPLOAD_DEADLINE_S` in `backend/relay/bridge/.env.example`).
 Everything in front of it must wait longer, or the browser is shown a failure
 while the inside may still record the write, and the person's retry makes it
 twice:

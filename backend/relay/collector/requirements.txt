@@ -1,0 +1,10 @@
+# Runtime dependencies of the collector (inside): an HTTP client to the API,
+# httpx. Installed together with common/requirements.txt. Pinned exactly,
+# transitive ones included - the same rule as backend/api (ADR 0018).
+anyio==4.15.1
+certifi==2026.10.19
+h11==0.16.0
+httpcore==1.0.9
+httpx==0.28.1
+idna==3.20
+typing_extensions==4.16.0

@@ -1,22 +1,9 @@
-[build-system]
-requires = ["setuptools>=68"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "cmp-relay"
-version = "0.1.0"
-description = "COMPASS public-ingress relay: the AWS-side bridge and the inside collector, joined by Amazon SQS"
-requires-python = ">=3.12"
-dynamic = ["dependencies"]
-
-[tool.setuptools.dynamic]
-dependencies = { file = ["requirements.txt"] }
-
-[tool.setuptools.packages.find]
-where = ["src"]
+# The relay's development tools, run from here across every part at once.
+# Nothing is installed from this file: each part (common, bridge, collector,
+# dev) has its own pyproject.toml (README, "Where each part runs").
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["common/tests", "bridge/tests", "collector/tests", "dev/tests"]
 addopts = "-q"
 # Starlette 1.9's TestClient asks for httpx2; the suite runs on httpx 0.28.
 filterwarnings = ["ignore:Using .httpx. with .starlette.testclient. is deprecated"]
@@ -24,15 +11,22 @@ filterwarnings = ["ignore:Using .httpx. with .starlette.testclient. is deprecate
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+src = ["common/src", "bridge/src", "collector/src", "dev/src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF"]
 ignore = ["S101"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["cmp_relay"]
+
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S", "B"]
+"*/tests/*" = ["S", "B"]
 
 [tool.mypy]
 python_version = "3.12"
 strict = true
 ignore_missing_imports = true
+# cmp_relay is a namespace package spread over the parts' src directories.
+mypy_path = ["common/src", "bridge/src", "collector/src", "dev/src"]
+explicit_package_bases = true

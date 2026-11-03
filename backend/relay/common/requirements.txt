@@ -1,0 +1,13 @@
+# Runtime dependencies of the code both sides run: sealing, the envelope, the
+# allow-list, the SQS and S3 calls, the settings. Pinned exactly, transitive
+# ones included - the same rule as backend/api (ADR 0018).
+boto3==1.43.118
+botocore==1.43.118
+cffi==2.1.1
+cryptography==50.0.2
+jmespath==1.1.0
+pycparser==3.12
+python-dateutil==2.9.0.post0
+s3transfer==0.19.3
+six==1.17.0
+urllib3==2.8.0
