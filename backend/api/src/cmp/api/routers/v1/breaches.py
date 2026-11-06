@@ -5,8 +5,9 @@ is a personal data breach, and the first *yes* records it as one (ADR 0022).
 The DPO's alone, and hidden: any other role is answered 404 on every route
 here, not 403 (`BreachReader`, `BreachWriter`). The platform records, derives
 and tracks; people contain, determine and submit. Nothing here talks to the
-Board or to CERT-In - a submission is recorded after a person has made it,
-with the reference the regulator returned.
+Board or to CERT-In - a submission is filed after a person has made it, with
+its proof and the reference the regulator returned. The organisation's board
+is mailed by the platform (ADR 0037).
 """
 
 from __future__ import annotations
@@ -21,11 +22,19 @@ from pydantic import AwareDatetime, Field
 from cmp.api import uploads
 from cmp.api.dependencies import BreachReader, BreachWriter
 from cmp.core import offices
+from cmp.core.errors import Conflict
 from cmp.db.pool import connection, transaction
 from cmp.db.repositories.breaches import LOGGED_TEXT
-from cmp.domain.breach import affected, board, lists, notices, service, tickets
-from cmp.schemas.common import Out, Schema
-from cmp.validation.files import BREACH_EVIDENCE, BREACH_LIST, check_upload
+from cmp.domain.breach import affected, board, intake, lists, notices, reports, service, tickets
+from cmp.infrastructure.spreadsheets import XLSX_MIME
+from cmp.infrastructure.storage import delete_upload
+from cmp.schemas.common import Acknowledged, Out, Schema
+from cmp.validation.files import (
+    BREACH_EVIDENCE,
+    BREACH_LIST,
+    BREACH_TICKET_EVIDENCE,
+    check_upload,
+)
 
 router = APIRouter(prefix="/breaches", tags=["breaches"])
 
@@ -118,18 +127,6 @@ class BreachAssessmentIn(Schema):
     remedial_measures: _Text | None = None
     #: 7(1)(e): who answers principals' questions.
     contact_point: _Text | None = None
-
-
-class BreachCompletionIn(Schema):
-    #: When the submission or report was made, as entered.
-    occurred_at: AwareDatetime
-    #: What the regulator returned. Required for every duty but the
-    #: organisation's board, where there may be none.
-    reference: Annotated[str, Field(max_length=200)] | None = None
-    #: The organisation's board only, and required there: to whom it was
-    #: reported. Sealed.
-    reported_to: Annotated[str, Field(max_length=2000)] | None = None
-    note: _Text | None = None
 
 
 class BreachExtensionIn(Schema):
@@ -273,6 +270,80 @@ class BreachTransitionsOut(Out):
     available: list[BreachTransitionOut]
 
 
+class BreachReportedOut(Out):
+    """Who reported it through the public link, if somebody did (0058)."""
+
+    #: Sealed.
+    reporter_name: str
+    #: Sealed.
+    reporter_email: str
+    received_at: datetime
+    #: When they say they noticed it. Theirs: nothing is anchored on it.
+    noticed_at: datetime | None
+    #: Whether they said it was a cyber attack: yes, no or unknown.
+    cyber_attack: str | None
+
+
+class IncidentReportRowOut(Out):
+    """A report waiting in the shared intake, as the list shows it."""
+
+    report_uuid: UUID
+    reference: str
+    #: Sealed.
+    reporter_name: str
+    #: Sealed.
+    reporter_email: str
+    #: Sealed.
+    title: str
+    noticed_at: datetime | None
+    received_at: datetime
+    cyber_attack: str | None
+
+
+class IncidentReportPageOut(Out):
+    """A page of the shared intake, oldest first."""
+
+    items: list[IncidentReportRowOut]
+    #: Every report waiting, not only this page's.
+    total: int
+    limit: int
+    offset: int
+
+
+class IncidentReportOut(IncidentReportRowOut):
+    """A report waiting in the shared intake, with everything it said."""
+
+    logged: BreachLoggedOut
+
+
+class DismissedReportOut(Out):
+    """A report an office did not take up, and why."""
+
+    reference: str
+    #: Sealed.
+    reporter_name: str
+    #: Sealed.
+    reporter_email: str
+    #: Sealed.
+    title: str
+    received_at: datetime
+    dismissed_at: datetime
+    #: Sealed.
+    dismissed_by_name: str | None
+    #: Sealed.
+    dismissal_reason: str
+
+
+class CertInSetAsideIn(Schema):
+    #: Why it is not reportable after all. Sealed.
+    reason: Annotated[str, Field(min_length=1, max_length=8000)]
+
+
+class IncidentDismissalIn(Schema):
+    #: Why it is not being taken up. Sealed.
+    reason: Annotated[str, Field(min_length=1, max_length=8000)]
+
+
 class BreachSummaryOut(Out):
     breach_uuid: UUID
     #: What it is quoted by: the breach reference once recorded, the incident's
@@ -319,6 +390,8 @@ class BreachOut(Out):
     logged: BreachLoggedOut = Field(default_factory=BreachLoggedOut)
     #: yes, no or unknown, as logged; None when the question was left.
     cyber_attack: str | None = None
+    #: Who reported it through the public link. None if the office logged it.
+    reported: BreachReportedOut | None = None
     recorded_at: datetime
     recorded_by_name: str | None
     #: pending, yes or no: the latest determination.
@@ -371,6 +444,77 @@ async def record_breach(body: BreachIn, principal: BreachWriter) -> dict[str, An
             cyber_attack=body.cyber_attack,
             office=principal.office or offices.RND,
         )
+
+
+# ------------------------------------- the shared intake (0058, ADR 0037)
+#
+# Before `/{breach_uuid}`: "intake" is not a uuid.
+
+
+@router.get(
+    "/intake",
+    response_model=IncidentReportPageOut,
+    summary="A page of the reports from the public link no office has taken up",
+)
+async def incident_reports(
+    principal: BreachReader,
+    limit: Annotated[int, Query(ge=1, le=intake.WAITING_MOST)] = intake.WAITING_SHOWN,
+    offset: Annotated[int, Query(ge=0, le=1_000_000)] = 0,
+) -> dict[str, Any]:
+    async with connection() as conn:
+        return await intake.waiting(conn, limit=limit, offset=offset)
+
+
+@router.get(
+    "/intake/dismissed",
+    response_model=list[DismissedReportOut],
+    summary="Reports an office dismissed, newest first, with who did it and why",
+)
+async def dismissed_reports(principal: BreachReader) -> list[dict[str, Any]]:
+    async with connection() as conn:
+        return await intake.dismissed(conn)
+
+
+# After `/intake/dismissed`: "dismissed" is not a uuid.
+@router.get(
+    "/intake/{report_uuid}",
+    response_model=IncidentReportOut,
+    summary="One waiting report in full",
+)
+async def incident_report(report_uuid: UUID, principal: BreachReader) -> dict[str, Any]:
+    async with connection() as conn:
+        return await intake.read(conn, report_uuid=str(report_uuid))
+
+
+@router.post(
+    "/intake/{report_uuid}/claim",
+    response_model=BreachOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Take a report into this office's register, as an incident",
+)
+async def claim_report(report_uuid: UUID, principal: BreachWriter) -> dict[str, Any]:
+    async with transaction() as conn:
+        return await intake.claim(
+            conn,
+            report_uuid=str(report_uuid),
+            office=principal.office or offices.RND,
+            actor_id=principal.user_id,
+        )
+
+
+@router.post(
+    "/intake/{report_uuid}/dismiss",
+    response_model=Acknowledged,
+    summary="Dismiss a report, saying why; it is kept",
+)
+async def dismiss_report(
+    report_uuid: UUID, body: IncidentDismissalIn, principal: BreachWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        await intake.dismiss(
+            conn, report_uuid=str(report_uuid), reason=body.reason, actor_id=principal.user_id
+        )
+    return {"message": "Dismissed"}
 
 
 @router.get(
@@ -493,26 +637,16 @@ async def mark_cert_in(breach_uuid: UUID, principal: BreachWriter) -> dict[str, 
 
 
 @router.post(
-    "/{breach_uuid}/obligations/{duty}/complete",
+    "/{breach_uuid}/cert-in/not-applicable",
     response_model=BreachOut,
-    summary=(
-        "Record a submission made, with the regulator's reference - or, for the "
-        "organisation's board, the report made and to whom"
-    ),
+    summary="Set aside a CERT-In mark made in error, once validated No; nobody is told",
 )
-async def complete_duty(
-    breach_uuid: UUID, duty: str, body: BreachCompletionIn, principal: BreachWriter
+async def set_aside_cert_in(
+    breach_uuid: UUID, body: CertInSetAsideIn, principal: BreachWriter
 ) -> dict[str, Any]:
     async with transaction() as conn:
-        return await service.complete_duty(
-            conn,
-            breach_uuid=str(breach_uuid),
-            duty=duty,
-            occurred_at=body.occurred_at,
-            reference=body.reference,
-            note=body.note,
-            reported_to=body.reported_to,
-            actor_id=principal.user_id,
+        return await service.set_aside_cert_in(
+            conn, breach_uuid=str(breach_uuid), reason=body.reason, actor_id=principal.user_id
         )
 
 
@@ -562,17 +696,16 @@ async def transition(
         )
 
 
-# ------------------------------------------------------------ who it touched (S3-02)
+# ------------------------------------------------------------ the people affected (S3-02)
 
 
 class BreachScopeIn(Schema):
-    #: processor, data_source or platform.
+    #: project, processor or data_source.
     kind: str
+    project_uuid: UUID | None = None
     processor_uuid: UUID | None = None
     source_uuid: UUID | None = None
-    #: platform only: the affected tables, from `platform_tables`.
-    tables: Annotated[list[str], Field(max_length=50)] = Field(default_factory=list)
-    #: platform only: rows written from and until. Either may be open.
+    #: project only: consents given from and until. Either may be open.
     since: AwareDatetime | None = None
     until: AwareDatetime | None = None
 
@@ -583,7 +716,7 @@ class BreachPreviewIn(Schema):
 
 class BreachAffectedIn(Schema):
     scopes: Annotated[list[BreachScopeIn], Field(max_length=20)] = Field(default_factory=list)
-    #: People the records place in scope who were not touched, by uuid.
+    #: People the records place in scope who were not affected, by uuid.
     exclude: Annotated[list[UUID], Field(max_length=5000)] = Field(default_factory=list)
     #: People the records cannot show, by uuid.
     add: Annotated[list[UUID], Field(max_length=5000)] = Field(default_factory=list)
@@ -591,8 +724,12 @@ class BreachAffectedIn(Schema):
 
 
 class BreachEvidenceOut(Out):
+    projects: list[str] = Field(default_factory=list)
     exports: list[str] = Field(default_factory=list)
     assets: list[str] = Field(default_factory=list)
+    #: HR activities whose category names the processor in scope.
+    activities: list[str] = Field(default_factory=list)
+    #: Only on people listed before tables stopped being a way to look.
     tables: list[str] = Field(default_factory=list)
 
 
@@ -602,7 +739,8 @@ class BreachPersonOut(Out):
     role: str
     has_email: bool
     has_mobile: bool
-    #: processor, data_source, platform or dpo (added by hand).
+    #: project, processor, data_source, upload, dpo (added by hand), or
+    #: platform on people listed before that stopped being a way to look.
     found_by: str
     evidence: BreachEvidenceOut
 
@@ -644,8 +782,19 @@ class BreachAffectedOut(Out):
     revisions: list[BreachAffectedRevisionOut]
     people: list[BreachAffectedPersonOut]
     next_cursor: str | None
-    #: The tables a platform scope may name.
-    platform_tables: list[str]
+
+
+class BreachProjectOptionOut(Out):
+    project_uuid: UUID
+    project_name: str
+    #: An HR activity, not a project.
+    is_activity: bool
+    #: How many people gave consent in it.
+    people: int
+
+
+class BreachAffectedOptionsOut(Out):
+    projects: list[BreachProjectOptionOut]
 
 
 def _scopes(scopes: list[BreachScopeIn]) -> list[dict[str, Any]]:
@@ -655,7 +804,7 @@ def _scopes(scopes: list[BreachScopeIn]) -> list[dict[str, Any]]:
 @router.get(
     "/{breach_uuid}/affected",
     response_model=BreachAffectedOut,
-    summary="Who the breach touched, as confirmed, with every revision",
+    summary="The people affected, as confirmed, with every revision",
 )
 async def list_affected(
     breach_uuid: UUID,
@@ -664,6 +813,16 @@ async def list_affected(
 ) -> dict[str, Any]:
     async with connection() as conn:
         return await affected.listing(conn, breach_uuid=str(breach_uuid), after=cursor)
+
+
+@router.get(
+    "/{breach_uuid}/affected/options",
+    response_model=BreachAffectedOptionsOut,
+    summary="The projects and activities to choose from, with how many people each",
+)
+async def affected_options(breach_uuid: UUID, principal: BreachReader) -> dict[str, Any]:
+    async with connection() as conn:
+        return await affected.options(conn, breach_uuid=str(breach_uuid))
 
 
 @router.post(
@@ -683,7 +842,7 @@ async def preview_affected(
 @router.post(
     "/{breach_uuid}/affected",
     response_model=BreachAffectedOut,
-    summary="Confirm who the breach touched: a new revision, adding only the newly found",
+    summary="Confirm the people affected: a new revision, adding only the newly found",
 )
 async def confirm_affected(
     breach_uuid: UUID, body: BreachAffectedIn, principal: BreachWriter
@@ -732,7 +891,7 @@ class BreachListReportOut(Out):
 
 
 class BreachContactOut(Out):
-    """Somebody the breach touched with no account. Name and contacts sealed."""
+    """Somebody affected who has no account. Name and contacts sealed."""
 
     contact_uuid: UUID
     full_name: str | None
@@ -773,7 +932,7 @@ async def _list_file(file: UploadFile) -> bytes:
 
 @router.get(
     "/{breach_uuid}/affected/upload/template",
-    summary="The CSV to fill in: people (name, email, mobile) or asset IDs",
+    summary="The Excel file to fill in: people (name, email, mobile) or asset IDs",
 )
 async def list_template(
     breach_uuid: UUID,
@@ -782,15 +941,8 @@ async def list_template(
 ) -> Response:
     async with connection() as conn:
         await service.require(conn, str(breach_uuid))
-    name = "breach-people.csv" if kind == "contacts" else "breach-assets.csv"
-    return Response(
-        content=lists.template(kind).encode("utf-8-sig"),
-        media_type="text/csv; charset=utf-8",
-        headers={
-            "Content-Disposition": f'attachment; filename="{name}"',
-            "Cache-Control": "no-store",
-        },
-    )
+    name = "breach-people.xlsx" if kind == "contacts" else "breach-assets.xlsx"
+    return uploads.generated(lists.template(kind), name, XLSX_MIME)
 
 
 @router.post(
@@ -802,7 +954,7 @@ async def check_list(
     breach_uuid: UUID,
     principal: BreachWriter,
     kind: ListKind,
-    file: Annotated[UploadFile, File(description="The filled-in CSV, max 25 MB")],
+    file: Annotated[UploadFile, File(description="The filled-in .xlsx or CSV, max 25 MB")],
 ) -> dict[str, Any]:
     payload = await _list_file(file)
     async with connection() as conn:
@@ -819,7 +971,7 @@ async def take_list(
     breach_uuid: UUID,
     principal: BreachWriter,
     kind: ListKind,
-    file: Annotated[UploadFile, File(description="The filled-in CSV, max 25 MB")],
+    file: Annotated[UploadFile, File(description="The filled-in .xlsx or CSV, max 25 MB")],
 ) -> dict[str, Any]:
     """People with an account join the list as themselves; anybody else is
     kept, sealed, as a contact of this breach alone, and is sent the notice by
@@ -832,7 +984,7 @@ async def take_list(
             breach_uuid=str(breach_uuid),
             kind=kind,
             payload=payload,
-            file_name=uploads.safe_name(file.filename) or "list.csv",
+            file_name=uploads.safe_name(file.filename) or "list.xlsx",
             actor_id=principal.user_id,
         )
 
@@ -840,7 +992,7 @@ async def take_list(
 @router.get(
     "/{breach_uuid}/affected/contacts",
     response_model=BreachContactsOut,
-    summary="People the breach touched who have no account, and the lists they came in",
+    summary="People affected who have no account, and the lists they came in",
 )
 async def list_contacts(
     breach_uuid: UUID,
@@ -1123,14 +1275,14 @@ class OrgBoardDutyOut(Out):
     clock: BreachClockOut
 
 
-class OrgBoardTouchedOut(Out):
+class OrgBoardAffectedOut(Out):
     listed: int
     notified: int
 
 
 class OrgBoardBriefOut(Out):
-    """For the organisation's board, drafted from the register. The platform
-    never reports to the board; a person does, and the DPO records it."""
+    """For the organisation's board, drafted from the register: what the
+    report mailed to it starts from."""
 
     document: str
     basis: str
@@ -1147,8 +1299,8 @@ class OrgBoardBriefOut(Out):
     became_aware_at: datetime | None
     cert_in_reportable: bool
     duties: list[OrgBoardDutyOut]
-    #: Counts only: who it touched is never named here.
-    touched: OrgBoardTouchedOut
+    #: Counts only: the people affected are never named here.
+    affected: OrgBoardAffectedOut
     missing: list[str]
     #: The organisation's board duty itself, as the others: its clock only.
     duty: OrgBoardDutyOut | None
@@ -1162,6 +1314,286 @@ class OrgBoardBriefOut(Out):
 async def org_board_brief(breach_uuid: UUID, principal: BreachReader) -> dict[str, Any]:
     async with connection() as conn:
         return await board.org_board_brief(conn, breach_uuid=str(breach_uuid))
+
+
+# --------------------------------------------- reports on a breach (0059, ADR 0037)
+
+
+class BreachDocumentCreateIn(Schema):
+    #: org_board, board_intimation, cert_in, board_report or closure.
+    kind: str
+
+
+class BreachDocumentIn(Schema):
+    #: A section's key and what it now says. A section left out is left alone.
+    sections: Annotated[dict[str, Annotated[str, Field(max_length=20_000)] | None], Field()]
+
+
+class BreachDocumentFilingIn(Schema):
+    #: When a person sent it to the regulator, as entered.
+    filed_at: AwareDatetime
+    #: What the regulator returned. Required but for a closure report.
+    reference: Annotated[str, Field(max_length=200)] | None = None
+
+
+class BreachDocumentSectionOut(Out):
+    key: str
+    label: str
+    #: Finalising is refused while it is empty.
+    required: bool
+    #: Sealed.
+    body: str | None
+
+
+class BreachDocumentMailRecipientOut(Out):
+    recipient_uuid: UUID
+    #: Sealed. None where the list holds only an address.
+    full_name: str | None
+    #: Sealed.
+    email: str
+    #: queued, delivered or failed: its latest.
+    status: str
+    attempt: int
+    #: Why it failed, as an error's class. RecipientRemoved if it was taken off
+    #: the list before the worker reached it.
+    error: str | None
+    recorded_at: datetime
+    #: Taken off the list since. Sending again leaves it as it stands.
+    removed: bool
+
+
+class BreachDocumentMailOut(Out):
+    delivered: int
+    #: To addresses still on the list, as `failed` is.
+    queued: int
+    failed: int
+    #: Of the queued: lost before the worker saw them, which sending again
+    #: queues again.
+    stale: int
+    #: How many addresses sending again would queue now. 0 on a draft, a
+    #: version a later one replaced, or anything else that would be refused.
+    retryable: int
+    #: Each address mailed, once, its latest state. An address taken off the
+    #: list stays here, marked `removed`, and counts as neither failed nor queued.
+    recipients: list[BreachDocumentMailRecipientOut]
+
+
+class BreachDocumentProofOut(Out):
+    attachment_uuid: UUID
+    #: approval or sent_mail.
+    kind: str
+    #: Sealed.
+    note: str | None
+    #: Sealed.
+    file_name: str
+    sha256: str
+    size_bytes: int
+    added_at: datetime
+    added_by_name: str | None
+
+
+class BreachDocumentOut(Out):
+    report_uuid: UUID
+    kind: str
+    title: str
+    version: int
+    #: draft, finalised or filed.
+    state: str
+    sections: list[BreachDocumentSectionOut]
+    created_at: datetime
+    created_by_name: str | None
+    updated_at: datetime
+    finalised_at: datetime | None
+    finalised_by_name: str | None
+    filed_at: datetime | None
+    filed_reference: str | None
+    filed_by_name: str | None
+    evidence: list[BreachDocumentProofOut]
+    #: What became of the mail to the organisation's board.
+    mail: BreachDocumentMailOut
+
+
+class BreachDocumentKindOut(Out):
+    kind: str
+    title: str
+    basis: str
+    #: The duty it discharges. None for a closure report.
+    duty: str | None
+    #: outstanding, done or not_applicable. None while there is no such duty.
+    duty_state: str | None
+    #: Why it may not be written yet, or None.
+    blocked_by: str | None
+    #: False for the report to the organisation's board.
+    goes_to_regulator: bool
+    #: Newest first.
+    versions: list[BreachDocumentOut]
+
+
+class BreachProofKindOut(Out):
+    kind: str
+    label: str
+
+
+class BreachDocumentsOut(Out):
+    kinds: list[BreachDocumentKindOut]
+    #: Addresses on the organisation's board list.
+    board_recipients: int
+    proofs: list[BreachProofKindOut]
+
+
+class BreachDocumentsResentOut(BreachDocumentsOut):
+    #: How many addresses this press queued. It may be none.
+    queued: int
+
+
+_REPORT = "/{breach_uuid}/reports/{report_uuid}"
+
+
+@router.get(
+    "/{breach_uuid}/reports",
+    response_model=BreachDocumentsOut,
+    summary="Every kind of report on a breach, and where each stands",
+)
+async def list_reports(breach_uuid: UUID, principal: BreachReader) -> dict[str, Any]:
+    async with connection() as conn:
+        return await reports.overview(conn, breach_uuid=str(breach_uuid))
+
+
+@router.post(
+    "/{breach_uuid}/reports",
+    response_model=BreachDocumentsOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Start the next version of a report, drafted from the register",
+)
+async def draft_report(
+    breach_uuid: UUID, body: BreachDocumentCreateIn, principal: BreachWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        return await reports.draft(
+            conn, breach_uuid=str(breach_uuid), kind=body.kind, actor_id=principal.user_id
+        )
+
+
+@router.put(_REPORT, response_model=BreachDocumentsOut, summary="Edit a draft report")
+async def edit_report(
+    breach_uuid: UUID, report_uuid: UUID, body: BreachDocumentIn, principal: BreachWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        return await reports.edit(
+            conn,
+            breach_uuid=str(breach_uuid),
+            report_uuid=str(report_uuid),
+            bodies=body.sections,
+            actor_id=principal.user_id,
+        )
+
+
+@router.post(
+    f"{_REPORT}/finalise",
+    response_model=BreachDocumentsOut,
+    summary="Freeze a report and mail the organisation's board; never a regulator",
+)
+async def finalise_report(
+    breach_uuid: UUID, report_uuid: UUID, principal: BreachWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        return await reports.finalise(
+            conn,
+            breach_uuid=str(breach_uuid),
+            report_uuid=str(report_uuid),
+            actor_id=principal.user_id,
+        )
+
+
+@router.post(
+    f"{_REPORT}/resend",
+    response_model=BreachDocumentsResentOut,
+    summary="Mail the report to every address on the list it has not reached",
+)
+async def resend_report(
+    breach_uuid: UUID, report_uuid: UUID, principal: BreachWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        return await reports.resend(
+            conn,
+            breach_uuid=str(breach_uuid),
+            report_uuid=str(report_uuid),
+            actor_id=principal.user_id,
+        )
+
+
+@router.post(
+    f"{_REPORT}/evidence",
+    response_model=BreachDocumentsOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Keep the proof of internal approval, or of the mail sent to the regulator",
+)
+async def add_report_proof(
+    breach_uuid: UUID,
+    report_uuid: UUID,
+    principal: BreachWriter,
+    file: Annotated[UploadFile, File(description="The file, max 25 MB")],
+    kind: Annotated[str, Form(description="approval or sent_mail")],
+    note: Annotated[str | None, Form(max_length=500)] = None,
+) -> dict[str, Any]:
+    # Checked before the file is stored, so a refusal leaves nothing behind.
+    async with connection() as conn:
+        await reports.check_proof(
+            conn, breach_uuid=str(breach_uuid), report_uuid=str(report_uuid), kind=kind
+        )
+    stored = await uploads.kept(file, subdir="breach", rules=BREACH_EVIDENCE)
+    try:
+        async with transaction() as conn:
+            return await reports.add_proof(
+                conn,
+                breach_uuid=str(breach_uuid),
+                report_uuid=str(report_uuid),
+                kind=kind,
+                note=note,
+                file_name=stored.file_name,
+                storage_ref=stored.storage_ref,
+                sha256=stored.sha256,
+                size_bytes=stored.size_bytes,
+                content_type=stored.content_type,
+                actor_id=principal.user_id,
+            )
+    except Conflict:
+        # Somebody moved first, and the refusal is certain: no row names this
+        # file, so nothing else could ever clear it. A commit that failed is no
+        # such certainty, and a file a row may name is never removed.
+        delete_upload(stored.storage_ref)
+        raise
+
+
+@router.post(
+    f"{_REPORT}/file",
+    response_model=BreachDocumentsOut,
+    summary="Record that a person sent it to the regulator; needs both proofs",
+)
+async def file_report(
+    breach_uuid: UUID, report_uuid: UUID, body: BreachDocumentFilingIn, principal: BreachWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        return await reports.file_report(
+            conn,
+            breach_uuid=str(breach_uuid),
+            report_uuid=str(report_uuid),
+            filed_at=body.filed_at,
+            reference=body.reference,
+            actor_id=principal.user_id,
+        )
+
+
+@router.get(f"{_REPORT}/pdf", summary="The report as a PDF; every read is audited")
+async def report_pdf(breach_uuid: UUID, report_uuid: UUID, principal: BreachReader) -> Response:
+    async with transaction() as conn:
+        payload, name = await reports.pdf(
+            conn,
+            breach_uuid=str(breach_uuid),
+            report_uuid=str(report_uuid),
+            actor_id=principal.user_id,
+        )
+    return uploads.generated(payload, name, "application/pdf")
 
 
 # ------------------------------------------------------------ breach tickets (S3-08)
@@ -1188,6 +1620,13 @@ class BreachTicketReasonIn(Schema):
     reason: Annotated[str, Field(min_length=1, max_length=8000)]
 
 
+class BreachTicketDateIn(Schema):
+    #: The new date to resolve it by.
+    answer_by: date
+    #: Why it moved. Sealed, and written on the thread for both sides to read.
+    reason: Annotated[str, Field(min_length=1, max_length=8000)]
+
+
 class BreachTicketMoveOut(Out):
     #: send_back, close, withdraw or reopen (the office); return (the holder).
     move: str
@@ -1196,12 +1635,15 @@ class BreachTicketMoveOut(Out):
 
 class BreachTicketEventOut(Out):
     event_uuid: UUID
-    #: returned, sent_back, closed, withdrawn or reopened.
+    #: returned, sent_back, closed, withdrawn, reopened or date_changed.
     kind: str
     #: With a return: done, partial or failed.
     outcome: str | None
     summary: str | None
     reason: str | None
+    #: With a date_changed: the date it replaced, and the new one.
+    date_before: date | None = None
+    date_after: date | None = None
     occurred_at: datetime
     actor_name: str | None
 
@@ -1242,6 +1684,8 @@ class BreachTicketOut(Out):
     #: What the office may do now. None on a closed breach.
     moves: list[BreachTicketMoveOut]
     may_write: bool
+    #: Whether the date may be changed now.
+    may_change_date: bool
     #: The holder's breach-only login (S3-09): pending, active or ended. None
     #: for a member of staff.
     temporary_access: str | None
@@ -1316,7 +1760,7 @@ async def message_holder(
     body: Annotated[str, Form(min_length=1, max_length=20_000)],
     evidence: Annotated[UploadFile | None, File(description="Optional file, max 25 MB")] = None,
 ) -> dict[str, Any]:
-    stored = await uploads.stored(evidence, subdir="breach")
+    stored = await uploads.stored(evidence, subdir="breach", rules=BREACH_TICKET_EVIDENCE)
     async with transaction() as conn:
         return await tickets.office_message(
             conn,
@@ -1344,6 +1788,25 @@ async def ticket_file(
             actor_id=principal.user_id,
         )
     return uploads.download(payload, name, recorded)
+
+
+@router.post(
+    f"{_TICKET}/resolve-by",
+    response_model=BreachTicketDetailOut,
+    summary="Change the date to resolve the ticket by, saying why",
+)
+async def change_ticket_date(
+    breach_uuid: UUID, ticket_uuid: UUID, body: BreachTicketDateIn, principal: BreachWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        return await tickets.office_change_date(
+            conn,
+            breach_uuid=str(breach_uuid),
+            ticket_uuid=str(ticket_uuid),
+            answer_by=body.answer_by,
+            reason=body.reason,
+            actor_id=principal.user_id,
+        )
 
 
 async def _move(

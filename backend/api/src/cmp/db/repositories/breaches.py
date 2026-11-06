@@ -87,7 +87,10 @@ async def create(
     logged: dict[str, str | None] | None = None,
     cyber_attack: str | None = None,
     office: str,
+    reference: str | None = None,
 ) -> Row:
+    """The row. `reference` is the number a report arrived with (0058); an
+    incident logged in the console draws its own."""
     told = {c: (logged or {}).get(c) for c in LOGGED_TEXT}
     sealed = await seal("breach", {"title": title, "location_detail": location_detail, **told})
     columns = ", ".join(LOGGED_TEXT)
@@ -98,12 +101,13 @@ async def create(
         INSERT INTO breach (reference, title, detected_at, began_at, location_kind,
                             location_processor_id, location_source_id, location_detail,
                             recorded_by, {columns}, cyber_attack, office_id)
-        VALUES ('INC-' || to_char(now(), 'YYYY') || '-'
-                  || lpad(nextval('breach_incident_ref_seq')::text, 4, '0'),
+        VALUES (coalesce(%s, 'INC-' || to_char(now(), 'YYYY') || '-'
+                  || cmp_next_number('breach_incident_ref_seq')),
                 %s, %s, %s, %s, %s, %s, %s, %s, {marks}, %s, {OFFICE_ID})
         RETURNING breach_id, breach_uuid
         """,
         (
+            reference,
             sealed["title"],
             detected_at,
             began_at,
@@ -130,8 +134,7 @@ async def record_as_breach(
     return await fetch_one(
         conn,
         """INSERT INTO breach_recording (breach_id, reference, determination_id, recorded_by)
-           VALUES (%s, 'BR-' || to_char(now(), 'YYYY') || '-'
-                         || lpad(nextval('breach_ref_seq')::text, 4, '0'),
+           VALUES (%s, 'BR-' || to_char(now(), 'YYYY') || '-' || cmp_next_number('breach_ref_seq'),
                    %s, %s)
            ON CONFLICT (breach_id) DO NOTHING
            RETURNING recording_uuid, reference""",
@@ -423,104 +426,7 @@ async def obligation_events(conn: Conn, obligation_ids: list[int]) -> list[Row]:
     )
 
 
-# ------------------------------------------------------------- who it touched
-
-#: The tables of the platform's own database that hold something about a data
-#: principal, each as (the person it is about, when the row was written).
-#: A database breach names tables and a window; everyone with a row in one of
-#: them written in that window is touched. Hand-kept, like every inventory of
-#: personal data here: `tests/integration/test_breach_affected.py` fails when a
-#: sealed table is neither listed nor named in `NOT_ABOUT_A_PRINCIPAL`.
-PLATFORM_TABLES: dict[str, str] = {
-    # Her account: name, contacts, date of birth.
-    "auth_user": "SELECT id AS person_id, created_at AS at FROM auth_user",
-    "consent_artefact": "SELECT auth_user_id, created_at FROM consent_artefact",
-    "asset_consent": """SELECT ca.auth_user_id, ac.created_at FROM asset_consent ac
-                        JOIN consent_artefact ca ON ca.consent_id = ac.consent_id""",
-    "export_line": """SELECT el.auth_user_id, e.exported_at FROM export_line el
-                      JOIN export_log e ON e.export_id = el.export_id""",
-    "rights_request": """SELECT subject_user_id, received_at FROM rights_request
-                         WHERE subject_user_id IS NOT NULL""",
-    # The holder's brief and thread carry her name, contacts and words.
-    "rights_request_holder": """SELECT r.subject_user_id, h.created_at
-                                FROM rights_request_holder h
-                                JOIN rights_request r ON r.request_id = h.request_id
-                                WHERE r.subject_user_id IS NOT NULL""",
-    "rights_ticket_message": """SELECT r.subject_user_id, m.created_at
-                                FROM rights_ticket_message m
-                                JOIN rights_request_holder h ON h.holder_id = m.holder_id
-                                JOIN rights_request r ON r.request_id = h.request_id
-                                WHERE r.subject_user_id IS NOT NULL""",
-    "rights_response_file": """SELECT r.subject_user_id, f.created_at FROM rights_response_file f
-                               JOIN rights_request r ON r.request_id = f.request_id
-                               WHERE r.subject_user_id IS NOT NULL""",
-    "rights_request_attachment": """SELECT r.subject_user_id, a.added_at
-                                    FROM rights_request_attachment a
-                                    JOIN rights_request r ON r.request_id = a.request_id
-                                    WHERE r.subject_user_id IS NOT NULL""",
-    # Both people in a nomination: the principal, and a nominee with an account.
-    "nomination": """SELECT principal_user_id, created_at FROM nomination
-                     UNION ALL
-                     SELECT nominee_user_id, created_at FROM nomination
-                     WHERE nominee_user_id IS NOT NULL""",
-    "person_type_history": "SELECT auth_user_id, changed_at FROM person_type_history",
-    "legal_hold": """SELECT subject_user_id, placed_at FROM legal_hold
-                     WHERE subject_user_id IS NOT NULL""",
-    # Staff are data principals too (ADR 0013): a cover arrangement's reason.
-    "delegation": """SELECT delegator_user_id, created_at FROM delegation
-                     UNION ALL
-                     SELECT delegate_user_id, created_at FROM delegation""",
-    "audit_log": """SELECT subject_user_id, occurred_at FROM audit_log
-                    WHERE subject_user_id IS NOT NULL""",
-    # Breach tickets (S3-08): the holder - a member of staff, and staff are
-    # data principals too - and what they and the office wrote to each other.
-    "breach_ticket": "SELECT holder_user_id, created_at FROM breach_ticket",
-    "breach_ticket_event": """SELECT t.holder_user_id, e.occurred_at FROM breach_ticket_event e
-                              JOIN breach_ticket t ON t.ticket_id = e.ticket_id""",
-    "breach_ticket_message": """SELECT t.holder_user_id, m.created_at
-                                FROM breach_ticket_message m
-                                JOIN breach_ticket t ON t.ticket_id = m.ticket_id""",
-}
-
-#: Sealed tables a database breach cannot trace to a data principal's account,
-#: and why. Whoever they concern is added to the list by hand.
-NOT_ABOUT_A_PRINCIPAL: dict[str, str] = {
-    "processor_respondent": "a contact at a processor, not an account the platform can notify",
-    "project_processor": "the office's reason for a processor decision",
-    "project_status_history": "the office's reason for a project's move",
-    "import_batch": "the name of a manifest file",
-    "breach": "the office's account of an incident",
-    "breach_status_history": "the office's reason for reopening a breach",
-    "breach_determination": "the office's reasoning",
-    "breach_assessment": "the office's account; a person named in it is added by hand",
-    "breach_obligation_event": "a note on a submission",
-    "breach_affected_revision": "a note on a revision of this list",
-    "breach_notice": "what everyone a breach touched is told; it names nobody",
-    "breach_attachment": "the office's evidence on an incident; a person it names is added by hand",
-    "office": "how a governance office is reached (0051): the office's contact, not a principal's",
-    "breach_contact": "someone a breach touched who has no account; already on that breach's list",
-    "breach_upload": "the name of a list of people or assets sent for a breach",
-    "message_copy": "a mailbox the office copies a message to - staff or a team, not a principal",
-}
-
-
-async def people_in_tables(
-    conn: Conn, tables: list[str], *, since: datetime | None, until: datetime | None
-) -> list[Row]:
-    """Everyone with a row in these tables written in the window, and which tables."""
-    arms = " UNION ALL ".join(
-        f"SELECT person_id, at, '{t}' AS tbl FROM ({PLATFORM_TABLES[t]}) AS x(person_id, at)"
-        for t in tables
-    )
-    return await fetch_all(
-        conn,
-        f"""SELECT person_id, array_agg(DISTINCT tbl ORDER BY tbl) AS tables
-              FROM ({arms}) AS rows
-             WHERE (%(since)s::timestamptz IS NULL OR at >= %(since)s)
-               AND (%(until)s::timestamptz IS NULL OR at <= %(until)s)
-             GROUP BY person_id""",
-        {"since": since, "until": until},
-    )
+# ------------------------------------------------------------- the people affected
 
 
 async def listed_person_ids(conn: Conn, breach_id: int) -> set[int]:
@@ -658,13 +564,14 @@ async def add_attachment(
     size_bytes: int,
     content_type: str,
     added_by: int,
+    report_id: int | None = None,
 ) -> Row:
     sealed = await seal("breach_attachment", {"file_name": file_name, "note": note})
     row = await fetch_one(
         conn,
         """INSERT INTO breach_attachment (breach_id, kind, note, file_name, storage_ref, sha256,
-                                          size_bytes, content_type, added_by)
-           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                          size_bytes, content_type, added_by, report_id)
+           VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
            RETURNING attachment_uuid""",
         (
             breach_id,
@@ -676,6 +583,7 @@ async def add_attachment(
             size_bytes,
             content_type,
             added_by,
+            report_id,
         ),
     )
     assert row is not None

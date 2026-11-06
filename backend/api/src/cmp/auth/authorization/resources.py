@@ -1,6 +1,6 @@
 """The things a permission can be about.
 
-Twenty-two names, each corresponding to one row of the API reference's permission
+Twenty-six names, each corresponding to one row of the API reference's permission
 tables. They are strings rather than an enum for one reason: a route names its
 resource inline — `RequireResource("project")` — and an enum member there would
 be noise without adding safety, because `verify_resources()` below checks the
@@ -58,6 +58,8 @@ RESTRICTED_COUNTRY: Final = "restricted_country"
 BREACH: Final = "breach"
 #: A breach ticket addressed to a member of staff (S3-08): their own only.
 BREACH_TICKET: Final = "breach_ticket"
+#: Who hears of a breach, and how (0058): the office's settings, no breach in them.
+BREACH_SETTINGS: Final = "breach_settings"
 
 #: The words of a message the platform sends, per junction and channel.
 MESSAGE_TEMPLATE: Final = "message_template"
@@ -96,6 +98,7 @@ ALL: Final[frozenset[str]] = frozenset(
         RESTRICTED_COUNTRY,
         BREACH,
         BREACH_TICKET,
+        BREACH_SETTINGS,
         NOTICE_TEMPLATE,
         HR_CATEGORY,
     }

@@ -27,8 +27,20 @@ from cmp.tasks.notifications.alerts import (
 )
 from cmp.tasks.notifications.batch import send_office_note
 from cmp.tasks.notifications.breach import send_breach_notice
-from cmp.tasks.notifications.breach_tickets import send_breach_ticket_waiting
+from cmp.tasks.notifications.breach_reports import (
+    record_breach_report_result,
+    send_breach_report,
+)
+from cmp.tasks.notifications.breach_tickets import (
+    send_breach_ticket_date_changed,
+    send_breach_ticket_waiting,
+)
 from cmp.tasks.notifications.consent import send_consent_receipt, send_reconsent_request
+from cmp.tasks.notifications.incident_reports import (
+    send_incident_report_code,
+    send_incident_report_received,
+    send_incident_reported,
+)
 from cmp.tasks.notifications.rights import (
     send_holder_instruction,
     send_nomination_accepted,
@@ -56,9 +68,12 @@ from cmp.tasks.notifications.withdrawal import (
 # queues it by name, the worker answers "unregistered task", and the message is
 # lost quietly. `tests/unit/tasks/test_registry.py` checks the roster.
 __all__ = [
+    "record_breach_report_result",
     "send_breach_duty_due",
     "send_breach_notice",
+    "send_breach_report",
     "send_breach_ticket_access",
+    "send_breach_ticket_date_changed",
     "send_breach_ticket_returned",
     "send_breach_ticket_waiting",
     "send_consent_receipt",
@@ -66,6 +81,9 @@ __all__ = [
     "send_delegation_arranged",
     "send_holder_instruction",
     "send_hr_withdrawal_notice",
+    "send_incident_report_code",
+    "send_incident_report_received",
+    "send_incident_reported",
     "send_nomination_accepted",
     "send_nomination_code",
     "send_nomination_invitation",

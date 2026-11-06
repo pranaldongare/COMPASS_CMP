@@ -180,16 +180,27 @@ async def test_a_breach_duty_is_said_once_when_due_soon_and_once_when_overdue(
         location_detail=None,
         actor_id=int(seeded["users"]["dpo"]["id"]),
     )
-    due = detected + timedelta(minutes=30)  # the organisation's board, by default
+    validated = await breach_service.determine(
+        conn,
+        breach_uuid=str(made["breach_uuid"]),
+        outcome="yes",
+        reasoning="Yes",
+        became_aware_at=detected,
+        actor_id=int(seeded["users"]["dpo"]["id"]),
+    )
+    # The organisation's board, by default: thirty minutes from the validation.
+    [due] = [d["due_at"] for d in validated["obligations"] if d["duty"] == "org_board"]
     dpo = await _email(conn, int(seeded["users"]["dpo"]["id"]))
 
+    # By the breach first: every open breach in the database is swept with this
+    # one, and opening an address is a call to the key service.
     def mine() -> list[tuple[Any, ...]]:
         return [
             a
             for n, a in queued
             if n == "send_breach_duty_due"
-            and plain(a[0]) == dpo
             and a[5] == str(made["breach_uuid"])
+            and plain(a[0]) == dpo
         ]
 
     await alerts.breach_duties(conn, now=due - timedelta(minutes=20))  # not yet
@@ -201,6 +212,109 @@ async def test_a_breach_duty_is_said_once_when_due_soon_and_once_when_overdue(
     await alerts.breach_duties(conn, now=due + timedelta(minutes=1))
     await alerts.breach_duties(conn, now=due + timedelta(minutes=6))
     assert [a[4].split(" ")[0] for a in mine()] == ["due", "overdue"]
+
+
+async def test_a_reinstated_duty_is_a_new_clock_and_says_so_again(
+    conn: Any, seeded: dict[str, Any], queued: list[Any], redis_conn: Any
+) -> None:
+    dpo = int(seeded["users"]["dpo"]["id"])
+    aware = datetime.now(UTC) - timedelta(minutes=10)
+    made = await breach_service.record(
+        conn,
+        title="A list sent to the wrong address",
+        detected_at=aware,
+        began_at=None,
+        location_kind="platform",
+        processor_uuid=None,
+        source_uuid=None,
+        location_detail=None,
+        actor_id=dpo,
+    )
+    uuid = str(made["breach_uuid"])
+
+    async def determine(outcome: str) -> dict[str, Any]:
+        return await breach_service.determine(
+            conn,
+            breach_uuid=uuid,
+            outcome=outcome,
+            reasoning=outcome,
+            became_aware_at=aware if outcome == "yes" else None,
+            actor_id=dpo,
+        )
+
+    [first] = [
+        d["due_at"] for d in (await determine("yes"))["obligations"] if d["duty"] == "org_board"
+    ]
+    email = await _email(conn, dpo)
+
+    def overdue() -> list[tuple[Any, ...]]:
+        return [
+            a
+            for n, a in queued
+            if n == "send_breach_duty_due"
+            and a[5] == uuid
+            and a[2] == "Organisation's board"
+            and a[4].startswith("overdue")
+            and plain(a[0]) == email
+        ]
+
+    await alerts.breach_duties(conn, now=first + timedelta(minutes=1))
+    assert len(overdue()) == 1
+    await determine("no")
+    await determine("yes")
+    detail = await breach_service.detail(conn, uuid)
+    [second] = [d["due_at"] for d in detail["obligations"] if d["duty"] == "org_board"]
+    assert second > first
+    await alerts.breach_duties(conn, now=second + timedelta(minutes=1))
+    await alerts.breach_duties(conn, now=second + timedelta(minutes=6))
+    assert len(overdue()) == 2, "its own clock, said once"
+
+
+async def test_a_reinstated_duty_is_warned_of_from_its_own_anchor(
+    conn: Any, seeded: dict[str, Any], queued: list[Any], redis_conn: Any
+) -> None:
+    """Twelve of the report's seventy-two hours, from the moment it was
+    reinstated: not a sixth of the time since the first awareness."""
+    dpo = int(seeded["users"]["dpo"]["id"])
+    now = datetime.now(UTC)
+    made = await breach_service.record(
+        conn,
+        title="A list sent to the wrong address",
+        detected_at=now - timedelta(hours=61),
+        began_at=None,
+        location_kind="platform",
+        processor_uuid=None,
+        source_uuid=None,
+        location_detail=None,
+        actor_id=dpo,
+    )
+    uuid = str(made["breach_uuid"])
+    for outcome, aware in (
+        ("yes", now - timedelta(hours=60)),
+        ("no", None),
+        ("yes", now),
+    ):
+        detail = await breach_service.determine(
+            conn,
+            breach_uuid=uuid,
+            outcome=outcome,
+            reasoning=outcome,
+            became_aware_at=aware,
+            actor_id=dpo,
+        )
+    [due] = [d["due_at"] for d in detail["obligations"] if d["duty"] == "board_report"]
+
+    def said() -> list[tuple[Any, ...]]:
+        return [
+            a
+            for n, a in queued
+            if n == "send_breach_duty_due" and a[5] == uuid and a[2] == "Board - detailed report"
+        ]
+
+    await alerts.breach_duties(conn, now=due - timedelta(hours=20))
+    assert said() == [], "twenty hours left is not the last sixth of this clock"
+    await alerts.breach_duties(conn, now=due - timedelta(hours=11))
+    assert said()
 
 
 async def test_role_access_and_cover_reach_the_people_concerned(

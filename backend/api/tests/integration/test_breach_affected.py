@@ -1,10 +1,10 @@
-"""Who a breach touched - derived, confirmed and revised (S3-02).
+"""Who a breach affected - derived, confirmed and revised (S3-02).
 
 A processor breach lists exactly the people in files sent to it; a source
-breach exactly the people captured in its assets; a database breach the
-people in the affected tables within the window. The DPO adds whom the
-records cannot show and leaves out whom they wrongly include. A revision adds
-rows and leaves the earlier list as it was.
+breach exactly the people captured in its assets; a project everyone who gave
+consent in it, in a window if one is given. The DPO adds whom the records
+cannot show and leaves out whom they wrongly include. A revision adds rows and
+leaves the earlier list as it was.
 """
 
 from __future__ import annotations
@@ -18,19 +18,21 @@ import pytest
 
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
 from cmp.core.security import new_token, token_fingerprint
-from cmp.db.repositories import breaches as breach_repo
+from cmp.db.repositories import holdings
 from cmp.domain.breach import affected, service
 from cmp.domain.consent import service as consent_service
-from cmp.infrastructure.dkms.fields import ENCRYPTED_FIELDS
 from tests.conftest import hashed
-from tests.integration.test_breach_register import tell_org_board
+from tests.integration.test_rights_by_office import _as_office
 from tests.integration.test_rights_flows import _asset_with_her
 
 pytestmark = pytest.mark.integration
 
 
-async def _person(conn: Any, seeded: dict[str, Any], tag: str) -> tuple[int, str, int]:
-    """A data principal with a real consent on the seeded notice.
+async def _person(
+    conn: Any, seeded: dict[str, Any], tag: str, *, granted: bool = True
+) -> tuple[int, str, int]:
+    """A data principal with a real consent on the seeded notice, or who
+    declined it.
 
     Returns her id, her uuid and her consent's id.
     """
@@ -60,7 +62,7 @@ async def _person(conn: Any, seeded: dict[str, Any], tag: str) -> tuple[int, str
         token=raw,
         user_id=row["id"],
         language_code="english",
-        grants={str(seeded["purpose"]["purpose_uuid"]): True},
+        grants={str(seeded["purpose"]["purpose_uuid"]): granted},
         action_type="checkbox_click",
         ip_address="127.0.0.1",
     )
@@ -170,27 +172,161 @@ async def test_a_source_breach_lists_exactly_the_people_in_its_assets(
     assert _uuids(listing) == {a[1]}
 
 
-async def test_a_database_breach_lists_the_people_in_the_tables_and_window(
+async def test_a_project_lists_everyone_who_gave_consent_in_it(
     conn: Any, seeded: dict[str, Any]
 ) -> None:
     a, b, c = [await _person(conn, seeded, t) for t in "abc"]
     started = (await (await conn.execute("SELECT now() AS t")).fetchone())["t"]
     uuid = await _breach(conn, seeded)
-    scope = {"kind": "platform", "tables": ["consent_artefact"], "since": started, "until": started}
+    project = str(seeded["project"]["project_uuid"])
+    scope = {"kind": "project", "project_uuid": project}
     shown = await affected.preview(conn, breach_uuid=uuid, scopes=[scope])
-    assert {str(p["person_uuid"]) for p in shown["people"]} == {a[1], b[1], c[1]}
-    assert all(p["evidence"]["tables"] == ["consent_artefact"] for p in shown["people"])
+    assert {a[1], b[1], c[1]} <= {str(p["person_uuid"]) for p in shown["people"]}
+    assert all(p["found_by"] == "project" for p in shown["people"])
+    assert shown["scopes"][0]["project_name"], "named, for the record of how they were found"
 
-    before = {**scope, "since": None, "until": started - timedelta(days=1)}
+    before = {**scope, "until": started - timedelta(days=3650)}
     earlier = await affected.preview(conn, breach_uuid=uuid, scopes=[before])
-    assert not {a[1], b[1], c[1]} & {str(p["person_uuid"]) for p in earlier["people"]}
+    assert earlier["derived"] == 0, "only consents given in the period"
 
-    with pytest.raises(ValidationFailed, match="Choose from"):
-        await affected.preview(
-            conn, breach_uuid=uuid, scopes=[{"kind": "platform", "tables": ["pg_authid"]}]
-        )
+    backwards = {**scope, "since": started, "until": started - timedelta(days=1)}
+    with pytest.raises(ValidationFailed, match="ends before"):
+        await affected.preview(conn, breach_uuid=uuid, scopes=[backwards])
     with pytest.raises(ValidationFailed):
         await affected.preview(conn, breach_uuid=uuid, scopes=[{"kind": "everywhere"}])
+    with pytest.raises(ValidationFailed):
+        await affected.preview(
+            conn, breach_uuid=uuid, scopes=[{"kind": "platform", "tables": ["auth_user"]}]
+        )
+
+
+async def test_someone_who_withdrew_is_listed_too(
+    conn: Any, seeded: dict[str, Any], request_context: Any
+) -> None:
+    """Their data was held. Listing too many is the safe side of Rule 7."""
+    a = await _person(conn, seeded, "withdrew")
+    await _withdraw(conn, a[2], at=datetime.now(UTC))
+    uuid = await _breach(conn, seeded)
+    shown = await affected.preview(
+        conn,
+        breach_uuid=uuid,
+        scopes=[{"kind": "project", "project_uuid": str(seeded["project"]["project_uuid"])}],
+    )
+    assert a[1] in {str(p["person_uuid"]) for p in shown["people"]}
+
+
+async def _withdraw(conn: Any, consent_id: int, *, at: datetime) -> None:
+    """Her withdrawal, an artefact of its own, with no grant on it."""
+    await conn.execute(
+        """INSERT INTO consent_artefact (auth_user_id, notice_id, notice_language_id,
+                                         notice_content_hash, link_id, served_at,
+                                         affirmative_action_at, action_type, is_withdrawal,
+                                         supersedes_consent_id)
+           SELECT auth_user_id, notice_id, notice_language_id, notice_content_hash, link_id,
+                  %s, %s, action_type, true, consent_id
+             FROM consent_artefact WHERE consent_id = %s""",
+        (at, at, consent_id),
+    )
+
+
+async def test_someone_who_withdrew_is_found_by_a_window_that_holds_only_the_withdrawal(
+    conn: Any, seeded: dict[str, Any], request_context: Any
+) -> None:
+    a = await _person(conn, seeded, "withdrew later")
+    later = datetime.now(UTC) + timedelta(days=30)
+    await _withdraw(conn, a[2], at=later)
+    uuid = await _breach(conn, seeded)
+    project = str(seeded["project"]["project_uuid"])
+    scope = {"kind": "project", "project_uuid": project, "since": later - timedelta(days=1)}
+    shown = await affected.preview(conn, breach_uuid=uuid, scopes=[scope])
+    assert a[1] in {str(p["person_uuid"]) for p in shown["people"]}
+
+
+async def test_someone_who_declined_everything_is_not_found_or_counted(
+    conn: Any, seeded: dict[str, Any], request_context: Any
+) -> None:
+    """Their artefact is the record that they gave nothing. Rule 7's notice
+    would tell them data they never gave was breached."""
+    gave = await _person(conn, seeded, "gave")
+    uuid = await _breach(conn, seeded)
+    project = str(seeded["project"]["project_uuid"])
+
+    async def people_counted() -> int:
+        [row] = [
+            p
+            for p in (await affected.options(conn, breach_uuid=uuid))["projects"]
+            if str(p["project_uuid"]) == project
+        ]
+        return int(row["people"])
+
+    before = await people_counted()
+    declined = await _person(conn, seeded, "declined", granted=False)
+    shown = await affected.preview(
+        conn, breach_uuid=uuid, scopes=[{"kind": "project", "project_uuid": project}]
+    )
+    found = {str(p["person_uuid"]) for p in shown["people"]}
+    assert gave[1] in found and declined[1] not in found
+    assert await people_counted() == before
+
+
+class TestTheOfficeWall:
+    """On a stack where RLS does not bind these queries are the wall: a Legal
+    session must not read R&D's people through a vendor both offices use."""
+
+    async def test_a_processor_s_people_are_the_session_office_s(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any
+    ) -> None:
+        a = await _person(conn, seeded, "a")
+        await _export(conn, seeded, "external", [a])
+        processor = int(seeded["processors"]["external"]["processor_id"])
+
+        await _as_office(conn, "hr")
+        assert await holdings.people_held_by(conn, processor_id=processor) == []
+        await _as_office(conn, "rnd")
+        assert a[0] in {
+            r["person_id"] for r in await holdings.people_held_by(conn, processor_id=processor)
+        }
+
+    async def test_a_source_s_people_are_the_session_office_s(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any
+    ) -> None:
+        a = await _person(conn, seeded, "a")
+        await _asset_with_her(conn, seeded, a[2], bystanders=0, ref="WALL")
+        row = await (
+            await conn.execute("SELECT source_id FROM data_source WHERE source_code = 'SRC-WALL'")
+        ).fetchone()
+        source = int(row["source_id"])
+
+        await _as_office(conn, "hr")
+        assert await holdings.people_held_by(conn, source_id=source) == []
+        await _as_office(conn, "rnd")
+        assert [r["person_id"] for r in await holdings.people_held_by(conn, source_id=source)] == [
+            a[0]
+        ]
+
+    async def test_a_person_s_holders_are_still_read_across_offices(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any
+    ) -> None:
+        """A rights request is about one person, wherever her data went."""
+        a = await _person(conn, seeded, "a")
+        await _export(conn, seeded, "external", [a])
+        await _asset_with_her(conn, seeded, a[2], bystanders=0, ref="ACROSS")
+        await _as_office(conn, "hr")
+        [held] = await holdings.holders_of_person(conn, a[0])
+        assert held["exports"] and held["assets"]
+
+
+async def test_the_options_are_the_projects_with_people_in_them(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    await _person(conn, seeded, "a")
+    uuid = await _breach(conn, seeded)
+    [mine] = [
+        p
+        for p in (await affected.options(conn, breach_uuid=uuid))["projects"]
+        if str(p["project_uuid"]) == str(seeded["project"]["project_uuid"])
+    ]
+    assert mine["people"] >= 1 and mine["is_activity"] is False
 
 
 async def test_the_dpo_adds_and_leaves_out_and_a_revision_keeps_the_last_list(
@@ -268,7 +404,6 @@ async def test_nobody_is_added_from_nowhere(conn: Any, seeded: dict[str, Any]) -
     await service.determine(
         conn, breach_uuid=uuid, outcome="no", reasoning="Test", became_aware_at=None, actor_id=dpo
     )
-    await tell_org_board(conn, seeded, uuid)
     await service.transition(conn, breach_uuid=uuid, to="closed", reason=None, actor_id=dpo)
     with pytest.raises(Conflict):
         await affected.confirm(
@@ -302,11 +437,3 @@ async def test_the_trail_counts_and_names_nobody(conn: Any, seeded: dict[str, An
     ).fetchone()
     assert row["subject_user_id"] is None
     assert a[1] not in row["detail"] and '"newly_listed": 1' in row["detail"]
-
-
-def test_every_sealed_table_is_traced_to_a_principal_or_says_why_not() -> None:
-    """A database breach finds people through `PLATFORM_TABLES`. A sealed table
-    it does not know is one whose people it would silently miss."""
-    known = set(breach_repo.PLATFORM_TABLES) | set(breach_repo.NOT_ABOUT_A_PRINCIPAL)
-    missing = sorted(set(ENCRYPTED_FIELDS) - known)
-    assert not missing, f"trace these to a person in PLATFORM_TABLES, or say why not: {missing}"

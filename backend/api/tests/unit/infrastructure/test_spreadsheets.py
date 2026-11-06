@@ -9,10 +9,11 @@ person can act on.
 from __future__ import annotations
 
 import io
+import zipfile
 from typing import Any
 
 import pytest
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 
 from cmp.core.errors import ValidationFailed
 from cmp.infrastructure import spreadsheets
@@ -98,3 +99,80 @@ def test_a_template_reads_back_as_its_example_rows() -> None:
     assert read_rows(payload, columns=COLUMNS, sheet="Data sources") == [
         (2, {"code": "A", "name": "One", "role": "identity"})
     ]
+
+
+def _rewritten(payload: bytes, part: str, body: bytes) -> bytes:
+    """The same workbook with one of its parts replaced."""
+    out = io.BytesIO()
+    with zipfile.ZipFile(io.BytesIO(payload)) as source, zipfile.ZipFile(out, "w") as target:
+        for member in source.infolist():
+            target.writestr(member, body if member.filename == part else source.read(member))
+    return out.getvalue()
+
+
+def test_a_workbook_that_would_unpack_past_the_budget_is_refused_unopened(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def opened(*args: Any, **kwargs: Any) -> None:
+        raise AssertionError("it should not have been opened")
+
+    monkeypatch.setattr(spreadsheets, "load_workbook", opened)
+    monkeypatch.setattr(spreadsheets, "MAX_UNPACKED_BYTES", 1024)
+    with pytest.raises(ValidationFailed, match="too large") as refused:
+        read_rows(_book(("Source code", "Name"), ("A", "B")), columns=COLUMNS)
+    assert refused.value.field == "file"
+
+
+def test_blank_rows_count_towards_the_last_row_a_sheet_may_have() -> None:
+    """A row's number is the file's to say, and the reader walks every gap: a
+    workbook of a few bytes could hold the API for minutes. openpyxl will not
+    write such a row, so the sheet is edited."""
+    payload = _book(("Source code", "Name"), ("A", "B"))
+    with zipfile.ZipFile(io.BytesIO(payload)) as source:
+        sheet = source.read("xl/worksheets/sheet1.xml")
+    far = sheet.replace(b'r="2"', b'r="5000000"')
+    far = far.replace(b'r="A2"', b'r="A5000000"').replace(b'r="B2"', b'r="B5000000"')
+    far = far.replace(b'ref="A1:B2"', b'ref="A1:B5000000"')
+    assert far != sheet
+    with pytest.raises(ValidationFailed, match="runs past row") as refused:
+        read_rows(_rewritten(payload, "xl/worksheets/sheet1.xml", far), columns=COLUMNS)
+    assert refused.value.field == "file"
+
+
+def test_a_workbook_with_no_sheets_is_refused_plainly() -> None:
+    payload = _rewritten(
+        _book(("Source code", "Name"), ("A", "B")),
+        "xl/workbook.xml",
+        b'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        b"<sheets/></workbook>",
+    )
+    with pytest.raises(ValidationFailed, match="no sheets") as refused:
+        read_rows(payload, columns=COLUMNS)
+    assert refused.value.field == "file"
+
+
+def test_a_sheet_that_turns_out_not_to_be_xml_is_refused_plainly() -> None:
+    """A sheet is parsed as it is walked, after the workbook opened."""
+    payload = _rewritten(
+        _book(("Source code", "Name"), ("A", "B")), "xl/worksheets/sheet1.xml", b"<nonsense"
+    )
+    with pytest.raises(ValidationFailed, match="could not be read"):
+        read_rows(payload, columns=COLUMNS)
+
+
+def test_the_headings_left_over_go_to_the_caller_before_any_row_is_read() -> None:
+    seen: list[tuple[set[str], list[str]]] = []
+
+    def check(found: set[str], others: list[str]) -> None:
+        seen.append((found, others))
+
+    payload = _book(("Source code", "Name", "Owner", None, "name"), ("A", "B", "C", None, "D"))
+    read_rows(payload, columns=COLUMNS, check_headings=check)
+    assert seen == [({"code", "name"}, ["Owner", "name"])]
+
+
+def test_a_text_column_is_formatted_as_text_in_the_template() -> None:
+    columns = (Column("code", "Source code"), Column("mobile", "Mobile", text=True))
+    sheet = load_workbook(io.BytesIO(build_workbook([SheetSpec("S", columns)]))).worksheets[0]
+    assert sheet.column_dimensions["B"].number_format == "@"
+    assert sheet.column_dimensions["A"].number_format != "@"

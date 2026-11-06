@@ -4,6 +4,7 @@
 `cmp.core.messages`, and the only caller is `cmp.infrastructure.messaging`.
 """
 
+from cmp.infrastructure.email.layout import quoted
 from cmp.infrastructure.email.transport import (
     Attachment,
     ConsoleEmailTransport,
@@ -22,4 +23,5 @@ __all__ = [
     "NullEmailTransport",
     "SmtpEmailTransport",
     "build_email_transport",
+    "quoted",
 ]

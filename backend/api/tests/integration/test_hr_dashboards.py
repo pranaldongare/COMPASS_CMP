@@ -76,7 +76,15 @@ async def test_the_legal_poc_reads_its_own_office(conn: Any, office: dict[str, A
     assert counts["versions_in_draft"] >= 1
     assert counts["requests_in_intake"] >= 1
     queues = {q["name"]: q["items"] for q in data["queues"]}
-    references = {r["reference"] for r in queues["Rights requests, soonest due first"]}
+    shown = {r["reference"] for r in queues["Rights requests, soonest due first"]}
+    # The queue stops at 25, soonest due first, and two requests made just now
+    # are the last due: on a database earlier runs have filled they fall past
+    # it. So what it shows is a part of the office's requests, and those two
+    # are among them.
+    every = await rights_repo.queue(conn, role=Role.LEGAL, user_id=0, limit=1_000_000)
+    references = {r["reference"] for r in every}
+    assert shown <= references
+    assert len(shown) == min(25, len(references))
     assert {office["held"]["reference"], office["intake"]["reference"]} <= references
     tag = office["world"]["template"]["template_code"]
     assert any(str(r["reference"]).startswith(tag) for r in queues["Template versions in draft"])

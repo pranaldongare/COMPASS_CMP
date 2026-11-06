@@ -9,7 +9,9 @@ its own.
 
 from __future__ import annotations
 
+import unicodedata
 from dataclasses import dataclass
+from urllib.parse import quote
 
 from fastapi import Response, UploadFile
 
@@ -19,11 +21,22 @@ from cmp.validation.files import EVIDENCE, UploadRules, check_upload, safe_suffi
 
 
 def safe_name(filename: str | None) -> str | None:
-    """A file name fit for a header: the base name, no quotes, bounded."""
+    """A file name fit for a header: the base name, no quotes, no control
+    characters, bounded."""
     if not filename:
         return None
-    base = filename.replace("\\", "/").rsplit("/", 1)[-1].replace('"', "").strip()
+    base = filename.replace("\\", "/").rsplit("/", 1)[-1].replace('"', "")
+    base = "".join(c for c in base if unicodedata.category(c) != "Cc").strip()
     return base[:255] or None
+
+
+def _attachment(filename: str) -> str:
+    """A `Content-Disposition` for a name of any language. A header carries
+    Latin-1 at most, and an en dash or a Hindi name is neither: the name itself
+    goes percent-encoded (RFC 5987), beside a plain one for an older reader."""
+    name = safe_name(filename) or "file"
+    plain = name.encode("ascii", "replace").decode("ascii").replace("?", "_")
+    return f"attachment; filename=\"{plain}\"; filename*=UTF-8''{quote(name, safe='')}"
 
 
 async def stored(
@@ -79,7 +92,7 @@ def download(payload: bytes, filename: str, recorded: str) -> Response:
         content=payload,
         media_type="application/octet-stream",
         headers={
-            "Content-Disposition": f'attachment; filename="{safe_name(filename) or "file"}"',
+            "Content-Disposition": _attachment(filename),
             "X-Recorded-SHA256": recorded,
             "X-Content-SHA256": file_hash(payload),
         },
@@ -94,7 +107,7 @@ def generated(payload: bytes, filename: str, media_type: str) -> Response:
         content=payload,
         media_type=media_type,
         headers={
-            "Content-Disposition": f'attachment; filename="{safe_name(filename) or "file"}"',
+            "Content-Disposition": _attachment(filename),
             "Cache-Control": "no-store, private",
             "X-Content-SHA256": file_hash(payload),
         },

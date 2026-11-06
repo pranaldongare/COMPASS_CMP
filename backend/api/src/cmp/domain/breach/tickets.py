@@ -17,10 +17,13 @@ Rules this module holds:
   constraint is the second line.
 * **The holder sees their ticket and nothing else** (BD-13): the breach
   reference, their instruction, the thread, the state, the answer-by date.
-  Never the title, where, validation, assessment, who it touched, notices,
+  Never the title, where, validation, assessment, who it affected, notices,
   duties or anybody else's ticket.
 * **The trail says what happened, never the words** (ADR 0015): the ticket, an
   outcome, that a reason was given. The holder is the subject.
+* **Either side may move the date, saying why** (0061): the old date, the new
+  one and the reason go on the ticket's events and its thread, and the two
+  dates on the trail. The other side is told.
 * **Every write takes the breach row first**, through `service.locked_open`,
   so a closed breach refuses every ticket write and two moves on one ticket
   act one after the other.
@@ -42,6 +45,7 @@ from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.domain.breach import access, service
 from cmp.domain.breach.ticket_state import (
+    DATE_CHANGED,
     EVENT,
     REASON_REQUIRED,
     Move,
@@ -91,6 +95,8 @@ HOLDER_KEYS: frozenset[str] = frozenset(
         "moves",
         # Whether they may add a colleague now (S3-09): while it is open.
         "may_add_colleague",
+        # Whether they may change the date now (0061): while it is open.
+        "may_change_date",
     }
 )
 
@@ -133,7 +139,7 @@ def _require_staff(user: Row) -> None:
 
 def _answer_by(value: date | None) -> date | None:
     if value is not None and value < _today():
-        raise ValidationFailed("The answer-by date has already passed", field="answer_by")
+        raise ValidationFailed("The resolve-by date has already passed", field="answer_by")
     return value
 
 
@@ -357,6 +363,7 @@ def _office_view(row: Row, events: list[Row], grant: Row | None = None) -> Row:
         "events": events,
         "moves": moves(state, side="office", breach_open=breach_open),
         "may_write": breach_open and may_write(state),
+        "may_change_date": breach_open and may_write(state),
         "temporary_access": _access_state(grant),
     }
 
@@ -374,6 +381,7 @@ def _holder_view(row: Row, events: list[Row]) -> Row:
         "last_activity_at": row["last_activity_at"],
         "moves": moves(state, side="holder", breach_open=row["breach_status"] == "open"),
         "may_add_colleague": row["breach_status"] == "open" and may_write(state),
+        "may_change_date": row["breach_status"] == "open" and may_write(state),
     }
     assert set(view) == HOLDER_KEYS
     return view
@@ -579,6 +587,114 @@ async def holder_attachment(
 ) -> tuple[bytes, str, str]:
     row = await _holder_row(conn, user_id, ticket_uuid)
     return await attachment(conn, row, message_uuid=message_uuid, actor_id=user_id)
+
+
+# ---------------------------------------------------------------- the date
+
+
+def _day(value: date | None) -> str:
+    return f"{value.day} {value:%B %Y}" if value else "no date"
+
+
+async def _change_date(
+    conn: Conn,
+    row: Row,
+    events: list[Row],
+    *,
+    side: str,
+    answer_by: date,
+    reason: str,
+    actor_id: int,
+) -> None:
+    """Move the date. On the ticket's events, its thread and the trail: what it
+    was, what it is, who moved it, and - on the event and the thread, sealed -
+    why. The caller holds the breach row."""
+    if not may_write(fold(events)):
+        raise Conflict("This ticket is no longer open", code="ticket_not_open")
+    text = _text(reason)
+    if not text:
+        raise ValidationFailed("Give the reason", field="reason")
+    if answer_by < _today():
+        raise ValidationFailed("The resolve-by date has already passed", field="answer_by")
+    before: date | None = row["answer_by"]
+    if answer_by == before:
+        raise ValidationFailed("That is the date it already has", field="answer_by")
+    ticket_id = int(row["ticket_id"])
+    await repo.add_event(
+        conn,
+        ticket_id,
+        kind=DATE_CHANGED,
+        actor_user_id=actor_id,
+        reason=text,
+        date_before=before,
+        date_after=answer_by,
+    )
+    await repo.set_answer_by(conn, ticket_id, answer_by)
+    await repo.add_message(
+        conn,
+        ticket_id,
+        side=side,
+        kind="status",
+        body=f"Resolve by changed from {_day(before)} to {_day(answer_by)}: {text}",
+        author_user_id=actor_id,
+    )
+    await repo.mark_read(conn, ticket_id, side=side)
+    await _trail(
+        conn,
+        row,
+        Event.BREACH_TICKET_DATE_CHANGED,
+        actor_id=actor_id,
+        detail={
+            "side": side,
+            "date_before": before.isoformat() if before else None,
+            "date_after": answer_by.isoformat(),
+            "reason_given": True,
+        },
+    )
+
+
+async def office_change_date(
+    conn: Conn,
+    *,
+    breach_uuid: str,
+    ticket_uuid: str,
+    answer_by: date,
+    reason: str,
+    actor_id: int,
+) -> Row:
+    """The office moves the date; the holder is told, in words that name no
+    breach (BD-18)."""
+    breach = await service.locked_open(conn, breach_uuid)
+    row = await _office_row(conn, breach, ticket_uuid)
+    events = (await _events_by_ticket(conn, [int(row["ticket_id"])]))[int(row["ticket_id"])]
+    await _change_date(
+        conn, row, events, side="office", answer_by=answer_by, reason=reason, actor_id=actor_id
+    )
+    from cmp.tasks.dispatch import dispatch_optional
+    from cmp.tasks.notifications.breach_tickets import send_breach_ticket_date_changed
+
+    if row.get("holder_email"):
+        dispatch_optional(send_breach_ticket_date_changed, str(row["holder_email"]), "/tickets")
+    return await office_detail(conn, breach_uuid=breach_uuid, ticket_uuid=ticket_uuid)
+
+
+async def holder_change_date(
+    conn: Conn, *, user_id: int, ticket_uuid: str, answer_by: date, reason: str
+) -> Row:
+    """The holder moves the date; the office's officers are told."""
+    row = await _holder_row(conn, user_id, ticket_uuid)
+    await service.locked_open(conn, str(row["breach_uuid"]))
+    # Read again under the lock: the office may have moved it while this waited,
+    # and what it was is what this records.
+    row = await _holder_row(conn, user_id, ticket_uuid)
+    events = (await _events_by_ticket(conn, [int(row["ticket_id"])]))[int(row["ticket_id"])]
+    await _change_date(
+        conn, row, events, side="holder", answer_by=answer_by, reason=reason, actor_id=user_id
+    )
+    from cmp.domain import alerts
+
+    await alerts.breach_ticket_date_changed(conn, breach=row)
+    return await my_detail(conn, user_id=user_id, ticket_uuid=ticket_uuid)
 
 
 # ---------------------------------------------------------------- moves

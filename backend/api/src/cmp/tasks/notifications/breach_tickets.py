@@ -29,3 +29,14 @@ def send_breach_ticket_waiting(email: str, full_name: str) -> dict[str, Any]:
         full_name=full_name,
         console_url=f"{settings.console_base_url.rstrip('/')}/tickets",
     )
+
+
+@shared_task(name="cmp.notifications.send_breach_ticket_date_changed", **RETRY_KW)
+def send_breach_ticket_date_changed(email: str, path: str) -> dict[str, Any]:
+    """To the other side from whoever moved it. It names no breach and no date:
+    both are in the console."""
+    return deliver(
+        Message.BREACH_TICKET_DATE_CHANGED,
+        to=email,
+        console_url=f"{settings.console_base_url.rstrip('/')}{path}",
+    )

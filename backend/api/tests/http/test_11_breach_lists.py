@@ -2,9 +2,9 @@
 
 The DPO downloads the template, checks a filled-in file (nothing written),
 takes it, and reads back the contacts with no account - name, email and
-mobile sealed - and the upload, whose file name is sealed too. A spreadsheet
-is refused with how to save it as CSV. Every other role is told the breach is
-not there.
+mobile sealed - and the upload, whose file name is sealed too. A workbook that
+cannot be read is refused with how to save it. Every other role is told the
+breach is not there.
 """
 
 from __future__ import annotations
@@ -79,7 +79,7 @@ class TestBreachLists:
             template=f"{B}/affected/upload/template",
             session=world.dpo,
         )
-        assert template.text.lstrip("﻿").startswith("name,email,mobile")
+        assert template.content.startswith(b"PK"), "an Excel workbook"
         assert "attachment" in template.headers["Content-Disposition"]
 
         checked = await call(
@@ -129,7 +129,7 @@ class TestBreachLists:
         )
         assert notices.json()["listed"] == 2 and notices.json()["contacts"] == 2
 
-    async def test_a_spreadsheet_is_refused_with_how_to_save_it(
+    async def test_a_broken_workbook_is_refused_with_how_to_save_it(
         self, http: httpx.AsyncClient, world: World
     ) -> None:
         uuid = await _breach(http, world)
@@ -149,7 +149,7 @@ class TestBreachLists:
                 )
             },
         )
-        assert "Save it as CSV" in refused.text
+        assert "Save the file as .xlsx" in refused.text
 
     async def test_every_other_role_is_told_it_is_not_there(
         self, http: httpx.AsyncClient, world: World

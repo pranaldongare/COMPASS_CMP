@@ -1,7 +1,7 @@
 """Breach tickets (S3-08): the ticket, what happened to it, and its thread.
 
-The ticket row changes only its two read markers, by trigger; its events and
-its thread are append-only by trigger and grant. A ticket's state is read by
+The ticket row changes only its two read markers and its date, by trigger; its
+events and its thread are append-only by trigger and grant. A ticket's state is read by
 folding its events (`cmp.domain.breach.tickets.fold`), never stored.
 
 Every word a person writes is sealed here, at the write. The holder's reads are
@@ -152,14 +152,25 @@ async def add_event(
     outcome: str | None = None,
     summary: str | None = None,
     reason: str | None = None,
+    date_before: date | None = None,
+    date_after: date | None = None,
 ) -> Row:
     sealed = await seal("breach_ticket_event", {"summary": summary, "reason": reason})
     row = await fetch_one(
         conn,
         """INSERT INTO breach_ticket_event
-             (ticket_id, kind, outcome, summary, reason, actor_user_id)
-           VALUES (%s, %s, %s, %s, %s, %s) RETURNING event_uuid""",
-        (ticket_id, kind, outcome, sealed["summary"], sealed["reason"], actor_user_id),
+             (ticket_id, kind, outcome, summary, reason, actor_user_id, date_before, date_after)
+           VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING event_uuid""",
+        (
+            ticket_id,
+            kind,
+            outcome,
+            sealed["summary"],
+            sealed["reason"],
+            actor_user_id,
+            date_before,
+            date_after,
+        ),
     )
     assert row is not None
     return row
@@ -170,10 +181,17 @@ async def events_for(conn: Conn, ticket_ids: list[int]) -> list[Row]:
     return await fetch_all(
         conn,
         """SELECT e.ticket_id, e.event_uuid, e.kind, e.outcome, e.summary, e.reason,
-                  e.occurred_at, u.full_name AS actor_name
+                  e.date_before, e.date_after, e.occurred_at, u.full_name AS actor_name
              FROM breach_ticket_event e JOIN auth_user u ON u.id = e.actor_user_id
             WHERE e.ticket_id = ANY(%s) ORDER BY e.event_id""",
         (ticket_ids,),
+    )
+
+
+async def set_answer_by(conn: Conn, ticket_id: int, answer_by: date) -> None:
+    """The new date. The event that records it is written first (0061)."""
+    await conn.execute(
+        "UPDATE breach_ticket SET answer_by = %s WHERE ticket_id = %s", (answer_by, ticket_id)
     )
 
 

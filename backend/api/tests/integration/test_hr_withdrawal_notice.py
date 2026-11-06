@@ -15,12 +15,16 @@ from typing import Any
 
 import pytest
 
+from cmp.api.routers.v1.breaches import BreachEvidenceOut
 from cmp.core.permissions import Role
 from cmp.db.repositories import holdings
 from cmp.db.sql import fetch_all
+from cmp.domain.breach import affected
+from cmp.domain.breach import service as breach_service
 from cmp.domain.consent import service as consent_service
 from cmp.domain.hr import activities, categories
 from tests.integration.hr_world import approved_version, legal_office, staff
+from tests.integration.test_rights_by_office import _as_office
 
 pytestmark = pytest.mark.integration
 
@@ -146,6 +150,53 @@ class TestTheRespondentsAreTold:
 
 
 class TestHoldersFromTheCategory:
+    async def test_a_breach_at_the_vendor_finds_her_through_the_activity(
+        self, conn: Any, activity: dict[str, Any], seeded: dict[str, Any]
+    ) -> None:
+        """No export reached the vendor, and holders_of_person says it holds her
+        data. Its uuid is reported as an activity, not as an export."""
+        processor = seeded["processors"]["external"]
+        rows = await holdings.people_held_by(conn, processor_id=int(processor["processor_id"]))
+        [hers] = [r for r in rows if r["person_id"] == seeded["subject"]["id"]]
+        assert hers["activities"] == [str(activity["made"]["activity_uuid"])]
+        assert hers["exports"] == []
+
+        await _as_office(conn, "rnd")
+        rows = await holdings.people_held_by(conn, processor_id=int(processor["processor_id"]))
+        assert seeded["subject"]["id"] not in {r["person_id"] for r in rows}, "the HR office's"
+
+    async def test_the_preview_of_a_vendor_scope_shows_the_activity_as_evidence(
+        self, conn: Any, activity: dict[str, Any], seeded: dict[str, Any]
+    ) -> None:
+        made = await breach_service.record(
+            conn,
+            title="The HRMS vendor reported a leak",
+            detected_at=datetime.now(UTC) - timedelta(hours=1),
+            began_at=None,
+            location_kind="platform",
+            processor_uuid=None,
+            source_uuid=None,
+            location_detail=None,
+            actor_id=int(activity["world"]["legal"]["id"]),
+            office="hr",
+        )
+        shown = await affected.preview(
+            conn,
+            breach_uuid=str(made["breach_uuid"]),
+            scopes=[
+                {
+                    "kind": "processor",
+                    "processor_uuid": str(seeded["processors"]["external"]["processor_uuid"]),
+                }
+            ],
+        )
+        [hers] = [
+            p for p in shown["people"] if str(p["person_uuid"]) == str(seeded["subject"]["uuid"])
+        ]
+        assert hers["found_by"] == "processor"
+        assert hers["evidence"] == {"activities": [str(activity["made"]["activity_uuid"])]}
+        assert BreachEvidenceOut.model_validate(hers["evidence"]).activities
+
     async def test_her_holders_include_the_category_s_processors(
         self, conn: Any, activity: dict[str, Any], seeded: dict[str, Any]
     ) -> None:

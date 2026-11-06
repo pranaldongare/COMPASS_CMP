@@ -236,7 +236,9 @@ async def breach_duties(conn: Conn, *, now: datetime | None = None) -> int:
     "About to" is the last sixth of the duty's window, at least five minutes:
     ten minutes of the board's thirty, an hour of CERT-In's six, twelve of the
     report's seventy-two. Each alert is remembered for thirty days in Redis, so
-    the sweep running every five minutes says each thing once.
+    the sweep running every five minutes says each thing once. The memory is of
+    this due time: a duty reinstated or extended is a new clock, and says it
+    again.
     """
     from cmp.domain.breach import clock
     from cmp.domain.breach import service as breach_service
@@ -252,7 +254,8 @@ async def breach_duties(conn: Conn, *, now: datetime | None = None) -> int:
             due = folded.get("due_at")
             if folded.get("state") != clock.State.OUTSTANDING or due is None:
                 continue
-            anchored = row.get("anchored_at") or row.get("created_at") or due
+            # The folded anchor: a reinstated duty runs from its own moment.
+            anchored = folded.get("anchored_at") or row.get("created_at") or due
             lead = max(timedelta(minutes=5), (due - anchored) / 6)
             if at >= due:
                 stage, state = "overdue", f"overdue since {moment(due)}"
@@ -262,7 +265,9 @@ async def breach_duties(conn: Conn, *, now: datetime | None = None) -> int:
                 stage, state = "due_soon", f"due in {left}"
             else:
                 continue
-            marker = rkey(K_CACHE, "alert", "breach_duty", str(row["obligation_id"]), stage)
+            marker = rkey(
+                K_CACHE, "alert", "breach_duty", str(row["obligation_id"]), stage, due.isoformat()
+            )
             if not await redis.set(marker, "1", nx=True, ex=30 * 24 * 3600):
                 continue
             office = breach.get("office_code")
@@ -297,6 +302,42 @@ async def breach_ticket_returned(
             words.get(outcome, outcome),
             str(breach["breach_uuid"]),
         )
+
+
+async def breach_ticket_date_changed(conn: Conn, *, breach: Row) -> None:
+    from cmp.tasks.notifications.breach_tickets import send_breach_ticket_date_changed
+
+    for email in await _officers(conn, breach.get("office_code") or "rnd"):
+        _queue(send_breach_ticket_date_changed, email, f"/breaches/{breach['breach_uuid']}#tickets")
+
+
+async def incident_reported(conn: Conn, *, report: Row) -> None:
+    """A report from the public link: to everyone in the roles the office has
+    named, who are told it is there and nothing of what it says; and to the
+    reporter, who is told its number."""
+    from cmp.db.repositories import incident_reports as reports
+    from cmp.tasks.notifications import incident_reports as tasks
+
+    roles = (await reports.settings(conn))["intake_roles"]
+    emails = await reports.active_emails(conn, list(roles))
+    if not emails:
+        # It waits on no clock, so nothing else would ever raise this.
+        log.error(
+            "incident_report.nobody_to_tell", reference=str(report["reference"]), roles=list(roles)
+        )
+    for email in emails:
+        _queue(
+            tasks.send_incident_reported,
+            email,
+            str(report["reference"]),
+            moment(report["received_at"]),
+        )
+    _queue(
+        tasks.send_incident_report_received,
+        str(report["reporter_email"]),
+        str(report["reporter_name"]),
+        str(report["reference"]),
+    )
 
 
 # ------------------------------------------------------------------ accounts

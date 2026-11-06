@@ -1,9 +1,9 @@
-"""The organisation's board within thirty minutes of first noticed (S3-07).
+"""The organisation's board within thirty minutes of a validation of yes.
 
-Every incident owes it, from the moment it is logged: a duty anchored at first
-noticed, its due time stored then. Validation never touches it. A person
-reports; the DPO records when and to whom, and the platform drafts a brief that
-names nobody.
+An incident owes it nothing until it is validated (ADR 0037, which moved this
+from first noticed): the first yes creates a duty anchored at that validation,
+its due time stored then. A later no sets it aside with the DPDP duties and a
+later yes brings it back. The platform drafts a brief that names nobody.
 """
 
 from __future__ import annotations
@@ -53,57 +53,78 @@ def _org(detail: dict[str, Any]) -> dict[str, Any]:
     return duty
 
 
-async def test_every_incident_owes_the_board_thirty_minutes_from_first_noticed(
+async def _validate(
+    conn: Any, seeded: dict[str, Any], logged: dict[str, Any], outcome: str = "yes"
+) -> dict[str, Any]:
+    return await service.determine(
+        conn,
+        breach_uuid=str(logged["breach_uuid"]),
+        outcome=outcome,
+        reasoning="As found",
+        became_aware_at=datetime.now(UTC) - MINUTE if outcome == "yes" else None,
+        actor_id=_dpo(seeded),
+    )
+
+
+async def test_an_incident_owes_the_board_nothing_until_a_yes(
     conn: Any, seeded: dict[str, Any]
 ) -> None:
-    """Written first. No mark and no validation: logging is the trigger, and the
-    clock runs from when it was noticed, not from when it was typed in."""
-    logged = await _log(conn, seeded, noticed_ago=10 * MINUTE)
-    duty = _org(logged)
+    logged = await _log(conn, seeded, noticed_ago=45 * MINUTE)
+    assert logged["obligations"] == [], "logged an hour late or not, nothing is overdue"
+    no = await _validate(conn, seeded, logged, "no")
+    assert not [d for d in no["obligations"] if d["duty"] == "org_board"], "a no creates none"
+
+
+async def test_a_yes_gives_the_board_thirty_minutes_from_the_validation(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    """Not from first noticed: the incident here was noticed three hours ago,
+    and the clock starts now."""
+    logged = await _log(conn, seeded, noticed_ago=180 * MINUTE)
+    before = datetime.now(UTC)
+    duty = _org(await _validate(conn, seeded, logged))
     assert duty["state"] == "outstanding"
-    assert duty["anchored_at"] == logged["detected_at"]
-    assert duty["due_at"] == logged["detected_at"] + 30 * MINUTE
+    assert before <= duty["anchored_at"] <= datetime.now(UTC)
+    assert duty["due_at"] == duty["anchored_at"] + 30 * MINUTE
     assert duty["label"] == "Organisation's board"
-    assert duty["basis"] == "Internal policy: within 30 minutes of first noticed"
-    assert 0 < duty["clock"]["seconds_remaining"] <= 20 * 60
+    assert duty["basis"] == "Internal policy: within 30 minutes of a validation of yes"
+    assert 29 * 60 < duty["clock"]["seconds_remaining"] <= 30 * 60
+    assert duty["clock"]["overdue"] is False
 
 
-async def test_an_incident_logged_late_starts_overdue(conn: Any, seeded: dict[str, Any]) -> None:
-    duty = _org(await _log(conn, seeded, noticed_ago=45 * MINUTE))
-    assert duty["clock"]["overdue"] is True
-    assert duty["clock"]["seconds_remaining"] < 0
+async def test_a_later_no_sets_it_aside_and_a_later_yes_restarts_it(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    logged = await _log(conn, seeded)
+    first = _org(await _validate(conn, seeded, logged))
+    aside = _org(await _validate(conn, seeded, logged, "no"))
+    assert aside["state"] == "not_applicable"
+    back = _org(await _validate(conn, seeded, logged))
+    assert back["state"] == "outstanding"
+    assert back["anchored_at"] > first["anchored_at"], "thirty minutes from the new yes"
 
 
-async def test_validation_never_touches_it(conn: Any, seeded: dict[str, Any]) -> None:
+async def test_a_report_already_made_stays_made(conn: Any, seeded: dict[str, Any]) -> None:
     logged = await _log(conn, seeded)
     uuid = str(logged["breach_uuid"])
-    before = _org(logged)
-    for outcome, aware in (("no", None), ("yes", datetime.now(UTC)), ("no", None)):
-        detail = await service.determine(
-            conn,
-            breach_uuid=uuid,
-            outcome=outcome,
-            reasoning="As found",
-            became_aware_at=aware,
-            actor_id=_dpo(seeded),
-        )
-        after = _org(detail)
-        assert after["state"] == "outstanding" and after["due_at"] == before["due_at"]
-        assert after["events"] == []
+    await _validate(conn, seeded, logged)
+    await tell_org_board(conn, seeded, uuid)
+    assert _org(await _validate(conn, seeded, logged, "no"))["state"] == "done"
 
 
 async def test_a_change_of_setting_moves_no_clock_already_running(
     conn: Any, seeded: dict[str, Any], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    first = await _log(conn, seeded)
+    first = _org(await _validate(conn, seeded, await _log(conn, seeded)))
     monkeypatch.setattr(settings, "breach_org_board_minutes", 60)
-    second = await _log(conn, seeded)
+    logged = await _log(conn, seeded)
+    second = _org(await _validate(conn, seeded, logged))
 
-    reread = _org(await service.detail(conn, str(first["breach_uuid"])))
-    assert reread["due_at"] == first["detected_at"] + 30 * MINUTE, "stored, never recomputed"
-    assert reread["basis"] == "Internal policy: within 30 minutes of first noticed"
-    assert _org(second)["due_at"] == second["detected_at"] + 60 * MINUTE
-    assert _org(second)["basis"] == "Internal policy: within 60 minutes of first noticed"
+    reread = _org(await service.detail(conn, str(logged["breach_uuid"])))
+    assert reread["due_at"] == second["anchored_at"] + 60 * MINUTE
+    assert first["due_at"] == first["anchored_at"] + 30 * MINUTE, "stored, never recomputed"
+    assert first["basis"] == "Internal policy: within 30 minutes of a validation of yes"
+    assert second["basis"] == "Internal policy: within 60 minutes of a validation of yes"
 
 
 async def test_recording_the_report_needs_whom_it_was_made_to(
@@ -111,6 +132,7 @@ async def test_recording_the_report_needs_whom_it_was_made_to(
 ) -> None:
     logged = await _log(conn, seeded)
     uuid = str(logged["breach_uuid"])
+    await _validate(conn, seeded, logged)
     common: dict[str, Any] = {
         "breach_uuid": uuid,
         "duty": "org_board",
@@ -124,7 +146,7 @@ async def test_recording_the_report_needs_whom_it_was_made_to(
     assert refused.value.field == "reported_to"
     with pytest.raises(ValidationFailed):
         await service.complete_duty(
-            conn, **{**common, "occurred_at": logged["detected_at"] - MINUTE}, reported_to="x"
+            conn, **{**common, "occurred_at": logged["detected_at"] - 10 * MINUTE}, reported_to="x"
         )
     with pytest.raises(ValidationFailed):
         await service.complete_duty(
@@ -172,6 +194,7 @@ async def test_only_the_board_takes_whom_and_only_it_does_without_a_reference(
 async def test_the_database_holds_the_rule_too(conn: Any, seeded: dict[str, Any]) -> None:
     """Past the service: a completion of this duty without whom is refused."""
     logged = await _log(conn, seeded)
+    await _validate(conn, seeded, logged)
     with pytest.raises(psycopg.errors.CheckViolation):
         await conn.execute(
             """INSERT INTO breach_obligation_event (obligation_id, kind, occurred_at, recorded_by)
@@ -185,22 +208,25 @@ async def test_the_database_holds_the_rule_too(conn: Any, seeded: dict[str, Any]
 async def test_closing_waits_for_the_report(conn: Any, seeded: dict[str, Any]) -> None:
     logged = await _log(conn, seeded)
     uuid = str(logged["breach_uuid"])
-    await service.determine(
-        conn,
-        breach_uuid=uuid,
-        outcome="no",
-        reasoning="Not personal data",
-        became_aware_at=None,
-        actor_id=_dpo(seeded),
-    )
+    await _validate(conn, seeded, logged)
     with pytest.raises(TransitionNotPermitted) as refused:
         await service.transition(
             conn, breach_uuid=uuid, to="closed", reason=None, actor_id=_dpo(seeded)
         )
-    assert refused.value.details["blockers"] == ["Organisation's board is outstanding"]
-    await tell_org_board(conn, seeded, uuid)
+    assert "Organisation's board is outstanding" in refused.value.details["blockers"]
+
+
+async def test_a_no_leaves_nothing_in_the_way_of_closing(conn: Any, seeded: dict[str, Any]) -> None:
+    """Why the duty moved: an incident that turns out to be nothing, and every
+    report from the public link that does, closes without telling the board."""
+    logged = await _log(conn, seeded)
+    await _validate(conn, seeded, logged, "no")
     closed = await service.transition(
-        conn, breach_uuid=uuid, to="closed", reason=None, actor_id=_dpo(seeded)
+        conn,
+        breach_uuid=str(logged["breach_uuid"]),
+        to="closed",
+        reason=None,
+        actor_id=_dpo(seeded),
     )
     assert closed["status"] == "closed"
 
@@ -221,11 +247,11 @@ async def test_the_brief_names_what_is_missing_and_nobody(
     brief = await board.org_board_brief(conn, breach_uuid=uuid)
 
     assert brief["reference"].startswith("INC-") and brief["validation"] == "pending"
-    assert brief["touched"] == {"listed": 0, "notified": 0}
+    assert brief["affected"] == {"listed": 0, "notified": 0}
     assert brief["cert_in_reportable"] is False
     assert any("validation is still pending" in m for m in brief["missing"])
     assert "When it began" in brief["missing"]
-    assert brief["duty"] is not None and brief["duty"]["duty"] == "org_board"
+    assert brief["duty"] is None, "no duty yet: it comes with a yes"
     text = json.dumps(brief, default=str)
     assert "caused_by" not in text and "Ravi" not in text
     sealed = (await service.detail(conn, uuid))["assessment"]["caused_by_findings"]
@@ -234,8 +260,19 @@ async def test_the_brief_names_what_is_missing_and_nobody(
 
 
 async def test_the_dashboard_counts_it(conn: Any, seeded: dict[str, Any]) -> None:
-    before = (await dashboard._dpo(conn))["counts"]
-    await _log(conn, seeded, noticed_ago=45 * MINUTE)
-    after = (await dashboard._dpo(conn))["counts"]
-    assert after["breach_duties_late"] == before["breach_duties_late"] + 1
-    assert after["breach_duties_outstanding"] == before["breach_duties_outstanding"] + 1
+    """By the incident's own row. The dashboard reads the register, which holds
+    500, so on a database with more open than that a new incident pushes an old
+    one out, and the total does not move by what this one adds."""
+
+    async def outstanding(incident: dict[str, Any]) -> int:
+        page = await dashboard._dpo(conn)
+        duties = [d for b in page["breaches"] for d in b["obligations"]]
+        waiting = [d for d in duties if d["state"] == "outstanding"]
+        assert page["counts"]["breach_duties_outstanding"] == len(waiting)
+        [mine] = [b for b in page["breaches"] if b["breach_uuid"] == incident["breach_uuid"]]
+        return sum(d["state"] == "outstanding" for d in mine["obligations"])
+
+    assert await outstanding(await _log(conn, seeded, noticed_ago=45 * MINUTE)) == 0
+    logged = await _log(conn, seeded)
+    await _validate(conn, seeded, logged)
+    assert await outstanding(logged) == 4

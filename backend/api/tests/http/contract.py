@@ -77,6 +77,9 @@ SEALED: frozenset[str] = frozenset(
         "determined_by_name",
         "revised_by_name",
         "responder_user_name",
+        "finalised_by_name",
+        "filed_by_name",
+        "added_by_name",
         # joined contacts
         "delegate_email",
         "delegator_email",

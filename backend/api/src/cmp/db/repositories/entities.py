@@ -328,6 +328,20 @@ _SPECS: dict[str, _Spec] = {
         href="/breaches/{uuid}#tickets",
         noun="Breach ticket",
     ),
+    "incident_report": _Spec(
+        # The number and nothing more: the report's words are the office's.
+        sql="""SELECT r.report_id AS id, r.report_uuid::text AS uuid,
+                      'Incident report ' || r.reference AS label
+               FROM incident_report r WHERE r.report_id = ANY(%s)""",
+        href=None,
+        noun="Incident report",
+    ),
+    "breach_settings": _Spec(
+        sql="""SELECT settings_id::int AS id, NULL::text AS uuid, 'Breach settings' AS label
+               FROM breach_settings WHERE settings_id = ANY(%s)""",
+        href=None,
+        noun="Breach settings",
+    ),
     "restricted_country": _Spec(
         sql="""SELECT country_id AS id, country_uuid::text AS uuid,
                       'Restricted country ' || country_code AS label

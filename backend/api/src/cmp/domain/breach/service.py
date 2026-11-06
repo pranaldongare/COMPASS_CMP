@@ -32,6 +32,7 @@ from typing import Any, Final
 from cmp.core import offices
 from cmp.core.config import settings
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
+from cmp.db.repositories import breach_reports as report_repo
 from cmp.db.repositories import breach_tickets as ticket_repo
 from cmp.db.repositories import breaches as repo
 from cmp.db.repositories import registry as registry_repo
@@ -144,13 +145,15 @@ async def record(
     logged: dict[str, str | None] | None = None,
     cyber_attack: str | None = None,
     office: str = offices.RND,
+    reference: str | None = None,
 ) -> Row:
     """Log an incident, into the register of the office that logs it. Nothing
     about it is known yet but that it was noticed, and whether it is a
-    personal data breach is for validation to say.
+    personal data breach is for validation to say. `reference` is the number
+    a report from the public link arrived with (`cmp.domain.breach.intake`).
 
     `logged` is what else the office can say at once (0047) - where it
-    started, how it was found, what it touched, how much, whose data, which
+    started, how it was found, what it reached, how much, whose data, which
     entities and third parties - every answer optional free text. A cyber
     attack (`cyber_attack` yes) is reportable to CERT-In from the start: the
     duty is created here, as Mark reportable to CERT-In would."""
@@ -207,6 +210,7 @@ async def record(
         logged=told,
         cyber_attack=cyber_attack or None,
         office=office,
+        reference=reference,
     )
     await repo.add_status_history(
         conn,
@@ -219,25 +223,6 @@ async def record(
     breach = await require(conn, str(created["breach_uuid"]))
     await record_event(
         conn, breach, Event.BREACH_RECORDED, actor_id=actor_id, detail={"location": kind.value}
-    )
-    # The organisation's board, for every incident, from first noticed (S3-07).
-    # No determination is needed and none will move it: it is policy, not DPDP.
-    due = clock.due_for(Duty.ORG_BOARD, detected_at)
-    await repo.create_obligation(
-        conn,
-        int(created["breach_id"]),
-        kind=Duty.ORG_BOARD.value,
-        due_at=due,
-        anchored_at=detected_at,
-        determination_id=None,
-        created_by=actor_id,
-    )
-    await record_event(
-        conn,
-        breach,
-        Event.BREACH_OBLIGATION_CREATED,
-        actor_id=actor_id,
-        detail={"duty": Duty.ORG_BOARD.value, "due_at": due.isoformat() if due else None},
     )
     if cyber_attack == "yes":
         return await mark_cert_in(conn, breach_uuid=str(created["breach_uuid"]), actor_id=actor_id)
@@ -261,9 +246,10 @@ async def determine(
     The first *yes* records the incident as a breach and issues its breach
     reference; a later one issues none. *Yes* creates the three DPDP duties,
     or reinstates any a previous *no* set aside, with clocks from
-    `became_aware_at`. *No* sets aside those not yet
-    done, citing this determination. *Pending* changes no duty. CERT-In stands
-    on its own test and is untouched by all three.
+    `became_aware_at`, and the organisation's board with thirty minutes from
+    now (ADR 0037). *No* sets aside those not yet done, citing this
+    determination. *Pending* changes no duty. CERT-In stands on its own test
+    and is untouched by all three.
     """
     breach = await locked_open(conn, breach_uuid)
     decided = choice(Outcome, outcome, field="outcome")
@@ -369,15 +355,17 @@ async def _apply_yes(
     conn: Conn, breach: Row, determination_id: int, aware: datetime, *, actor_id: int
 ) -> None:
     duties = await duties_of(conn, int(breach["breach_id"]))
-    for duty in DPDP_DUTIES:
-        due = clock.due_for(duty, aware)
+    # Every DPDP duty runs from awareness, as entered; the organisation's board
+    # from this validation, which is when there is something to tell it.
+    for duty, anchor in (*((d, aware) for d in DPDP_DUTIES), (Duty.ORG_BOARD, _now())):
+        due = clock.due_for(duty, anchor)
         if duty not in duties:
             await repo.create_obligation(
                 conn,
                 int(breach["breach_id"]),
                 kind=duty.value,
                 due_at=due,
-                anchored_at=aware,
+                anchored_at=anchor,
                 determination_id=determination_id,
                 created_by=actor_id,
             )
@@ -396,7 +384,7 @@ async def _apply_yes(
                 int(row["obligation_id"]),
                 kind=EventKind.REINSTATED,
                 due_at=due,
-                anchored_at=aware,
+                anchored_at=anchor,
                 determination_id=determination_id,
                 recorded_by=actor_id,
             )
@@ -444,6 +432,24 @@ async def _apply_no(conn: Conn, breach: Row, determination_id: int, *, actor_id:
             Event.BREACH_OBLIGATION_NOT_APPLICABLE,
             actor_id=actor_id,
             detail={"duty": duty.value},
+        )
+    # The board's duty comes with a yes, so a first no has none to set aside
+    # and creates none; one a later no finds outstanding goes with the others.
+    board = duties.get(Duty.ORG_BOARD)
+    if board and board[1]["state"] == State.OUTSTANDING:
+        await repo.add_obligation_event(
+            conn,
+            int(board[0]["obligation_id"]),
+            kind=EventKind.NOT_APPLICABLE,
+            determination_id=determination_id,
+            recorded_by=actor_id,
+        )
+        await record_event(
+            conn,
+            breach,
+            Event.BREACH_OBLIGATION_NOT_APPLICABLE,
+            actor_id=actor_id,
+            detail={"duty": Duty.ORG_BOARD.value},
         )
 
 
@@ -578,12 +584,34 @@ async def assessments(conn: Conn, *, breach_uuid: str) -> list[Row]:
 
 
 async def mark_cert_in(conn: Conn, *, breach_uuid: str, actor_id: int) -> Row:
-    """A reportable cyber incident: CERT-In is due six hours from detection."""
+    """A reportable cyber incident: CERT-In is due six hours from detection.
+    Marked again after it was set aside, the duty comes back with that same
+    clock, citing the latest determination as a reinstatement must."""
     breach = await locked_open(conn, breach_uuid)
-    duties = await duties_of(conn, int(breach["breach_id"]))
-    if Duty.CERT_IN in duties:
+    breach_id = int(breach["breach_id"])
+    found = (await duties_of(conn, breach_id)).get(Duty.CERT_IN)
+    if found and found[1]["state"] != State.NOT_APPLICABLE:
         raise Conflict("Already marked as reportable to CERT-In", code="cert_in_marked")
     due = clock.due_for(Duty.CERT_IN, breach["detected_at"])
+    if found:
+        latest = (await repo.determinations(conn, breach_id))[-1]
+        await repo.add_obligation_event(
+            conn,
+            int(found[0]["obligation_id"]),
+            kind=EventKind.REINSTATED,
+            due_at=due,
+            anchored_at=breach["detected_at"],
+            determination_id=int(latest["determination_id"]),
+            recorded_by=actor_id,
+        )
+        await record_event(
+            conn,
+            breach,
+            Event.BREACH_OBLIGATION_REINSTATED,
+            actor_id=actor_id,
+            detail={"duty": Duty.CERT_IN.value, "due_at": due.isoformat() if due else None},
+        )
+        return await detail(conn, breach_uuid)
     await repo.create_obligation(
         conn,
         int(breach["breach_id"]),
@@ -599,6 +627,54 @@ async def mark_cert_in(conn: Conn, *, breach_uuid: str, actor_id: int) -> Row:
         Event.BREACH_CERT_IN_MARKED,
         actor_id=actor_id,
         detail={"duty": Duty.CERT_IN.value, "due_at": due.isoformat() if due else None},
+    )
+    return await detail(conn, breach_uuid)
+
+
+async def set_aside_cert_in(conn: Conn, *, breach_uuid: str, reason: str, actor_id: int) -> Row:
+    """A mark that turned out to be a mistake. A No leaves CERT-In alone, since
+    it stands on its own test, and without this a false alarm could only close
+    by mailing the board a report nobody will send and filing proof of it.
+
+    Only once the latest determination is No: until then there may be something
+    to report, and it is that No this cites. A duty done, or a report filed,
+    says something was reported, and stands. It mails nobody and leaves the
+    organisation's board alone. The reason is sealed on the event, and the trail
+    says only that one was given."""
+    reason_given = _text(reason)
+    if not reason_given:
+        raise ValidationFailed("Say why it is not reportable to CERT-In", field="reason")
+    breach = await locked_open(conn, breach_uuid)
+    breach_id = int(breach["breach_id"])
+    row, _ = await _outstanding(conn, breach, Duty.CERT_IN)
+    filed = [
+        r
+        for r in await report_repo.on_breach(conn, breach_id)
+        if r["kind"] == Duty.CERT_IN and r["filed_at"] is not None
+    ]
+    if filed:
+        raise Conflict("A report to CERT-In has been filed, so it stands", code="report_filed")
+    determinations = await repo.determinations(conn, breach_id)
+    latest = determinations[-1] if determinations else None
+    if latest is None or latest["outcome"] != Outcome.NO:
+        raise Conflict(
+            "CERT-In can be set aside only once the incident is validated as No",
+            code="cert_in_not_validated_no",
+        )
+    await repo.add_obligation_event(
+        conn,
+        int(row["obligation_id"]),
+        kind=EventKind.NOT_APPLICABLE,
+        note=reason_given,
+        determination_id=int(latest["determination_id"]),
+        recorded_by=actor_id,
+    )
+    await record_event(
+        conn,
+        breach,
+        Event.BREACH_CERT_IN_SET_ASIDE,
+        actor_id=actor_id,
+        detail={"duty": Duty.CERT_IN.value, "reason_given": True},
     )
     return await detail(conn, breach_uuid)
 
@@ -849,6 +925,8 @@ def _location(row: Row) -> Row:
 
 
 async def detail(conn: Conn, breach_uuid: str) -> Row:
+    from cmp.domain.breach import intake  # it imports this module
+
     breach = await require(conn, breach_uuid)
     breach_id = int(breach["breach_id"])
     determinations = await repo.determinations(conn, breach_id)
@@ -877,6 +955,7 @@ async def detail(conn: Conn, breach_uuid: str) -> Row:
         # What else was said when it was logged (0047), as logged.
         "logged": {c: breach.get(c) for c in repo.LOGGED_TEXT},
         "cyber_attack": breach.get("cyber_attack"),
+        "reported": await intake.reported(conn, breach_id),
         "recorded_at": breach["recorded_at"],
         "recorded_by_name": breach["recorded_by_name"],
         "determination": current["outcome"] if current else Outcome.PENDING.value,

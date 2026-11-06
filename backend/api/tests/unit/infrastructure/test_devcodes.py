@@ -12,7 +12,9 @@ from typing import Any
 
 import pytest
 
+from cmp.core.messages import Channel, Message
 from cmp.infrastructure import devcodes
+from cmp.infrastructure.messaging import render
 
 
 class _List:
@@ -57,6 +59,19 @@ def test_the_code_is_kept_from_every_shape_the_templates_use(
     entry = json.loads(kept.items[0])
     assert entry["code"] == "123456"
     assert entry["to"] == "priya@example.org"
+
+
+def test_a_reporters_code_is_found_in_the_mail_and_is_not_in_its_subject(kept: _List) -> None:
+    """A subject is written to the log on delivery, and a code never is."""
+    subject, body = render(
+        Message.INCIDENT_REPORT_CODE,
+        Channel.EMAIL,
+        {"code": "123456", "minutes": 10},
+        overrides={},
+    )
+    assert "123456" not in str(subject) and "123456" in body
+    devcodes.record(channel="email", to="asha@example.org", text=f"{subject}\n{body}")
+    assert json.loads(kept.items[0])["code"] == "123456"
 
 
 def test_a_message_with_no_code_keeps_nothing(kept: _List) -> None:

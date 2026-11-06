@@ -1,7 +1,7 @@
 # CMP backend
 
 The API of the consent management platform: FastAPI 0.141 on Python 3.12,
-PostgreSQL 16, Redis 7, Celery 5. 325 operations over 58 tables, every query
+PostgreSQL 16, Redis 7, Celery 5. 391 operations over 72 tables, every query
 hand-written SQL over psycopg 3, every migration raw DDL. Personal fields are
 sealed through the key service in [`../dkms`](../dkms) before they reach a
 table. The repository-wide documentation is under
@@ -30,7 +30,7 @@ python3.12 -m venv .venv
 pip install -r requirements-dev.txt # the runtime, the tools, and this package (editable)
 
 cp .env.example .env                # PUBLIC_BASE_URL and CONSOLE_BASE_URL to the two portals; DKMS_URL to the key service
-alembic upgrade head                # 49 migrations: 58 tables, triggers, grants, the lookup hashes
+alembic upgrade head                # 62 migrations: 72 tables, triggers, grants, the lookup hashes
 python scripts/seed.py              # the administrator, processors, sources, purposes, an approved project with a published notice and a live link
 
 python -m cmp --port 8000
@@ -204,11 +204,12 @@ src/cmp/
   main.py            ASGI entrypoint
   bootstrap/         assembly: factory, lifespan, middleware, routers, container
   api/
-    routers/v1/      audit, auth, breach_tickets, breaches, consents, dashboard,
+    routers/v1/      audit, auth, breach_settings, breach_tickets, breaches, consents, dashboard,
                      delegations, exchange, legal_holds, me, messages, notice_templates,
                      notices, projects, registry, rights, system, transfers, users
     routers/public/  consent (the /c/{token} flow), rights (the public pages),
                      holder_tickets (an outside holder's ticket by link and code),
+                     incident_reports (reporting an incident with no account),
                      devcodes (development only)
     dependencies/    sessions, csrf, authentication, authorization, paging, filters
     middleware/      request context, security headers, body limit, access log

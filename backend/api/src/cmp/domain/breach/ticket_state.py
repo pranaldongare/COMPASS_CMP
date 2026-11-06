@@ -13,6 +13,8 @@ events, and the state is where they leave it.
 | issued, returned | withdrawn | withdrawn | DPO |
 | closed, withdrawn | reopened | issued | DPO |
 
+A change of its date is an event too (0061), and leaves the state where it was.
+
 The moves a side may make are served with every ticket, so neither console
 holds a copy of this table.
 """
@@ -50,6 +52,9 @@ class Outcome(StrEnum):
 #: Issued or returned: a ticket still owed something, which keeps its breach
 #: from closing (BD-17) and may still be written on.
 OPEN: Final[frozenset[TicketState]] = frozenset({TicketState.ISSUED, TicketState.RETURNED})
+
+#: A change of date: on the record with the rest, and it moves no state.
+DATE_CHANGED: Final = "date_changed"
 
 #: Where each event leaves a ticket, whatever it was before - the moves below
 #: decide which events may be written in the first place.
@@ -95,7 +100,7 @@ def fold(events: Iterable[dict[str, Any]]) -> TicketState:
     """The state the events, in the order written, leave a ticket in."""
     state = TicketState.ISSUED
     for event in events:
-        state = _AFTER[str(event["kind"])]
+        state = _AFTER.get(str(event["kind"]), state)
     return state
 
 

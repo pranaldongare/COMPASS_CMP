@@ -2032,6 +2032,88 @@
         }
       }
     },
+    "/incident-reports/code": {
+      "post": {
+        "tags": [
+          "incident reports"
+        ],
+        "summary": "A code to the address given",
+        "operationId": "report_code_incident_reports_code_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentCodeIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Acknowledged"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/incident-reports": {
+      "post": {
+        "tags": [
+          "incident reports"
+        ],
+        "summary": "Report an incident, with the code",
+        "operationId": "report_incident_incident_reports_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentReportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentReportReceivedOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users/staff": {
       "get": {
         "tags": [
@@ -15868,6 +15950,227 @@
         }
       }
     },
+    "/breaches/intake": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "A page of the reports from the public link no office has taken up",
+        "operationId": "incident_reports_breaches_intake_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000000,
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentReportPageOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/intake/dismissed": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Reports an office dismissed, newest first, with who did it and why",
+        "operationId": "dismissed_reports_breaches_intake_dismissed_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DismissedReportOut"
+                  },
+                  "type": "array",
+                  "title": "Response Dismissed Reports Breaches Intake Dismissed Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/intake/{report_uuid}": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "One waiting report in full",
+        "operationId": "incident_report_breaches_intake__report_uuid__get",
+        "parameters": [
+          {
+            "name": "report_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IncidentReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/intake/{report_uuid}/claim": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Take a report into this office's register, as an incident",
+        "operationId": "claim_report_breaches_intake__report_uuid__claim_post",
+        "parameters": [
+          {
+            "name": "report_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/intake/{report_uuid}/dismiss": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Dismiss a report, saying why; it is kept",
+        "operationId": "dismiss_report_breaches_intake__report_uuid__dismiss_post",
+        "parameters": [
+          {
+            "name": "report_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IncidentDismissalIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Acknowledged"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/breaches/{breach_uuid}": {
       "get": {
         "tags": [
@@ -16210,13 +16513,13 @@
         }
       }
     },
-    "/breaches/{breach_uuid}/obligations/{duty}/complete": {
+    "/breaches/{breach_uuid}/cert-in/not-applicable": {
       "post": {
         "tags": [
           "breaches"
         ],
-        "summary": "Record a submission made, with the regulator's reference - or, for the organisation's board, the report made and to whom",
-        "operationId": "complete_duty_breaches__breach_uuid__obligations__duty__complete_post",
+        "summary": "Set aside a CERT-In mark made in error, once validated No; nobody is told",
+        "operationId": "set_aside_cert_in_breaches__breach_uuid__cert_in_not_applicable_post",
         "parameters": [
           {
             "name": "breach_uuid",
@@ -16227,15 +16530,6 @@
               "format": "uuid",
               "title": "Breach Uuid"
             }
-          },
-          {
-            "name": "duty",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Duty"
-            }
           }
         ],
         "requestBody": {
@@ -16243,7 +16537,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/BreachCompletionIn"
+                "$ref": "#/components/schemas/CertInSetAsideIn"
               }
             }
           }
@@ -16426,7 +16720,7 @@
         "tags": [
           "breaches"
         ],
-        "summary": "Who the breach touched, as confirmed, with every revision",
+        "summary": "The people affected, as confirmed, with every revision",
         "operationId": "list_affected_breaches__breach_uuid__affected_get",
         "parameters": [
           {
@@ -16484,7 +16778,7 @@
         "tags": [
           "breaches"
         ],
-        "summary": "Confirm who the breach touched: a new revision, adding only the newly found",
+        "summary": "Confirm the people affected: a new revision, adding only the newly found",
         "operationId": "confirm_affected_breaches__breach_uuid__affected_post",
         "parameters": [
           {
@@ -16515,6 +16809,49 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BreachAffectedOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/affected/options": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "The projects and activities to choose from, with how many people each",
+        "operationId": "affected_options_breaches__breach_uuid__affected_options_get",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachAffectedOptionsOut"
                 }
               }
             }
@@ -16590,7 +16927,7 @@
         "tags": [
           "breaches"
         ],
-        "summary": "The CSV to fill in: people (name, email, mobile) or asset IDs",
+        "summary": "The Excel file to fill in: people (name, email, mobile) or asset IDs",
         "operationId": "list_template_breaches__breach_uuid__affected_upload_template_get",
         "parameters": [
           {
@@ -16749,7 +17086,7 @@
         "tags": [
           "breaches"
         ],
-        "summary": "People the breach touched who have no account, and the lists they came in",
+        "summary": "People affected who have no account, and the lists they came in",
         "operationId": "list_contacts_breaches__breach_uuid__affected_contacts_get",
         "parameters": [
           {
@@ -17186,6 +17523,446 @@
         }
       }
     },
+    "/breaches/{breach_uuid}/reports": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Every kind of report on a breach, and where each stands",
+        "operationId": "list_reports_breaches__breach_uuid__reports_get",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachDocumentsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Start the next version of a report, drafted from the register",
+        "operationId": "draft_report_breaches__breach_uuid__reports_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachDocumentCreateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachDocumentsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/reports/{report_uuid}": {
+      "put": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Edit a draft report",
+        "operationId": "edit_report_breaches__breach_uuid__reports__report_uuid__put",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          },
+          {
+            "name": "report_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachDocumentIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachDocumentsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/reports/{report_uuid}/finalise": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Freeze a report and mail the organisation's board; never a regulator",
+        "operationId": "finalise_report_breaches__breach_uuid__reports__report_uuid__finalise_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          },
+          {
+            "name": "report_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachDocumentsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/reports/{report_uuid}/resend": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Mail the report to every address on the list it has not reached",
+        "operationId": "resend_report_breaches__breach_uuid__reports__report_uuid__resend_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          },
+          {
+            "name": "report_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachDocumentsResentOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/reports/{report_uuid}/evidence": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Keep the proof of internal approval, or of the mail sent to the regulator",
+        "operationId": "add_report_proof_breaches__breach_uuid__reports__report_uuid__evidence_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          },
+          {
+            "name": "report_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_add_report_proof_breaches__breach_uuid__reports__report_uuid__evidence_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachDocumentsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/reports/{report_uuid}/file": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Record that a person sent it to the regulator; needs both proofs",
+        "operationId": "file_report_breaches__breach_uuid__reports__report_uuid__file_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          },
+          {
+            "name": "report_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachDocumentFilingIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachDocumentsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/reports/{report_uuid}/pdf": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "The report as a PDF; every read is audited",
+        "operationId": "report_pdf_breaches__breach_uuid__reports__report_uuid__pdf_get",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          },
+          {
+            "name": "report_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/breaches/{breach_uuid}/tickets": {
       "get": {
         "tags": [
@@ -17446,6 +18223,69 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/tickets/{ticket_uuid}/resolve-by": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Change the date to resolve the ticket by, saying why",
+        "operationId": "change_ticket_date_breaches__breach_uuid__tickets__ticket_uuid__resolve_by_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          },
+          {
+            "name": "ticket_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachTicketDateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachTicketDetailOut"
+                }
               }
             }
           },
@@ -17931,6 +18771,59 @@
         }
       }
     },
+    "/breach-tickets/{ticket_uuid}/resolve-by": {
+      "post": {
+        "tags": [
+          "breach tickets"
+        ],
+        "summary": "Change the date to resolve my breach ticket by, saying why",
+        "operationId": "change_my_ticket_date_breach_tickets__ticket_uuid__resolve_by_post",
+        "parameters": [
+          {
+            "name": "ticket_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Ticket Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachTicketDateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyBreachTicketDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/breach-tickets/{ticket_uuid}/return": {
       "post": {
         "tags": [
@@ -17967,6 +18860,152 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/MyBreachTicketDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breach-settings": {
+      "get": {
+        "tags": [
+          "breach settings"
+        ],
+        "summary": "Who hears of a breach, and how",
+        "operationId": "get_settings_breach_settings_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachSettingsOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breach-settings/intake-roles": {
+      "put": {
+        "tags": [
+          "breach settings"
+        ],
+        "summary": "Which roles are told of a report from the public link",
+        "operationId": "set_intake_roles_breach_settings_intake_roles_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntakeRolesIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachSettingsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breach-settings/board-recipients": {
+      "post": {
+        "tags": [
+          "breach settings"
+        ],
+        "summary": "Add an address to the organisation's board",
+        "operationId": "add_board_recipient_breach_settings_board_recipients_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BoardRecipientIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachSettingsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breach-settings/board-recipients/{recipient_uuid}": {
+      "delete": {
+        "tags": [
+          "breach settings"
+        ],
+        "summary": "Take an address off the organisation's board",
+        "operationId": "remove_board_recipient_breach_settings_board_recipients__recipient_uuid__delete",
+        "parameters": [
+          {
+            "name": "recipient_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Recipient Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachSettingsOut"
                 }
               }
             }
@@ -20516,6 +21555,83 @@
         ],
         "title": "AuditSummary"
       },
+      "BoardRecipientIn": {
+        "properties": {
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Email"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "BoardRecipientIn"
+      },
+      "BoardRecipientOut": {
+        "properties": {
+          "recipient_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Recipient Uuid"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "added_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Added At"
+          },
+          "added_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Added By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recipient_uuid",
+          "full_name",
+          "email",
+          "added_at",
+          "added_by_name"
+        ],
+        "title": "BoardRecipientOut"
+      },
       "Body_add_approval_projects__project_uuid__approvals_post": {
         "properties": {
           "approval_type": {
@@ -20581,6 +21697,39 @@
         ],
         "title": "Body_add_attachment_breaches__breach_uuid__attachments_post"
       },
+      "Body_add_report_proof_breaches__breach_uuid__reports__report_uuid__evidence_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "The file, max 25 MB"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind",
+            "description": "approval or sent_mail"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "kind"
+        ],
+        "title": "Body_add_report_proof_breaches__breach_uuid__reports__report_uuid__evidence_post"
+      },
       "Body_answer_holder_tickets__token__answer_post": {
         "properties": {
           "summary": {
@@ -20641,7 +21790,7 @@
             "type": "string",
             "contentMediaType": "application/octet-stream",
             "title": "File",
-            "description": "The filled-in CSV, max 25 MB"
+            "description": "The filled-in .xlsx or CSV, max 25 MB"
           }
         },
         "type": "object",
@@ -21057,7 +22206,7 @@
             "type": "string",
             "contentMediaType": "application/octet-stream",
             "title": "File",
-            "description": "The filled-in CSV, max 25 MB"
+            "description": "The filled-in .xlsx or CSV, max 25 MB"
           }
         },
         "type": "object",
@@ -21187,6 +22336,22 @@
         "type": "object",
         "title": "BreachAffectedIn"
       },
+      "BreachAffectedOptionsOut": {
+        "properties": {
+          "projects": {
+            "items": {
+              "$ref": "#/components/schemas/BreachProjectOptionOut"
+            },
+            "type": "array",
+            "title": "Projects"
+          }
+        },
+        "type": "object",
+        "required": [
+          "projects"
+        ],
+        "title": "BreachAffectedOptionsOut"
+      },
       "BreachAffectedOut": {
         "properties": {
           "total": {
@@ -21217,13 +22382,6 @@
               }
             ],
             "title": "Next Cursor"
-          },
-          "platform_tables": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Platform Tables"
           }
         },
         "type": "object",
@@ -21231,8 +22389,7 @@
           "total",
           "revisions",
           "people",
-          "next_cursor",
-          "platform_tables"
+          "next_cursor"
         ],
         "title": "BreachAffectedOut"
       },
@@ -21937,57 +23094,6 @@
         ],
         "title": "BreachClockOut"
       },
-      "BreachCompletionIn": {
-        "properties": {
-          "occurred_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Occurred At"
-          },
-          "reference": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 200
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reference"
-          },
-          "reported_to": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2000
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reported To"
-          },
-          "note": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 8000
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Note"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "occurred_at"
-        ],
-        "title": "BreachCompletionIn"
-      },
       "BreachContactOut": {
         "properties": {
           "contact_uuid": {
@@ -22054,7 +23160,7 @@
           "upload_kind"
         ],
         "title": "BreachContactOut",
-        "description": "Somebody the breach touched with no account. Name and contacts sealed."
+        "description": "Somebody affected who has no account. Name and contacts sealed."
       },
       "BreachContactsOut": {
         "properties": {
@@ -22295,6 +23401,551 @@
           "determined_by_name"
         ],
         "title": "BreachDeterminationOut"
+      },
+      "BreachDocumentCreateIn": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "title": "BreachDocumentCreateIn"
+      },
+      "BreachDocumentFilingIn": {
+        "properties": {
+          "filed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Filed At"
+          },
+          "reference": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reference"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "filed_at"
+        ],
+        "title": "BreachDocumentFilingIn"
+      },
+      "BreachDocumentIn": {
+        "properties": {
+          "sections": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 20000
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Sections"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "sections"
+        ],
+        "title": "BreachDocumentIn"
+      },
+      "BreachDocumentKindOut": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "basis": {
+            "type": "string",
+            "title": "Basis"
+          },
+          "duty": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duty"
+          },
+          "duty_state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duty State"
+          },
+          "blocked_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Blocked By"
+          },
+          "goes_to_regulator": {
+            "type": "boolean",
+            "title": "Goes To Regulator"
+          },
+          "versions": {
+            "items": {
+              "$ref": "#/components/schemas/BreachDocumentOut"
+            },
+            "type": "array",
+            "title": "Versions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "title",
+          "basis",
+          "duty",
+          "duty_state",
+          "blocked_by",
+          "goes_to_regulator",
+          "versions"
+        ],
+        "title": "BreachDocumentKindOut"
+      },
+      "BreachDocumentMailOut": {
+        "properties": {
+          "delivered": {
+            "type": "integer",
+            "title": "Delivered"
+          },
+          "queued": {
+            "type": "integer",
+            "title": "Queued"
+          },
+          "failed": {
+            "type": "integer",
+            "title": "Failed"
+          },
+          "stale": {
+            "type": "integer",
+            "title": "Stale"
+          },
+          "retryable": {
+            "type": "integer",
+            "title": "Retryable"
+          },
+          "recipients": {
+            "items": {
+              "$ref": "#/components/schemas/BreachDocumentMailRecipientOut"
+            },
+            "type": "array",
+            "title": "Recipients"
+          }
+        },
+        "type": "object",
+        "required": [
+          "delivered",
+          "queued",
+          "failed",
+          "stale",
+          "retryable",
+          "recipients"
+        ],
+        "title": "BreachDocumentMailOut"
+      },
+      "BreachDocumentMailRecipientOut": {
+        "properties": {
+          "recipient_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Recipient Uuid"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "attempt": {
+            "type": "integer",
+            "title": "Attempt"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "recorded_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Recorded At"
+          },
+          "removed": {
+            "type": "boolean",
+            "title": "Removed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recipient_uuid",
+          "full_name",
+          "email",
+          "status",
+          "attempt",
+          "error",
+          "recorded_at",
+          "removed"
+        ],
+        "title": "BreachDocumentMailRecipientOut"
+      },
+      "BreachDocumentOut": {
+        "properties": {
+          "report_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Report Uuid"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/BreachDocumentSectionOut"
+            },
+            "type": "array",
+            "title": "Sections"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "created_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By Name"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "finalised_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finalised At"
+          },
+          "finalised_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finalised By Name"
+          },
+          "filed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filed At"
+          },
+          "filed_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filed Reference"
+          },
+          "filed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Filed By Name"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/BreachDocumentProofOut"
+            },
+            "type": "array",
+            "title": "Evidence"
+          },
+          "mail": {
+            "$ref": "#/components/schemas/BreachDocumentMailOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report_uuid",
+          "kind",
+          "title",
+          "version",
+          "state",
+          "sections",
+          "created_at",
+          "created_by_name",
+          "updated_at",
+          "finalised_at",
+          "finalised_by_name",
+          "filed_at",
+          "filed_reference",
+          "filed_by_name",
+          "evidence",
+          "mail"
+        ],
+        "title": "BreachDocumentOut"
+      },
+      "BreachDocumentProofOut": {
+        "properties": {
+          "attachment_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attachment Uuid"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "sha256": {
+            "type": "string",
+            "title": "Sha256"
+          },
+          "size_bytes": {
+            "type": "integer",
+            "title": "Size Bytes"
+          },
+          "added_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Added At"
+          },
+          "added_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Added By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "attachment_uuid",
+          "kind",
+          "note",
+          "file_name",
+          "sha256",
+          "size_bytes",
+          "added_at",
+          "added_by_name"
+        ],
+        "title": "BreachDocumentProofOut"
+      },
+      "BreachDocumentSectionOut": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "required": {
+            "type": "boolean",
+            "title": "Required"
+          },
+          "body": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label",
+          "required",
+          "body"
+        ],
+        "title": "BreachDocumentSectionOut"
+      },
+      "BreachDocumentsOut": {
+        "properties": {
+          "kinds": {
+            "items": {
+              "$ref": "#/components/schemas/BreachDocumentKindOut"
+            },
+            "type": "array",
+            "title": "Kinds"
+          },
+          "board_recipients": {
+            "type": "integer",
+            "title": "Board Recipients"
+          },
+          "proofs": {
+            "items": {
+              "$ref": "#/components/schemas/BreachProofKindOut"
+            },
+            "type": "array",
+            "title": "Proofs"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kinds",
+          "board_recipients",
+          "proofs"
+        ],
+        "title": "BreachDocumentsOut"
+      },
+      "BreachDocumentsResentOut": {
+        "properties": {
+          "kinds": {
+            "items": {
+              "$ref": "#/components/schemas/BreachDocumentKindOut"
+            },
+            "type": "array",
+            "title": "Kinds"
+          },
+          "board_recipients": {
+            "type": "integer",
+            "title": "Board Recipients"
+          },
+          "proofs": {
+            "items": {
+              "$ref": "#/components/schemas/BreachProofKindOut"
+            },
+            "type": "array",
+            "title": "Proofs"
+          },
+          "queued": {
+            "type": "integer",
+            "title": "Queued"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kinds",
+          "board_recipients",
+          "proofs",
+          "queued"
+        ],
+        "title": "BreachDocumentsResentOut"
       },
       "BreachDutyEventOut": {
         "properties": {
@@ -22564,6 +24215,13 @@
       },
       "BreachEvidenceOut": {
         "properties": {
+          "projects": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Projects"
+          },
           "exports": {
             "items": {
               "type": "string"
@@ -22577,6 +24235,13 @@
             },
             "type": "array",
             "title": "Assets"
+          },
+          "activities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Activities"
           },
           "tables": {
             "items": {
@@ -23750,6 +25415,16 @@
             ],
             "title": "Cyber Attack"
           },
+          "reported": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BreachReportedOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "recorded_at": {
             "type": "string",
             "format": "date-time",
@@ -23918,6 +25593,53 @@
           "people"
         ],
         "title": "BreachPreviewOut"
+      },
+      "BreachProjectOptionOut": {
+        "properties": {
+          "project_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Uuid"
+          },
+          "project_name": {
+            "type": "string",
+            "title": "Project Name"
+          },
+          "is_activity": {
+            "type": "boolean",
+            "title": "Is Activity"
+          },
+          "people": {
+            "type": "integer",
+            "title": "People"
+          }
+        },
+        "type": "object",
+        "required": [
+          "project_uuid",
+          "project_name",
+          "is_activity",
+          "people"
+        ],
+        "title": "BreachProjectOptionOut"
+      },
+      "BreachProofKindOut": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind",
+          "label"
+        ],
+        "title": "BreachProofKindOut"
       },
       "BreachReportFactOut": {
         "properties": {
@@ -24105,11 +25827,91 @@
         "title": "BreachReportOut",
         "description": "Rule 7(2)(b), all six items, drafted from the register."
       },
+      "BreachReportedOut": {
+        "properties": {
+          "reporter_name": {
+            "type": "string",
+            "title": "Reporter Name"
+          },
+          "reporter_email": {
+            "type": "string",
+            "title": "Reporter Email"
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Received At"
+          },
+          "noticed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Noticed At"
+          },
+          "cyber_attack": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cyber Attack"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reporter_name",
+          "reporter_email",
+          "received_at",
+          "noticed_at",
+          "cyber_attack"
+        ],
+        "title": "BreachReportedOut",
+        "description": "Who reported it through the public link, if somebody did (0058)."
+      },
+      "BreachRoleOut": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role",
+          "title"
+        ],
+        "title": "BreachRoleOut"
+      },
       "BreachScopeIn": {
         "properties": {
           "kind": {
             "type": "string",
             "title": "Kind"
+          },
+          "project_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Uuid"
           },
           "processor_uuid": {
             "anyOf": [
@@ -24134,14 +25936,6 @@
               }
             ],
             "title": "Source Uuid"
-          },
-          "tables": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "maxItems": 50,
-            "title": "Tables"
           },
           "since": {
             "anyOf": [
@@ -24174,6 +25968,51 @@
           "kind"
         ],
         "title": "BreachScopeIn"
+      },
+      "BreachSettingsOut": {
+        "properties": {
+          "intake_roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Intake Roles"
+          },
+          "roles": {
+            "items": {
+              "$ref": "#/components/schemas/BreachRoleOut"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
+          "officers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Officers"
+          },
+          "board_recipients": {
+            "items": {
+              "$ref": "#/components/schemas/BoardRecipientOut"
+            },
+            "type": "array",
+            "title": "Board Recipients"
+          },
+          "report_link": {
+            "type": "string",
+            "title": "Report Link"
+          }
+        },
+        "type": "object",
+        "required": [
+          "intake_roles",
+          "roles",
+          "officers",
+          "board_recipients",
+          "report_link"
+        ],
+        "title": "BreachSettingsOut"
       },
       "BreachStatusChangeOut": {
         "properties": {
@@ -24315,6 +26154,28 @@
         ],
         "title": "BreachSummaryOut"
       },
+      "BreachTicketDateIn": {
+        "properties": {
+          "answer_by": {
+            "type": "string",
+            "format": "date",
+            "title": "Answer By"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "answer_by",
+          "reason"
+        ],
+        "title": "BreachTicketDateIn"
+      },
       "BreachTicketDetailOut": {
         "properties": {
           "ticket": {
@@ -24383,6 +26244,30 @@
               }
             ],
             "title": "Reason"
+          },
+          "date_before": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date Before"
+          },
+          "date_after": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date After"
           },
           "occurred_at": {
             "type": "string",
@@ -24695,6 +26580,10 @@
             "type": "boolean",
             "title": "May Write"
           },
+          "may_change_date": {
+            "type": "boolean",
+            "title": "May Change Date"
+          },
           "temporary_access": {
             "anyOf": [
               {
@@ -24724,6 +26613,7 @@
           "events",
           "moves",
           "may_write",
+          "may_change_date",
           "temporary_access"
         ],
         "title": "BreachTicketOut",
@@ -25396,6 +27286,22 @@
         "type": "object",
         "title": "CategoryUpdate",
         "description": "Name and description. The code is how templates, activities and the\ntrail name the category, so it does not change."
+      },
+      "CertInSetAsideIn": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "CertInSetAsideIn"
       },
       "ChannelOut": {
         "properties": {
@@ -27401,6 +29307,64 @@
         ],
         "title": "DelegationOut"
       },
+      "DismissedReportOut": {
+        "properties": {
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "reporter_name": {
+            "type": "string",
+            "title": "Reporter Name"
+          },
+          "reporter_email": {
+            "type": "string",
+            "title": "Reporter Email"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Received At"
+          },
+          "dismissed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Dismissed At"
+          },
+          "dismissed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dismissed By Name"
+          },
+          "dismissal_reason": {
+            "type": "string",
+            "title": "Dismissal Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reference",
+          "reporter_name",
+          "reporter_email",
+          "title",
+          "received_at",
+          "dismissed_at",
+          "dismissed_by_name",
+          "dismissal_reason"
+        ],
+        "title": "DismissedReportOut",
+        "description": "A report an office did not take up, and why."
+      },
       "DisputeIn": {
         "properties": {
           "text": {
@@ -28634,6 +30598,401 @@
         ],
         "title": "ImportRowOut"
       },
+      "IncidentCodeIn": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 255,
+            "format": "email",
+            "title": "Email"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "IncidentCodeIn"
+      },
+      "IncidentDismissalIn": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "IncidentDismissalIn"
+      },
+      "IncidentReportIn": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 255,
+            "format": "email",
+            "title": "Email"
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 10,
+            "minLength": 4,
+            "pattern": "^[0-9]+$",
+            "title": "Code"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "incident_details": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Incident Details"
+          },
+          "noticed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Noticed At"
+          },
+          "origin": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Origin"
+          },
+          "discovery": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discovery"
+          },
+          "affected_systems": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Affected Systems"
+          },
+          "impact_scale": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Impact Scale"
+          },
+          "countries_involved": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Countries Involved"
+          },
+          "data_nature": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data Nature"
+          },
+          "subject_types": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Types"
+          },
+          "entities_involved": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entities Involved"
+          },
+          "third_parties": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Third Parties"
+          },
+          "cyber_attack": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(yes|no|unknown)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cyber Attack"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "email",
+          "code",
+          "title",
+          "incident_details"
+        ],
+        "title": "IncidentReportIn"
+      },
+      "IncidentReportOut": {
+        "properties": {
+          "report_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Report Uuid"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "reporter_name": {
+            "type": "string",
+            "title": "Reporter Name"
+          },
+          "reporter_email": {
+            "type": "string",
+            "title": "Reporter Email"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "noticed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Noticed At"
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Received At"
+          },
+          "cyber_attack": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cyber Attack"
+          },
+          "logged": {
+            "$ref": "#/components/schemas/BreachLoggedOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report_uuid",
+          "reference",
+          "reporter_name",
+          "reporter_email",
+          "title",
+          "noticed_at",
+          "received_at",
+          "cyber_attack",
+          "logged"
+        ],
+        "title": "IncidentReportOut",
+        "description": "A report waiting in the shared intake, with everything it said."
+      },
+      "IncidentReportPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/IncidentReportRowOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "IncidentReportPageOut",
+        "description": "A page of the shared intake, oldest first."
+      },
+      "IncidentReportReceivedOut": {
+        "properties": {
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reference",
+          "message"
+        ],
+        "title": "IncidentReportReceivedOut"
+      },
+      "IncidentReportRowOut": {
+        "properties": {
+          "report_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Report Uuid"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "reporter_name": {
+            "type": "string",
+            "title": "Reporter Name"
+          },
+          "reporter_email": {
+            "type": "string",
+            "title": "Reporter Email"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "noticed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Noticed At"
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Received At"
+          },
+          "cyber_attack": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cyber Attack"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report_uuid",
+          "reference",
+          "reporter_name",
+          "reporter_email",
+          "title",
+          "noticed_at",
+          "received_at",
+          "cyber_attack"
+        ],
+        "title": "IncidentReportRowOut",
+        "description": "A report waiting in the shared intake, as the list shows it."
+      },
       "InstructionIn": {
         "properties": {
           "instruction": {
@@ -28652,6 +31011,24 @@
         "additionalProperties": false,
         "type": "object",
         "title": "InstructionIn"
+      },
+      "IntakeRolesIn": {
+        "properties": {
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Roles"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "roles"
+        ],
+        "title": "IntakeRolesIn"
       },
       "IssueTicketsIn": {
         "properties": {
@@ -30328,6 +32705,10 @@
           "may_add_colleague": {
             "type": "boolean",
             "title": "May Add Colleague"
+          },
+          "may_change_date": {
+            "type": "boolean",
+            "title": "May Change Date"
           }
         },
         "type": "object",
@@ -30341,7 +32722,8 @@
           "unread",
           "last_activity_at",
           "moves",
-          "may_add_colleague"
+          "may_add_colleague",
+          "may_change_date"
         ],
         "title": "MyBreachTicketOut",
         "description": "Exactly what a holder is given (BD-13), and nothing else."
@@ -31580,6 +33962,24 @@
         ],
         "title": "OptionVersion"
       },
+      "OrgBoardAffectedOut": {
+        "properties": {
+          "listed": {
+            "type": "integer",
+            "title": "Listed"
+          },
+          "notified": {
+            "type": "integer",
+            "title": "Notified"
+          }
+        },
+        "type": "object",
+        "required": [
+          "listed",
+          "notified"
+        ],
+        "title": "OrgBoardAffectedOut"
+      },
       "OrgBoardBriefOut": {
         "properties": {
           "document": {
@@ -31665,8 +34065,8 @@
             "type": "array",
             "title": "Duties"
           },
-          "touched": {
-            "$ref": "#/components/schemas/OrgBoardTouchedOut"
+          "affected": {
+            "$ref": "#/components/schemas/OrgBoardAffectedOut"
           },
           "missing": {
             "items": {
@@ -31702,12 +34102,12 @@
           "became_aware_at",
           "cert_in_reportable",
           "duties",
-          "touched",
+          "affected",
           "missing",
           "duty"
         ],
         "title": "OrgBoardBriefOut",
-        "description": "For the organisation's board, drafted from the register. The platform\nnever reports to the board; a person does, and the DPO records it."
+        "description": "For the organisation's board, drafted from the register: what the\nreport mailed to it starts from."
       },
       "OrgBoardDutyOut": {
         "properties": {
@@ -31780,24 +34180,6 @@
         ],
         "title": "OrgBoardDutyOut",
         "description": "A duty as the brief carries it: its clock, and nobody's name."
-      },
-      "OrgBoardTouchedOut": {
-        "properties": {
-          "listed": {
-            "type": "integer",
-            "title": "Listed"
-          },
-          "notified": {
-            "type": "integer",
-            "title": "Notified"
-          }
-        },
-        "type": "object",
-        "required": [
-          "listed",
-          "notified"
-        ],
-        "title": "OrgBoardTouchedOut"
       },
       "OtpBody": {
         "properties": {

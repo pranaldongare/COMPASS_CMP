@@ -21,10 +21,15 @@ from pydantic import Field
 
 from cmp.api import uploads
 from cmp.api.dependencies import BreachTicketReader, BreachTicketWriter
-from cmp.api.routers.v1.breaches import BreachTicketMessageOut, BreachTicketMoveOut
+from cmp.api.routers.v1.breaches import (
+    BreachTicketDateIn,
+    BreachTicketMessageOut,
+    BreachTicketMoveOut,
+)
 from cmp.db.pool import across_offices, connection, transaction
 from cmp.domain.breach import tickets
 from cmp.schemas.common import Out, Schema
+from cmp.validation.files import BREACH_TICKET_EVIDENCE
 
 router = APIRouter(prefix="/breach-tickets", tags=["breach tickets"])
 
@@ -48,6 +53,8 @@ class MyBreachTicketOut(Out):
     moves: list[BreachTicketMoveOut]
     #: Whether they may bring in a colleague now (S3-09): while it is open.
     may_add_colleague: bool
+    #: Whether they may change the date now: while it is open.
+    may_change_date: bool
 
 
 class MyBreachTicketDetailOut(Out):
@@ -85,7 +92,7 @@ async def message_office(
     body: Annotated[str, Form(min_length=1, max_length=20_000)],
     evidence: Annotated[UploadFile | None, File(description="Optional file, max 25 MB")] = None,
 ) -> dict[str, Any]:
-    stored = await uploads.stored(evidence, subdir="breach")
+    stored = await uploads.stored(evidence, subdir="breach", rules=BREACH_TICKET_EVIDENCE)
     async with transaction() as conn, across_offices(conn):
         return await tickets.holder_message(
             conn,
@@ -144,6 +151,24 @@ async def add_colleague(
 
 
 @router.post(
+    "/{ticket_uuid}/resolve-by",
+    response_model=MyBreachTicketDetailOut,
+    summary="Change the date to resolve my breach ticket by, saying why",
+)
+async def change_my_ticket_date(
+    ticket_uuid: UUID, body: BreachTicketDateIn, principal: BreachTicketWriter
+) -> dict[str, Any]:
+    async with transaction() as conn, across_offices(conn):
+        return await tickets.holder_change_date(
+            conn,
+            user_id=principal.user_id,
+            ticket_uuid=str(ticket_uuid),
+            answer_by=body.answer_by,
+            reason=body.reason,
+        )
+
+
+@router.post(
     "/{ticket_uuid}/return",
     response_model=MyBreachTicketDetailOut,
     summary="Return my breach ticket: what was done, and how it went",
@@ -156,7 +181,7 @@ async def return_my_breach_ticket(
     outcome: Annotated[str, Form(description="done, partial or failed")],
     evidence: Annotated[UploadFile | None, File(description="Optional evidence, max 25 MB")] = None,
 ) -> dict[str, Any]:
-    stored = await uploads.stored(evidence, subdir="breach")
+    stored = await uploads.stored(evidence, subdir="breach", rules=BREACH_TICKET_EVIDENCE)
     async with transaction() as conn, across_offices(conn):
         return await tickets.return_ticket(
             conn,

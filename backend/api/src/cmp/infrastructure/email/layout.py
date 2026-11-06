@@ -19,6 +19,7 @@ What the text becomes:
 | A short first line followed by more ("What happened") | A heading over its paragraph |
 | Lines starting "- " | A bulleted list |
 | "If you were not expecting this message..." | Small print, last |
+| Text marked `quoted()` (a report's words) | Plain paragraphs and nothing else |
 
 Everything in the text is escaped before any of it becomes markup: a breach
 notice's words or a person's name in a response are text, never HTML. The
@@ -31,6 +32,7 @@ from __future__ import annotations
 
 import html
 import re
+from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import Final
 
@@ -53,6 +55,26 @@ _URL = re.compile(r"https?://[^\s<>\"']+[^\s<>\"'.,;:!?)\]]")
 _LONE_URL = re.compile(r"^\s*(https?://\S+)\s*$")
 _SMALL_PRINT = ("if you were not expecting this message",)
 
+#: Around text that is quoted rather than the platform's own. Control characters
+#: nobody types, and `quoted` takes them out of what it marks, so the words
+#: cannot end their own quotation.
+_QUOTE_OPEN: Final = "\x02"
+_QUOTE_CLOSE: Final = "\x03"
+_QUOTED = re.compile(f"{_QUOTE_OPEN}(.*?){_QUOTE_CLOSE}", re.DOTALL)
+
+
+def quoted(text: str) -> str:
+    """Mark text as somebody's words, for a template variable that carries them:
+    in the email they stay plain paragraphs, whatever they look like. A link
+    alone on its line stays text, and so does a six-digit number or a line
+    starting "- ". The template's own links, around it, work as ever."""
+    return f"{_QUOTE_OPEN}{unmarked(text)}{_QUOTE_CLOSE}"
+
+
+def unmarked(text: str) -> str:
+    """The text with its quotation marks gone: what a reader of plain text gets."""
+    return text.replace(_QUOTE_OPEN, "").replace(_QUOTE_CLOSE, "")
+
 
 def _inline(text: str) -> str:
     """One line of text as HTML: escaped, its links made links."""
@@ -70,8 +92,8 @@ def _inline(text: str) -> str:
     return "".join(out)
 
 
-def _paragraph(lines: list[str]) -> str:
-    text = "<br>".join(_inline(line.strip()) for line in lines)
+def _paragraph(lines: list[str], *, inline: Callable[[str], str] = _inline) -> str:
+    text = "<br>".join(inline(line.strip()) for line in lines)
     return f'<p style="margin:0 0 16px;font-size:15px;line-height:1.65;color:{INK};">{text}</p>'
 
 
@@ -140,10 +162,29 @@ def _is_heading(line: str, rest: list[str]) -> bool:
 def body_html(body: str) -> str:
     """The message's text, laid out."""
     blocks: list[str] = []
-    for chunk in re.split(r"\n\s*\n", body.strip()):
-        lines = [line for line in chunk.split("\n") if line.strip()]
-        if not lines:
-            continue
+    # Split on a group: every second part is what was quoted.
+    for index, part in enumerate(_QUOTED.split(body)):
+        blocks.extend(_quoted_blocks(part) if index % 2 else _blocks(part))
+    return "\n".join(blocks)
+
+
+def _chunks(text: str) -> list[list[str]]:
+    """The text's paragraphs, as lines."""
+    chunks = [
+        [line for line in chunk.split("\n") if line.strip()]
+        for chunk in re.split(r"\n\s*\n", text.strip())
+    ]
+    return [lines for lines in chunks if lines]
+
+
+def _quoted_blocks(text: str) -> list[str]:
+    """Somebody's words: escaped, in paragraphs, and read as nothing else."""
+    return [_paragraph(lines, inline=html.escape) for lines in _chunks(text)]
+
+
+def _blocks(text: str) -> list[str]:
+    blocks: list[str] = []
+    for lines in _chunks(text):
         if lines[0].strip().lower().startswith(_SMALL_PRINT):
             blocks.append(_small_print(lines))
             continue
@@ -151,7 +192,7 @@ def body_html(body: str) -> str:
             blocks.append(_heading(lines[0]))
             lines = lines[1:]
         blocks.extend(_lines(lines))
-    return "\n".join(blocks)
+    return blocks
 
 
 def _lines(lines: list[str]) -> list[str]:
@@ -198,7 +239,9 @@ def _preheader(body: str) -> str:
     """The line an inbox shows beside the subject: the message's first words,
     with any code left out of it."""
     words = " ".join(
-        line.strip() for line in body.split("\n") if line.strip() and not _CODE.match(line)
+        line.strip()
+        for line in unmarked(body).split("\n")
+        if line.strip() and not _CODE.match(line)
     )
     return html.escape(words[:140])
 
@@ -251,7 +294,7 @@ def render_html(*, subject: str, body: str, organisation: str) -> str:
 def render_text(*, body: str, organisation: str) -> str:
     """The plain-text part: the message, then the same footer in words."""
     return (
-        f"{body.rstrip()}\n\n"
+        f"{unmarked(body).rstrip()}\n\n"
         f"--\n{organisation} Privacy Office\n"
         f"This message was sent automatically by the {organisation} consent management platform.\n"
     )

@@ -9,7 +9,9 @@ Reading is defensive, because the file comes from outside:
 * **Values, not formulas.** The workbook is read with `data_only`, so a cell
   holding `=HYPERLINK(...)` gives its last computed value, never the formula.
 * **Bounded.** At most `MAX_ROWS` data rows, and only the columns a caller
-  names; a cell's text is stripped and capped.
+  names; a cell's text is stripped and capped. The zip is sized before it is
+  opened (`MAX_UNPACKED_BYTES`) and no sheet is walked past Excel's last row
+  (`MAX_SHEET_ROWS`), blank rows counted, because either can be small on disk.
 
 Writing builds a template: a header row, optional example rows, a dropdown on
 each column with a fixed set of values, and a sheet of instructions.
@@ -19,7 +21,7 @@ from __future__ import annotations
 
 import io
 import zipfile
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Any
@@ -35,6 +37,16 @@ from cmp.core.errors import ValidationFailed
 MAX_ROWS = 1000
 #: No registry value needs more; a longer cell is a mistake or an attack.
 MAX_CELL_CHARS = 2000
+#: What all the parts of a workbook may come to, unpacked. The largest list we
+#: take is a few megabytes of XML, while a small zip can unpack to gigabytes and
+#: `load_workbook` holds the shared strings in memory whole.
+MAX_UNPACKED_BYTES = 200 * 1024 * 1024
+#: Excel's last row. A row's number is whatever the file says, and the reader
+#: walks the gap before it a row at a time, so a blank row costs what a full one
+#: does. No real sheet goes further, however many blank rows it trails.
+MAX_SHEET_ROWS = 1_048_576
+
+_UNREADABLE = "The workbook could not be read. Save it again as .xlsx from Excel and upload it."
 
 XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
@@ -53,6 +65,9 @@ class Column:
     width: int = 24
     #: Other header texts that mean this column.
     aliases: tuple[str, ...] = ()
+    #: Formatted as text in the template, so Excel keeps what is typed as typed:
+    #: left to itself it makes a number of +91 98765 43210, and drops the plus.
+    text: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,7 +77,7 @@ class SheetSpec:
     examples: Sequence[Sequence[Any]] = field(default_factory=tuple)
 
 
-def _normalise(text: object) -> str:
+def normalise_heading(text: object) -> str:
     """'Legal name *' -> 'legal name'; 'Security confirmed on (YYYY-MM-DD)' -> its words."""
     out = str(text or "").replace("*", " ").lower()
     if "(" in out:
@@ -77,27 +92,73 @@ def _cell(value: object) -> object:
     return value
 
 
+def match_headings(
+    header: Sequence[object], columns: Sequence[Column]
+) -> tuple[dict[int, Column], list[str]]:
+    """Which column of a sheet is which of `columns`, by its place in the row,
+    and the headings none of them took. A column named twice is taken once."""
+    wanted: dict[str, Column] = {}
+    for col in columns:
+        for text in (col.header, col.key, *col.aliases):
+            wanted[normalise_heading(text)] = col
+    position: dict[int, Column] = {}
+    others: list[str] = []
+    for index, heading in enumerate(header):
+        match = wanted.get(normalise_heading(heading))
+        if match is not None and match not in position.values():
+            position[index] = match
+        elif str(heading or "").strip():
+            others.append(str(heading).strip())
+    return position, others
+
+
+def _check_unpacked(payload: bytes) -> None:
+    """Refuse a zip that would unpack past the budget, before anything unpacks
+    it. The sizes are the zip's own word, and `zipfile` holds a member to it:
+    one that runs on fails its check rather than filling memory."""
+    with zipfile.ZipFile(io.BytesIO(payload)) as archive:
+        unpacked = sum(member.file_size for member in archive.infolist())
+    if unpacked > MAX_UNPACKED_BYTES:
+        raise ValidationFailed(
+            "This workbook is too large to read. Split it into smaller files.", field="file"
+        )
+
+
 def read_rows(
-    payload: bytes, *, columns: Sequence[Column], sheet: str | None = None
+    payload: bytes,
+    *,
+    columns: Sequence[Column],
+    sheet: str | None = None,
+    max_rows: int | None = None,
+    check_headings: Callable[[set[str], list[str]], None] | None = None,
 ) -> list[tuple[int, dict[str, Any]]]:
     """The data rows of one sheet as (spreadsheet row number, {column key: value}).
 
     The first sheet whose title matches `sheet` (any case), else the first
     sheet. The first row is the header. Rows with nothing in them are skipped.
+    At most `max_rows` data rows, `MAX_ROWS` unless the caller says otherwise.
+    `check_headings`, if given, sees the keys found and the headings left over
+    before any row is read, and raises if the sheet will not do.
     """
+    limit = max_rows or MAX_ROWS
     if not zipfile.is_zipfile(io.BytesIO(payload)):
         raise ValidationFailed(
             "That is not an Excel workbook (.xlsx). Save the file as .xlsx and upload it again.",
             field="file",
         )
     try:
+        _check_unpacked(payload)
         book = load_workbook(io.BytesIO(payload), read_only=True, data_only=True)
+    except ValidationFailed:
+        raise
     except Exception as exc:  # a corrupt or hostile file - say so, plainly
-        raise ValidationFailed(
-            "The workbook could not be read. Save it again as .xlsx from Excel and upload it.",
-            field="file",
-        ) from exc
+        raise ValidationFailed(_UNREADABLE, field="file") from exc
     try:
+        if not book.worksheets:
+            raise ValidationFailed(
+                "The workbook has no sheets in it: the first row must be the headings.",
+                field="file",
+            )
         names = {name.lower(): name for name in book.sheetnames}
         title = names.get(sheet.lower()) if sheet else None
         ws = book[title] if title else book.worksheets[0]
@@ -108,15 +169,7 @@ def read_rows(
                 "The sheet is empty: the first row must be the headings.", field="file"
             )
 
-        wanted: dict[str, Column] = {}
-        for col in columns:
-            for text in (col.header, col.key, *col.aliases):
-                wanted[_normalise(text)] = col
-        position: dict[int, Column] = {}
-        for index, text in enumerate(header):
-            match = wanted.get(_normalise(text))
-            if match is not None and match not in position.values():
-                position[index] = match
+        position, others = match_headings(header, columns)
         missing = [c.header for c in columns if c.required and c not in position.values()]
         if missing:
             raise ValidationFailed(
@@ -124,22 +177,34 @@ def read_rows(
                 "Download the template to see the headings it expects.",
                 field="file",
             )
+        if check_headings is not None:
+            check_headings({c.key for c in position.values()}, others)
 
         out: list[tuple[int, dict[str, Any]]] = []
         for number, values in enumerate(rows, start=2):
+            if number > MAX_SHEET_ROWS:
+                raise ValidationFailed(
+                    f"The sheet runs past row {MAX_SHEET_ROWS:,}, the last Excel has. "
+                    "Save it again from Excel and upload it.",
+                    field="file",
+                )
             record = {
                 col.key: _cell(values[index]) if index < len(values) else None
                 for index, col in position.items()
             }
             if all(v is None for v in record.values()):
                 continue
-            if len(out) >= MAX_ROWS:
+            if len(out) >= limit:
                 raise ValidationFailed(
-                    f"The sheet has more than {MAX_ROWS} rows. Split it into smaller files.",
+                    f"The sheet has more than {limit:,} rows. Split it into smaller files.",
                     field="file",
                 )
             out.append((number, record))
         return out
+    except ValidationFailed:
+        raise
+    except Exception as exc:  # a sheet is read as it is walked, not on opening
+        raise ValidationFailed(_UNREADABLE, field="file") from exc
     finally:
         book.close()
 
@@ -163,6 +228,8 @@ def build_workbook(sheets: Iterable[SheetSpec], *, instructions: Sequence[str] =
             cell.fill = _REQUIRED_FILL if col.required else _HEADER_FILL
             cell.alignment = Alignment(vertical="center")
             ws.column_dimensions[get_column_letter(index)].width = col.width
+            if col.text:
+                ws.column_dimensions[get_column_letter(index)].number_format = "@"
             if col.choices:
                 letter = get_column_letter(index)
                 rule = DataValidation(

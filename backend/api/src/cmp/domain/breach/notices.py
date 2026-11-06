@@ -1,4 +1,4 @@
-"""Telling the people a breach touched (S3-03).
+"""Telling the people a breach affected (S3-03).
 
 Rule 7(1): each affected principal is told, concisely, clearly and plainly and
 without delay, five things - what happened, the consequences likely for her,
@@ -34,6 +34,8 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
+from cmp.db.redis import K_LOCK
+from cmp.db.redis import key as rkey
 from cmp.db.repositories import breach_lists as list_repo
 from cmp.db.repositories import breach_notices as repo
 from cmp.db.repositories import breaches as breach_repo
@@ -157,7 +159,8 @@ async def send(conn: Conn, *, breach_uuid: str, actor_id: int) -> Row:
     people = await repo.recipients(conn, breach_id)
     if not people:
         raise Conflict(
-            "Nobody is listed as touched yet. Confirm who it touched first", code="nobody_listed"
+            "Nobody is listed as affected yet. Confirm the people affected first",
+            code="nobody_listed",
         )
     notice_id = int(notice["notice_id"])
     states = await repo.latest_states(conn, breach_id, notice_id)
@@ -196,7 +199,8 @@ async def send(conn: Conn, *, breach_uuid: str, actor_id: int) -> Row:
                 attempt = int(last["attempt"]) + 1
             elif last["status"] == "queued" and last["recorded_at"] <= stale_before:
                 # Lost before the worker: queue the same delivery again. Its
-                # task checks the attempt has no outcome yet before sending.
+                # task claims the person, then checks the attempt has no outcome
+                # yet, so one that was only slow does not tell them twice.
                 again = await repo.queued_delivery(
                     conn, notice_id, to, channel=channel, attempt=int(last["attempt"])
                 )
@@ -287,6 +291,16 @@ async def reopen_if_done(conn: Conn, breach: Row, *, newly_listed: int, actor_id
 
 
 # ------------------------------------------------------------------ the worker
+
+
+async def claim_key(conn: Conn, delivery_uuid: str) -> str | None:
+    """What every task for this person on this notice and channel claims before
+    it sends, or None if there is nothing to send."""
+    row = await job(conn, delivery_uuid)
+    if row is None:
+        return None
+    kind, ident = repo.recipient_of(row)
+    return rkey(K_LOCK, "breach_notice", row["notice_id"], kind, ident, row["channel"])
 
 
 async def job(conn: Conn, delivery_uuid: str) -> Row | None:

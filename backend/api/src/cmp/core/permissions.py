@@ -390,6 +390,14 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         # The Legal office's register: every power the DPO has on its own.
         Role.LEGAL: Grant(Scope.ALL, write=True),
     },
+    # How the office hears of a breach (0058): who is told of a report from
+    # the public link, and where the organisation's board is mailed. The
+    # administrator keeps it with the two officers, and sees no breach by it.
+    "breach_settings": {
+        Role.ADMIN: Grant(Scope.ALL, write=True),
+        Role.DPO: Grant(Scope.ALL, write=True),
+        Role.LEGAL: Grant(Scope.ALL, write=True),
+    },
     # The Government's s.16 restricted-country list (S2-04). The DPO keeps it,
     # because it decides what may leave the country; the administrator reads it,
     # because a refused export lands on their desk as often as anyone's.
@@ -503,6 +511,7 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "requests",
         # Personal data breaches: the register, and every duty's clock.
         "breaches",
+        "breach-settings",
         "audit",
         "users",
         # The words of every message the platform sends.
@@ -588,6 +597,7 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "processors",
         "sources",
         "requests",
+        "breach-settings",
         "audit",
         "delegate",
         *PERSONAL,
@@ -607,6 +617,7 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         # The Legal office's rights queue and breach register (0055).
         "requests",
         "breaches",
+        "breach-settings",
         "hr-activities",
         "hr-categories",
         "templates",

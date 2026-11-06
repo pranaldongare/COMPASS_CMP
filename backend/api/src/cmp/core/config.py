@@ -264,10 +264,10 @@ class Settings(BaseSettings):
     # the time elapsed and flags nothing. The 6 and 72 hours are statute and
     # live with the obligations they time (`cmp.domain.breach.clock`).
     breach_without_delay_target_hours: float | None = Field(default=None, gt=0)
-    # Internal policy: the organisation's board hears of an incident within
-    # this many minutes of its being first noticed (BD-02, ADR 0022). Read when
-    # an incident is logged and stored as its duty's due time; changing it
-    # moves no clock already running.
+    # Internal policy: the organisation's board hears of a breach within this
+    # many minutes of a validation of yes (BD-02, ADR 0037). Read at that
+    # validation and stored as its duty's due time; changing it moves no clock
+    # already running.
     breach_org_board_minutes: int = Field(default=30, gt=0)
     # Who a breach ticket may be assigned to: an address on one of these
     # domains, checked on the server for every assignee and every colleague

@@ -64,7 +64,7 @@ async def test_what_is_said_is_kept_sealed_and_shown(conn: Any, seeded: dict[str
         (made["breach_uuid"],),
     )
     assert row is not None and all(str(row[c]).startswith("SE::") for c in LOGGED_TEXT)
-    assert _duties(made) == {"org_board"}
+    assert _duties(made) == set()
 
 
 async def test_nothing_is_required(conn: Any, seeded: dict[str, Any]) -> None:
@@ -77,9 +77,9 @@ async def test_a_cyber_attack_is_reportable_to_cert_in_at_once(
     conn: Any, seeded: dict[str, Any]
 ) -> None:
     made = await _log(conn, seeded, cyber_attack="yes")
-    assert _duties(made) == {"org_board", "cert_in"}
+    assert _duties(made) == {"cert_in"}
     unknown = await _log(conn, seeded, cyber_attack="unknown")
-    assert _duties(unknown) == {"org_board"}
+    assert _duties(unknown) == set()
     with pytest.raises(ValidationFailed):
         await _log(conn, seeded, cyber_attack="maybe")
 

@@ -77,11 +77,15 @@ ENTITY_TYPES: Final[frozenset[str]] = frozenset(
         "restricted_country",
         # A personal data breach and its duties (S3-01).
         "breach",
-        # A notice to the people a breach touched (S3-03). Her notification
+        # A notice to the people a breach affected (S3-03). Her notification
         # names this, not the breach, which is the office's alone.
         "breach_notice",
         # A breach ticket (S3-08): named by the breach reference only.
         "breach_ticket",
+        # An incident reported through the public link (0058), and how the
+        # office has set up who hears of one. Neither belongs to an office.
+        "incident_report",
+        "breach_settings",
         # The office's replacement words for a message junction.
         "message_template",
         # The Legal office's category of HR activity (0052, ADR 0033): its
@@ -319,6 +323,7 @@ class Event:
     BREACH_DETERMINED = "breach.determined"
     BREACH_ASSESSED = "breach.assessed"
     BREACH_CERT_IN_MARKED = "breach.cert_in_marked"
+    BREACH_CERT_IN_SET_ASIDE = "breach.cert_in_set_aside"
     BREACH_OBLIGATION_CREATED = "breach.obligation_created"
     BREACH_OBLIGATION_COMPLETED = "breach.obligation_completed"
     BREACH_OBLIGATION_NOT_APPLICABLE = "breach.obligation_not_applicable"
@@ -330,14 +335,14 @@ class Event:
     BREACH_ATTACHMENT_ADDED = "breach.attachment_added"
     #: An attached file was read: every read is audited.
     BREACH_ATTACHMENT_READ = "breach.attachment_read"
-    #: A confirmation of who the breach touched: counts, never people (S3-02).
+    #: A confirmation of the people affected: counts, never people (S3-02).
     BREACH_AFFECTED_REVISED = "breach.affected_revised"
-    #: A list of the people a breach touched, or of its assets, was taken
+    #: A list of the people a breach affected, or of its assets, was taken
     #: (2026-10-07). Detail: its kind and counts - never a name or contact.
     BREACH_AFFECTED_UPLOADED = "breach.affected_uploaded"
     #: The principals' duty owed again: people listed after it completed.
     BREACH_OBLIGATION_REOPENED = "breach.obligation_reopened"
-    # Notices to the people it touched (S3-03).
+    # Notices to the people it affected (S3-03).
     BREACH_NOTICE_DRAFTED = "breach.notice_drafted"
     BREACH_NOTICE_EDITED = "breach.notice_edited"
     BREACH_NOTICE_APPROVED = "breach.notice_approved"
@@ -352,10 +357,26 @@ class Event:
     BREACH_TICKET_CLOSED = "breach_ticket.closed"
     BREACH_TICKET_WITHDRAWN = "breach_ticket.withdrawn"
     BREACH_TICKET_REOPENED = "breach_ticket.reopened"
+    #: Its resolve-by date moved, by either side, with a reason (0061).
+    BREACH_TICKET_DATE_CHANGED = "breach_ticket.date_changed"
     #: A file on a ticket's thread was read: every read is audited.
     BREACH_TICKET_FILE_READ = "breach_ticket.file_read"
     #: A holder added a colleague, who got their own ticket (S3-09).
     BREACH_TICKET_COLLEAGUE_ADDED = "breach_ticket.colleague_added"
+    # An incident reported through the public link (0058), against the report.
+    INCIDENT_REPORT_RECEIVED = "incident_report.received"
+    INCIDENT_REPORT_CLAIMED = "incident_report.claimed"
+    INCIDENT_REPORT_DISMISSED = "incident_report.dismissed"
+    # A report on a breach (0059), against the breach.
+    BREACH_REPORT_DRAFTED = "breach.report_drafted"
+    BREACH_REPORT_EDITED = "breach.report_edited"
+    BREACH_REPORT_FINALISED = "breach.report_finalised"
+    BREACH_REPORT_RESENT = "breach.report_resent"
+    BREACH_REPORT_PROOF_ADDED = "breach.report_proof_added"
+    BREACH_REPORT_FILED = "breach.report_filed"
+    BREACH_REPORT_READ = "breach.report_read"
+    #: Who is told of a report, or who is on the organisation's board.
+    BREACH_SETTINGS_CHANGED = "breach_settings.changed"
     RIGHTS_RESPONDED = "rights.responded"
     RIGHTS_RESPONSE_DOWNLOADED = "rights.response_downloaded"
     #: A document the requester sent with the request, and every read of one.

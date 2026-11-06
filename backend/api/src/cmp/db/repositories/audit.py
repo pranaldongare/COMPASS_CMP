@@ -56,7 +56,7 @@ SUBJECT_VISIBLE: frozenset[str] = frozenset(
         "consent.withdrawn",
         "notice.served",
         "export.generated",
-        # Rule 7(1): a notice about a breach that touched her, in her account.
+        # Rule 7(1): a notice about a breach that affected her, in her account.
         "breach_notice.delivered",
         "nomination.created",
         "nomination.accepted",
@@ -474,14 +474,18 @@ _TO_BREACH_HOLDER = (
     "breach_ticket.reopened",
 )
 
+#: What either side does on a breach ticket, which only the other side should
+#: hear about. `detail.side` says whose it was.
+_BETWEEN_BREACH_SIDES = ("breach_ticket.message", "breach_ticket.date_changed")
+
 
 async def breach_ticket_events_for_holder(
     conn: Conn, holder_user_id: int, *, limit: int = 50
 ) -> list[Row]:
     """What happened on the breach tickets addressed to this person (S3-08):
     assigned, sent back, closed, withdrawn, reopened, and every message the
-    office wrote. Carries the ticket's uuid, so the bell opens the ticket on
-    /tickets and never the register, which answers them 404."""
+    office wrote and date it moved. Carries the ticket's uuid, so the bell opens
+    the ticket on /tickets and never the register, which answers them 404."""
     return await fetch_all(
         conn,
         f"""
@@ -491,12 +495,11 @@ async def breach_ticket_events_for_holder(
         WHERE l.entity_type = 'breach_ticket'
           AND t.holder_user_id = %s
           AND (l.event_type = ANY(%s)
-               OR (l.event_type = 'breach_ticket.message'
-                   AND l.detail_json->>'side' = 'office'))
+               OR (l.event_type = ANY(%s) AND l.detail_json->>'side' = 'office'))
         ORDER BY l.occurred_at DESC
         LIMIT %s
         """,
-        (holder_user_id, list(_TO_BREACH_HOLDER), limit),
+        (holder_user_id, list(_TO_BREACH_HOLDER), list(_BETWEEN_BREACH_SIDES), limit),
     )
 
 
@@ -504,8 +507,8 @@ async def breach_ticket_events_for_office(
     conn: Conn, *, office: str | None, limit: int = 50
 ) -> list[Row]:
     """What holders did on breach tickets, for the DPO: every return, every
-    message a holder wrote, and - S3-09 - every colleague a holder added.
-    `office` is the reader's."""
+    message a holder wrote and date they moved, and - S3-09 - every colleague a
+    holder added. `office` is the reader's."""
     clause, params = office_clause(office)
     return await fetch_all(
         conn,
@@ -514,13 +517,12 @@ async def breach_ticket_events_for_office(
         {_FROM}
         WHERE l.entity_type = 'breach_ticket'
           AND (l.event_type IN ('breach_ticket.returned', 'breach_ticket.colleague_added')
-               OR (l.event_type = 'breach_ticket.message'
-                   AND l.detail_json->>'side' = 'holder'))
+               OR (l.event_type = ANY(%s) AND l.detail_json->>'side' = 'holder'))
           AND {clause}
         ORDER BY l.occurred_at DESC
         LIMIT %s
         """,
-        (*params, limit),
+        (list(_BETWEEN_BREACH_SIDES), *params, limit),
     )
 
 

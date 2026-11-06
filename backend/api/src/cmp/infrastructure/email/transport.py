@@ -243,7 +243,7 @@ class ConsoleEmailTransport:
                 f"\n{'=' * 78}\n"
                 f"{stamp}  [email]  to: {to}\n"
                 f"{extra}"
-                f"subject: {subject}\n{'-' * 78}\n{body}\n"
+                f"subject: {subject}\n{'-' * 78}\n{layout.unmarked(body)}\n"
             )
             with self._path.open("a", encoding="utf-8") as handle:
                 handle.write(entry)

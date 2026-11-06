@@ -18,7 +18,9 @@ import pytest
 
 from cmp.core.config import settings
 from cmp.core.errors import Conflict, NotFound, TransitionNotPermitted, ValidationFailed
-from cmp.domain.breach import clock, service
+from cmp.db.sql import fetch_all
+from cmp.domain.breach import board, clock, service
+from tests.conftest import plain
 
 pytestmark = pytest.mark.integration
 
@@ -60,8 +62,8 @@ async def _yes(
 
 
 async def tell_org_board(conn: Any, seeded: dict[str, Any], uuid: str) -> dict[str, Any]:
-    """Every incident owes the organisation's board a report (S3-07); a test
-    about something else records it so it does not stand in the way."""
+    """A yes owes the organisation's board a report (ADR 0037); a test about
+    something else records it so it does not stand in the way."""
     return await service.complete_duty(
         conn,
         breach_uuid=uuid,
@@ -144,6 +146,198 @@ async def test_a_breach_recorded_late_shows_the_cert_in_time_actually_left(
         await service.mark_cert_in(
             conn, breach_uuid=str(breach["breach_uuid"]), actor_id=_dpo(seeded)
         )
+
+
+class TestACertInMarkMadeInError:
+    """A false alarm validated No has nothing to report and nobody to report it
+    to, and must be able to close without saying otherwise."""
+
+    @staticmethod
+    async def _marked(conn: Any, seeded: dict[str, Any], *outcomes: str) -> str:
+        uuid = str((await _breach(conn, seeded))["breach_uuid"])
+        await service.mark_cert_in(conn, breach_uuid=uuid, actor_id=_dpo(seeded))
+        for outcome in outcomes:
+            await TestACertInMarkMadeInError._determine(conn, seeded, uuid, outcome)
+        return uuid
+
+    @staticmethod
+    async def _determine(conn: Any, seeded: dict[str, Any], uuid: str, outcome: str) -> None:
+        await service.determine(
+            conn,
+            breach_uuid=uuid,
+            outcome=outcome,
+            reasoning="As far as is known",
+            became_aware_at=datetime.now(UTC) - HOUR if outcome == "yes" else None,
+            actor_id=_dpo(seeded),
+        )
+
+    @staticmethod
+    async def _set_aside(
+        conn: Any, seeded: dict[str, Any], uuid: str, reason: str = "It was a false alarm"
+    ) -> dict[str, Any]:
+        return await service.set_aside_cert_in(
+            conn, breach_uuid=uuid, reason=reason, actor_id=_dpo(seeded)
+        )
+
+    async def test_after_a_no_it_is_set_aside_and_the_incident_closes(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        uuid = await self._marked(conn, seeded, "no")
+        before = await service.detail(conn, uuid)
+        assert "Report to CERT-In is outstanding" in before["transitions"][0]["blockers"]
+        after = await self._set_aside(conn, seeded, uuid)
+        assert _duty(after, "cert_in")["state"] == "not_applicable"
+        assert after["transitions"][0]["allowed"] is True
+        closed = await service.transition(
+            conn, breach_uuid=uuid, to="closed", reason=None, actor_id=_dpo(seeded)
+        )
+        assert closed["status"] == "closed"
+
+    async def test_it_cites_the_no_and_seals_the_reason(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        uuid = await self._marked(conn, seeded, "no")
+        detail = await self._set_aside(conn, seeded, uuid)
+        [event] = _duty(detail, "cert_in")["events"]
+        assert event["determination_uuid"] == detail["determinations"][-1]["determination_uuid"]
+        assert str(event["note"]).startswith("SE::")
+        assert plain(event["note"]) == "It was a false alarm"
+
+    async def test_the_trail_says_a_reason_was_given_and_not_what_it_said(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        uuid = await self._marked(conn, seeded, "no")
+        await self._set_aside(conn, seeded, uuid)
+        [row] = await fetch_all(
+            conn,
+            """SELECT l.actor_user_id, l.detail_json FROM audit_log l
+                 JOIN breach b ON b.breach_id = l.entity_id
+                WHERE l.entity_type = 'breach' AND b.breach_uuid = %s
+                  AND l.event_type = 'breach.cert_in_set_aside'""",
+            (uuid,),
+        )
+        assert row["actor_user_id"] == _dpo(seeded)
+        assert row["detail_json"]["duty"] == "cert_in"
+        assert row["detail_json"]["reason_given"] is True
+        assert "false alarm" not in str(row["detail_json"])
+
+    @pytest.mark.parametrize("reason", ["", "   "])
+    async def test_it_needs_a_reason(self, conn: Any, seeded: dict[str, Any], reason: str) -> None:
+        uuid = await self._marked(conn, seeded, "no")
+        with pytest.raises(ValidationFailed) as refused:
+            await self._set_aside(conn, seeded, uuid, reason)
+        assert refused.value.field == "reason"
+
+    @pytest.mark.parametrize("outcomes", [(), ("pending",), ("no", "pending"), ("no", "yes")])
+    async def test_it_waits_for_the_latest_determination_to_be_no(
+        self, conn: Any, seeded: dict[str, Any], outcomes: tuple[str, ...]
+    ) -> None:
+        uuid = await self._marked(conn, seeded, *outcomes)
+        with pytest.raises(Conflict) as refused:
+            await self._set_aside(conn, seeded, uuid)
+        assert refused.value.code == "cert_in_not_validated_no"
+        assert "validated as No" in refused.value.message
+        assert _duty(await service.detail(conn, uuid), "cert_in")["state"] == "outstanding"
+
+    async def test_there_must_be_such_a_duty(self, conn: Any, seeded: dict[str, Any]) -> None:
+        uuid = str((await _breach(conn, seeded))["breach_uuid"])
+        await self._determine(conn, seeded, uuid, "no")
+        with pytest.raises(Conflict) as refused:
+            await self._set_aside(conn, seeded, uuid)
+        assert refused.value.code == "no_such_duty"
+
+    async def test_a_duty_done_stands(self, conn: Any, seeded: dict[str, Any]) -> None:
+        uuid = await self._marked(conn, seeded, "no")
+        await service.complete_duty(
+            conn,
+            breach_uuid=uuid,
+            duty="cert_in",
+            occurred_at=datetime.now(UTC),
+            reference="CERT/1",
+            note=None,
+            actor_id=_dpo(seeded),
+        )
+        with pytest.raises(Conflict) as refused:
+            await self._set_aside(conn, seeded, uuid)
+        assert refused.value.code == "duty_not_outstanding"
+
+    async def test_set_aside_twice_is_refused(self, conn: Any, seeded: dict[str, Any]) -> None:
+        uuid = await self._marked(conn, seeded, "no")
+        await self._set_aside(conn, seeded, uuid)
+        with pytest.raises(Conflict) as refused:
+            await self._set_aside(conn, seeded, uuid)
+        assert refused.value.code == "duty_not_outstanding"
+
+    async def test_a_report_filed_stands(self, conn: Any, seeded: dict[str, Any]) -> None:
+        """Filed while the duty was aside, then marked again: the duty is out
+        again, and something was still reported."""
+        uuid = await self._marked(conn, seeded, "no")
+        breach = await service.require(conn, uuid)
+        cur = await conn.execute(
+            """INSERT INTO breach_report (breach_id, kind, version, created_by, finalised_by,
+                                          finalised_at, filed_at, filed_reference, filed_by,
+                                          filed_recorded_at)
+               VALUES (%s, 'cert_in', 1, %s, %s, now(), now(), 'CERT/1', %s, now())
+               RETURNING report_id""",
+            (breach["breach_id"], _dpo(seeded), _dpo(seeded), _dpo(seeded)),
+        )
+        assert await cur.fetchone()
+        with pytest.raises(Conflict) as refused:
+            await self._set_aside(conn, seeded, uuid)
+        assert refused.value.code == "report_filed"
+
+    async def test_it_tells_nobody_and_leaves_the_board_alone(
+        self, conn: Any, seeded: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        uuid = await self._marked(conn, seeded, "yes", "no")
+        board = _duty(await service.detail(conn, uuid), "org_board")
+
+        def told(*_: Any, **__: Any) -> None:
+            pytest.fail("somebody was told")
+
+        import cmp.tasks.dispatch as dispatch
+
+        monkeypatch.setattr(dispatch, "dispatch_optional", told)
+        monkeypatch.setattr(dispatch, "dispatch_required", told)
+        after = await self._set_aside(conn, seeded, uuid)
+        assert _duty(after, "org_board")["events"] == board["events"]
+
+    async def test_marking_again_brings_the_duty_back_with_its_own_clock(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        uuid = await self._marked(conn, seeded, "no")
+        first = _duty(await service.detail(conn, uuid), "cert_in")
+        await self._set_aside(conn, seeded, uuid)
+        detail = await service.mark_cert_in(conn, breach_uuid=uuid, actor_id=_dpo(seeded))
+        duty = _duty(detail, "cert_in")
+        assert duty["state"] == "outstanding"
+        assert duty["due_at"] == first["due_at"], "six hours from detection, as it was"
+        assert duty["obligation_uuid"] == first["obligation_uuid"], "the same duty"
+        assert [e["kind"] for e in duty["events"]] == ["not_applicable", "reinstated"]
+        with pytest.raises(Conflict) as refused:
+            await service.mark_cert_in(conn, breach_uuid=uuid, actor_id=_dpo(seeded))
+        assert refused.value.code == "cert_in_marked"
+
+    async def test_a_later_yes_does_not_bring_it_back_and_marking_does(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        """CERT-In stands on its own test. Were a yes to bring it back, a real
+        breach that was never a cyber incident could not close, since a mark
+        can be set aside only after a No."""
+        uuid = await self._marked(conn, seeded, "no")
+        await self._set_aside(conn, seeded, uuid)
+        await self._determine(conn, seeded, uuid, "yes")
+        assert _duty(await service.detail(conn, uuid), "cert_in")["state"] == "not_applicable"
+        detail = await service.mark_cert_in(conn, breach_uuid=uuid, actor_id=_dpo(seeded))
+        assert _duty(detail, "cert_in")["state"] == "outstanding"
+
+    async def test_the_board_is_no_longer_told_it_is_reportable(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        uuid = await self._marked(conn, seeded, "no")
+        assert (await board.org_board_brief(conn, breach_uuid=uuid))["cert_in_reportable"] is True
+        await self._set_aside(conn, seeded, uuid)
+        assert (await board.org_board_brief(conn, breach_uuid=uuid))["cert_in_reportable"] is False
 
 
 async def test_cert_in_stands_on_its_own_test(conn: Any, seeded: dict[str, Any]) -> None:
@@ -230,7 +424,6 @@ async def test_a_breach_determined_no_closes_and_reopens_with_a_reason(
         became_aware_at=None,
         actor_id=_dpo(seeded),
     )
-    await tell_org_board(conn, seeded, uuid)
     closed = await service.transition(
         conn, breach_uuid=uuid, to="closed", reason=None, actor_id=_dpo(seeded)
     )
@@ -515,8 +708,8 @@ async def test_the_trail_records_what_happened_and_none_of_the_words(
         )
     ).fetchall()
     events = [r["event_type"] for r in rows]
-    # Logged, its organisation's-board duty created, then validated.
-    assert events[:3] == ["breach.recorded", "breach.obligation_created", "breach.determined"]
+    # Logged, then validated, and the yes creates all four duties.
+    assert events[:2] == ["breach.recorded", "breach.determined"]
     assert events.count("breach.obligation_created") == 4
     assert not any(
         "laptop" in r["detail"].lower() or "contact details" in r["detail"].lower() for r in rows

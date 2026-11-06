@@ -17,14 +17,31 @@ import pytest
 from cmp.api.routers.v1 import dashboard
 from cmp.core.config import settings
 from cmp.core.errors import Conflict, NotFound, TransitionNotPermitted, ValidationFailed
+from cmp.db.repositories import audit as audit_repo
+from cmp.db.repositories import breaches as breach_repo
 from cmp.db.sql import fetch_all, fetch_one
 from cmp.domain.breach import service, tickets
-from cmp.domain.breach.tickets import HOLDER_KEYS
 from cmp.tasks import dispatch as dispatch_mod
 from tests.conftest import plain
 from tests.integration.test_breach_register import tell_org_board
 
 pytestmark = pytest.mark.integration
+
+#: BD-13, spelled out here and not read from the code: widening what a holder
+#: is given has to change this test.
+HOLDER_KEYS = {
+    "ticket_uuid",
+    "breach_reference",
+    "instruction",
+    "state",
+    "answer_by",
+    "created_at",
+    "unread",
+    "last_activity_at",
+    "moves",
+    "may_add_colleague",
+    "may_change_date",
+}
 
 
 @pytest.fixture(autouse=True)
@@ -213,7 +230,7 @@ async def test_the_holder_sees_their_ticket_and_nothing_of_the_register(
     conn: Any, seeded: dict[str, Any]
 ) -> None:
     """BD-13: the reference, the instruction, the thread, the state, the
-    answer-by. Not the title, where, validation, assessment, who it touched,
+    answer-by. Not the title, where, validation, assessment, who it affected,
     notices, duties or anybody else's ticket."""
     uuid = await _recorded(conn, seeded)
     await _assign(conn, seeded, uuid, role="dco")
@@ -539,3 +556,303 @@ async def test_every_staff_dashboard_lists_their_breach_tickets(
     [item] = [i for i in items if i.get("href") == f"/tickets?breach_ticket={t}"]
     assert item["reference"].startswith("BR-") and count >= 1
     assert "Lab share" not in json.dumps(item)
+
+
+class TestTheDateMayMove:
+    """Item 9 (0061): either side, with a reason, on the record."""
+
+    async def test_the_holder_moves_it_and_the_office_is_told(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[Any], request_context: Any
+    ) -> None:
+        uuid = await _recorded(conn, seeded)
+        first, second = _today() + timedelta(days=2), _today() + timedelta(days=9)
+        made = await _assign(conn, seeded, uuid, answer_by=first)
+        ticket = str(made["ticket"]["ticket_uuid"])
+        mailed.clear()
+        moved = await tickets.holder_change_date(
+            conn,
+            user_id=_id(seeded, "dco"),
+            ticket_uuid=ticket,
+            answer_by=second,
+            reason="The log vendor answers on Monday",
+        )
+        assert moved["ticket"]["answer_by"] == second
+        assert moved["ticket"]["state"] == "issued", "it moves no state"
+        assert mailed, "the office is told"
+        assert {m[0] for m in mailed} == {"cmp.notifications.send_breach_ticket_date_changed"}
+
+    async def test_the_office_moves_it_and_the_mail_names_no_breach(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[Any], request_context: Any
+    ) -> None:
+        uuid = await _recorded(conn, seeded)
+        made = await _assign(conn, seeded, uuid, answer_by=_today() + timedelta(days=2))
+        ticket = str(made["ticket"]["ticket_uuid"])
+        mailed.clear()
+        moved = await tickets.office_change_date(
+            conn,
+            breach_uuid=uuid,
+            ticket_uuid=ticket,
+            answer_by=_today() + timedelta(days=5),
+            reason="More time agreed",
+            actor_id=_id(seeded, "dpo"),
+        )
+        assert moved["ticket"]["answer_by"] == _today() + timedelta(days=5)
+        [(_, args)] = mailed
+        assert args[1] == "/tickets", "no breach in the mail"
+
+    async def test_it_is_on_the_events_the_thread_and_the_trail(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[Any], request_context: Any
+    ) -> None:
+        uuid = await _recorded(conn, seeded)
+        first, second = _today() + timedelta(days=2), _today() + timedelta(days=9)
+        made = await _assign(conn, seeded, uuid, answer_by=first)
+        ticket = str(made["ticket"]["ticket_uuid"])
+        await tickets.holder_change_date(
+            conn,
+            user_id=_id(seeded, "dco"),
+            ticket_uuid=ticket,
+            answer_by=second,
+            reason="The log vendor answers on Monday",
+        )
+        detail = await tickets.office_detail(conn, breach_uuid=uuid, ticket_uuid=ticket)
+        [event] = [e for e in detail["ticket"]["events"] if e["kind"] == "date_changed"]
+        assert (event["date_before"], event["date_after"]) == (first, second)
+        assert str(event["reason"]).startswith("SE::"), "sealed"
+        assert plain(event["reason"]) == "The log vendor answers on Monday"
+        assert event["actor_name"]
+        status = [m for m in detail["messages"] if m["kind"] == "status"]
+        assert "The log vendor answers on Monday" in plain(status[-1]["body"])
+        row = await fetch_one(
+            conn,
+            """SELECT detail_json FROM audit_log WHERE event_type = 'breach_ticket.date_changed'
+                ORDER BY log_id DESC LIMIT 1""",
+        )
+        assert row is not None
+        trail = row["detail_json"]
+        assert trail["date_before"] == first.isoformat()
+        assert trail["date_after"] == second.isoformat()
+        assert "vendor" not in json.dumps(trail), "the reason is not on the trail in words"
+
+    async def test_it_is_the_only_new_thing_on_the_holders_thread(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[Any], request_context: Any
+    ) -> None:
+        uuid = await _recorded(conn, seeded)
+        made = await _assign(conn, seeded, uuid, answer_by=_today() + timedelta(days=2))
+        ticket = str(made["ticket"]["ticket_uuid"])
+        holder = {"user_id": _id(seeded, "dco"), "ticket_uuid": ticket}
+        before = (await tickets.my_detail(conn, **holder))["messages"]
+        await tickets.office_change_date(
+            conn,
+            breach_uuid=uuid,
+            ticket_uuid=ticket,
+            answer_by=_today() + timedelta(days=5),
+            reason="More time agreed",
+            actor_id=_id(seeded, "dpo"),
+        )
+        after = await tickets.my_detail(conn, **holder)
+        assert set(after["ticket"]) == HOLDER_KEYS
+        [added] = after["messages"][len(before) :]
+        assert added["kind"] == "status"
+        assert "More time agreed" in plain(added["body"])
+
+    async def test_what_it_was_is_read_under_the_lock(
+        self,
+        conn: Any,
+        seeded: dict[str, Any],
+        mailed: list[Any],
+        request_context: Any,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """The office moves it while the holder's change waits for the breach
+        row: the holder's records what the office moved it to."""
+        uuid = await _recorded(conn, seeded)
+        first = _today() + timedelta(days=2)
+        moved_to = _today() + timedelta(days=4)
+        made = await _assign(conn, seeded, uuid, answer_by=first)
+        ticket = str(made["ticket"]["ticket_uuid"])
+        real = service.locked_open
+
+        async def the_office_got_there_first(conn: Any, breach_uuid: str) -> Any:
+            monkeypatch.setattr(service, "locked_open", real)
+            await tickets.office_change_date(
+                conn,
+                breach_uuid=uuid,
+                ticket_uuid=ticket,
+                answer_by=moved_to,
+                reason="More time agreed",
+                actor_id=_id(seeded, "dpo"),
+            )
+            return await real(conn, breach_uuid)
+
+        monkeypatch.setattr(service, "locked_open", the_office_got_there_first)
+        await tickets.holder_change_date(
+            conn,
+            user_id=_id(seeded, "dco"),
+            ticket_uuid=ticket,
+            answer_by=_today() + timedelta(days=9),
+            reason="The vendor answers on Monday",
+        )
+        detail = await tickets.office_detail(conn, breach_uuid=uuid, ticket_uuid=ticket)
+        events = [e for e in detail["ticket"]["events"] if e["kind"] == "date_changed"]
+        assert [e["date_before"] for e in events] == [first, moved_to]
+
+    async def test_each_side_hears_of_the_others_change_in_the_bell_and_not_its_own(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[Any], request_context: Any
+    ) -> None:
+        uuid = await _recorded(conn, seeded)
+        made = await _assign(conn, seeded, uuid, answer_by=_today() + timedelta(days=2))
+        ticket = str(made["ticket"]["ticket_uuid"])
+
+        async def moved(feed: Any, **kw: Any) -> list[dict[str, Any]]:
+            rows = await feed(conn, **kw)
+            return [
+                r
+                for r in rows
+                if r["event_type"] == "breach_ticket.date_changed"
+                and r["detail"]["ticket"] == ticket
+            ]
+
+        async def the_holders() -> list[dict[str, Any]]:
+            return await moved(
+                audit_repo.breach_ticket_events_for_holder, holder_user_id=_id(seeded, "dco")
+            )
+
+        async def the_offices() -> list[dict[str, Any]]:
+            return await moved(audit_repo.breach_ticket_events_for_office, office=None)
+
+        await tickets.holder_change_date(
+            conn,
+            user_id=_id(seeded, "dco"),
+            ticket_uuid=ticket,
+            answer_by=_today() + timedelta(days=5),
+            reason="The vendor answers on Monday",
+        )
+        assert [r["detail"]["side"] for r in await the_offices()] == ["holder"]
+        assert await the_holders() == [], "they know: they did it"
+
+        await tickets.office_change_date(
+            conn,
+            breach_uuid=uuid,
+            ticket_uuid=ticket,
+            answer_by=_today() + timedelta(days=7),
+            reason="More time agreed",
+            actor_id=_id(seeded, "dpo"),
+        )
+        assert [r["detail"]["side"] for r in await the_holders()] == ["office"]
+        assert [r["detail"]["side"] for r in await the_offices()] == ["holder"]
+
+    async def test_a_closed_breach_keeps_it(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[Any], request_context: Any
+    ) -> None:
+        uuid = await _recorded(conn, seeded)
+        made = await _assign(conn, seeded, uuid, answer_by=_today() + timedelta(days=2))
+        ticket = str(made["ticket"]["ticket_uuid"])
+        breach = await service.require(conn, uuid)
+        await breach_repo.set_status(conn, int(breach["breach_id"]), to="closed")
+        later = _today() + timedelta(days=5)
+        with pytest.raises(Conflict) as by_the_holder:
+            await tickets.holder_change_date(
+                conn,
+                user_id=_id(seeded, "dco"),
+                ticket_uuid=ticket,
+                answer_by=later,
+                reason="x",
+            )
+        assert by_the_holder.value.code == "breach_closed"
+        with pytest.raises(Conflict) as by_the_office:
+            await tickets.office_change_date(
+                conn,
+                breach_uuid=uuid,
+                ticket_uuid=ticket,
+                answer_by=later,
+                reason="x",
+                actor_id=_id(seeded, "dpo"),
+            )
+        assert by_the_office.value.code == "breach_closed"
+
+    async def test_a_ticket_with_no_date_may_be_given_one(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[Any], request_context: Any
+    ) -> None:
+        uuid = await _recorded(conn, seeded)
+        made = await _assign(conn, seeded, uuid)
+        moved = await tickets.office_change_date(
+            conn,
+            breach_uuid=uuid,
+            ticket_uuid=str(made["ticket"]["ticket_uuid"]),
+            answer_by=_today() + timedelta(days=1),
+            reason="Needed for the 72-hour report",
+            actor_id=_id(seeded, "dpo"),
+        )
+        assert moved["ticket"]["answer_by"] == _today() + timedelta(days=1)
+
+    async def test_what_is_refused(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[Any], request_context: Any
+    ) -> None:
+        uuid = await _recorded(conn, seeded)
+        by = _today() + timedelta(days=2)
+        made = await _assign(conn, seeded, uuid, answer_by=by)
+        ticket = str(made["ticket"]["ticket_uuid"])
+        common = {"user_id": _id(seeded, "dco"), "ticket_uuid": ticket}
+        with pytest.raises(ValidationFailed) as no_reason:
+            await tickets.holder_change_date(
+                conn, **common, answer_by=by + timedelta(days=1), reason=" "
+            )
+        assert no_reason.value.field == "reason"
+        with pytest.raises(ValidationFailed) as past:
+            await tickets.holder_change_date(
+                conn, **common, answer_by=_today() - timedelta(days=1), reason="x"
+            )
+        assert past.value.field == "answer_by"
+        with pytest.raises(ValidationFailed, match="already has"):
+            await tickets.holder_change_date(conn, **common, answer_by=by, reason="x")
+
+    async def test_a_ticket_that_is_not_open_keeps_its_date(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[Any], request_context: Any
+    ) -> None:
+        uuid = await _recorded(conn, seeded)
+        made = await _assign(conn, seeded, uuid)
+        ticket = str(made["ticket"]["ticket_uuid"])
+        await tickets.office_move(
+            conn,
+            breach_uuid=uuid,
+            ticket_uuid=ticket,
+            move="withdraw",
+            reason="Not needed",
+            actor_id=_id(seeded, "dpo"),
+        )
+        with pytest.raises(Conflict) as refused:
+            await tickets.holder_change_date(
+                conn,
+                user_id=_id(seeded, "dco"),
+                ticket_uuid=ticket,
+                answer_by=_today() + timedelta(days=1),
+                reason="x",
+            )
+        assert refused.value.code == "ticket_not_open"
+        detail = await tickets.my_detail(conn, user_id=_id(seeded, "dco"), ticket_uuid=ticket)
+        assert detail["ticket"]["may_change_date"] is False
+
+    async def test_nobody_else_moves_a_holders_date(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[Any], request_context: Any
+    ) -> None:
+        uuid = await _recorded(conn, seeded)
+        made = await _assign(conn, seeded, uuid)
+        with pytest.raises(NotFound):
+            await tickets.holder_change_date(
+                conn,
+                user_id=_id(seeded, "rco"),
+                ticket_uuid=str(made["ticket"]["ticket_uuid"]),
+                answer_by=_today() + timedelta(days=1),
+                reason="x",
+            )
+
+    async def test_the_database_refuses_a_date_nothing_recorded(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[Any], request_context: Any
+    ) -> None:
+        uuid = await _recorded(conn, seeded)
+        made = await _assign(conn, seeded, uuid)
+        with pytest.raises(psycopg.errors.RestrictViolation):
+            await conn.execute(
+                "UPDATE breach_ticket SET answer_by = current_date + 3 WHERE ticket_uuid = %s",
+                (str(made["ticket"]["ticket_uuid"]),),
+            )

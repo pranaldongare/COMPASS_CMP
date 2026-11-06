@@ -33,6 +33,7 @@ def test_every_hash_column_is_named_hash() -> None:
 BORN_HASHED = {
     "breach_contact": "0045_breach_contact_upload.py",
     "message_copy": "0046_message_copy.py",
+    "breach_board_recipient": "0058_public_incident_report.py",
 }
 
 

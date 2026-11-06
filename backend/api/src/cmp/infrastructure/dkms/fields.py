@@ -180,6 +180,34 @@ ENCRYPTED_FIELDS: dict[str, dict[str, DataType]] = {
         "entities_involved": DataType.FREE_TEXT,
         "third_parties": DataType.FREE_TEXT,
     },
+    # An incident reported through the public link (0058): who, and what they
+    # said, on the same terms as the same words on `breach`.
+    "incident_report": {
+        "reporter_name": DataType.NAME,
+        "reporter_email": DataType.EMAIL,
+        "title": DataType.FREE_TEXT,
+        "origin": DataType.FREE_TEXT,
+        "discovery": DataType.FREE_TEXT,
+        "affected_systems": DataType.FREE_TEXT,
+        "incident_details": DataType.FREE_TEXT,
+        "impact_scale": DataType.FREE_TEXT,
+        "countries_involved": DataType.FREE_TEXT,
+        "data_nature": DataType.FREE_TEXT,
+        "subject_types": DataType.FREE_TEXT,
+        "entities_involved": DataType.FREE_TEXT,
+        "third_parties": DataType.FREE_TEXT,
+        "dismissal_reason": DataType.FREE_TEXT,
+    },
+    # A report on a breach (0059): the words are the office's, and may name
+    # anybody until they are corrected.
+    "breach_report_section": {
+        "body": DataType.FREE_TEXT,
+    },
+    # The organisation's board: a person's name and address (0058).
+    "breach_board_recipient": {
+        "full_name": DataType.NAME,
+        "email": DataType.EMAIL,
+    },
     "breach_status_history": {
         "reason": DataType.FREE_TEXT,
     },
@@ -287,6 +315,10 @@ BLIND_INDEXED: dict[str, dict[str, str]] = {
     # A copy address, listed once per message (0046).
     "message_copy": {
         "address": "address_hash",
+    },
+    # An address on the organisation's board, listed once (0058).
+    "breach_board_recipient": {
+        "email": "email_hash",
     },
 }
 

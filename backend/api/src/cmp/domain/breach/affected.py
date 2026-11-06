@@ -1,16 +1,18 @@
-"""Who a breach touched, derived from the records and confirmed by the DPO (S3-02).
+"""The people a breach affected, found from the records and confirmed by the
+office (S3-02).
 
 Rule 7(1) asks for a notice to each affected principal "to the best of its
-knowledge". The records know three kinds of place a breach can happen, and who
-each held:
+knowledge". A person running a breach knows what it reached, in the words of
+the work, and the records answer in those words:
 
-* **a processor** - everyone in files exported to it (`export_line`);
-* **a data source** - everyone captured in its assets (`asset_consent`);
-* **the platform's own database** - everyone with a row in the affected
-  tables, written within a window.
+* **a project or activity** - everyone who ever gave consent in it, in a window
+  if one is given (2026-11-06);
+* **a vendor** (a processor) - everyone in files exported to it (`export_line`),
+  and everyone standing in an HR activity whose category names it;
+* **a data source** - everyone captured in its assets (`asset_consent`).
 
-The first two are the same relation a rights request reads to find a person's
-holders, read from the other end (`db/repositories/holdings.py`). The DPO
+The last two are the same relation a rights request reads to find a person's
+holders, read from the other end (`db/repositories/holdings.py`). The office
 previews what the records show, confirms it - leaving out anyone the records
 wrongly include, adding anyone they cannot show - and each confirmation is a
 revision. A person is listed once and never removed; a later revision adds
@@ -19,7 +21,6 @@ only people not already listed, and each is notified in turn (S3-03).
 
 from __future__ import annotations
 
-from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
@@ -40,9 +41,9 @@ PAGE = 200
 
 
 class ScopeKind(StrEnum):
+    PROJECT = "project"
     PROCESSOR = "processor"
     DATA_SOURCE = "data_source"
-    PLATFORM = "platform"
 
 
 def _merge(found: dict[int, tuple[str, dict[str, list[str]]]], pid: int, by: str, ev: Row) -> None:
@@ -65,16 +66,53 @@ async def _derive(
     resolved: list[Row] = []
     for i, scope in enumerate(scopes):
         kind = choice(ScopeKind, str(scope.get("kind") or ""), field=f"scopes[{i}].kind")
-        if kind == ScopeKind.PROCESSOR:
+        if kind == ScopeKind.PROJECT:
+            uuid = scope.get("project_uuid")
+            project = uuid and await holdings.project_of_office(conn, str(uuid))
+            if not project:
+                raise NotFound("Project")
+            since, until = scope.get("since"), scope.get("until")
+            if since and until and since > until:
+                raise ValidationFailed(
+                    "The period ends before it starts", field=f"scopes[{i}].until"
+                )
+            rows = await holdings.people_in_project(
+                conn, int(project["project_id"]), since=since, until=until
+            )
+            for r in rows:
+                _merge(found, int(r["person_id"]), "project", {"projects": [str(uuid)]})
+            resolved.append(
+                {
+                    "kind": kind.value,
+                    "project_uuid": str(uuid),
+                    "project_name": project["project_name"],
+                    "since": since.isoformat() if since else None,
+                    "until": until.isoformat() if until else None,
+                    "found": len(rows),
+                }
+            )
+        elif kind == ScopeKind.PROCESSOR:
             uuid = scope.get("processor_uuid")
             processor = uuid and await registry_repo.processor_by_uuid(conn, str(uuid))
             if not processor:
                 raise NotFound("Processor")
             rows = await holdings.people_held_by(conn, processor_id=int(processor["processor_id"]))
             for r in rows:
-                _merge(found, int(r["person_id"]), "processor", {"exports": r["exports"]})
-            resolved.append({"kind": kind.value, "processor_uuid": str(uuid), "found": len(rows)})
-        elif kind == ScopeKind.DATA_SOURCE:
+                _merge(
+                    found,
+                    int(r["person_id"]),
+                    "processor",
+                    {"exports": r["exports"], "activities": r["activities"]},
+                )
+            resolved.append(
+                {
+                    "kind": kind.value,
+                    "processor_uuid": str(uuid),
+                    "processor_name": processor["legal_name"],
+                    "found": len(rows),
+                }
+            )
+        else:
             uuid = scope.get("source_uuid")
             source = uuid and await registry_repo.source_by_uuid(conn, str(uuid))
             if not source:
@@ -82,33 +120,11 @@ async def _derive(
             rows = await holdings.people_held_by(conn, source_id=int(source["source_id"]))
             for r in rows:
                 _merge(found, int(r["person_id"]), "data_source", {"assets": r["assets"]})
-            resolved.append({"kind": kind.value, "source_uuid": str(uuid), "found": len(rows)})
-        else:
-            tables = list(scope.get("tables") or [])
-            if not tables:
-                raise ValidationFailed("Name the affected tables", field=f"scopes[{i}].tables")
-            unknown = sorted(set(tables) - set(repo.PLATFORM_TABLES))
-            if unknown:
-                raise ValidationFailed(
-                    f"Not a table that holds a principal's data: {', '.join(unknown)}. "
-                    f"Choose from {', '.join(sorted(repo.PLATFORM_TABLES))}",
-                    field=f"scopes[{i}].tables",
-                )
-            since: datetime | None = scope.get("since")
-            until: datetime | None = scope.get("until")
-            if since and until and since > until:
-                raise ValidationFailed(
-                    "The window ends before it starts", field=f"scopes[{i}].until"
-                )
-            rows = await repo.people_in_tables(conn, sorted(set(tables)), since=since, until=until)
-            for r in rows:
-                _merge(found, int(r["person_id"]), "platform", {"tables": r["tables"]})
             resolved.append(
                 {
                     "kind": kind.value,
-                    "tables": sorted(set(tables)),
-                    "since": since.isoformat() if since else None,
-                    "until": until.isoformat() if until else None,
+                    "source_uuid": str(uuid),
+                    "source_name": source["name"],
                     "found": len(rows),
                 }
             )
@@ -159,7 +175,7 @@ async def confirm(
     """
     breach = await service.locked_open(conn, breach_uuid)
     if not scopes and not add:
-        raise ValidationFailed("Derive from somewhere, or add people by hand", field="scopes")
+        raise ValidationFailed("Choose where to look, or add a person", field="scopes")
     resolved, found = await _derive(conn, scopes) if scopes else ([], {})
 
     excluded: set[int] = set()
@@ -231,5 +247,11 @@ async def listing(conn: Conn, *, breach_uuid: str, after: str | None) -> Row:
         "revisions": await repo.affected_revisions(conn, breach_id),
         "people": page,
         "next_cursor": str(page[-1]["affected_uuid"]) if more else None,
-        "platform_tables": sorted(repo.PLATFORM_TABLES),
     }
+
+
+async def options(conn: Conn, *, breach_uuid: str) -> Row:
+    """The projects and activities a person may choose from: the office's, and
+    only those with people in them."""
+    await service.require(conn, breach_uuid)
+    return {"projects": await holdings.projects_with_people(conn)}

@@ -48,8 +48,23 @@ GROUP_LABELS: Final[dict[str, str]] = {
     "breach": "Incidents and breaches",
     "breach_notice": "Breach notices",
     "breach_ticket": "Breach tickets",
+    "incident_report": "Incident reports",
+    "breach_settings": "Breach settings",
     "message_template": "Messages",
     "audit": "Audit trail",
+}
+
+#: Events the words of their own name would not explain.
+EVENT_LABELS: Final[dict[str, str]] = {
+    "breach.affected_revised": "People affected confirmed",
+    "breach.affected_uploaded": "People affected added from a list",
+    "breach.report_drafted": "Report drafted",
+    "breach.report_edited": "Report edited",
+    "breach.report_finalised": "Report finalised",
+    "breach.report_resent": "Report sent to the board again",
+    "breach.report_proof_added": "Proof added to a report",
+    "breach.report_filed": "Report recorded as sent to the regulator",
+    "breach.report_read": "Report downloaded as a PDF",
 }
 
 #: Which pickers the console offers, and the plain name of each.
@@ -81,7 +96,7 @@ def event_types() -> list[dict[str, str]]:
                 "value": value,
                 "group": group,
                 "group_label": GROUP_LABELS.get(group, _label(group)),
-                "label": _label(rest),
+                "label": EVENT_LABELS.get(value) or _label(rest),
             }
         )
     return sorted(out, key=lambda e: (e["group_label"], e["label"]))

@@ -11,7 +11,7 @@ parsing. Each step is cheaper than the one it protects.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Final
 
 from cmp.core.errors import BadRequest, ValidationFailed
@@ -77,9 +77,10 @@ REQUEST_DOCUMENT = UploadRules(
     allowed_suffixes=(".pdf", ".png", ".jpg", ".jpeg", ".txt", ".docx"),
 )
 
-#: A list of the people a breach touched, or of its assets (2026-10-07): a CSV
-#: from the template. Spreadsheet types are let through so the reader can say
-#: "save it as CSV" rather than "wrong type": Windows labels a .csv as Excel's.
+#: A list of the people a breach affected, or of its assets (2026-10-07): an
+#: Excel workbook from the template, or a CSV. The old .xls type is let through
+#: so the reader can say "save it as .xlsx" rather than "wrong type", and
+#: because Windows labels a .csv as Excel's.
 BREACH_LIST = UploadRules(
     field="file",
     max_bytes=25 * 1024 * 1024,
@@ -90,7 +91,7 @@ BREACH_LIST = UploadRules(
         "application/vnd.ms-excel",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     ),
-    allowed_suffixes=(".csv", ".txt"),
+    allowed_suffixes=(".xlsx", ".csv", ".txt"),
 )
 
 #: What arrives with an incident (2026-10-06): the email that reported it,
@@ -122,6 +123,10 @@ BREACH_EVIDENCE = UploadRules(
         ".docx",
     ),
 )
+
+#: A file on a breach ticket, either side's: what the Attachments tab takes,
+#: under the name of the ticket's own form field.
+BREACH_TICKET_EVIDENCE = replace(BREACH_EVIDENCE, field="evidence")
 
 #: A registry import (2026-10-14): processors or data sources, one row each, in
 #: the workbook the template gives. Only .xlsx, which is a zip of XML and is

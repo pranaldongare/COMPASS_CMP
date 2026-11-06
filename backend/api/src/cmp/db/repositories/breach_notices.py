@@ -1,4 +1,4 @@
-"""Notices to the people a breach touched, and the account of each (S3-03).
+"""Notices to the people a breach affected, and the account of each (S3-03).
 
 A notice is a version of five things Rule 7(1) requires; a delivery is one
 state of one attempt on one channel for one person. Deliveries are
@@ -94,7 +94,7 @@ async def latest_approved(conn: Conn, breach_id: int) -> Row | None:
 
 
 async def recipients(conn: Conn, breach_id: int) -> list[Row]:
-    """Everyone listed as touched, with whether each can be written to: the
+    """Everyone listed as affected, with whether each can be written to: the
     accounts, then the contacts with no account (0045). Exactly one of
     `person_id` and `contact_id` is set on each."""
     return await fetch_all(

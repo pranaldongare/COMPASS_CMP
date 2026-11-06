@@ -25,6 +25,7 @@ from cmp.db.repositories import entities as entity_repo
 from cmp.db.repositories import projects as project_repo
 from cmp.db.repositories import rights as rights_repo
 from cmp.db.repositories import users as user_repo
+from cmp.domain.breach import intake
 from cmp.domain.breach import service as breach_service
 from cmp.domain.breach import tickets as breach_tickets
 from cmp.schemas.common import Acknowledged, Out
@@ -102,6 +103,14 @@ _ATTENTION: dict[str, list[dict[str, Any]]] = {
             "severity": "critical",
             "href": "/breaches",
         },
+        # A report from the public link no office has taken up (0058). Nothing
+        # runs on it, and after the first email only this says it is waiting.
+        {
+            "count": "incident_reports_waiting",
+            "label": "Reported incidents waiting for an office",
+            "severity": "warning",
+            "href": "/breaches",
+        },
         {
             "count": "breach_duties_outstanding",
             "label": "Breach duties outstanding",
@@ -118,7 +127,7 @@ _ATTENTION: dict[str, list[dict[str, Any]]] = {
         },
         {
             "count": "breach_tickets_overdue",
-            "label": "Breach tickets past their answer-by",
+            "label": "Breach tickets past their resolve-by",
             "severity": "critical",
             "href": "/breaches",
         },
@@ -292,6 +301,7 @@ _ATTENTION["legal"] = [
         if row.get("count")
         in {
             "breach_duties_late",
+            "incident_reports_waiting",
             "breach_duties_outstanding",
             "breach_tickets_returned",
             "breach_tickets_overdue",
@@ -651,6 +661,7 @@ async def _dpo(conn: Any) -> dict[str, Any]:
             "breach_duties_late": sum(
                 1 for d in duties if d["clock"]["overdue"] or d["clock"]["past_target"]
             ),
+            "incident_reports_waiting": await intake.waiting_count(conn),
             **ticket_counts,
         },
         "breaches": breaches,
@@ -721,6 +732,7 @@ async def _legal(conn: Any) -> dict[str, Any]:
             "breach_duties_late": sum(
                 1 for d in duties if d["clock"]["overdue"] or d["clock"]["past_target"]
             ),
+            "incident_reports_waiting": await intake.waiting_count(conn),
             **await breach_tickets.dashboard_counts(conn),
         },
         "breaches": breaches,
@@ -913,7 +925,8 @@ async def notifications(
                 if principal.role is Role.DPO
                 else []
             )
-            # Breach tickets (S3-08): the same two halves.
+            # Breach tickets (S3-08): the same two halves, and each office's
+            # officer hears of their own office's, as the mail tells them.
             held = await audit_repo.breach_ticket_events_for_holder(
                 conn, principal.user_id, limit=limit
             )
@@ -921,7 +934,7 @@ async def notifications(
                 await audit_repo.breach_ticket_events_for_office(
                     conn, office=principal.office, limit=limit
                 )
-                if principal.role is Role.DPO
+                if principal.role in (Role.DPO, Role.LEGAL)
                 else []
             )
             seen: set[str] = set()

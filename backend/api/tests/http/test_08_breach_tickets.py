@@ -24,6 +24,7 @@ from tests.http.world import World, build
 B = "/breaches/{breach_uuid}"
 T = f"{B}/tickets/{{ticket_uuid}}"
 MINE = "/breach-tickets/{ticket_uuid}"
+WORD = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
 
 @pytest.fixture(scope="module")
@@ -158,6 +159,28 @@ class TestTheTicket:
             session=world.dco,
             check_sealed=False,
         )
+        # What the Attachments tab takes, a ticket takes: a Word document on a
+        # message, a saved mail on the return. What could run, neither.
+        await call(
+            http,
+            "POST",
+            f"/breach-tickets/{ticket}/messages",
+            template=f"{MINE}/messages",
+            session=world.dco,
+            data={"body": "The findings"},
+            files={"evidence": ("findings.docx", b"PK\x03\x04 a document", WORD)},
+        )
+        refused = await call(
+            http,
+            "POST",
+            f"/breach-tickets/{ticket}/messages",
+            template=f"{MINE}/messages",
+            session=world.dco,
+            data={"body": "A script"},
+            files={"evidence": ("run.sh", b"#!/bin/sh\n", "application/x-sh")},
+            expect=422,
+        )
+        assert refused.json()["error"]["field"] == "evidence"
         await call(
             http,
             "POST",
@@ -165,7 +188,7 @@ class TestTheTicket:
             template=f"{MINE}/return",
             session=world.dco,
             data={"summary": "Exported and kept", "outcome": "done"},
-            files={"evidence": ("log.txt", b"kept", "text/plain")},
+            files={"evidence": ("the-export.eml", b"From: x\r\n\r\nHi\r\n", "message/rfc822")},
         )
 
         # The office: list, read, write, download, send back.
@@ -194,6 +217,7 @@ class TestTheTicket:
             template=f"{T}/messages",
             session=world.dpo,
             data={"body": "Which retention applies?"},
+            files={"evidence": ("the-policy.docx", b"PK\x03\x04 a document", WORD)},
         )
         back = await call(
             http,
@@ -469,14 +493,6 @@ class TestBreachOnlyLogins:
             template=f"{B}/determinations",
             session=world.dpo,
             json={"outcome": "no", "reasoning": "Contained"},
-        )
-        await call(
-            http,
-            "POST",
-            f"/breaches/{uuid}/obligations/org_board/complete",
-            template=f"{B}/obligations/{{duty}}/complete",
-            session=world.dpo,
-            json={"occurred_at": _at(0.5), "reported_to": "The chair"},
         )
         await call(
             http,

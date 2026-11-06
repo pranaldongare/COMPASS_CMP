@@ -1,4 +1,4 @@
-"""Telling the people a breach touched (S3-03).
+"""Telling the people a breach affected (S3-03).
 
 Nothing is sent before approval, and approval needs all five contents. A send
 writes the notice to every listed person's account and queues her email and
@@ -51,7 +51,7 @@ def _sends(queued: list[tuple[str, tuple[Any, ...]]]) -> list[tuple[str, tuple[A
 
 
 async def _determined(conn: Any, seeded: dict[str, Any], people: list[str]) -> str:
-    """A breach determined yes, with these people listed as touched."""
+    """A breach determined yes, with these people listed as affected."""
     uuid = await _breach(conn, seeded)
     dpo = int(seeded["users"]["dpo"]["id"])
     await service.determine(
@@ -214,6 +214,22 @@ async def test_an_approved_notice_does_not_change(conn: Any, seeded: dict[str, A
     await notices.draft(conn, breach_uuid=uuid, words=WORDS, actor_id=dpo)
     with pytest.raises(Conflict, match="draft is already open"):
         await notices.draft(conn, breach_uuid=uuid, words=WORDS, actor_id=dpo)
+
+
+async def test_a_task_claims_the_person_and_the_channel_and_not_the_task(
+    conn: Any, seeded: dict[str, Any], queued: list[Any]
+) -> None:
+    a = await _person(conn, seeded, "a")
+    uuid = await _determined(conn, seeded, [a[1]])
+    dpo = int(seeded["users"]["dpo"]["id"])
+    await _approved(conn, seeded, uuid)
+    await notices.send(conn, breach_uuid=uuid, actor_id=dpo)
+    rows = {r["channel"]: str(r["delivery_uuid"]) for r in await _deliveries(conn, uuid)}
+    key = await notices.claim_key(conn, rows["sms"])
+    assert key is not None and key.startswith("mutex:breach_notice:") and key.endswith(":sms")
+    assert await notices.claim_key(conn, rows["sms"]) == key, "a second task claims the same"
+    await notices.record_result(conn, delivery_uuid=rows["sms"], status="delivered", detail={})
+    assert await notices.claim_key(conn, rows["sms"]) is None, "nothing is left to send"
 
 
 async def test_the_duty_completes_by_delivery_and_reopens_for_people_listed_later(

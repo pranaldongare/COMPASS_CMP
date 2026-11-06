@@ -1,4 +1,4 @@
-"""Who a breach touched, from a list somebody sends us (2026-10-07).
+"""Who a breach affected, from a list somebody sends us (2026-10-07).
 
 A breach whose people are not on the platform could never close: the notice
 is owed to everyone listed, and nobody could be listed. Two lists now arrive:
@@ -15,18 +15,23 @@ so the breach can close.
 
 from __future__ import annotations
 
+import io
+import threading
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
+from openpyxl import Workbook, load_workbook
 
 from cmp.core.errors import Conflict, ValidationFailed
+from cmp.db.repositories import breach_lists as lists_repo
 from cmp.db.sql import fetch_all, fetch_one
 from cmp.domain.breach import lists, notices, service
 from cmp.tasks import dispatch as dispatch_mod
 from tests.conftest import plain
 from tests.integration.test_breach_affected import _breach, _person
 from tests.integration.test_breach_notices import WORDS, _duty, _sends
+from tests.integration.test_rights_by_office import _as_office
 from tests.integration.test_rights_flows import _asset_with_her
 
 pytestmark = pytest.mark.integration
@@ -73,14 +78,202 @@ async def _take(conn: Any, seeded: dict[str, Any], uuid: str, kind: str, body: b
     )
 
 
-def test_the_templates_name_their_columns_and_say_how() -> None:
-    people = lists.template("contacts").splitlines()
-    assert people[0] == "name,email,mobile"
-    assert any(line.startswith("#") for line in people)
-    assets = lists.template("assets").splitlines()
-    assert assets[0] == "asset_id,source_code"
+def _headers(payload: bytes) -> list[Any]:
+    sheet = load_workbook(io.BytesIO(payload)).worksheets[0]
+    return [c.value for c in next(sheet.iter_rows(min_row=1, max_row=1))]
+
+
+def _workbook(*rows: tuple[Any, ...]) -> bytes:
+    book = Workbook()
+    for row in rows:
+        book.active.append(row)
+    out = io.BytesIO()
+    book.save(out)
+    return out.getvalue()
+
+
+def test_the_templates_are_excel_files_that_name_their_columns() -> None:
+    assert _headers(lists.template("contacts")) == ["Name", "Mail ID", "Mobile number"]
+    assert _headers(lists.template("assets")) == ["Asset ID *", "Source code"]
     with pytest.raises(ValidationFailed):
         lists.template("everyone")
+
+
+async def test_an_excel_list_is_read_like_a_csv(conn: Any, seeded: dict[str, Any]) -> None:
+    uuid = await _recorded(conn, seeded)
+    body = _workbook(
+        ("Name", "Mail IDs", "Mobile Number"),
+        ("Asha Rao", "asha.xlsx@example.org", "+91 98765 11111"),
+        ("Vikram", None, 919876522222),
+        ("Nobody", None, None),
+        ("Broken", "not-an-address", None),
+    )
+    assert lists.read("contacts", body).rows[0] == (
+        2,
+        {"name": "Asha Rao", "email": "asha.xlsx@example.org", "mobile": "+91 98765 11111"},
+    )
+    report = await lists.check(conn, breach_uuid=uuid, kind="contacts", payload=body)
+    assert report["new_contacts"] == 2 and report["unreadable"] == 2
+    assert [e["row"] for e in report["errors"]] == [4, 5], "by the row Excel shows"
+    assert report["errors"][1]["message"] == "Not an email address: not-an-address"
+    taken = await _take(conn, seeded, uuid, "contacts", body)
+    assert taken["new_contacts"] == 2
+
+
+@pytest.mark.parametrize(
+    ("mail", "mobile"),
+    [
+        ("Mail IDs", "Mobile number"),
+        ("Mail ID", "Mobile numbers"),
+        ("Email IDs", "Mobile No."),
+        ("E-mail", "Phone number"),
+        ("email_id", "mobile_no"),
+    ],
+)
+def test_the_columns_people_write_are_read_from_either_kind_of_file(mail: str, mobile: str) -> None:
+    expected = {"name": "Asha", "email": "asha@example.org", "mobile": "+919876511111"}
+    excel = _workbook(("Name", mail, mobile), ("Asha", "asha@example.org", "+919876511111"))
+    assert lists.read("contacts", excel).rows == [(2, expected)]
+    csv = _csv(f"Name,{mail},{mobile}", "Asha,asha@example.org,+919876511111")
+    assert lists.read("contacts", csv).rows == [(2, expected)]
+
+
+@pytest.mark.parametrize(
+    "heading", ["Alternate mail", "Email 2", "Secondary Mobile", "Telephone", "Mail ID"]
+)
+def test_a_contact_column_that_cannot_be_read_stops_the_file_by_name(heading: str) -> None:
+    """Quietly left out, it is somebody who is never told. 'Mail ID' here is the
+    column named a second time."""
+    excel = _workbook(("Email", heading), ("asha@example.org", "x"))
+    csv = _csv(f"Email,{heading}", "asha@example.org,x")
+    for body in (excel, csv):
+        with pytest.raises(ValidationFailed) as refused:
+            lists.read("contacts", body)
+        assert heading in refused.value.message and refused.value.field == "file"
+
+
+def test_a_file_with_neither_contact_column_names_what_it_has() -> None:
+    excel = _workbook(("Name", "Contact"), ("Asha", "asha@example.org"))
+    csv = _csv("Name,Contact", "Asha,asha@example.org")
+    for body in (excel, csv):
+        with pytest.raises(ValidationFailed) as refused:
+            lists.read("contacts", body)
+        assert "'Contact'" in refused.value.message
+        assert "Start from the template" in refused.value.message
+
+
+def test_a_heading_that_only_sounds_like_a_contact_is_left_alone() -> None:
+    body = _workbook(("Mailing address", "Email"), ("12 Hill Road", "asha@example.org"))
+    assert lists.read("contacts", body).rows == [(2, {"email": "asha@example.org"})]
+
+
+def test_a_mobile_excel_made_a_number_gets_its_plus_back() -> None:
+    body = _workbook(
+        ("Email", "Mobile number"),
+        (None, 919876522222),  # as Excel keeps a typed +919876522222
+        (None, 919876522222.0),
+        (None, 9876522222),  # ten digits: no country code to be sure of
+    )
+    assert [r["mobile"] for _, r in lists.read("contacts", body).rows] == [
+        "+919876522222",
+        "+919876522222",
+        "9876522222",
+    ]
+
+
+async def test_a_number_cell_finds_the_account_it_belongs_to(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    uuid = await _recorded(conn, seeded)
+    a = await _person(conn, seeded, "by number")
+    row = await fetch_one(conn, "SELECT mobile FROM auth_user WHERE id = %s", (a[0],))
+    assert row is not None
+    body = _workbook(("Mobile number",), (int(str(plain(row["mobile"])).lstrip("+")),))
+    report = await lists.check(conn, breach_uuid=uuid, kind="contacts", payload=body)
+    assert (report["matched_people"], report["new_contacts"]) == (1, 0)
+
+
+def test_the_template_s_mobile_column_is_text() -> None:
+    sheet = load_workbook(io.BytesIO(lists.template("contacts"))).worksheets[0]
+    assert sheet.column_dimensions["C"].number_format == "@"
+
+
+async def test_a_list_is_read_off_the_event_loop(
+    conn: Any, seeded: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    uuid = await _recorded(conn, seeded)
+    read = lists.read
+    ran_on: list[threading.Thread] = []
+
+    def watched(kind: str, payload: bytes) -> lists.Reading:
+        ran_on.append(threading.current_thread())
+        return read(kind, payload)
+
+    monkeypatch.setattr(lists, "read", watched)
+    await lists.check(conn, breach_uuid=uuid, kind="contacts", payload=_csv("email", "a@b.org"))
+    assert ran_on and ran_on[0] is not threading.current_thread()
+
+
+def test_a_csv_is_read_as_one_text_and_rows_keep_their_lines() -> None:
+    """A quoted field may hold a newline. A comment and a blank line are not
+    rows, and the row number is the line the record starts on."""
+    body = b'# from the vendor\nemail,name\n\n"a\nb@c.org",Asha\nd@e.org,Ravi\n'
+    assert lists.read("contacts", body).rows == [
+        (4, {"email": "a\nb@c.org", "name": "Asha"}),
+        (6, {"email": "d@e.org", "name": "Ravi"}),
+    ]
+
+
+def test_a_csv_the_reader_refuses_is_a_plain_refusal() -> None:
+    with pytest.raises(ValidationFailed) as refused:
+        lists.read("contacts", b"email\n" + b"a" * 140_000 + b"\n")
+    assert refused.value.field == "file"
+
+
+async def test_an_asset_of_the_other_office_is_not_found_by_a_list(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    a = await _person(conn, seeded, "wall")
+    await _asset_with_her(conn, seeded, a[2], bystanders=1, ref="WALL1")
+    asset = await fetch_one(
+        conn, "SELECT asset_id, asset_uuid FROM data_asset WHERE source_asset_ref = 'ASSET-WALL1'"
+    )
+    assert asset is not None
+    asset_id, asset_uuid = int(asset["asset_id"]), str(asset["asset_uuid"])
+
+    await _as_office(conn, "hr")
+    assert await lists_repo.assets_by_uuid(conn, [asset_uuid]) == []
+    assert await lists_repo.assets_by_ref(conn, ["ASSET-WALL1"]) == []
+    assert await lists_repo.people_in_assets(conn, [asset_id]) == ([], 0)
+
+    await _as_office(conn, "rnd")
+    assert len(await lists_repo.assets_by_uuid(conn, [asset_uuid])) == 1
+    assert len(await lists_repo.assets_by_ref(conn, ["ASSET-WALL1"])) == 1
+    people, untraceable = await lists_repo.people_in_assets(conn, [asset_id])
+    assert [p["person_id"] for p in people] == [a[0]] and untraceable == 1
+
+
+async def test_the_template_as_downloaded_can_be_filled_in_and_sent(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    uuid = await _recorded(conn, seeded)
+    book = load_workbook(io.BytesIO(lists.template("contacts")))
+    book.worksheets[0].append(("Meena", "meena.template@example.org", None))
+    out = io.BytesIO()
+    book.save(out)
+    report = await lists.check(conn, breach_uuid=uuid, kind="contacts", payload=out.getvalue())
+    assert report["new_contacts"] == 1
+
+
+async def test_an_excel_sheet_without_a_contact_column_says_so(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    uuid = await _recorded(conn, seeded)
+    with pytest.raises(ValidationFailed) as refused:
+        await lists.check(
+            conn, breach_uuid=uuid, kind="contacts", payload=_workbook(("Name",), ("Asha",))
+        )
+    assert "Start from the template" in refused.value.message
 
 
 async def test_a_people_list_matches_accounts_and_keeps_the_rest_as_contacts(
@@ -201,13 +394,18 @@ async def test_a_reference_two_sources_share_needs_the_source_code(
     assert named["matched_people"] == 1 and not named["errors"]
 
 
-async def test_a_file_that_is_not_a_csv_says_how_to_make_one(
+async def test_a_file_that_cannot_be_read_says_what_to_do(
     conn: Any, seeded: dict[str, Any]
 ) -> None:
     uuid = await _recorded(conn, seeded)
-    with pytest.raises(ValidationFailed) as excel:
+    with pytest.raises(ValidationFailed) as old:
+        await lists.check(
+            conn, breach_uuid=uuid, kind="contacts", payload=b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
+        )
+    assert "Save it as .xlsx" in old.value.message
+    with pytest.raises(ValidationFailed) as broken:
         await lists.check(conn, breach_uuid=uuid, kind="contacts", payload=b"PK\x03\x04rest")
-    assert "Save it as CSV" in excel.value.message
+    assert "xlsx" in broken.value.message
     with pytest.raises(ValidationFailed) as headless:
         await lists.check(conn, breach_uuid=uuid, kind="contacts", payload=_csv("a,b", "1,2"))
     assert "Start from the template" in headless.value.message

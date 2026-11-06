@@ -82,6 +82,7 @@ celery_app.conf.update(
         "cmp.notifications.send_password_reset": {"queue": "high_priority"},
         "cmp.notifications.send_contact_confirmation": {"queue": "high_priority"},
         "cmp.notifications.send_rights_verification_code": {"queue": "high_priority"},
+        "cmp.notifications.send_incident_report_code": {"queue": "high_priority"},
         "cmp.notifications.send_registration_code": {"queue": "high_priority"},
         "cmp.notifications.send_nomination_code": {"queue": "high_priority"},
         "cmp.notifications.send_holder_ticket_code": {"queue": "high_priority"},

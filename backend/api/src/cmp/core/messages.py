@@ -95,6 +95,15 @@ class Message(StrEnum):
     RIGHTS_GRIEVANCE_ABOUT_DPO = "rights_grievance_about_dpo"
     BREACH_DUTY_DUE = "breach_duty_due"
     BREACH_TICKET_RETURNED = "breach_ticket_returned"
+    BREACH_TICKET_DATE_CHANGED = "breach_ticket_date_changed"
+    #: The public link (0058): the reporter's code, their acknowledgement, and
+    #: the office's word that a report has arrived.
+    INCIDENT_REPORT_CODE = "incident_report_code"
+    INCIDENT_REPORT_RECEIVED = "incident_report_received"
+    INCIDENT_REPORTED = "incident_reported"
+    #: A report on a breach, mailed to the organisation's board (0059).
+    BREACH_BOARD_REPORT = "breach_board_report"
+    BREACH_REPORT_FINALISED = "breach_report_finalised"
     STAFF_ROLE_CHANGED = "staff_role_changed"
     STAFF_ACCESS_ENDED = "staff_access_ended"
     DELEGATION_ARRANGED = "delegation_arranged"
@@ -1081,13 +1090,16 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "What happened, what it means and what you can do are in your account: "
             "{portal_url} Questions: {contact}"
         ),
-        to="Each person a breach touched who has an account, at their registered email and mobile.",
+        to=(
+            "Each person a breach affected who has an account, at their registered email "
+            "and mobile."
+        ),
     ),
     Junction(
         key=Message.BREACH_NOTICE_DIRECT,
         title="Personal data breach notice, to someone with no account",
         description=(
-            "Rule 7(1), to a person the breach touched who has no account here - named in a "
+            "Rule 7(1), to a person the breach affected who has no account here - named in a "
             "list sent to the Privacy Office (2026-10-07). The same five as the notice, in "
             "full, with no account to point to: by email, and by SMS."
         ),
@@ -1137,7 +1149,7 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "{what_happened} What you can do: {protective_steps} Questions: {contact}"
         ),
         to=(
-            "Each person a breach touched who has no account, at the email and mobile in the "
+            "Each person a breach affected who has no account, at the email and mobile in the "
             "list sent to the office."
         ),
     ),
@@ -1555,6 +1567,163 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
         ),
     ),
     Junction(
+        key=Message.BREACH_TICKET_DATE_CHANGED,
+        title="A ticket's resolve-by date has changed",
+        description=(
+            "Sent to the other side when the holder of a breach ticket, or the Privacy Office, "
+            "changes the date it is to be resolved by. It names no breach and no date: both, "
+            "and the reason, are on the ticket."
+        ),
+        group="Breach",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable(
+                "console_url",
+                "The ticket's place in the console (CONSOLE_BASE_URL).",
+                "https://console.example.org/tickets",
+            ),
+            ORGANISATION,
+        ),
+        email_subject="A ticket's resolve-by date has changed",
+        email_body=(
+            "The date a ticket is to be resolved by has changed. The new date and the reason "
+            "are on the ticket, in the console:\n\n{console_url}" + _SIGN_OFF_EMAIL
+        ),
+        sms_body=None,
+        to=(
+            "Whoever did not change it: the member of staff holding the ticket, or every "
+            "active officer of the breach's office."
+        ),
+    ),
+    Junction(
+        key=Message.BREACH_BOARD_REPORT,
+        title="A report to the organisation's board",
+        description=(
+            "Sent when the Privacy Office notifies the organisation's board of a personal data "
+            "breach. It carries the report the office drafted, in the email and as a PDF."
+        ),
+        group="Breach",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("breach_reference", "The breach's reference.", "BR-2026-0003"),
+            Variable("report_title", "What the report is.", "Report to the organisation's board"),
+            Variable("report_text", "The report, as the office wrote it.", "What happened: ..."),
+            ORGANISATION,
+        ),
+        email_subject="{organisation}: {breach_reference} - {report_title}",
+        email_body=(
+            "{report_title} on {breach_reference}, from the {organisation} Privacy Office. "
+            "It is attached as a PDF.\n\n{report_text}" + _SIGN_OFF_EMAIL
+        ),
+        sms_body=None,
+        to="Every address on the organisation's board list, under Breach settings.",
+        attachment="The report as a PDF.",
+    ),
+    Junction(
+        key=Message.BREACH_REPORT_FINALISED,
+        title="A report for the regulator is ready",
+        description=(
+            "Sent to the organisation's board when the Privacy Office finalises a report for "
+            "the DPDP Board or CERT-In, or a closure report. It tells the organisation's board "
+            "only: this message does not go to any regulator."
+        ),
+        group="Breach",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("breach_reference", "The breach's reference.", "BR-2026-0003"),
+            Variable("report_title", "What the report is.", "72-hour report to the DPDP Board"),
+            Variable("report_text", "The report, as the office wrote it.", "What happened: ..."),
+            ORGANISATION,
+        ),
+        email_subject="{organisation}: {breach_reference} - {report_title} finalised",
+        email_body=(
+            "The {organisation} Privacy Office has finalised the {report_title} on "
+            "{breach_reference}. It is attached as a PDF.\n\n"
+            "This is for your information. It has not been sent to the regulator: the Privacy "
+            "Office does that once it has been approved.\n\n{report_text}" + _SIGN_OFF_EMAIL
+        ),
+        sms_body=None,
+        to="Every address on the organisation's board list, under Breach settings.",
+        attachment="The report as a PDF.",
+    ),
+    Junction(
+        key=Message.INCIDENT_REPORT_CODE,
+        title="Your code to report an incident",
+        description=(
+            "Sent to somebody reporting an incident through the public link, to prove the "
+            "address they gave before the report is taken."
+        ),
+        group="Breach",
+        channels=EMAIL_ONLY,
+        variables=(CODE, MINUTES, ORGANISATION),
+        email_subject="Your {organisation} code to report an incident",
+        email_body=(
+            "Enter this code to send your report to the {organisation} Privacy Office:\n\n"
+            "    {code}\n\n"
+            "It expires in {minutes} minutes." + _SIGN_OFF_EMAIL
+        ),
+        sms_body=None,
+        to="Whoever is reporting an incident, at the email address they typed.",
+    ),
+    Junction(
+        key=Message.INCIDENT_REPORT_RECEIVED,
+        title="We have your incident report",
+        description=(
+            "Sent to somebody who reported an incident through the public link, with the "
+            "reference it was given."
+        ),
+        group="Breach",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("full_name", "The person who reported it.", "Asha Rao"),
+            Variable("incident_reference", "The reference it was given.", "INC-2026-0042"),
+            ORGANISATION,
+        ),
+        email_subject="{organisation}: we have your report {incident_reference}",
+        email_body=(
+            "{full_name}, thank you. The {organisation} Privacy Office has your report, and "
+            "its reference is {incident_reference}.\n\n"
+            "Please quote it if you write to us about this. We may write to you at this "
+            "address if we need to know more." + _SIGN_OFF_EMAIL
+        ),
+        sms_body=None,
+        to="Whoever reported the incident, at the email address they proved.",
+    ),
+    Junction(
+        key=Message.INCIDENT_REPORTED,
+        title="An incident has been reported",
+        description=(
+            "Sent when somebody reports an incident through the public link. It says that one "
+            "has arrived, and nothing of what it says: the report is read in the console."
+        ),
+        group="Breach",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("incident_reference", "The reference it was given.", "INC-2026-0042"),
+            Variable("received_at", "When it arrived, in UTC.", "6 November 2026, 09:14 UTC"),
+            Variable(
+                "breaches_url",
+                "The list of incidents in the console.",
+                "https://console.example.org/breaches",
+            ),
+            ORGANISATION,
+        ),
+        email_subject="Incident reported: {incident_reference}",
+        email_body=(
+            "An incident was reported through the public link at {received_at}. Its reference "
+            "is {incident_reference}.\n\n"
+            "No clock has started. An officer of the DPO or Legal office reads it, and claims "
+            "it for their office or dismisses it.\n\n"
+            "For those officers, the list of incidents:\n"
+            "{breaches_url}" + _SIGN_OFF_EMAIL
+        ),
+        sms_body=None,
+        to=(
+            "Every active account in the roles named under Breach settings - by default the "
+            "Data Protection Officer and the Legal PoC - at their primary email."
+        ),
+    ),
+    Junction(
         key=Message.STAFF_ROLE_CHANGED,
         title="Your role has changed",
         description="Sent to a member of staff when an administrator changes their role.",
@@ -1648,6 +1817,8 @@ COPYABLE: Final[frozenset[Message]] = frozenset(
         Message.RIGHTS_GRIEVANCE_ABOUT_DPO,
         Message.BREACH_DUTY_DUE,
         Message.BREACH_TICKET_RETURNED,
+        Message.BREACH_TICKET_DATE_CHANGED,
+        Message.INCIDENT_REPORTED,
         Message.STAFF_ROLE_CHANGED,
         Message.STAFF_ACCESS_ENDED,
         Message.DELEGATION_ARRANGED,
@@ -1657,11 +1828,14 @@ COPYABLE: Final[frozenset[Message]] = frozenset(
 
 #: Messages that may carry files by email (2026-10-08), and only ever files
 #: the recipient already owns: her own consent record, or a file the office
-#: put on a ticket's thread for that ticket's holder.
+#: put on a ticket's thread for that ticket's holder, or the report written
+#: for the organisation's board.
 ATTACHABLE: Final[frozenset[Message]] = frozenset(
     {
         Message.CONSENT_RECEIPT,
         Message.TICKET_MESSAGE,
+        Message.BREACH_BOARD_REPORT,
+        Message.BREACH_REPORT_FINALISED,
     }
 )
 

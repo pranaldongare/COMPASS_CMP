@@ -3,8 +3,8 @@
 An incident is logged with an `INC-` reference; the first determination of
 *yes* records it as a breach with a `BR-` one, and two sent at once issue one.
 Nothing is sent to anyone before that. The DPO walks every route: log,
-validate, assess, mark CERT-In, record a submission, extend the report, close
-refused and allowed. Every other role is answered 404 - on the register, on a
+validate, assess, mark CERT-In, file a report, extend the report, close refused
+and allowed. Every other role is answered 404 - on the register, on a
 breach that exists, and on a write - so a caller cannot tell a breach from a
 uuid that was never one. Two determinations sent at once create each duty once.
 
@@ -22,6 +22,10 @@ from typing import Any
 import httpx
 import pytest
 
+from cmp.core.context import RequestContext, use_context
+from cmp.db.pool import transaction
+from cmp.domain.breach import reports
+from cmp.infrastructure.storage.service import storage
 from tests.conftest import plain
 from tests.http.conftest import SessionFactory
 from tests.http.contract import call
@@ -57,6 +61,74 @@ def _sealed(body: dict[str, Any]) -> None:
             assert event["note"] is None or str(event["note"]).startswith("SE::")
 
 
+async def file_report(
+    http: httpx.AsyncClient, world: World, path: str, kind: str, reference: str
+) -> dict[str, Any]:
+    """Draft, finalise, both proofs, filed: the only way a regulator's duty
+    completes. Returns the report as it ends."""
+    await on_the_board(http, world)
+    drafted = await call(
+        http,
+        "POST",
+        f"{path}/reports",
+        template=f"{B}/reports",
+        session=world.dpo,
+        json={"kind": kind},
+        expect=201,
+    )
+    [view] = [k for k in drafted.json()["kinds"] if k["kind"] == kind]
+    doc = view["versions"][0]
+    report = f"{path}/reports/{doc['report_uuid']}"
+    await call(
+        http,
+        "PUT",
+        report,
+        template=f"{B}/reports/{{report_uuid}}",
+        session=world.dpo,
+        json={"sections": {s["key"]: "As the office wrote it" for s in doc["sections"]}},
+    )
+    await call(
+        http,
+        "POST",
+        f"{report}/finalise",
+        template=f"{B}/reports/{{report_uuid}}/finalise",
+        session=world.dpo,
+    )
+    for proof in ("approval", "sent_mail"):
+        await call(
+            http,
+            "POST",
+            f"{report}/evidence",
+            template=f"{B}/reports/{{report_uuid}}/evidence",
+            session=world.dpo,
+            data={"kind": proof},
+            files={"file": (f"{proof}.pdf", b"%PDF-1.7 proof", "application/pdf")},
+            expect=201,
+        )
+    filed = await call(
+        http,
+        "POST",
+        f"{report}/file",
+        template=f"{B}/reports/{{report_uuid}}/file",
+        session=world.dpo,
+        json={"filed_at": datetime.now(UTC).isoformat(), "reference": reference},
+    )
+    [view] = [k for k in filed.json()["kinds"] if k["kind"] == kind]
+    return view["versions"][0]
+
+
+async def on_the_board(http: httpx.AsyncClient, world: World) -> None:
+    """An address on the organisation's board list: finalising needs one."""
+    await call(
+        http,
+        "POST",
+        "/breach-settings/board-recipients",
+        session=world.dpo,
+        json={"email": "board.chair@http-suite.test"},
+        expect=(200, 409),
+    )
+
+
 async def _record(http: httpx.AsyncClient, world: World, **extra: Any) -> dict[str, Any]:
     made = await call(
         http,
@@ -90,8 +162,8 @@ class TestTheRegister:
         assert breach["breach_reference"] is None
         assert breach["reference"] == breach["incident_reference"]
 
-        # Every incident owes the organisation's board from the moment it is logged.
-        assert [d["duty"] for d in breach["obligations"]] == ["org_board"]
+        # It owes the organisation's board nothing until it is validated.
+        assert breach["obligations"] == []
         marked = await call(
             http, "POST", f"{path}/cert-in", template=f"{B}/cert-in", session=world.dpo
         )
@@ -135,15 +207,13 @@ class TestTheRegister:
         )
 
         for duty in ("cert_in", "board_intimation"):
-            done = await call(
-                http,
-                "POST",
-                f"{path}/obligations/{duty}/complete",
-                template=f"{B}/obligations/{{duty}}/complete",
-                session=world.dpo,
-                json={"occurred_at": _at(1), "reference": f"REF-{duty}", "note": "Filed by hand"},
-            )
-            _sealed(done.json())
+            filed = await file_report(http, world, path, duty, f"REF-{duty}")
+            assert filed["state"] == "filed" and filed["filed_reference"] == f"REF-{duty}"
+            assert all(str(s["body"]).startswith("SE::") for s in filed["sections"])
+        one = await call(http, "GET", path, template=B, session=world.dpo)
+        _sealed(one.json())
+        done = {d["duty"]: d["state"] for d in one.json()["obligations"]}
+        assert done["cert_in"] == "done" and done["board_intimation"] == "done"
         extended = await call(
             http,
             "POST",
@@ -169,14 +239,14 @@ class TestTheRegister:
             json={"to": "closed"},
             expect=409,
         )
-        # An unknown duty is a 422 naming the choices, never a 500.
+        # An unknown kind of report is a 422 naming the choices, never a 500.
         await call(
             http,
             "POST",
-            f"{path}/obligations/nonsense/complete",
-            template=f"{B}/obligations/{{duty}}/complete",
+            f"{path}/reports",
+            template=f"{B}/reports",
             session=world.dpo,
-            json={"occurred_at": _at(1), "reference": "x"},
+            json={"kind": "nonsense"},
             expect=422,
         )
 
@@ -200,14 +270,6 @@ class TestTheRegister:
             session=world.dpo,
             json={"outcome": "no", "reasoning": "Test data only"},
         )
-        await call(
-            http,
-            "POST",
-            f"{path}/obligations/org_board/complete",
-            template=f"{B}/obligations/{{duty}}/complete",
-            session=world.dpo,
-            json={"occurred_at": _at(0.5), "reported_to": "The board's secretary"},
-        )
         closed = await call(
             http,
             "POST",
@@ -221,15 +283,14 @@ class TestTheRegister:
 
 
 class TestTheOrganisationsBoard:
-    async def test_draft_the_brief_then_record_the_report(
-        self, http: httpx.AsyncClient, world: World
+    async def test_notified_by_mail_once_it_is_validated(
+        self, http: httpx.AsyncClient, world: World, queued: Any
     ) -> None:
         breach = await _record(
             http, world, location_kind="platform", processor_uuid=None, detected_at=_at(0.25)
         )
         path = f"/breaches/{breach['breach_uuid']}"
-        [duty] = breach["obligations"]
-        assert duty["duty"] == "org_board" and 0 < duty["clock"]["seconds_remaining"] <= 15 * 60
+        assert breach["obligations"] == [], "it owes the board nothing until a yes"
 
         brief = await call(
             http,
@@ -240,44 +301,122 @@ class TestTheOrganisationsBoard:
         )
         body = brief.json()
         assert body["reference"] == breach["incident_reference"]
-        assert body["validation"] == "pending" and body["touched"]["listed"] == 0
+        assert body["validation"] == "pending" and body["affected"]["listed"] == 0
         assert str(body["title"]).startswith("SE::"), "sealed; the console opens it"
         assert "reported_to" not in brief.text and "_by_name" not in brief.text
 
-        # Whom is required here, and a reference is not.
         await call(
             http,
             "POST",
-            f"{path}/obligations/org_board/complete",
-            template=f"{B}/obligations/{{duty}}/complete",
+            f"{path}/reports",
+            template=f"{B}/reports",
             session=world.dpo,
-            json={"occurred_at": _at(0.1)},
-            expect=422,
+            json={"kind": "org_board"},
+            expect=409,
         )
-        done = await call(
+        validated = await call(
             http,
             "POST",
-            f"{path}/obligations/org_board/complete",
-            template=f"{B}/obligations/{{duty}}/complete",
+            f"{path}/determinations",
+            template=f"{B}/determinations",
             session=world.dpo,
-            json={"occurred_at": _at(0.1), "reported_to": "The chair, by phone"},
+            json={"outcome": "yes", "reasoning": "It is", "became_aware_at": _at(0.1)},
         )
-        [told] = done.json()["obligations"]
+        [duty] = [d for d in validated.json()["obligations"] if d["duty"] == "org_board"]
+        assert 29 * 60 < duty["clock"]["seconds_remaining"] <= 30 * 60
+
+        await on_the_board(http, world)
+        drafted = await call(
+            http,
+            "POST",
+            f"{path}/reports",
+            template=f"{B}/reports",
+            session=world.dpo,
+            json={"kind": "org_board"},
+            expect=201,
+        )
+        [view] = [k for k in drafted.json()["kinds"] if k["kind"] == "org_board"]
+        doc = view["versions"][0]
+        report = f"{path}/reports/{doc['report_uuid']}"
+        assert str(doc["sections"][0]["body"]).startswith("SE::")
+        # A proof refused leaves no file behind: the checks come first.
+        kept = storage().root / "breach"
+        before = set(kept.glob("*"))
+        await call(
+            http,
+            "POST",
+            f"{report}/evidence",
+            template=f"{B}/reports/{{report_uuid}}/evidence",
+            session=world.dpo,
+            data={"kind": "approval"},
+            files={"file": ("approval.pdf", b"%PDF-1.7 proof", "application/pdf")},
+            expect=409,
+        )
+        assert set(kept.glob("*")) == before
+        await call(
+            http,
+            "POST",
+            f"{report}/finalise",
+            template=f"{B}/reports/{{report_uuid}}/finalise",
+            session=world.dpo,
+        )
+        deliveries = [q[1][0] for q in queued if q[0].endswith("send_breach_report")]
+        assert deliveries
+        # Sending again touches only an address the report has not reached;
+        # these are queued and not yet stale, so it queues nothing new.
+        before = len(queued)
+        resent = await call(
+            http,
+            "POST",
+            f"{report}/resend",
+            template=f"{B}/reports/{{report_uuid}}/resend",
+            session=world.dpo,
+        )
+        assert len(queued) == before
+        assert resent.json()["queued"] == 0
+        pdf = await call(
+            http,
+            "GET",
+            f"{report}/pdf",
+            template=f"{B}/reports/{{report_uuid}}/pdf",
+            session=world.dpo,
+        )
+        assert pdf.content.startswith(b"%PDF")
+        # Queued is not told: the duty waits for the worker's outcomes.
+        one = await call(http, "GET", path, template=B, session=world.dpo)
+        [told] = [d for d in one.json()["obligations"] if d["duty"] == "org_board"]
+        assert told["state"] == "outstanding" and told["reported_to"] is None
+        with use_context(RequestContext(request_id="task:breach_report:test")):
+            async with transaction() as conn:
+                for delivery in deliveries:
+                    await reports.record_result(
+                        conn, delivery_uuid=str(delivery), status="delivered", detail={}
+                    )
+                    await reports.settle(conn, delivery_uuid=str(delivery))
+        read = await call(
+            http, "GET", f"{path}/reports", template=f"{B}/reports", session=world.dpo
+        )
+        [view] = [k for k in read.json()["kinds"] if k["kind"] == "org_board"]
+        [address] = view["versions"][0]["mail"]["recipients"]
+        assert address["status"] == "delivered" and address["removed"] is False
+        assert str(address["email"]).startswith("SE::"), "sealed; the console opens it"
+        one = await call(http, "GET", path, template=B, session=world.dpo)
+        [told] = [d for d in one.json()["obligations"] if d["duty"] == "org_board"]
         assert told["state"] == "done" and told["reference"] is None
         assert str(told["reported_to"]).startswith("SE::")
-        assert plain(told["reported_to"]) == "The chair, by phone"
+        assert "board.chair@http-suite.test" in plain(told["reported_to"])
         for who in (world.dco, world.admin):
             await call(
                 http,
                 "GET",
-                f"{path}/org-board/brief",
-                template=f"{B}/org-board/brief",
+                f"{path}/reports",
+                template=f"{B}/reports",
                 session=who,
                 expect=404,
             )
 
 
-class TestWhoItTouched:
+class TestThePeopleAffected:
     async def test_derive_preview_confirm_and_list(
         self, http: httpx.AsyncClient, world: World
     ) -> None:
@@ -314,7 +453,23 @@ class TestWhoItTouched:
             http, "GET", f"{path}/affected", template=f"{B}/affected", session=world.dpo
         )
         assert listed.json()["total"] == body["total"]
-        assert "consent_artefact" in listed.json()["platform_tables"]
+        options = await call(
+            http,
+            "GET",
+            f"{path}/affected/options",
+            template=f"{B}/affected/options",
+            session=world.dpo,
+        )
+        assert world.project_uuid in {p["project_uuid"] for p in options.json()["projects"]}
+        by_project = await call(
+            http,
+            "POST",
+            f"{path}/affected/preview",
+            template=f"{B}/affected/preview",
+            session=world.dpo,
+            json={"scopes": [{"kind": "project", "project_uuid": world.project_uuid}]},
+        )
+        assert by_project.json()["derived"] >= 1
         await call(
             http,
             "POST",

@@ -71,6 +71,9 @@ CHILDREN = {
     "breach_obligation",
     "breach_obligation_event",
     "breach_recording",
+    "breach_report",
+    "breach_report_delivery",
+    "breach_report_section",
     "breach_status_history",
     "breach_ticket",
     "breach_ticket_event",
@@ -90,6 +93,9 @@ NOT_POLICED = {
     "auth_user": "registered_via_link_id names the link a sign-up came from; the account is hers",
     # A breach-only login is the account's, ended by the administrator.
     "breach_temporary_access": "the grant of a login, read by the account and the administrator",
+    # A report from the public link is nobody's office's until one claims it
+    # (0058): both officers read the intake, and `breach_id` is what it became.
+    "incident_report": "breach_id; it belongs to no office until claimed",
     # The registry is shared (offices-and-tenancy.md): a source belongs to a
     # processor; `site_id` is the site it was first registered for.
     "data_source": "site_id; the registry of sources is shared by both offices",

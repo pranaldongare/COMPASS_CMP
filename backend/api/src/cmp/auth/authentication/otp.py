@@ -58,6 +58,10 @@ class Scope:
     #: the account will be created with (ADR 0034, F-7). Keyed on the pending
     #: sign-in and the number: "<pending>:<mobile>".
     SSO_MOBILE = "sso_mobile"
+    #: Somebody reporting an incident through the public link, proving the
+    #: address they typed (0058). Keyed on the address's `contact_key`, so
+    #: Redis holds no address of somebody who may be blowing a whistle.
+    INCIDENT_REPORT = "incident_report"
     #: Development only: the stand-in provider's sign-in, proving the address
     #: typed on its page (`SSO_MOCK`). Keyed "<state>:<email>".
     SSO_MOCK = "sso_mock"

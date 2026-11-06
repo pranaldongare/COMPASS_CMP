@@ -1,4 +1,4 @@
-"""The Board's two documents, drafted from the register (S3-04).
+"""The Board's two documents, as the register stands (S3-04).
 
 Rule 7(2) asks the fiduciary to intimate the Board twice: **without delay**,
 with the nature, extent, timing, location and likely impact (7(2)(a)); and
@@ -8,11 +8,11 @@ register holds, at any point, as many times as the DPO likes - a draft read on
 the first morning and the same draft read on the third say what was known each
 time.
 
-**The platform never submits.** These are documents a person reads, checks and
-files through the Board's own channel; the submission is then recorded on the
-duty with the reference the Board returned (`service.complete_duty`). Nothing
-in `cmp.domain.breach` opens a connection to anywhere but this database and the
-key service, and a test reads the source to keep it so.
+**The platform never submits.** What a person sends is the report the office
+writes (`cmp.domain.breach.reports`), filed with its proof and the reference the
+Board returned. Nothing in `cmp.domain.breach` opens a connection to anywhere
+but this database and the key service, and a test reads the source to keep it
+so.
 
 **Nothing is left out quietly.** A fact the register does not yet hold is
 named in `missing`, and item (vi) says in words when no notice has been sent,
@@ -27,7 +27,7 @@ from typing import Any
 from cmp.db.repositories import breaches as breach_repo
 from cmp.db.sql import Conn
 from cmp.domain.breach import clock, notices, service
-from cmp.domain.breach.clock import Duty
+from cmp.domain.breach.clock import Duty, State
 
 Row = dict[str, Any]
 
@@ -151,9 +151,9 @@ async def org_board_brief(conn: Conn, *, breach_uuid: str) -> Row:
     """For the organisation's board (S3-07): what the register holds now.
 
     Drafted at any point, as often as wanted, from the incident's first minutes
-    on. It never carries the finding on who caused it, a name or a contact:
-    who it touched is counts. The platform drafts it and never sends it; a
-    person reports, and the DPO records when and to whom on the duty.
+    on. It never carries the finding on who caused it, a name or a contact: the
+    people affected are counts. What is mailed to the board is the report the
+    office writes (`cmp.domain.breach.reports`); this is the register's own view.
     """
     detail = await service.detail(conn, breach_uuid)
     account = await notices.account_for_report(conn, breach_uuid=breach_uuid)
@@ -169,7 +169,7 @@ async def org_board_brief(conn: Conn, *, breach_uuid: str) -> Row:
     if not (detail["assessment"] or {}).get("nature_extent"):
         missing.append("The nature and extent of what happened")
     if listed == 0:
-        missing.append("Who it touched - no list has been confirmed")
+        missing.append("Who is affected - no list has been confirmed")
     own = _duty(detail, Duty.ORG_BOARD)
     brief_duties = [{k: d[k] for k in _BRIEF_DUTY} for d in duties]
     return {
@@ -183,9 +183,11 @@ async def org_board_brief(conn: Conn, *, breach_uuid: str) -> Row:
         "location": detail["location"],
         "validation": detail["determination"],
         "became_aware_at": detail["became_aware_at"],
-        "cert_in_reportable": any(d["duty"] == Duty.CERT_IN for d in duties),
+        "cert_in_reportable": any(
+            d["duty"] == Duty.CERT_IN and d["state"] != State.NOT_APPLICABLE for d in duties
+        ),
         "duties": brief_duties,
-        "touched": {"listed": listed, "notified": int(account["notified"])},
+        "affected": {"listed": listed, "notified": int(account["notified"])},
         "missing": missing,
         # This brief's own duty, as the rest: its clock, no names.
         "duty": next((d for d in brief_duties if d["duty"] == Duty.ORG_BOARD), None),

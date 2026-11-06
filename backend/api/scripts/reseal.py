@@ -62,6 +62,15 @@ PRIMARY_KEY = {
     "breach_ticket": "ticket_id",
     "breach_ticket_event": "event_id",
     "breach_ticket_message": "message_id",
+    "breach_attachment": "attachment_id",
+    "breach_board_recipient": "recipient_id",
+    "breach_contact": "contact_id",
+    "breach_report_section": "section_id",
+    "breach_upload": "upload_id",
+    "incident_report": "report_id",
+    "message_copy": "copy_id",
+    "office": "office_id",
+    "rights_request_attachment": "attachment_id",
 }
 
 #: What kind of blind index each indexed column takes.
@@ -116,6 +125,15 @@ APPEND_ONLY = {
     "breach_ticket": "trg_breach_ticket_read_only",
     "breach_ticket_event": "trg_breach_ticket_event_append_only",
     "breach_ticket_message": "trg_breach_ticket_message_append_only",
+    # Append-only like the rest, and sealed when written (0042, 0043, 0045).
+    "breach_attachment": "trg_breach_attachment_append_only",
+    "breach_contact": "trg_breach_contact_append_only",
+    "breach_upload": "trg_breach_upload_append_only",
+    "rights_request_attachment": "trg_rights_request_attachment_append_only",
+    # What was reported stays as it was said (0058); a finalised report's words
+    # do not change (0059). Sealed when written, like the rest.
+    "incident_report": "trg_incident_report_outcome_once",
+    "breach_report_section": "trg_breach_report_section_frozen",
 }
 
 

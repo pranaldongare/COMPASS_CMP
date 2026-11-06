@@ -43,15 +43,25 @@ async def contact_hashes(conn: Conn, breach_id: int) -> tuple[set[str], set[str]
     )
 
 
+#: An asset is its project's office's. Sources are shared, so a list names assets
+#: of both offices unless the query says otherwise.
+_ASSET = """
+  FROM data_asset da
+  JOIN data_source ds ON ds.source_id = da.source_id
+  JOIN collection c   ON c.collection_id = da.collection_id
+  JOIN project p      ON p.project_id = c.project_id
+"""
+
+
 async def assets_by_uuid(conn: Conn, uuids: list[str]) -> list[Row]:
     if not uuids:
         return []
     return await fetch_all(
         conn,
-        """SELECT da.asset_id, da.asset_uuid::text AS asset_uuid, da.source_asset_ref,
-                  ds.source_code
-             FROM data_asset da JOIN data_source ds ON ds.source_id = da.source_id
-            WHERE da.asset_uuid = ANY(%s::uuid[])""",
+        f"""SELECT da.asset_id, da.asset_uuid::text AS asset_uuid, da.source_asset_ref,
+                   ds.source_code
+              {_ASSET}
+             WHERE da.asset_uuid = ANY(%s::uuid[]) AND cmp_office_visible(p.office_id)""",
         (uuids,),
     )
 
@@ -63,10 +73,10 @@ async def assets_by_ref(conn: Conn, refs: list[str]) -> list[Row]:
         return []
     return await fetch_all(
         conn,
-        """SELECT da.asset_id, da.asset_uuid::text AS asset_uuid, da.source_asset_ref,
-                  ds.source_code
-             FROM data_asset da JOIN data_source ds ON ds.source_id = da.source_id
-            WHERE da.source_asset_ref = ANY(%s)""",
+        f"""SELECT da.asset_id, da.asset_uuid::text AS asset_uuid, da.source_asset_ref,
+                   ds.source_code
+              {_ASSET}
+             WHERE da.source_asset_ref = ANY(%s) AND cmp_office_visible(p.office_id)""",
         (refs,),
     )
 
@@ -85,16 +95,23 @@ async def people_in_assets(conn: Conn, asset_ids: list[int]) -> tuple[list[Row],
              FROM asset_consent ac
              JOIN consent_artefact ca ON ca.consent_id = ac.consent_id
              JOIN data_asset da       ON da.asset_id = ac.asset_id
-            WHERE ac.asset_id = ANY(%s)
+             JOIN collection c        ON c.collection_id = da.collection_id
+             JOIN project p           ON p.project_id = c.project_id
+            WHERE ac.asset_id = ANY(%s) AND cmp_office_visible(p.office_id)
               AND coalesce(ac.disposition::text, 'active') <> 'erased'
             GROUP BY ca.auth_user_id""",
         (asset_ids,),
     )
     untraceable = await fetch_val(
         conn,
-        """SELECT count(*) FROM asset_consent
-            WHERE asset_id = ANY(%s) AND consent_id IS NULL
-              AND coalesce(disposition::text, 'active') <> 'erased'""",
+        """SELECT count(*)
+             FROM asset_consent ac
+             JOIN data_asset da ON da.asset_id = ac.asset_id
+             JOIN collection c  ON c.collection_id = da.collection_id
+             JOIN project p     ON p.project_id = c.project_id
+            WHERE ac.asset_id = ANY(%s) AND ac.consent_id IS NULL
+              AND cmp_office_visible(p.office_id)
+              AND coalesce(ac.disposition::text, 'active') <> 'erased'""",
         (asset_ids,),
     )
     return people, int(untraceable or 0)

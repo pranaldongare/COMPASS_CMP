@@ -185,8 +185,9 @@ async def test_the_dashboard_shows_every_open_breach_and_each_duty(
 
 def test_nothing_in_the_breach_code_can_reach_a_regulator() -> None:
     """The platform drafts and tracks; a person submits. So nothing that handles
-    a breach may import a way to talk to the outside world, and the one task
-    that sends anything sends the principals' notice and nothing else."""
+    a breach may import a way to talk to the outside world, and the tasks that
+    send anything send the principals' notice, a ticket's word to its holder and
+    a report to the organisation's board, and nothing else (ADR 0037)."""
     src = pathlib.Path(cmp.__file__).parent
     outward = {
         "httpx",
@@ -204,6 +205,8 @@ def test_nothing_in_the_breach_code_can_reach_a_regulator() -> None:
         *sorted((src / "domain/breach").glob("*.py")),
         src / "api/routers/v1/breaches.py",
         src / "api/routers/v1/breach_tickets.py",
+        src / "api/routers/v1/breach_settings.py",
+        src / "api/routers/public/incident_reports.py",
     ]
     found: list[str] = []
     for path in files:
@@ -229,12 +232,36 @@ def test_nothing_in_the_breach_code_can_reach_a_regulator() -> None:
     # The notice, to an account holder or to a contact with no account (0045).
     assert delivered == ["Message.BREACH_NOTICE_DIRECT", "Message.BREACH_NOTICE"]
 
-    # Breach tickets (S3-08) tell a member of staff a ticket is waiting, from
-    # their own task, and nothing else.
+    # Breach tickets (S3-08) tell a member of staff a ticket is waiting, or its
+    # date moved, from their own task, and nothing else.
     task = (src / "tasks/notifications/breach_tickets.py").read_text(encoding="utf-8")
     delivered = [
         ast.unparse(node.args[0])
         for node in ast.walk(ast.parse(task))
         if isinstance(node, ast.Call) and getattr(node.func, "id", "") == "deliver"
     ]
-    assert delivered == ["Message.BREACH_TICKET_WAITING"]
+    assert delivered == ["Message.BREACH_TICKET_WAITING", "Message.BREACH_TICKET_DATE_CHANGED"]
+
+    # A report goes to the addresses on the organisation's board list, in one
+    # of two sets of words (ADR 0037). The address is the job's, read from the
+    # delivery's entry on that list, and comes from nowhere else: no regulator's.
+    task = ast.parse((src / "tasks/notifications/breach_reports.py").read_text(encoding="utf-8"))
+    calls = [
+        node
+        for node in ast.walk(task)
+        if isinstance(node, ast.Call) and getattr(node.func, "id", "") == "deliver"
+    ]
+    assert sorted(ast.unparse(c.args[0]) for c in calls) == [
+        "Message.BREACH_BOARD_REPORT",
+        "Message.BREACH_REPORT_FINALISED",
+    ]
+    assert all([k.arg for k in c.keywords] == [None] for c in calls), "only **words, no `to=`"
+    addressed = [
+        ast.unparse(value)
+        for node in ast.walk(task)
+        if isinstance(node, ast.Dict)
+        for key, value in zip(node.keys, node.values, strict=True)
+        if isinstance(key, ast.Constant) and key.value == "to"
+    ]
+    assert addressed == ["job['email']"]
+    assert "x.email" in (src / "db/repositories/breach_reports.py").read_text(encoding="utf-8")

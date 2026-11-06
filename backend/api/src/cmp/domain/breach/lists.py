@@ -1,8 +1,8 @@
-"""Who a breach touched, from a list somebody sends us (2026-10-07).
+"""The people a breach affected, from a list somebody sends us (2026-10-07).
 
-The records cannot always say who a breach touched: the people may not be on
-the platform at all. The list then comes from outside, in one of two forms,
-each from a template we give out:
+The records cannot always say who is affected: the people may not be on the
+platform at all. The list then comes from outside, in one of two forms, each
+from an Excel template we give out (a CSV is taken too):
 
 * **people** - a name, an email and a mobile per row. Somebody whose email or
   mobile is an account's goes on the breach's list as that account (and so
@@ -21,9 +21,12 @@ corrected file can be sent again. The file itself is not kept.
 
 from __future__ import annotations
 
+import asyncio
 import csv
 import io
+import re
 import uuid as uuid_mod
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from typing import Any, Final
 
@@ -37,6 +40,14 @@ from cmp.db.sql import Conn
 from cmp.domain.audit.service import Event
 from cmp.domain.breach import notices, service
 from cmp.infrastructure.dkms.blind import index_of
+from cmp.infrastructure.spreadsheets import (
+    Column,
+    SheetSpec,
+    build_workbook,
+    match_headings,
+    normalise_heading,
+    read_rows,
+)
 from cmp.validation import normalise_mobile
 from cmp.validation.contacts import Email
 
@@ -51,25 +62,40 @@ MAX_ROWS: Final = 50_000
 #: counted.
 SHOWN_ERRORS: Final = 50
 
-COLUMNS: Final[dict[str, tuple[str, ...]]] = {
-    "contacts": ("name", "email", "mobile"),
-    "assets": ("asset_id", "source_code"),
-}
-
 #: The names people put at the top of a column instead of ours.
 ALIASES: Final[dict[str, str]] = {
     "full_name": "name",
     "full name": "name",
     "mail": "email",
+    "mails": "email",
     "mail id": "email",
+    "mail ids": "email",
     "mail_id": "email",
+    "mail address": "email",
+    "emails": "email",
     "email id": "email",
+    "email ids": "email",
     "email_id": "email",
     "email address": "email",
+    "email addresses": "email",
+    "e-mail": "email",
+    "e-mails": "email",
+    "e-mail id": "email",
+    "e-mail ids": "email",
+    "e-mail address": "email",
     "phone": "mobile",
+    "phone no": "mobile",
+    "phone no.": "mobile",
+    "phone number": "mobile",
+    "phone numbers": "mobile",
+    "mobiles": "mobile",
     "mobile no": "mobile",
+    "mobile no.": "mobile",
     "mobile_no": "mobile",
+    "mobile nos": "mobile",
+    "mobile nos.": "mobile",
     "mobile number": "mobile",
+    "mobile numbers": "mobile",
     "asset id": "asset_id",
     "asset": "asset_id",
     "asset_ref": "asset_id",
@@ -77,44 +103,78 @@ ALIASES: Final[dict[str, str]] = {
     "source code": "source_code",
 }
 
-HELP: Final[dict[str, list[str]]] = {
-    "contacts": [
-        "One row per person the breach touched.",
-        "name: as they would recognise it. Optional, but it helps the Privacy Office.",
-        "email: where the notice is emailed. mobile: where it is sent by SMS, with the "
-        "country code (+91 98765 43210). Give either, or both - both are sent to.",
-        "Somebody already on the platform is matched by email or mobile and also sees "
-        "the notice in their account. Lines starting with # are ignored.",
-    ],
-    "assets": [
-        "One row per asset the breach touched: a recording, an image, a file.",
-        "asset_id: the platform's asset ID, or the ID the capture tool gave it.",
-        "source_code: the data source's code. Needed only when two sources use the same "
-        "asset ID. Lines starting with # are ignored.",
-        "The people who consented in each asset are listed. People in an asset who "
-        "consented to nothing cannot be traced, and are counted.",
-    ],
-}
-
-EXAMPLE: Final[dict[str, list[str]]] = {
-    "contacts": ["Asha Rao", "asha.rao@example.org", "+91 98765 43210"],
-    "assets": ["GAIT-0417", "SRIB-LAB"],
-}
-
 _EMAIL: Final = TypeAdapter(Email)
 
+#: A heading that reads as a contact whatever else it says: 'Alternate mail',
+#: 'Email 2', 'Telephone'. Not 'Mailing address'.
+_CONTACT_HEADING: Final = re.compile(r"(?<![a-z])(e-?mail|mail|mobile|telephone|phone)s?(?![a-z])")
 
-def template(kind: str) -> str:
-    """The CSV to fill in: the header, a line of guidance per column, an example."""
+#: The sheet of each template. Its headers are what a person reads; the aliases
+#: above are what people put there instead. No example row: one left in by
+#: mistake would be somebody written to about a breach.
+_SHEETS: Final[dict[str, SheetSpec]] = {
+    "contacts": SheetSpec(
+        title="People",
+        columns=(
+            Column(
+                "name",
+                "Name",
+                help="As they would recognise it. Optional, but it helps the Privacy Office.",
+                width=30,
+            ),
+            Column(
+                "email",
+                "Mail ID",
+                help="Where the notice is emailed. Give this or the mobile number, or both.",
+                width=36,
+            ),
+            Column(
+                "mobile",
+                "Mobile number",
+                help="Where it is sent by SMS, with the country code: +91 98765 43210.",
+                width=22,
+                text=True,
+            ),
+        ),
+    ),
+    "assets": SheetSpec(
+        title="Assets",
+        columns=(
+            Column(
+                "asset_id",
+                "Asset ID",
+                required=True,
+                help="The platform's asset ID, or the ID the capture tool gave it.",
+                width=40,
+            ),
+            Column(
+                "source_code",
+                "Source code",
+                help="The data source's code. Needed only when two sources use the same ID.",
+                width=20,
+            ),
+        ),
+    ),
+}
+
+HELP: Final[dict[str, list[str]]] = {
+    "contacts": [
+        "One row per person affected, on the People sheet.",
+        "Somebody already on the platform is matched by their mail ID or mobile number, and "
+        "also sees the notice in their account.",
+    ],
+    "assets": [
+        "One row per asset affected, on the Assets sheet: a recording, an image, a file.",
+        "The people who consented in each asset are listed. People in an asset who consented "
+        "to nothing cannot be traced, and are counted.",
+    ],
+}
+
+
+def template(kind: str) -> bytes:
+    """The workbook to fill in: the columns, and how to fill them."""
     _kind(kind)
-    out = io.StringIO()
-    writer = csv.writer(out, lineterminator="\n")
-    writer.writerow(COLUMNS[kind])
-    for line in HELP[kind]:
-        out.write(f"# {line}\n")
-    out.write("# Example - delete it before sending:\n")
-    writer.writerow(EXAMPLE[kind])
-    return out.getvalue()
+    return build_workbook([_SHEETS[kind]], instructions=HELP[kind])
 
 
 def _kind(kind: str) -> str:
@@ -134,20 +194,136 @@ class Reading:
         self.errors.append({"row": line, "message": message})
 
 
+def _text(value: object) -> str:
+    """A cell as text. A number typed into Excel comes back a number, and a
+    long one a float: a mobile without a plus sign is both."""
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    return "" if value is None else str(value).strip()
+
+
+def _mobile(value: object) -> str:
+    """A mobile cell as text. Excel keeps a typed +919876522222 as the number
+    919876522222 unless the cell is text, and accounts hold it with its plus, so
+    a number long enough to carry a country code gets it back. A shorter one is
+    left as it came: no country code is assumed."""
+    text = _text(value)
+    if isinstance(value, int | float) and text.isdigit() and 11 <= len(text) <= 15:
+        return f"+{text}"
+    return text
+
+
+def _columns(kind: str) -> tuple[Column, ...]:
+    return tuple(
+        Column(
+            c.key,
+            c.header,
+            required=c.required,
+            aliases=tuple(a for a, key in ALIASES.items() if key == c.key),
+        )
+        for c in _SHEETS[kind].columns
+    )
+
+
+def _check_contact_headings(found: set[str], others: list[str]) -> None:
+    """Refuse a list we would read short. A contact column left behind is
+    somebody who is never told, and the file would still look fine, so a heading
+    that reads like one and went unmatched stops it, by name, and so does a
+    file with neither column."""
+    unread = [h for h in others if _CONTACT_HEADING.search(normalise_heading(h))]
+    if unread:
+        raise ValidationFailed(
+            f"The column '{unread[0][:60]}' looks like a mail ID or mobile number but could "
+            "not be read. Name it Mail ID or Mobile number, or take it out, and send the file "
+            "again",
+            field="file",
+        )
+    if not {"email", "mobile"} & found:
+        named = ", ".join(f"'{h[:60]}'" for h in others[:6])
+        raise ValidationFailed(
+            "This file has no Mail ID or Mobile number column"
+            + (f"; it has {named} instead" if named else "")
+            + ". Start from the template",
+            field="file",
+        )
+
+
+def _read_workbook(kind: str, payload: bytes) -> Reading:
+    out = Reading()
+    rows = read_rows(
+        payload,
+        columns=_columns(kind),
+        max_rows=MAX_ROWS,
+        check_headings=_check_contact_headings if kind == "contacts" else None,
+    )
+    if not rows:
+        raise ValidationFailed("The file has no rows", field="file")
+    if kind == "contacts" and not any(r.get("email") or r.get("mobile") for _, r in rows):
+        raise ValidationFailed(
+            "This sheet has no mail ID or mobile number in it. Start from the template",
+            field="file",
+        )
+    for number, record in rows:
+        out.rows.append(
+            (
+                number,
+                {k: _mobile(v) if k == "mobile" else _text(v) for k, v in record.items()},
+            )
+        )
+    return out
+
+
+def _csv_rows(text: str) -> Iterator[tuple[int, list[str]]]:
+    """The rows of a CSV with the line each starts on, leaving out blank lines
+    and comments. One reader over the whole text: a quoted field may hold a
+    newline, which reading line by line would cut in two."""
+    reader = csv.reader(io.StringIO(text, newline=""))
+    number = 1
+    for cells in reader:
+        first = cells[0].lstrip() if cells else ""
+        if (first or len(cells) > 1) and not first.startswith("#"):
+            yield number, cells
+        number = reader.line_num + 1
+
+
+def _read_csv(kind: str, text: str) -> Reading:
+    rows = _csv_rows(text)
+    first = next(rows, None)
+    if first is None:
+        raise ValidationFailed("The file has no rows", field="file")
+    position, others = match_headings(first[1], _columns(kind))
+    found = {c.key for c in position.values()}
+    if kind == "contacts":
+        _check_contact_headings(found, others)
+    elif "asset_id" not in found:
+        raise ValidationFailed(
+            "The first row must name the columns (asset_id, source_code); this one has no "
+            "asset_id column. Start from the template",
+            field="file",
+        )
+    out = Reading()
+    for number, cells in rows:
+        if len(out.rows) + len(out.errors) >= MAX_ROWS:
+            raise ValidationFailed(
+                f"A file takes at most {MAX_ROWS:,} rows. Send the rest in another",
+                field="file",
+            )
+        out.rows.append(
+            (number, {c.key: cells[i].strip() for i, c in position.items() if i < len(cells)})
+        )
+    return out
+
+
 def read(kind: str, payload: bytes) -> Reading:
-    """The rows of a CSV, by their line number in the file."""
+    """The rows of an Excel workbook or a CSV, by their row number in the file."""
     _kind(kind)
     if payload[:8] == b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1":
         raise ValidationFailed(
-            "That is an old Excel workbook (.xls). Save it as CSV (File > Save As > CSV UTF-8) "
-            "and send that",
+            "That is an old Excel workbook (.xls). Save it as .xlsx (File > Save As) and send that",
             field="file",
         )
     if payload[:2] == b"PK":
-        raise ValidationFailed(
-            "That is an Excel workbook. Save it as CSV (File > Save As > CSV UTF-8) and send that",
-            field="file",
-        )
+        return _read_workbook(kind, payload)
     try:
         text = payload.decode("utf-8-sig")
     except UnicodeDecodeError:
@@ -155,41 +331,14 @@ def read(kind: str, payload: bytes) -> Reading:
             text = payload.decode("cp1252")
         except UnicodeDecodeError:
             raise ValidationFailed(
-                "The file could not be read as text. Save it as CSV UTF-8", field="file"
+                "The file could not be read. Save it as .xlsx from Excel", field="file"
             ) from None
-    lines = [
-        (n, line)
-        for n, line in enumerate(text.splitlines(), start=1)
-        if line.strip() and not line.lstrip().startswith("#")
-    ]
-    if not lines:
-        raise ValidationFailed("The file has no rows", field="file")
-    reader = csv.reader([line for _, line in lines])
-    header = [ALIASES.get(h.strip().lower(), h.strip().lower()) for h in next(reader)]
-    wanted = COLUMNS[kind]
-    first = "email or mobile" if kind == "contacts" else "asset_id"
-    if (kind == "contacts" and not {"email", "mobile"} & set(header)) or (
-        kind == "assets" and "asset_id" not in header
-    ):
+    try:
+        return _read_csv(kind, text)
+    except csv.Error as exc:
         raise ValidationFailed(
-            f"The first row must name the columns ({', '.join(wanted)}); "
-            f"this one has no {first} column. Start from the template",
-            field="file",
-        )
-    out = Reading()
-    for (number, _), cells in zip(lines[1:], reader, strict=True):
-        if len(out.rows) + len(out.errors) >= MAX_ROWS:
-            raise ValidationFailed(
-                f"A file takes at most {MAX_ROWS:,} rows. Send the rest in another",
-                field="file",
-            )
-        values = {
-            header[i]: cells[i].strip()
-            for i in range(min(len(header), len(cells)))
-            if header[i] in wanted
-        }
-        out.rows.append((number, values))
-    return out
+            "The file could not be read. Save it as .xlsx from Excel", field="file"
+        ) from exc
 
 
 # ---------------------------------------------------------------- resolving
@@ -349,7 +498,9 @@ async def _plan_assets(conn: Conn, breach_id: int, reading: Reading) -> Plan:
 
 
 async def _plan(conn: Conn, breach_id: int, kind: str, payload: bytes) -> Plan:
-    reading = read(kind, payload)
+    # Off the event loop, as a consent record's PDF is: reading a large list
+    # takes a while, and the API has other requests to answer meanwhile.
+    reading = await asyncio.to_thread(read, kind, payload)
     if kind == "contacts":
         return await _plan_contacts(conn, breach_id, reading)
     return await _plan_assets(conn, breach_id, reading)

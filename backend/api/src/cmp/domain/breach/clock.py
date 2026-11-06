@@ -1,11 +1,11 @@
 # ruff: noqa: E501 - the table of duties below is read as a table; wrapped, it is not.
 """The duties a breach starts, and the clock on each.
 
-Five duties, running in parallel from two different moments:
+Five duties, running in parallel from three different moments:
 
 | Duty | Created when | Due | Basis |
 |---|---|---|---|
-| Organisation's board | every incident, when it is logged | 30 minutes from detection (`BREACH_ORG_BOARD_MINUTES`) | internal policy |
+| Organisation's board | validated a personal data breach | 30 minutes from that validation (`BREACH_ORG_BOARD_MINUTES`) | internal policy |
 | Report to CERT-In | marked a reportable cyber incident | 6 hours from detection | CERT-In Directions 2022, IT Act s.70B |
 | Board - initial intimation | determined a personal data breach | without delay | Rule 7(2)(a) |
 | Board - detailed report | determined a personal data breach | 72 hours from awareness, or what the Board allows | Rule 7(2)(b) |
@@ -53,8 +53,10 @@ class Duty(StrEnum):
     PRINCIPALS = "principals"
 
 
-#: The three duties a determination creates. CERT-In stands on its own test,
-#: and the organisation's board on its policy: validation touches neither.
+#: The three statutory duties a determination creates, with clocks from
+#: awareness. The organisation's board is created by the same yes, on its own
+#: clock from the validation itself (`ORG_BOARD`, ADR 0037). CERT-In stands on
+#: its own test: validation does not touch it.
 DPDP_DUTIES: Final[tuple[Duty, ...]] = (
     Duty.BOARD_INTIMATION,
     Duty.BOARD_REPORT,
@@ -70,7 +72,7 @@ LABELS: Final[dict[str, str]] = {
 }
 
 BASIS: Final[dict[str, str]] = {
-    Duty.ORG_BOARD: "Internal policy: within 30 minutes of first noticed",
+    Duty.ORG_BOARD: "Internal policy: within 30 minutes of a validation of yes",
     Duty.CERT_IN: "CERT-In Directions 2022 (IT Act s.70B): within 6 hours of noticing",
     Duty.BOARD_INTIMATION: "Rule 7(2)(a): without delay",
     Duty.BOARD_REPORT: "Rule 7(2)(b): within 72 hours of becoming aware, or as the Board allows",
@@ -97,7 +99,7 @@ def basis_for(duty: str, due_at: datetime | None, anchored_at: datetime | None) 
     own clock was stored with, not today's setting."""
     if duty == Duty.ORG_BOARD and due_at is not None and anchored_at is not None:
         minutes = round((due_at - anchored_at).total_seconds() / 60)
-        return f"Internal policy: within {minutes} minutes of first noticed"
+        return f"Internal policy: within {minutes} minutes of a validation of yes"
     return BASIS[duty]
 
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from cmp.db.repositories.audit_lookup import LOOKUP_KINDS
 from cmp.domain.audit.service import ENTITY_TYPES, Event
-from cmp.domain.audit.vocabulary import GROUP_LABELS, event_types, vocabulary
+from cmp.domain.audit.vocabulary import EVENT_LABELS, GROUP_LABELS, event_types, vocabulary
 
 
 def _event_values() -> set[str]:
@@ -17,6 +17,13 @@ def test_every_event_type_is_served_with_a_group_and_a_label() -> None:
     for e in event_types():
         assert e["group"] == e["value"].split(".")[0]
         assert e["label"] and e["group_label"]
+
+
+def test_the_breach_list_and_report_events_read_in_plain_words() -> None:
+    labels = {e["value"]: e["label"] for e in event_types()}
+    assert labels["breach.affected_revised"] == "People affected confirmed"
+    assert labels["breach.report_filed"] == "Report recorded as sent to the regulator"
+    assert set(EVENT_LABELS) <= set(labels), "a label for an event that does not exist"
 
 
 def test_every_group_the_code_uses_has_a_readable_name() -> None:
