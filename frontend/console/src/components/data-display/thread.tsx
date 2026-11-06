@@ -105,6 +105,8 @@ export function ReplyBox({
   placeholder,
   disabledReason,
   allowFile = true,
+  fileAccept = "application/pdf,image/png,image/jpeg,text/csv,text/plain",
+  fileHint = "Optional. PDF, image, CSV or text, up to 25 MB. Kept with the message.",
   finalOption,
 }: {
   onSend: (body: string, file: File | null, final: boolean) => Promise<void>;
@@ -112,6 +114,9 @@ export function ReplyBox({
   placeholder: string;
   disabledReason?: string | null;
   allowFile?: boolean;
+  /** What a side may attach, where it differs from a rights ticket. */
+  fileAccept?: string;
+  fileHint?: string;
   /** Offered where a submission may close the ticket: label and explanation. */
   finalOption?: { label: string; hint: string } | null;
 }) {
@@ -155,8 +160,8 @@ export function ReplyBox({
       {allowFile && (
         <FileInput
           label="Attach a file"
-          hint="Optional. PDF, image, CSV or text, up to 25 MB. Kept with the message."
-          accept="application/pdf,image/png,image/jpeg,text/csv,text/plain"
+          hint={fileHint}
+          accept={fileAccept}
           maxBytes={25 * 1024 * 1024}
           file={file}
           onChange={setFile}

@@ -1,12 +1,17 @@
 /**
- * Incidents and breaches, as the DPO (S3-01, S3-06).
+ * Incidents and breaches, as the DPO (S3-01, S3-06, ADR 0037).
  *
- * One journey: log an incident noticed five hours ago, mark it reportable to
- * CERT-In and read the hour that is left, validate it as a personal data
- * breach - which records it with a BR reference - and see the three DPDP
- * duties appear, and find the breach refusing to close
- * while they are outstanding. Then a collection owner, who is told the page
- * is not part of their account - the server answers them 404.
+ * One journey: log an incident noticed five hours ago, find that nothing is
+ * owed yet, mark it reportable to CERT-In and read the hour that is left,
+ * validate it as a personal data breach - which records it with a BR reference
+ * and starts the three DPDP duties and the organisation's board's thirty
+ * minutes - and find the breach refusing to close while they are outstanding.
+ * Then a collection owner, who is told the page is not part of their account -
+ * the server answers them 404.
+ *
+ * The whole of a report's path - the public link, the board's mail, filing with
+ * proof - is `breach-workflow.spec.ts`. This one lists its one person by hand:
+ * an end-to-end breach must never sweep up the dev database's people.
  */
 import { expect, test, type Page } from "@playwright/test";
 
@@ -58,20 +63,11 @@ test.describe("the DPO", () => {
     await expect(page.locator("#attachments").getByText("Email", { exact: true })).toBeVisible();
     await openTab(page, "Duties");
 
-    // The organisation's board is owed from the moment it was logged, from when
-    // it was first noticed: five hours ago is long past thirty minutes.
-    const orgBoard = page.getByRole("row", { name: /Organisation's board/ });
-    await expect(orgBoard.getByText(/^Overdue by /)).toBeVisible();
-    await page.getByRole("link", { name: "Brief for the organisation's board" }).click();
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Brief for the organisation's board - ${incident}`);
-    await expect(page.getByText("Whether it is a personal data breach - validation is still pending")).toBeVisible();
-    await page.getByRole("link", { name: "Back to the incident" }).click();
-    await orgBoard.getByRole("button", { name: "Record the report" }).click();
-    await page.getByLabel(/^Reported at/).fill(hoursAgo(4.5));
-    await page.getByLabel(/^Reported to/).fill("The chair, by phone");
-    await page.getByRole("dialog").getByRole("button", { name: "Record", exact: true }).click();
-    await expect(orgBoard.getByText("Done")).toBeVisible();
-    await expect(orgBoard.getByText(/to The chair, by phone/)).toBeVisible();
+    // Nothing is owed at logging: the organisation's board's duty waits for a
+    // validation of yes, so an incident that is junk can close untold.
+    await expect(page.getByText(/^No duty yet\./)).toBeVisible();
+    await expect(page.getByRole("row", { name: /Organisation's board/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Notify Organization Board" })).toHaveCount(0);
 
     await page.getByRole("button", { name: "Mark reportable to CERT-In" }).click();
     const certIn = page.getByRole("row", { name: /Report to CERT-In/ });
@@ -90,31 +86,25 @@ test.describe("the DPO", () => {
     // tabs on a phone - one of the two placements is shown.
     await expect(page.getByText(incident, { exact: true }).filter({ visible: true })).toBeVisible();
     await openTab(page, "Duties");
+    // Thirty minutes from the yes, not from when it was noticed five hours ago.
+    await expect(page.getByRole("row", { name: /Organisation's board/ }).getByText(/^(29|30) min left$/)).toBeVisible();
     await expect(page.getByRole("row", { name: /Board - initial intimation/ })).toBeVisible();
     await expect(page.getByRole("row", { name: /Board - detailed report/ })).toBeVisible();
     await expect(page.getByRole("row", { name: /Principals notified/ })).toBeVisible();
 
-    // Who it touched: the platform's own tables, as recorded, confirmed as revision 1.
+    // The seeded principal, added by hand: one person, and nobody else from the
+    // dev database, however many of them a project or a vendor would find.
     await openTab(page, "People & notices");
-    await page.getByRole("button", { name: "Derive who it touched" }).click();
-    // Accounts created from a few minutes ahead: nobody, which keeps the dev
-    // database's people off an end-to-end breach's list - including the
-    // breach-only logins e2e/breach-tickets.spec.ts made the minute before.
-    await page.getByRole("checkbox", { name: "auth_user" }).check();
-    await page.getByLabel(/^Rows written from/).fill(hoursAgo(-0.1));
-    await page.getByRole("button", { name: "Show what the records say" }).click();
-    await expect(page.getByText(/The records place \d+ people here/)).toBeVisible();
-    await page.getByRole("button", { name: "Confirm the list" }).click();
-    await expect(page.getByText(/^Revision 1, /)).toBeVisible();
-
-    // The seeded principal, added by hand: the records cannot show her here.
-    await page.getByRole("button", { name: "Revise the list" }).click();
-    await page.getByRole("button", { name: "Remove this place" }).click();
-    await page.getByLabel(/^Add someone the records cannot show/).fill("subject@cmp.local");
-    await page.getByRole("button", { name: "Find" }).click();
-    await page.getByRole("button", { name: "Add", exact: true }).first().click();
-    await page.getByRole("button", { name: "Confirm the list" }).click();
-    await expect(page.getByText(/^Revision 2, /)).toBeVisible();
+    await expect(page.getByText("Nobody is listed yet.")).toBeVisible();
+    await page.getByRole("button", { name: "Add people" }).click();
+    const adding = page.getByRole("dialog");
+    await adding.getByRole("button", { name: /^Add one person/ }).click();
+    await adding.getByLabel(/^Find the person/).fill("subject@cmp.local");
+    await adding.getByRole("button", { name: "Find" }).click();
+    await adding.getByRole("button", { name: "Add", exact: true }).first().click();
+    await adding.getByRole("button", { name: "Add this person" }).click();
+    await expect(page.getByText("1 person added to the list")).toBeVisible();
+    await expect(page.locator("#affected").getByRole("cell", { name: "Added by hand" })).toBeVisible();
 
     // Draft, approve and send; nothing goes before approval.
     await page.getByRole("button", { name: "Draft the notice" }).click();
@@ -129,7 +119,9 @@ test.describe("the DPO", () => {
     await page.getByRole("button", { name: "Save draft" }).click();
     await expect(page.getByText("Draft saved")).toBeVisible();
     await page.getByRole("button", { name: "Approve", exact: true }).click();
-    await page.getByRole("button", { name: "Send version 1" }).click();
+    // One button, and it asks first.
+    await page.getByRole("button", { name: "Send to 1 affected person" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Send to 1 affected person" }).click();
     // Her account at once; her email and SMS by the worker, which records each.
     await expect(page.getByText("1 of 1 listed person has been notified on every channel.")).toBeVisible({
       timeout: 60_000,
@@ -142,13 +134,17 @@ test.describe("the DPO", () => {
     await expect(page.getByText("Principals notified is outstanding")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Close the breach" })).toBeDisabled();
 
-    // The Board's documents, drafted from the register; the account of notices in (vi).
+    // The 72-hour report, drafted from the register; the account of notices in (vi).
     const reference = (await page.getByRole("heading", { level: 1 }).textContent()) ?? "";
-    await page.getByRole("link", { name: "Documents for the Board" }).click();
-    await expect(page.getByText("Initial intimation - Rule 7(2)(a)")).toBeVisible();
-    await expect(page.getByText("Detailed report - Rule 7(2)(b)")).toBeVisible();
-    await expect(page.getByText("(vi) The account of notices to the Data Principals affected")).toBeVisible();
-    await expect(page.getByText(/^1 of the 1 Data Principals listed as affected have been notified/)).toBeVisible();
+    await openTab(page, "Reports");
+    await expect(page.getByTestId("report-board_intimation").getByText("Rule 7(2)(a)")).toBeVisible();
+    await page.getByTestId("report-board_report").getByRole("button", { name: "Draft it" }).click();
+    const report = page.getByRole("dialog");
+    await expect(report.getByRole("heading", { name: /^72-hour report to the DPDP Board · version 1$/ })).toBeVisible();
+    await expect(report.getByLabel(/^\(vi\) The account of notices/)).toHaveValue(
+      /^1 of the 1 Data Principals listed as affected have been notified/,
+    );
+    await report.getByRole("button", { name: "Cancel" }).click();
 
     // Found in the register by the reference it was logged as, and by its
     // title; the search stays in the address.

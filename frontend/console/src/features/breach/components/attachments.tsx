@@ -43,12 +43,24 @@ export const ATTACHMENT_KIND: Record<BreachAttachmentKind, string> = {
   proof: "Proof",
   chat: "Chat",
   other: "Other",
+  approval: "Internal approval",
+  sent_mail: "Mail to the regulator",
 };
+
+/** What a person may call a file they add. The other two kinds are proof kept
+ *  with a report, and arrive through its Record as sent (0059). */
+const ADDABLE_KINDS: BreachAttachmentKind[] = ["email", "proof", "chat", "other"];
 
 /** What the API takes: documents, images, saved emails, text - nothing
  *  that runs. 25 MB each. */
 export const ATTACHMENT_ACCEPT = ".pdf,.png,.jpg,.jpeg,.txt,.csv,.log,.eml,.msg,.docx";
 export const ATTACHMENT_MAX_BYTES = 25 * 1024 * 1024;
+
+/** A breach ticket's reply box takes what raising the ticket takes. */
+export const TICKET_REPLY_FILE = {
+  fileAccept: ATTACHMENT_ACCEPT,
+  fileHint: "Optional. PDF, Word, image, saved email, CSV or text, up to 25 MB. Kept with the message.",
+};
 
 export interface PendingAttachment {
   key: number;
@@ -90,7 +102,7 @@ export function AttachmentRows({
                 value={r.kind}
                 onChange={(e) => update(r.key, { kind: e.target.value as BreachAttachmentKind })}
               >
-                {(Object.keys(ATTACHMENT_KIND) as BreachAttachmentKind[]).map((k) => (
+                {ADDABLE_KINDS.map((k) => (
                   <option key={k} value={k}>
                     {ATTACHMENT_KIND[k]}
                   </option>
@@ -195,7 +207,7 @@ export function AttachmentsCard({ breach }: { breach: Breach }) {
               <Field label="What it is">
                 {(p) => (
                   <Select {...p} value={kind} onChange={(e) => setKind(e.target.value as BreachAttachmentKind)}>
-                    {(Object.keys(ATTACHMENT_KIND) as BreachAttachmentKind[]).map((k) => (
+                    {ADDABLE_KINDS.map((k) => (
                       <option key={k} value={k}>
                         {ATTACHMENT_KIND[k]}
                       </option>

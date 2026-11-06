@@ -40,6 +40,7 @@ export type NavKey =
   | "messages"
   | "requests"
   | "breaches"
+  | "breach-settings"
   | "notifications"
   | "profile";
 

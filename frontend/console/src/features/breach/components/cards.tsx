@@ -4,12 +4,14 @@
  *
  * Every control renders the server's answer. Which duties exist, when each is
  * due and whether the breach may close all come back on the breach itself; a
- * refused action shows the server's sentence.
+ * refused action shows the server's sentence. A duty is completed by its
+ * report (0059), on the Reports tab, never here: the only way to a regulator's
+ * duty is through the proof that it was sent.
  */
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CalendarPlus, CheckCircle2, Lock, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { AlertTriangle, CalendarPlus, CircleSlash, FileText, Lock, Plus, RotateCcw, Trash2 } from "lucide-react";
 import * as React from "react";
 
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -34,14 +36,15 @@ import {
 } from "@/components/ui/primitives";
 import {
   assessBreach,
-  completeDuty,
   determineBreach,
   extendReport,
   markCertIn,
+  setAsideCertIn,
   transitionBreach,
 } from "@/features/breach/api";
 import { DutyStateBadge, OUTCOME_COPY, clockText } from "@/features/breach/components/copy";
 import { instant, messageOf } from "@/features/breach/components/record-breach";
+import { NotifyBoardButton } from "@/features/breach/components/reports-card";
 import { cn, formatDateTime } from "@/lib/format";
 import { keys } from "@/lib/query";
 import { useToast } from "@/providers";
@@ -68,90 +71,6 @@ function useBreachWrite<A>(breach: Breach, fn: (uuid: string, args: A) => Promis
 }
 
 /* ------------------------------------------------------------------ duties */
-
-function CompleteDialog({
-  breach,
-  duty,
-  onClose,
-}: {
-  breach: Breach;
-  duty: BreachDuty;
-  onClose: () => void;
-}) {
-  const toast = useToast();
-  // The organisation's board is not a regulator: a person reports to it, and
-  // what is recorded is when and to whom - a reference only if there is one.
-  const board = duty.duty === "org_board";
-  const [when, setWhen] = React.useState("");
-  const [reference, setReference] = React.useState("");
-  const [reportedTo, setReportedTo] = React.useState("");
-  const [note, setNote] = React.useState("");
-  const write = useBreachWrite(breach, (uuid, a: { at: string }) =>
-    completeDuty(uuid, duty.duty, {
-      occurred_at: a.at,
-      reference: reference.trim() || null,
-      reported_to: board ? reportedTo.trim() : null,
-      note: note.trim() || null,
-    }),
-  );
-  const at = instant(when);
-  const ready = at !== null && (board ? reportedTo.trim() !== "" : reference.trim() !== "");
-  async function save() {
-    if (!at) return;
-    try {
-      await write.mutateAsync({ at });
-      toast.success(
-        `${duty.label}: recorded`,
-        board ? "The report and whom it was made to are on the record." : "The submission and its reference are on the record.",
-      );
-      onClose();
-    } catch (err) {
-      toast.error("Not recorded", messageOf(err, "The server refused."));
-    }
-  }
-  return (
-    <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent
-        title={board ? "Record the report - Organisation's board" : `Record the submission - ${duty.label}`}
-        description={
-          board
-            ? "The platform never reports to the organisation's board. Record when a person reported to it, and to whom."
-            : "The platform never submits to a regulator. Record what was submitted through the regulator's own channel, when, and the reference it returned."
-        }
-      >
-        <div className="space-y-3">
-          <Field
-            label={board ? "Reported at" : "Submitted at"}
-            hint="When it was made, not when you are recording it"
-            required
-          >
-            {(p) => <Input {...p} type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />}
-          </Field>
-          {board ? (
-            <Field label="Reported to" hint="Who was told, and how - for example the chair, by phone" required>
-              {(p) => <Input {...p} value={reportedTo} maxLength={2000} onChange={(e) => setReportedTo(e.target.value)} />}
-            </Field>
-          ) : (
-            <Field label="Reference returned" hint="Acknowledgement or filing number" required>
-              {(p) => <Input {...p} value={reference} maxLength={200} onChange={(e) => setReference(e.target.value)} />}
-            </Field>
-          )}
-          <Field label="Note" hint="Optional">
-            {(p) => <Textarea {...p} value={note} onChange={(e) => setNote(e.target.value)} />}
-          </Field>
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button variant="primary" disabled={!ready} loading={write.isPending} onClick={save}>
-              Record
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 function ExtensionDialog({ breach, onClose }: { breach: Breach; onClose: () => void }) {
   const toast = useToast();
@@ -203,18 +122,68 @@ function ExtensionDialog({ breach, onClose }: { breach: Breach; onClose: () => v
   );
 }
 
+/** A CERT-In mark that was a mistake. The server allows it once the incident is
+ *  validated as No, because until then there may be something to report. */
+function CertInSetAsideDialog({ breach, onClose }: { breach: Breach; onClose: () => void }) {
+  const toast = useToast();
+  const [reason, setReason] = React.useState("");
+  const write = useBreachWrite(breach, (uuid, why: string) => setAsideCertIn(uuid, why));
+  async function save() {
+    try {
+      await write.mutateAsync(reason.trim());
+      toast.success("CERT-In set aside", "Nobody was mailed. The reason is kept with the duty.");
+      onClose();
+    } catch (err) {
+      toast.error("Not set aside", messageOf(err, "The server refused."));
+    }
+  }
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent
+        title="Not reportable to CERT-In"
+        description="This sets the CERT-In duty aside, so it stops running and no longer holds up closing the incident. It mails nobody: neither CERT-In nor the organisation's board is told. If it turns out to be reportable, mark it again, and it comes back on the same clock."
+      >
+        <div className="space-y-3">
+          <Field label="Why it is not reportable" hint="Kept with the duty" required>
+            {(p) => (
+              <Textarea {...p} rows={3} maxLength={8000} value={reason} onChange={(e) => setReason(e.target.value)} />
+            )}
+          </Field>
+          <div className="flex justify-end gap-2">
+            <Button variant="ghost" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button variant="primary" disabled={!reason.trim()} loading={write.isPending} onClick={save}>
+              Set CERT-In aside
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Why a duty was set aside, where somebody said. A No sets the DPDP duties
+ *  aside with no words of its own; those are on the validation. */
+const setAsideBecause = (d: BreachDuty) => d.events.filter((e) => e.kind === "not_applicable").at(-1)?.note;
+
 export function DutiesCard({ breach }: { breach: Breach }) {
   const toast = useToast();
-  const [completing, setCompleting] = React.useState<BreachDuty | null>(null);
   const [extending, setExtending] = React.useState(false);
+  const [settingAside, setSettingAside] = React.useState(false);
   const certIn = useBreachWrite(breach, (uuid, _: void) => markCertIn(uuid));
   const open = breach.status === "open";
-  const hasCertIn = breach.obligations.some((d) => d.duty === "cert_in");
+  const certInDuty = breach.obligations.find((d) => d.duty === "cert_in");
+  // Set aside, it can be marked again.
+  const mayMark = certInDuty === undefined || certInDuty.state === "not_applicable";
 
   async function mark() {
     try {
       await certIn.mutateAsync();
-      toast.success("CERT-In duty created", "Due six hours from when it was first noticed.");
+      toast.success(
+        certInDuty ? "CERT-In duty reinstated" : "CERT-In duty created",
+        "Due six hours from when it was first noticed.",
+      );
     } catch (err) {
       toast.error("Not marked", messageOf(err, "The server refused."));
     }
@@ -225,8 +194,8 @@ export function DutiesCard({ breach }: { breach: Breach }) {
       <CardHeader>
         <CardTitle>Duties</CardTitle>
         <p className="mt-1 text-xs text-text-muted">
-          Each runs on its own clock, in parallel. The organisation&apos;s board and CERT-In run from when it was first
-          noticed; every DPDP duty from when the organisation became aware.
+          Each runs on its own clock, in parallel. The organisation&apos;s board has 30 minutes from a validation of
+          yes; CERT-In runs from when it was first noticed; every DPDP duty from when the organisation became aware.
           {breach.without_delay_target_hours === null
             ? " No internal target is set for “without delay”: the time elapsed is shown and nothing is flagged."
             : ` The internal target for “without delay” is ${breach.without_delay_target_hours} hours.`}
@@ -235,8 +204,8 @@ export function DutiesCard({ breach }: { breach: Breach }) {
       <CardBody className="space-y-4">
         {breach.obligations.length === 0 ? (
           <p className="text-sm text-text-muted">
-            No duty yet. A validation of yes records it as a personal data breach and creates the Board and principals
-            duties (<a href="#validation" className="font-medium text-accent-text hover:underline">record the validation</a>);
+            No duty yet. A validation of yes records it as a personal data breach and creates the organisation&apos;s
+            board and DPDP duties (<a href="#validation" className="font-medium text-accent-text hover:underline">record the validation</a>);
             marking a reportable cyber incident creates CERT-In.
           </p>
         ) : (
@@ -247,7 +216,9 @@ export function DutiesCard({ breach }: { breach: Breach }) {
                 <Th>State</Th>
                 <Th>Due</Th>
                 <Th>Clock</Th>
-                <Th>
+                {/* Relative, or the hidden word sits outside the table's scroller
+                    and widens the whole page on a phone. */}
+                <Th className="relative">
                   <span className="sr-only">Actions</span>
                 </Th>
               </tr>
@@ -264,13 +235,18 @@ export function DutiesCard({ breach }: { breach: Breach }) {
                     {d.state === "done" && (
                       <span className="block text-xs text-text-subtle">
                         {formatDateTime(d.completed_at)}
-                        {d.reported_to && <> · to {d.reported_to}</>}
+                        {d.reported_to && <> · {d.reported_to}</>}
                         {d.reference && (
                           <>
                             {" "}
                             · <Mono>{d.reference}</Mono>
                           </>
                         )}
+                      </span>
+                    )}
+                    {d.state === "not_applicable" && setAsideBecause(d) && (
+                      <span className="block text-xs break-words whitespace-pre-wrap text-text-subtle">
+                        {setAsideBecause(d)}
                       </span>
                     )}
                   </Td>
@@ -280,17 +256,27 @@ export function DutiesCard({ breach }: { breach: Breach }) {
                   </Td>
                   <Td className="text-sm">{clockText(d.state, d.clock)}</Td>
                   <Td className="text-right">
-                    {open && d.state === "outstanding" && d.duty !== "principals" && (
-                      <Button variant="secondary" size="sm" onClick={() => setCompleting(d)}>
-                        <CheckCircle2 className="size-4" />
-                        {d.duty === "org_board" ? "Record the report" : "Record submission"}
+                    {/* Whatever the duty's state: the button says what it offers, and a
+                        change of duty must not take an open editor with it. */}
+                    {d.duty === "org_board" && <NotifyBoardButton breach={breach} />}
+                    {open && d.state === "outstanding" && d.duty !== "org_board" && d.duty !== "principals" && (
+                      <Button variant="secondary" size="sm" asChild>
+                        <a href="#reports">
+                          <FileText className="size-4" />
+                          Open the report
+                        </a>
                       </Button>
                     )}
-
                     {open && d.state === "outstanding" && d.duty === "board_report" && (
                       <Button variant="ghost" size="sm" onClick={() => setExtending(true)}>
                         <CalendarPlus className="size-4" />
                         Extension
+                      </Button>
+                    )}
+                    {open && d.state === "outstanding" && d.duty === "cert_in" && breach.determination === "no" && (
+                      <Button variant="ghost" size="sm" onClick={() => setSettingAside(true)}>
+                        <CircleSlash className="size-4" />
+                        Not reportable to CERT-In
                       </Button>
                     )}
                     {open && d.state === "outstanding" && d.duty === "principals" && (
@@ -302,7 +288,7 @@ export function DutiesCard({ breach }: { breach: Breach }) {
             </tbody>
           </Table>
         )}
-        {open && !hasCertIn && (
+        {open && mayMark && (
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border p-3 text-sm">
             <span>
               Is this a reportable cyber incident under the CERT-In Directions? CERT-In stands on its own test, apart
@@ -315,8 +301,8 @@ export function DutiesCard({ breach }: { breach: Breach }) {
           </div>
         )}
       </CardBody>
-      {completing && <CompleteDialog breach={breach} duty={completing} onClose={() => setCompleting(null)} />}
       {extending && <ExtensionDialog breach={breach} onClose={() => setExtending(false)} />}
+      {settingAside && <CertInSetAsideDialog breach={breach} onClose={() => setSettingAside(false)} />}
     </Card>
   );
 }
@@ -348,7 +334,10 @@ export function DeterminationCard({ breach }: { breach: Breach }) {
       setAware("");
       // The first yes records the breach and issues its number; say so.
       if (!recorded && fresh.breach_reference) {
-        toast.success(`Recorded as ${fresh.breach_reference}`, "The DPDP duties have started.");
+        toast.success(
+          `Recorded as ${fresh.breach_reference}`,
+          "The DPDP duties have started, and the organisation's board has 30 minutes.",
+        );
       } else {
         toast.success("Validation recorded", OUTCOME_COPY[outcome]);
       }
@@ -363,8 +352,9 @@ export function DeterminationCard({ breach }: { breach: Breach }) {
         <CardTitle>Validation - is it a personal data breach under s.2(u)?</CardTitle>
         <p className="mt-1 text-xs text-text-muted">
           A person&apos;s judgement, recorded with its reasoning. The platform never infers it - not from encryption,
-          not from anything. The first yes records the incident as a personal data breach and starts the DPDP duties;
-          a later no sets them aside and keeps the breach reference. A revision is a new row; the latest is current.
+          not from anything. The first yes records the incident as a personal data breach, starts the DPDP duties and
+          gives 30 minutes to tell the organisation&apos;s board; a later no sets them aside and keeps the breach
+          reference. Every validation is kept; the latest stands.
         </p>
       </CardHeader>
       <CardBody className="space-y-4">
@@ -385,7 +375,11 @@ export function DeterminationCard({ breach }: { breach: Breach }) {
             ))}
           </ol>
         ) : (
-          <p className="text-sm text-text-muted">Still validating. The clocks already running keep running.</p>
+          <p className="text-sm text-text-muted">
+            {breach.obligations.some((d) => d.state === "outstanding")
+              ? "Still validating. The clocks already running keep running."
+              : "Still validating. No clock is running yet."}
+          </p>
         )}
         {breach.status === "open" && (
           <div className="space-y-3 border-t border-border pt-4">
@@ -520,7 +514,7 @@ export function AssessmentCard({ breach }: { breach: Breach }) {
   async function save() {
     try {
       const fresh = await write.mutateAsync();
-      toast.success(`Revision ${fresh.assessment?.revision ?? ""} recorded`, "The previous revision is kept as it was.");
+      toast.success(`Version ${fresh.assessment?.revision ?? ""} recorded`, "The previous version is kept as it was.");
       setEditing(false);
     } catch (err) {
       toast.error("Not recorded", messageOf(err, "The server refused."));
@@ -532,9 +526,9 @@ export function AssessmentCard({ breach }: { breach: Breach }) {
       <CardHeader>
         <CardTitle>Assessment</CardTitle>
         <p className="mt-1 text-xs text-text-muted">
-          What is known, for the notices and the Board&apos;s report. Revised as knowledge grows: each revision is a new
-          row and the latest is current.
-          {latest && ` Revision ${latest.revision} of ${breach.assessment_revisions}, ${formatDateTime(latest.revised_at)} by ${latest.revised_by_name ?? "unknown"}.`}
+          What is known, for the notices and the Board&apos;s report. Updated as knowledge grows: every version is kept
+          and the latest is current.
+          {latest && ` Version ${latest.revision} of ${breach.assessment_revisions}, ${formatDateTime(latest.revised_at)} by ${latest.revised_by_name ?? "unknown"}.`}
         </p>
       </CardHeader>
       <CardBody className="space-y-4">
@@ -567,7 +561,7 @@ export function AssessmentCard({ breach }: { breach: Breach }) {
         {!editing && breach.status === "open" && (
           <Button variant="secondary" size="sm" onClick={start}>
             <RotateCcw className="size-4" />
-            {latest ? "Revise the assessment" : "Start the assessment"}
+            {latest ? "Update the assessment" : "Start the assessment"}
           </Button>
         )}
         {editing && (
@@ -592,7 +586,7 @@ export function AssessmentCard({ breach }: { breach: Breach }) {
                 Cancel
               </Button>
               <Button variant="primary" loading={write.isPending} onClick={save}>
-                Record this revision
+                Record this version
               </Button>
             </div>
           </div>

@@ -2,10 +2,11 @@
  * What else is known when an incident is logged (0047, 2026-10-08).
  *
  * The Privacy Office's intake questions, every one optional: much is not
- * known in the first minutes, and the incident is logged anyway - its clocks
- * run from when it was first noticed. The answers are kept as logged; what is
- * learned later goes in the assessment. One question is a choice: a cyber
- * attack is reportable to CERT-In, and saying yes starts that duty at once.
+ * known in the first minutes, and the incident is logged anyway. The answers
+ * are kept as logged; what is learned later goes in the assessment. One
+ * question is a choice: a cyber attack is reportable to CERT-In, and saying
+ * yes here starts that duty at once. The same answer on the public link starts
+ * nothing (0058): it is a stranger's word, and reads as one.
  */
 "use client";
 
@@ -78,6 +79,13 @@ export const CYBER_ATTACK: Record<BreachCyberAttack, string> = {
   yes: "Yes - reportable to CERT-In",
   no: "No",
   unknown: "Not known yet",
+};
+
+/** What somebody said on the public link: for an officer to weigh. */
+export const REPORTED_CYBER_ATTACK: Record<BreachCyberAttack, string> = {
+  yes: "They say it was",
+  no: "They say it was not",
+  unknown: "They do not know",
 };
 
 export function LoggedFields({

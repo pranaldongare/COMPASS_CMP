@@ -96,7 +96,10 @@ const OLD = breach({ reference: "INC-2026-0009", incident_reference: "INC-2026-0
 
 beforeEach(() => {
   window.history.replaceState(null, "", "/breaches");
-  server.use(http.get(`${API}/breaches`, () => HttpResponse.json([LAPTOP, SHARE, OLD])));
+  server.use(
+    http.get(`${API}/breaches`, () => HttpResponse.json([LAPTOP, SHARE, OLD])),
+    http.get(`${API}/breaches/intake`, () => HttpResponse.json({ items: [], total: 0, limit: 50, offset: 0 })),
+  );
 });
 
 const shown = () =>
@@ -137,7 +140,7 @@ describe("the register", () => {
 
     await user.selectOptions(screen.getByLabelText("Tickets"), "overdue");
     expect(shown()).toEqual(["BR-2026-0007"]);
-    expect(screen.getByText("1 past their answer-by")).toBeInTheDocument();
+    expect(screen.getByText("1 past their resolve-by date")).toBeInTheDocument();
 
     await user.click(screen.getAllByRole("button", { name: "Clear filters" })[0]);
     expect(shown()).toHaveLength(3);
@@ -160,5 +163,38 @@ describe("the register", () => {
     window.history.replaceState(null, "", "/breaches?q=nothing-like-this");
     render(<BreachesPage />);
     expect(await screen.findByText("Nothing matches")).toBeInTheDocument();
+  });
+
+  it("shows a report from the public link above the filters, apart from the register", async () => {
+    server.use(
+      http.get(`${API}/breaches/intake`, () =>
+        HttpResponse.json({
+          items: [
+            {
+              report_uuid: "99999999-9999-4999-8999-999999999999",
+              reference: "INC-2026-0010",
+              reporter_name: "Asha Rao",
+              reporter_email: "asha@example.org",
+              title: "A file on a public share",
+              noticed_at: null,
+              received_at: ago(1),
+              cyber_attack: null,
+            },
+          ],
+          total: 1,
+          limit: 50,
+          offset: 0,
+        }),
+      ),
+    );
+    render(<BreachesPage />);
+
+    const intake = await screen.findByTestId("incident-intake");
+    expect(within(intake).getByText("A file on a public share")).toBeInTheDocument();
+    expect(intake.compareDocumentPosition(screen.getByRole("searchbox", { name: "Search" }))).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    await screen.findByText("Printer queue");
+    expect(shown()).not.toContain("INC-2026-0010");
   });
 });

@@ -57,6 +57,7 @@ const SECTION_OF: ReadonlyArray<
   ["/consents", "consents"],
   ["/requests", "requests"],
   ["/breaches", "breaches"],
+  ["/breach-settings", "breach-settings"],
   ["/links", "links"],
   ["/exports", "exports"],
   ["/imports", "imports"],

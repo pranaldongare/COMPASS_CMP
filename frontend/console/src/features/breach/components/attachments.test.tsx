@@ -18,6 +18,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push, replace: vi.fn(), back: vi.fn(), refresh: vi.fn() }),
 }));
 vi.mock("@/providers", () => ({
+  useAuth: () => ({ me: null }),
   useToast: () => ({ success: vi.fn(), error: vi.fn(), warning: vi.fn() }),
 }));
 
@@ -72,6 +73,16 @@ describe("AttachmentsCard", () => {
     await vi.waitFor(() => expect(body).not.toBe(""));
     expect(field(body, "kind")).toBe("email");
     expect(field(body, "note")).toBe("Forwarded by the helpdesk");
+  });
+
+  it("offers the four kinds a person adds, and names a report's proof on the list", async () => {
+    const proof = { ...ATT, kind: "sent_mail" as const, file_name: "to-the-board.eml", note: null };
+    const { user } = render(<AttachmentsCard breach={breach({ attachments: [proof] })} />);
+
+    expect(screen.getByText("Mail to the regulator")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Attach a file" }));
+    const kinds = within(screen.getByLabelText("What it is")).getAllByRole("option");
+    expect(kinds.map((o) => o.textContent)).toEqual(["Email", "Proof", "Chat", "Other"]);
   });
 
   it("offers no way to add once the breach is closed", () => {

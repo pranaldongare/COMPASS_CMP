@@ -96,3 +96,51 @@ export async function freshCode(
   if (!code) throw new Error(`no one-time code for ${recipient}: ${outboxProblem}`);
   return code;
 }
+
+/** One message in the outbox: who it went to, and what it said. */
+export interface OutboxEntry {
+  channel: string;
+  to: string;
+  subject: string;
+  /** The files it carried, as "name (type, N bytes)". */
+  attached: string[];
+  body: string;
+}
+
+/** Where the outbox ends now: `entriesSince` reads what is written after it. */
+export function outboxMark(): number {
+  return fs.statSync(OUTBOX).size;
+}
+
+/**
+ * What was written after a mark, as messages.
+ *
+ * From the mark rather than from the top, because the outbox of a machine that
+ * has run the suites for months is hundreds of megabytes, and because "who was
+ * mailed" is a question about this run alone. An entry opens with a line of
+ * equals signs, then `<when>  [<channel>]  to: <address>`.
+ */
+export function entriesSince(mark: number): OutboxEntry[] {
+  const size = fs.statSync(OUTBOX).size;
+  const bytes = Buffer.alloc(Math.max(0, size - mark));
+  const handle = fs.openSync(OUTBOX, "r");
+  try {
+    fs.readSync(handle, bytes, 0, bytes.length, mark);
+  } finally {
+    fs.closeSync(handle);
+  }
+  const entries: OutboxEntry[] = [];
+  for (const block of bytes.toString("utf8").split(/^={78}$/m)) {
+    const head = /^\S+\s+\[(\w+)\]\s+to:\s*(\S+)/m.exec(block);
+    if (!head) continue;
+    const [top, ...rest] = block.split(/^-{78}$/m);
+    entries.push({
+      channel: head[1],
+      to: head[2],
+      subject: /^subject: (.*)$/m.exec(top)?.[1] ?? "",
+      attached: [...top.matchAll(/^attached: (.*)$/gm)].map((m) => m[1]),
+      body: rest.join("").trim(),
+    });
+  }
+  return entries;
+}

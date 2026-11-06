@@ -19,8 +19,9 @@ import { AttachmentRows, type PendingAttachment } from "@/features/breach/compon
 import { LOGGED_FIELDS, LoggedFields } from "@/features/breach/components/logged-details";
 import { LOCATION_COPY } from "@/features/breach/components/copy";
 import { useAllProcessors, useAllSources } from "@/features/registry/queries";
+import { canSee } from "@/lib/permissions";
 import { keys } from "@/lib/query";
-import { useToast } from "@/providers";
+import { useAuth, useToast } from "@/providers";
 import type { BreachCyberAttack, BreachLocationKind, BreachLogged } from "@/types";
 
 /** A `datetime-local` value as an instant, or null when empty. */
@@ -36,30 +37,33 @@ export function messageOf(err: unknown, fallback: string): string {
     : fallback;
 }
 
-/** A to Z, ignoring case, and narrowed by what is typed. */
-function arrange(options: { uuid: string; label: string; also?: string }[], q: string) {
+/** A to Z, ignoring case, and narrowed by what is typed. What is chosen stays
+ *  in the list, or the box would read "Choose…" while it is still chosen. */
+function arrange(options: { uuid: string; label: string; also?: string }[], q: string, chosen: string) {
   const term = q.trim().toLowerCase();
   return options
-    .filter((o) => !term || `${o.label} ${o.also ?? ""}`.toLowerCase().includes(term))
+    .filter((o) => !term || o.uuid === chosen || `${o.label} ${o.also ?? ""}`.toLowerCase().includes(term))
     .sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" }));
 }
 
 // Every row, not the newest fifty: an incident can be at any processor or
 // source, however old, and the register's newest page left the seeded ones
 // out (2026-10-06).
-function useProcessorOptions(q: string) {
+function useProcessorOptions(q: string, chosen: string) {
   const processors = useAllProcessors();
   return arrange(
     (processors.data ?? []).map((p) => ({ uuid: p.processor_uuid, label: p.legal_name, also: p.contract_ref })),
     q,
+    chosen,
   );
 }
 
-function useSourceOptions(q: string) {
+function useSourceOptions(q: string, chosen: string) {
   const sources = useAllSources();
   return arrange(
     (sources.data ?? []).map((s) => ({ uuid: s.source_uuid, label: `${s.name} (${s.source_code})` })),
     q,
+    chosen,
   );
 }
 
@@ -101,19 +105,28 @@ function Choose({
 
 /** Listed whole, A to Z, and narrowed by typing: the register can hold
  *  hundreds. */
-export function ProcessorPicker({ value, onChange }: { value: string; onChange: (uuid: string) => void }) {
+export function ProcessorPicker({
+  value,
+  onChange,
+  label = "Processor",
+}: {
+  value: string;
+  onChange: (uuid: string) => void;
+  label?: string;
+}) {
   const [q, setQ] = React.useState("");
-  const options = useProcessorOptions(q);
-  return <Choose label="Processor" q={q} setQ={setQ} options={options} value={value} onChange={onChange} />;
+  const options = useProcessorOptions(q, value);
+  return <Choose label={label} q={q} setQ={setQ} options={options} value={value} onChange={onChange} />;
 }
 
 export function SourcePicker({ value, onChange }: { value: string; onChange: (uuid: string) => void }) {
   const [q, setQ] = React.useState("");
-  const options = useSourceOptions(q);
+  const options = useSourceOptions(q, value);
   return <Choose label="Data source" q={q} setQ={setQ} options={options} value={value} onChange={onChange} />;
 }
 
 export function RecordBreachForm({ onDone }: { onDone: () => void }) {
+  const { me } = useAuth();
   const toast = useToast();
   const qc = useQueryClient();
   const router = useRouter();
@@ -127,6 +140,10 @@ export function RecordBreachForm({ onDone }: { onDone: () => void }) {
   const [logged, setLogged] = React.useState<BreachLogged>({});
   const [cyber, setCyber] = React.useState<BreachCyberAttack | null>(null);
   const record = useMutation({ mutationFn: recordBreach });
+  // The Legal PoC has no sources section, so nothing to choose from.
+  const places = (Object.keys(LOCATION_COPY) as BreachLocationKind[]).filter(
+    (k) => k !== "data_source" || canSee(me, "sources"),
+  );
 
   const detectedAt = instant(detected);
   const ready =
@@ -152,9 +169,9 @@ export function RecordBreachForm({ onDone }: { onDone: () => void }) {
         ),
         cyber_attack: cyber,
       });
-      // The incident first - its clocks run from now - then its files, one by
-      // one. A file the server refuses does not undo the incident: it is said,
-      // and can be attached again from the incident's page.
+      // The incident first, then its files, one by one. A file the server
+      // refuses does not undo the incident: it is said, and can be attached
+      // again from the incident's page.
       const chosen = files.filter((f): f is PendingAttachment & { file: File } => f.file !== null);
       const refused: string[] = [];
       for (const f of chosen) {
@@ -209,7 +226,7 @@ export function RecordBreachForm({ onDone }: { onDone: () => void }) {
               setTarget("");
             }}
           >
-            {(Object.keys(LOCATION_COPY) as BreachLocationKind[]).map((k) => (
+            {places.map((k) => (
               <option key={k} value={k}>
                 {LOCATION_COPY[k]}
               </option>
@@ -221,7 +238,7 @@ export function RecordBreachForm({ onDone }: { onDone: () => void }) {
       {kind === "data_source" && <SourcePicker value={target} onChange={setTarget} />}
       <Field
         label="Where, in words"
-        hint={kind === "other" ? "Which store or system" : "Optional: the system, the table, the device"}
+        hint={kind === "other" ? "Which store or system" : "Optional: the system, the file, the device"}
         required={kind === "other"}
       >
         {(p) => <Textarea {...p} value={detail} onChange={(e) => setDetail(e.target.value)} />}

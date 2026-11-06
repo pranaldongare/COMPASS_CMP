@@ -218,7 +218,7 @@ function SearchForm({
   return (
     <form
       method="post"
-      className="flex items-end gap-2"
+      className="flex flex-wrap items-end gap-2"
       onSubmit={(e) => {
         e.preventDefault();
         onSubmit(term.trim());
@@ -299,7 +299,7 @@ function AboutPicker({
   const aboutAPerson = effectiveKind === "data_subject" || effectiveKind === "staff";
 
   return (
-    <div className="flex items-end gap-2">
+    <div className="flex flex-wrap items-end gap-2">
       <Field label="About">
         {(p) => (
           <Select

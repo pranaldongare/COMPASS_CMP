@@ -4,17 +4,19 @@
  * Above the tabs, where it stands: closing (or reopening) it, with exactly
  * what still stands in the way, beside the facts it was logged with. Under
  * the tabs, the work in the order it runs: the duties and their clocks first,
- * because they are what runs out; then validation, who it touched and what
- * they are told, the tickets, the assessment, the files kept with it
- * (2026-10-06), and its history. A tab whose
- * duties are late says so from whichever tab is open.
+ * because they are what runs out; then validation, the reports (0059), the
+ * people affected and what they are told, the tickets, the assessment, the
+ * files kept with it (2026-10-06), and its history. A tab whose duties are
+ * late says so from whichever tab is open.
  *
  * The fragment names the tab, so a tab can be linked to and survives a
  * reload; the anchors of the cards inside a tab open it too, which keeps
  * `#tickets` - the bell's link for a holder's answer - landing on the card.
  * It is quoted by its incident reference until a yes records it as a breach
  * (S3-06). Nothing on this page decides what is due or whether the breach may
- * close; every card renders the server's answer.
+ * close; every card renders the server's answer. Who reported it is here too
+ * when it came through the public link (0058). A failed background read keeps
+ * what is on the screen: an open form is not thrown away for it.
  */
 "use client";
 
@@ -40,7 +42,6 @@ import { AuditTrailLink } from "@/components/data-display/audit-link";
 import { PageHeader } from "@/components/layout/app-shell";
 import {
   Alert,
-  Button,
   Card,
   CardBody,
   CardHeader,
@@ -52,7 +53,10 @@ import {
 import { Tab, TabList, TabPanel, Tabs, useHashTab } from "@/components/ui/tabs";
 import { listBreachTickets } from "@/features/breach/api";
 import { AffectedCard } from "@/features/breach/components/affected-card";
-import { LoggedDetails } from "@/features/breach/components/logged-details";
+import {
+  LoggedDetails,
+  REPORTED_CYBER_ATTACK,
+} from "@/features/breach/components/logged-details";
 import { AttachmentsCard } from "@/features/breach/components/attachments";
 import {
   AssessmentCard,
@@ -66,15 +70,18 @@ import {
   locationText,
 } from "@/features/breach/components/copy";
 import { NoticesCard } from "@/features/breach/components/notices-card";
+import { NotifyBoardButton, ReportsCard } from "@/features/breach/components/reports-card";
 import { TicketsCard } from "@/features/breach/components/tickets-card";
 import { useBreach } from "@/features/breach/queries";
 import { formatDateTime } from "@/lib/format";
 import { keys } from "@/lib/query";
-import type { Breach } from "@/types";
+import { useAuth } from "@/providers";
+import type { Breach, BreachTicket } from "@/types";
 
 const TABS = [
   "duties",
   "validation",
+  "reports",
   "people",
   "tickets",
   "assessment",
@@ -108,7 +115,7 @@ export default function BreachPage() {
   });
 
   if (breach.isLoading) return <Skeleton className="h-96" />;
-  if (breach.error) {
+  if (breach.error && !breach.data) {
     return (
       <Alert tone="danger" title="Could not load this incident">
         {breach.error.userMessage()}
@@ -120,6 +127,8 @@ export default function BreachPage() {
 
   const outstanding = b.obligations.filter((d) => d.state === "outstanding");
   const late = outstanding.filter((d) => d.clock.overdue || d.clock.past_target).length;
+  // A report completes every duty but telling the people.
+  const reportsDue = outstanding.filter((d) => d.duty !== "principals").length;
   const openTickets = (tickets.data ?? []).filter(
     (t) => t.state === "issued" || t.state === "returned",
   );
@@ -155,18 +164,7 @@ export default function BreachPage() {
         }
         actions={
           <>
-            <Button variant="secondary" size="sm" asChild>
-              <Link href={`/breaches/${b.breach_uuid}/org-board`}>
-                <FileText className="size-4" />
-                Brief for the organisation&apos;s board
-              </Link>
-            </Button>
-            <Button variant="secondary" size="sm" asChild>
-              <Link href={`/breaches/${b.breach_uuid}/board`}>
-                <FileText className="size-4" />
-                Documents for the Board
-              </Link>
-            </Button>
+            <NotifyBoardButton breach={b} />
             <AuditTrailLink entityType="breach" uuid={b.breach_uuid} label={b.reference} />
           </>
         }
@@ -218,8 +216,8 @@ export default function BreachPage() {
       {/* The step that starts the statutory clocks, wherever the reader is. */}
       {b.status === "open" && b.determination === "pending" && tab !== "validation" && (
         <Alert tone="info" title="Not validated yet" className="mb-6">
-          Is it a personal data breach under s.2(u)? A yes records it and starts the DPDP
-          duties.{" "}
+          Is it a personal data breach under s.2(u)? A yes records it, starts the DPDP duties
+          and gives 30 minutes to tell the organisation&apos;s board.{" "}
           <a href="#validation" className="font-medium text-accent-text hover:underline">
             Record the validation
           </a>
@@ -239,6 +237,9 @@ export default function BreachPage() {
           <Tab value="validation" icon={ShieldCheck} count={b.determinations.length}>
             Validation
           </Tab>
+          <Tab value="reports" icon={FileText} count={reportsDue}>
+            Reports
+          </Tab>
           <Tab value="people" icon={Users}>
             People &amp; notices
           </Tab>
@@ -246,7 +247,7 @@ export default function BreachPage() {
             value="tickets"
             icon={Inbox}
             count={tickets.data ? openTickets.length : undefined}
-            alert={ticketsLate ? `${ticketsLate} past their answer-by` : undefined}
+            alert={ticketsLate ? `${ticketsLate} past their resolve-by date` : undefined}
           >
             Tickets
           </Tab>
@@ -267,6 +268,9 @@ export default function BreachPage() {
         <TabPanel value="validation" className="space-y-6">
           <DeterminationCard breach={b} />
         </TabPanel>
+        <TabPanel value="reports" className="space-y-6">
+          <ReportsCard breach={b} />
+        </TabPanel>
         <TabPanel value="people" className="space-y-6">
           <div id="affected" className="scroll-mt-20">
             <AffectedCard breach={b} />
@@ -285,7 +289,7 @@ export default function BreachPage() {
           <AttachmentsCard breach={b} />
         </TabPanel>
         <TabPanel value="activity" className="space-y-6">
-          <HistoryCard breach={b} />
+          <HistoryCard breach={b} tickets={tickets.data ?? []} />
         </TabPanel>
       </Tabs>
 
@@ -306,6 +310,27 @@ function DetailsCard({ breach: b }: { breach: Breach }) {
         <DescriptionList>
           {b.breach_reference && b.incident_reference !== b.breach_reference && (
             <DescriptionItem term="Logged as">{b.incident_reference}</DescriptionItem>
+          )}
+          {b.reported && (
+            <>
+              <DescriptionItem term="Reported by">
+                {b.reported.reporter_name}
+                <span className="block text-xs text-text-subtle">
+                  {b.reported.reporter_email}
+                </span>
+              </DescriptionItem>
+              <DescriptionItem term="Arrived">
+                {formatDateTime(b.reported.received_at)}
+              </DescriptionItem>
+              <DescriptionItem term="They noticed it">
+                {b.reported.noticed_at ? formatDateTime(b.reported.noticed_at) : "Not said"}
+              </DescriptionItem>
+              {b.reported.cyber_attack && (
+                <DescriptionItem term="Was it a cyber attack?">
+                  {REPORTED_CYBER_ATTACK[b.reported.cyber_attack]}
+                </DescriptionItem>
+              )}
+            </>
           )}
           <DescriptionItem term="Recorded as a breach">
             {b.breach_recorded_at
@@ -339,8 +364,10 @@ function DetailsCard({ breach: b }: { breach: Breach }) {
   );
 }
 
-/** Every open, close and reopening, with the reason a reopening gives. */
-function HistoryCard({ breach: b }: { breach: Breach }) {
+/** Every open, close and reopening, with the reason a reopening gives. A
+ *  ticket has its own trail, so a date moved on one is found from here too. */
+function HistoryCard({ breach: b, tickets }: { breach: Breach; tickets: BreachTicket[] }) {
+  const { me } = useAuth();
   return (
     <Card id="history" className="scroll-mt-20">
       <CardHeader className="flex items-center justify-between">
@@ -348,7 +375,8 @@ function HistoryCard({ breach: b }: { breach: Breach }) {
           <CardTitle>History</CardTitle>
           <p className="mt-0.5 text-xs text-text-muted">
             Append-only. Every close and reopening, who made it, and why. Everything else
-            done to it is in the audit trail.
+            done to the breach is in its audit trail; what happens on a ticket, such as a
+            changed date, is on that ticket&apos;s own trail.
           </p>
         </div>
         <HistoryIcon className="size-4 text-text-subtle" aria-hidden="true" />
@@ -385,6 +413,28 @@ function HistoryCard({ breach: b }: { breach: Breach }) {
             </li>
           ))}
         </ol>
+      )}
+      {tickets.length > 0 && me?.nav.includes("audit") && (
+        <CardBody className="border-t border-border">
+          <p className="mb-2 text-sm font-medium">Each ticket&apos;s trail</p>
+          <ul className="space-y-2">
+            {tickets.map((t) => (
+              <li key={t.ticket_uuid} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <span>
+                  {t.holder_name ?? "A member of staff"}
+                  <span className="block text-xs text-text-subtle">
+                    Assigned {formatDateTime(t.created_at)}
+                  </span>
+                </span>
+                <AuditTrailLink
+                  entityType="breach_ticket"
+                  uuid={t.ticket_uuid}
+                  label={`Ticket on ${b.reference}`}
+                />
+              </li>
+            ))}
+          </ul>
+        </CardBody>
       )}
     </Card>
   );

@@ -1,0 +1,63 @@
+/**
+ * An upload gets longer than the 30-second default.
+ *
+ * Every breach upload goes through `apiPost`: a proof, a ticket's file, an
+ * attachment, a list of up to 50,000 rows. The request interceptor gives a
+ * multipart body `UPLOAD_TIMEOUT_MS` and leaves every other request on the
+ * default, as the portal does.
+ *
+ * Apart from `client.test.ts`, which is shared byte-for-byte with the portal
+ * (frontend/shared-files.txt). The adapter stands in for the network and sees
+ * the config exactly as the interceptors left it.
+ */
+
+import type { AxiosAdapter, InternalAxiosRequestConfig } from "axios";
+import { describe, expect, it } from "vitest";
+
+import { UPLOAD_TIMEOUT_MS, apiGet, apiPost } from "@/lib/api/client";
+
+function capture(): { adapter: AxiosAdapter; seen: InternalAxiosRequestConfig[] } {
+  const seen: InternalAxiosRequestConfig[] = [];
+  const adapter: AxiosAdapter = async (config) => {
+    seen.push(config);
+    return { data: {}, status: 200, statusText: "OK", headers: {}, config };
+  };
+  return { adapter, seen };
+}
+
+describe("the request timeout", () => {
+  it("is 180 seconds for a multipart upload", async () => {
+    const { adapter, seen } = capture();
+    const form = new FormData();
+    form.append("file", new Blob(["%PDF-1.7"], { type: "application/pdf" }), "proof.pdf");
+
+    await apiPost("/breaches/b1/attachments", form, { adapter });
+
+    expect(UPLOAD_TIMEOUT_MS).toBe(180_000);
+    expect(seen[0]?.timeout).toBe(UPLOAD_TIMEOUT_MS);
+    // The browser still writes the multipart boundary itself.
+    expect(String(seen[0]?.headers.get("Content-Type") ?? "")).not.toContain(
+      "application/json",
+    );
+  });
+
+  it("stays at the 30-second default for everything else", async () => {
+    const { adapter, seen } = capture();
+
+    await apiPost("/breaches", { title: "A laptop" }, { adapter });
+    await apiGet("/breaches", { adapter });
+
+    expect(seen.map((config) => config.timeout)).toEqual([30_000, 30_000]);
+  });
+
+  it("never shortens a longer timeout a caller asked for", async () => {
+    const { adapter, seen } = capture();
+
+    await apiPost("/breaches/b1/attachments", new FormData(), {
+      adapter,
+      timeout: 300_000,
+    });
+
+    expect(seen[0]?.timeout).toBe(300_000);
+  });
+});

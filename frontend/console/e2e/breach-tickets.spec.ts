@@ -1,7 +1,9 @@
 /**
  * Breach tickets, end to end (S3-08).
  *
- * The DPO logs an incident, validates it a breach, and asks the DCO to act;
+ * The DPO logs an incident, validates it a breach, and asks the DCO to act
+ * (the organisation's board is `breach-workflow.spec.ts`: a no sets its duty
+ * aside here, as it does the rest);
  * the DCO finds the ticket on Tickets - the breach reference and the ask,
  * nothing else from the register - writes and returns it; the DPO closes the
  * ticket, and only then does the breach close.
@@ -38,7 +40,7 @@ const bare = (url: string) => url.split("#")[0];
 test.describe("the DPO asks", () => {
   test.use({ storageState: statePath("dpo") });
 
-  test("logs, records the breach, tells the board and assigns a ticket to the DCO", async ({ page }) => {
+  test("logs, records the breach and assigns a ticket to the DCO", async ({ page }) => {
     shared.title = `E2E ticket breach ${Date.now()}`;
     await page.goto("/breaches");
     await page.getByRole("button", { name: "Log an incident" }).click();
@@ -58,14 +60,6 @@ test.describe("the DPO asks", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^BR-\d{4}-\d{4}$/);
     shared.reference = ((await page.getByRole("heading", { level: 1 }).textContent()) ?? "").trim();
     shared.url = bare(page.url());
-
-    await openTab(page, "Duties");
-    const orgBoard = page.getByRole("row", { name: /Organisation's board/ });
-    await orgBoard.getByRole("button", { name: "Record the report" }).click();
-    await page.getByLabel(/^Reported at/).fill(minutesAgo(5));
-    await page.getByLabel(/^Reported to/).fill("The chair, by phone");
-    await page.getByRole("dialog").getByRole("button", { name: "Record", exact: true }).click();
-    await expect(orgBoard.getByText("Done")).toBeVisible();
 
     await openTab(page, "Tickets");
     await page.getByRole("button", { name: "Assign a ticket" }).click();
@@ -186,14 +180,6 @@ test.describe("a temporary holder", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^BR-\d{4}-\d{4}$/);
     temp.reference = ((await page.getByRole("heading", { level: 1 }).textContent()) ?? "").trim();
     temp.url = bare(page.url());
-
-    await openTab(page, "Duties");
-    const orgBoard = page.getByRole("row", { name: /Organisation's board/ });
-    await orgBoard.getByRole("button", { name: "Record the report" }).click();
-    await page.getByLabel(/^Reported at/).fill(minutesAgo(5));
-    await page.getByLabel(/^Reported to/).fill("The chair, by phone");
-    await page.getByRole("dialog").getByRole("button", { name: "Record", exact: true }).click();
-    await expect(orgBoard.getByText("Done")).toBeVisible();
 
     await openTab(page, "Tickets");
     await page.getByRole("button", { name: "Assign a ticket" }).click();

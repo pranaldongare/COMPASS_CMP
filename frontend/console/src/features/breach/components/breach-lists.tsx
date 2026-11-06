@@ -1,14 +1,15 @@
 /**
- * Who a breach touched, from a list somebody sends us (2026-10-07).
+ * The people a breach affected, from a list somebody sends us (2026-10-07).
  *
  * When the people are not on the platform the records cannot list them, and
  * the breach could not close: the notice is owed to everyone listed. The list
- * comes from outside instead, from one of two templates - people by name,
- * email and mobile, or asset IDs - and is checked before it is taken: nothing
- * is written, everything it would add is counted, and every row that cannot
- * be read is named by its row number. Somebody already on the platform joins
- * the list as themselves; anybody else is kept, sealed, as this breach's
- * contact, and is sent the notice by email and SMS.
+ * comes from outside instead, on one of two Excel templates - people by name,
+ * mail ID and mobile number, which is nearly always what somebody has, or
+ * asset IDs - and is checked before it is taken: nothing is written,
+ * everything it would add is counted, and every row that cannot be read is
+ * named by its row number. Somebody already on the platform joins the list as
+ * themselves; anybody else is kept, sealed, as this breach's contact, and is
+ * sent the notice by email and SMS.
  */
 "use client";
 
@@ -40,14 +41,17 @@ import type { Breach, BreachListKind, BreachListReport } from "@/types";
 
 const KINDS: Record<BreachListKind, { label: string; hint: string }> = {
   contacts: {
-    label: "People: name, email, mobile",
-    hint: "Each person is sent the notice by email and by SMS. Somebody already on the platform is matched by email or mobile and also sees it in their account.",
+    label: "People: name, mail ID, mobile number",
+    hint: "Each person is sent the notice by email and by SMS. Somebody already on the platform is matched by mail ID or mobile number and also sees it in their account.",
   },
   assets: {
     label: "Asset IDs",
     hint: "The platform's asset ID or the capture tool's own. The people who consented in each asset are listed; people in an asset who consented to nothing cannot be traced, and are counted.",
   },
 };
+
+/** What comes after adding people, however they were added. */
+export const NEXT_STEP = "Next: draft and approve the notice below, then send it.";
 
 function Counts({ report, taken }: { report: BreachListReport; taken: boolean }) {
   const rows: [string, number][] = [
@@ -73,7 +77,16 @@ function Counts({ report, taken }: { report: BreachListReport; taken: boolean })
 }
 
 /** Check a filled-in template, then add what it names. */
-export function UploadList({ breach, onDone }: { breach: Breach; onDone: () => void }) {
+export function UploadList({
+  breach,
+  onBack,
+  onDone,
+}: {
+  breach: Breach;
+  /** Offered instead of Cancel when this is a step in something longer. */
+  onBack?: () => void;
+  onDone: () => void;
+}) {
   const toast = useToast();
   const qc = useQueryClient();
   const input = React.useRef<HTMLInputElement>(null);
@@ -122,10 +135,7 @@ export function UploadList({ breach, onDone }: { breach: Breach; onDone: () => v
     try {
       const taken = await takeBreachList(breach.breach_uuid, kind, file);
       const added = taken.matched_people + taken.new_contacts;
-      toast.success(
-        `${added} ${added === 1 ? "person" : "people"} added to the list`,
-        "Send the approved notice to reach them: email and SMS, and the account of anyone on the platform.",
-      );
+      toast.success(`${added} ${added === 1 ? "person" : "people"} added to the list`, NEXT_STEP);
       void qc.invalidateQueries({ queryKey: keys.breach.affected(breach.breach_uuid) });
       void qc.invalidateQueries({ queryKey: keys.breach.notices(breach.breach_uuid) });
       void qc.invalidateQueries({ queryKey: keys.breach.detail(breach.breach_uuid) });
@@ -137,33 +147,39 @@ export function UploadList({ breach, onDone }: { breach: Breach; onDone: () => v
     }
   }
 
+  const option = (k: BreachListKind) => (
+    <label className="flex items-start gap-2 text-sm">
+      <input
+        type="radio"
+        name="breach-list-kind"
+        className="mt-0.5 size-4 accent-[var(--accent)]"
+        checked={kind === k}
+        onChange={() => choose(k)}
+      />
+      <span>
+        {KINDS[k].label}
+        <span className="block text-xs text-text-subtle">{KINDS[k].hint}</span>
+      </span>
+    </label>
+  );
+
   return (
-    <div className="space-y-4 rounded-md border border-border p-4">
+    <div className="space-y-4">
       <div>
-        <p className="text-sm font-medium">Add people from a list</p>
+        <p className="text-sm font-medium">Upload an Excel list</p>
         <p className="mt-0.5 text-xs text-text-muted">
-          For people the records cannot show - not on the platform, or known only by the assets
-          they are in. Start from the template, fill it in, and check it before adding it.
+          For people the records cannot show, such as anyone not on the platform. Download the
+          template, fill in one row per person, and check the file before adding it.
         </p>
       </div>
 
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">What the list holds</legend>
-        {(Object.keys(KINDS) as BreachListKind[]).map((k) => (
-          <label key={k} className="flex items-start gap-2 text-sm">
-            <input
-              type="radio"
-              name="breach-list-kind"
-              className="mt-0.5 size-4 accent-[var(--accent)]"
-              checked={kind === k}
-              onChange={() => choose(k)}
-            />
-            <span>
-              {KINDS[k].label}
-              <span className="block text-xs text-text-subtle">{KINDS[k].hint}</span>
-            </span>
-          </label>
-        ))}
+        {option("contacts")}
+        <details open={kind === "assets"}>
+          <summary className="cursor-pointer text-xs text-text-muted">Only have asset IDs?</summary>
+          <div className="mt-2">{option("assets")}</div>
+        </details>
       </fieldset>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -174,7 +190,7 @@ export function UploadList({ breach, onDone }: { breach: Breach; onDone: () => v
         <input
           ref={input}
           type="file"
-          accept=".csv,text/csv"
+          accept=".xlsx,.csv"
           className="sr-only"
           aria-label="The filled-in list"
           tabIndex={-1}
@@ -182,6 +198,9 @@ export function UploadList({ breach, onDone }: { breach: Breach; onDone: () => v
             setFile(e.target.files?.[0] ?? null);
             setReport(null);
             setError(null);
+            // A file corrected and saved over itself is the same path, and the
+            // browser says nothing of a path it already holds.
+            e.target.value = "";
           }}
         />
         <Button variant="secondary" size="sm" onClick={() => input.current?.click()}>
@@ -191,7 +210,8 @@ export function UploadList({ breach, onDone }: { breach: Breach; onDone: () => v
         {file && <span className="text-xs text-text-muted">{file.name}</span>}
       </div>
       <p className="text-xs text-text-subtle">
-        A CSV. From Excel: File &gt; Save As &gt; CSV UTF-8. Up to 50,000 rows and 25 MB.
+        An Excel file (.xlsx) made from the template, with its column headings left as they are.
+        Up to 50,000 rows and 25 MB.
       </p>
 
       <FormError message={error} />
@@ -233,8 +253,8 @@ export function UploadList({ breach, onDone }: { breach: Breach; onDone: () => v
       )}
 
       <div className="flex flex-wrap gap-2">
-        <Button variant="ghost" size="sm" onClick={onDone}>
-          Cancel
+        <Button variant="ghost" size="sm" onClick={onBack ?? onDone}>
+          {onBack ? "Back" : "Cancel"}
         </Button>
         <Button
           variant="secondary"
@@ -262,8 +282,9 @@ export function UploadList({ breach, onDone }: { breach: Breach; onDone: () => v
   );
 }
 
-/** People the breach touched who have no account, and the lists they came in. */
+/** People affected who have no account, and the lists they came in. */
 export function BreachContacts({ breach }: { breach: Breach }) {
+  const toast = useToast();
   const query = useQuery({
     queryKey: keys.breach.contacts(breach.breach_uuid),
     queryFn: () => listBreachContacts(breach.breach_uuid),
@@ -274,12 +295,20 @@ export function BreachContacts({ breach }: { breach: Breach }) {
     rows: NonNullable<typeof data>["contacts"];
     cursor: string | null;
   }>({ from: undefined, rows: [], cursor: null });
+  const [loadingMore, setLoadingMore] = React.useState(false);
   const paging = more.from === data ? more : { from: data, rows: [], cursor: data?.next_cursor ?? null };
 
   async function loadMore() {
     if (!paging.cursor) return;
-    const page = await listBreachContacts(breach.breach_uuid, paging.cursor);
-    setMore({ from: data, rows: [...paging.rows, ...page.contacts], cursor: page.next_cursor });
+    setLoadingMore(true);
+    try {
+      const page = await listBreachContacts(breach.breach_uuid, paging.cursor);
+      setMore({ from: data, rows: [...paging.rows, ...page.contacts], cursor: page.next_cursor });
+    } catch (err) {
+      toast.error("Could not load more", messageOf(err, "The server refused."));
+    } finally {
+      setLoadingMore(false);
+    }
   }
 
   if (!data || (data.total === 0 && data.uploads.length === 0)) return null;
@@ -318,7 +347,7 @@ export function BreachContacts({ breach }: { breach: Breach }) {
         </Table>
       )}
       {paging.cursor && (
-        <Button variant="ghost" size="sm" onClick={loadMore}>
+        <Button variant="ghost" size="sm" loading={loadingMore} onClick={loadMore}>
           Show more
         </Button>
       )}

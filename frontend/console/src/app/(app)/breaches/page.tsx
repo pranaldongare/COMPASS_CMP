@@ -16,6 +16,10 @@
  * most 500 rows and its titles are sealed, so the narrowing happens here,
  * after the API client has opened them; every clock and count it reads is
  * the server's.
+ *
+ * Above the filters, reports from the public link waiting for an office
+ * (0058): they are not in the register until one is claimed. Those an office
+ * dismissed are a button away, whether or not any wait.
  */
 "use client";
 
@@ -45,6 +49,7 @@ import {
   clockText,
   locationText,
 } from "@/features/breach/components/copy";
+import { DismissedReportsButton, IntakeCard } from "@/features/breach/components/intake-card";
 import { RecordBreachForm } from "@/features/breach/components/record-breach";
 import { useBreaches } from "@/features/breach/queries";
 import { cn, formatDateTime, formatRelative } from "@/lib/format";
@@ -133,14 +138,19 @@ function BreachesPageView() {
     <>
       <PageHeader
         title="Incidents and personal data breaches"
-        description="Section 8(6) and Rule 7, and CERT-In. Log an incident as it is noticed; the team validates whether it is a personal data breach, and a yes records it. The platform tracks every clock; people contain it, validate it, and submit to the Board and CERT-In through their own channels."
+        description="Section 8(6) and Rule 7, and CERT-In. Log an incident as it is noticed; the team validates whether it is a personal data breach, and a yes records it. The platform tracks every clock and mails the organisation's board; people contain it, validate it, and send to the DPDP Board and CERT-In through the regulators' own channels."
         actions={
-          <Button variant="primary" onClick={() => setRecording(true)}>
-            <Plus className="size-4" />
-            Log an incident
-          </Button>
+          <>
+            <DismissedReportsButton />
+            <Button variant="primary" onClick={() => setRecording(true)}>
+              <Plus className="size-4" />
+              Log an incident
+            </Button>
+          </>
         }
       />
+
+      <IntakeCard />
 
       <FilterBar>
         <SearchBox
@@ -184,7 +194,7 @@ function BreachesPageView() {
           allLabel="Any"
           options={[
             { value: "open", label: "With an open ticket" },
-            { value: "overdue", label: "Past their answer-by" },
+            { value: "overdue", label: "Past their resolve-by date" },
           ]}
         />
         <FilterSelect
@@ -306,7 +316,7 @@ function BreachesPageView() {
                             {b.tickets_open} open
                             {b.tickets_overdue > 0 && (
                               <span className="block text-xs text-danger-text">
-                                {b.tickets_overdue} past their answer-by
+                                {b.tickets_overdue} past their resolve-by date
                               </span>
                             )}
                           </Link>

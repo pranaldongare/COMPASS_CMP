@@ -618,12 +618,22 @@ export const SECTIONS: HelpSection[] = [
     id: "breaches",
     title: "Incidents and personal data breaches",
     summary:
-      "From an incident's first minutes to closing it: validation, the duties and their clocks, the notices, the tickets.",
+      "From a report or an incident's first minutes to closing it: validation, the duties and their clocks, the reports, the notices, the tickets.",
     roles: ["dpo", "legal"],
     blocks: [
       {
         kind: "p",
-        text: "[[Breaches]] is the Privacy Office's alone; every other role is told it is not there. The platform logs, records, drafts and tracks every clock. It never reports to the organisation's board, the Data Protection Board or CERT-In: a person does, through their own channel, and you record it.",
+        text: "[[Breaches]] is the Privacy Office's alone; every other role is told it is not there. The platform logs, records, drafts and tracks every clock, and mails the organisation's board. It never sends anything to the DPDP Board or CERT-In: a person does, through the regulator's own channel, and keeps the proof here.",
+      },
+      {
+        kind: "list",
+        title: "Reports from the public link",
+        items: [
+          "Anyone can report a breach through the public link, with no account: they give their name and confirm their email address with a code. The link is on [[Breach settings]].",
+          "The report arrives with an INC reference under [[Reported through the public link]], above the register. The DPO and Legal are both mailed, and both see it until one claims or dismisses it. No clock runs and no duty exists until then.",
+          "The list shows fifty at a time, the oldest first, with [[Previous]] and [[Next]] when there are more.",
+          "Click [[Read it]], then [[Claim for my office]]: it becomes an incident in your register under the same reference, and the other office no longer sees it. What they said about a cyber attack starts nothing; mark it yourself once you have read it. Or [[Dismiss]] it with a reason: the report is kept.",
+        ],
       },
       {
         kind: "tip",
@@ -633,36 +643,62 @@ export const SECTIONS: HelpSection[] = [
       {
         kind: "tip",
         title: "Finding your way on a breach's page",
-        text: "[[Close the breach]] sits at the top, with a list of what still stands in the way. Below it the work is in tabs, in the order it runs: [[Duties]], [[Validation]], [[People & notices]], [[Tickets]], [[Assessment]] and [[Activity]]. A red count on [[Duties]] or [[Tickets]] means something there is late.",
+        text: "[[Close the breach]] sits at the top, with a list of what still stands in the way. Below it the work is in tabs, in the order it runs: [[Duties]], [[Validation]], [[Reports]], [[People & notices]], [[Tickets]], [[Assessment]], [[Attachments]] and [[Activity]]. A red count on [[Duties]] or [[Tickets]] means something there is late.",
       },
       {
         kind: "steps",
         title: "From incident to close",
         items: [
-          "[[Log an incident]] - from your dashboard or [[Breaches]] - with the time it was [[First noticed]], not now. Under [[What is known so far]] answer what you can: [[Is it a cyber attack?]] (Yes starts the CERT-In duty at once), where it started, how it was found, the systems, how much, countries, kinds of data, whose data, our entities and third parties - all optional. [[Attach a file]] for the email that reported it, a screenshot or a chat; more can go on the [[Attachments]] tab later. It gets an INC reference, and the [[Organisation's board]] duty starts: thirty minutes from first noticed.",
-          "Tell the board now: [[Brief for the organisation's board]] drafts what to say and prints. Then [[Record the report]] on the duty, with when and to whom.",
-          "If it may be a reportable cyber incident, [[Mark reportable to CERT-In]]: six hours from first noticed.",
-          "Record the [[Validation]]: is it a personal data breach under s.2(u)? The first yes records it with a BR reference and starts the Board and principals duties. No sets them aside; the reasoning is kept.",
-          "Derive [[Who it touched]], keep the assessment current, and draft the notice. [[Send version 1]] waits until the breach is recorded.",
-          "People the records cannot show - not on the platform, or known only by their assets: on [[People & notices]] click [[Add people from a list]], choose what the list holds, [[Download the template]], fill it in and save it as CSV. [[Check the file]] shows what it would add and which rows it cannot read; then [[Add to the list]]. People with no account are sent the notice by email and SMS, and count toward [[Principals notified]] like everyone else.",
-          "Ask the people who must act: [[Assign a ticket]] to a member of staff, or choose [[Someone without a console login]] and give their name and work email, with what you need and an optional [[Answer by]]. Read their answers on the ticket; [[Send back]] or [[Close the ticket]] once it is returned.",
-          "Draft [[Documents for the Board]], submit through the Board's own channel, and [[Record submission]] on each duty with the reference returned.",
+          "[[Log an incident]] - from your dashboard or [[Breaches]] - with the time it was [[First noticed]], not now. Under [[What is known so far]] answer what you can: [[Is it a cyber attack?]] (Yes starts the CERT-In duty at once), where it started, how it was found, the systems, how much, countries, kinds of data, whose data, our entities and third parties - all optional. [[Attach a file]] for the email that reported it, a screenshot or a chat; more can go on the [[Attachments]] tab later. It gets an INC reference. Nothing else is due yet.",
+          "If it may be a reportable cyber incident, [[Mark reportable to CERT-In]]: six hours from first noticed. If that turns out to be a mistake, validate it as No, then click [[Not reportable to CERT-In]] on its row and say why: the duty is set aside and nobody is mailed. A later yes does not bring it back; mark it again if it is reportable.",
+          "Record the [[Validation]]: is it a personal data breach under s.2(u)? The first yes records it with a BR reference, starts the DPDP Board and principals duties, and gives you 30 minutes to tell the organisation's board. A later no sets them aside; the reasoning is kept.",
+          "Click [[Notify Organization Board]]. A window opens with a report drafted from what the incident holds. Change what you need to and click [[Send to the board]]: it is mailed to the addresses on [[Breach settings]]. The duty is done when the mail lands, once every address has had its try and at least one was reached. If none was, the duty stays outstanding: open the [[Reports]] tab, see which address failed under [[Address by address]], put it right on [[Breach settings]] and click [[Try again]], which mails every address not yet reached, any added to the list since, and nobody who already has it.",
+          "On the [[Reports]] tab, click [[Draft it]] for each report that applies: the initial intimation to the DPDP Board, the report to CERT-In, the 72-hour report and, if you want one, the closure report. Each is its own draft, started from what the incident holds and yours to rewrite. The closure report is optional and never stops the breach closing.",
+          "When a report is ready, click [[Finalise and tell the board]]. It is frozen, and the organisation's board is mailed for its information. Nothing goes to the regulator: send it yourself, through the regulator's own channel. To change a finalised report, start a [[New version]].",
+          "Then click [[Record as sent]]: attach the proof of internal approval and the mail you sent, and give when it was sent and the reference returned. That is what completes the duty. If the reference has not come back yet, [[Attach and finish later]] keeps the files, and you come back to record it.",
+          "On [[People & notices]], under [[Affected people]], click [[Add people]] and choose how: [[From a project or activity]], [[From a vendor]], [[From a data source]], [[Upload an Excel list]] or [[Add one person]]. Adding someone tells them nothing. Keep the assessment current as you learn more.",
+          "People the records cannot show, such as anyone not on the platform: choose [[Upload an Excel list]], [[Download the template]] and fill in Name, Mail ID and Mobile number. [[Check the file]] shows what it would add and which rows it cannot read; then [[Add to the list]]. People with no account are sent the notice by email and SMS, like everyone else.",
+          "[[Draft the notice]] from the assessment, which starts it for you; a box can hold 4,000 characters, so anything longer is cut there and the draft says which. [[Save draft]] and [[Approve]] it. One button then mails every affected Data Principal; it says how many, for example [[Send to all 12 affected people]]. It waits until the breach is recorded.",
+          "To change a notice, [[Start an updated notice]]. While that draft is open the button stays, for the version last approved, and says so: [[Send version 1 to all 12 affected people]]. Anyone added meanwhile can be told without waiting for the update.",
+          "Ask the people who must act: [[Assign a ticket]] to a member of staff, or choose [[Someone without a console login]] and give their name and work email, with what you need, an optional [[Resolve by]] date and, if it helps, [[Attach a document]]. Read their answers on the ticket; [[Send back]] or [[Close the ticket]] once it is returned.",
+          "Either of you can [[Change the date]] on an open ticket, with a reason and no approval. The other is told, and the old date, the new date and the reason stay on the ticket.",
           "Close it once validated, every duty is done or not applicable, and no ticket is open. The page lists what is in the way.",
         ],
       },
       {
         kind: "note",
         title: "What a ticket holder sees",
-        text: "The breach reference, your instruction, the thread and their ticket's state - nothing else from the register. Their email says only that a ticket from the Privacy Office is waiting; it names no breach.",
+        text: "The breach reference, your instruction, the thread, the date to resolve it by and their ticket's state - nothing else from the register. Their email says only that a ticket from the Privacy Office is waiting; it names no breach.",
       },
       {
         kind: "list",
         title: "Temporary logins and colleagues",
         items: [
-          "Somebody with no console login, on one of the organisation's own email domains, is given a login for this breach only. They are emailed a code to set a password, and sign in with an emailed code like all staff. The Tickets table marks it [[Temporary login]], and says whether they have signed in yet.",
-          "A holder can [[Add a colleague]] while their ticket is open. The colleague gets their own ticket on the breach, opening with the holder's note rather than your instruction, and shows in the table under the person who added them. You can see every addition; you do not approve it.",
-          "When you [[Withdraw]] that person's ticket or the breach closes, their part is over: they keep their login, read only, so they can still read their ticket. The table marks it [[Temporary login · read only]]. Reopening their ticket lets them answer again. Only an administrator's [[End temporary access]] removes the login.",
+          "Somebody with no console login, on one of the organisation's own email domains, is given a login for this breach only. They are emailed a code to set a password, and sign in with an emailed code like all staff. The list on the [[Tickets]] tab marks it [[Temporary login]], and says whether they have signed in yet.",
+          "A holder can [[Add a colleague]] while their ticket is open. The colleague gets their own ticket on the breach, opening with the holder's note rather than your instruction, and shows on the list under the person who added them. You can see every addition; you do not approve it.",
+          "When you [[Withdraw]] that person's ticket or the breach closes, their part is over: they keep their login, read only, so they can still read their ticket. The list marks it [[Temporary login · read only]]. Reopening their ticket lets them answer again. Only an administrator's [[End temporary access]] removes the login.",
         ],
+      },
+    ],
+  },
+  {
+    id: "breach-settings",
+    title: "Breach settings",
+    summary:
+      "Who hears of a breach: the public link, who is told of a report, and the organisation's board.",
+    roles: ["dpo", "legal", "admin"],
+    blocks: [
+      {
+        kind: "list",
+        items: [
+          "[[The public link]] is where anyone reports a breach, with no account, once they have confirmed their email address. [[Copy]] it and put it wherever people will look for it: the intranet, a notice, a staff handbook.",
+          "[[Who is told when a report arrives]]: every active account in the roles you tick is mailed that a report has arrived, not what it says. The DPO and the Legal PoC are always told.",
+          "[[The organisation's board]] lists the addresses its reports are mailed to. Give a [[Mail ID]], with a [[Name]] if you wish, and click [[Add]]. No report can be finalised while the list is empty.",
+        ],
+      },
+      {
+        kind: "note",
+        text: "Nothing here says anything about a breach, so the administrator can keep it without seeing one.",
       },
     ],
   },
@@ -686,10 +722,11 @@ export const SECTIONS: HelpSection[] = [
         kind: "list",
         title: "What you can see",
         items: [
-          "A breach ticket: the breach reference, what you are asked, the date to answer by if there is one, and the conversation with the Privacy Office. Nothing else about the breach.",
+          "A breach ticket: the breach reference, what you are asked, the date to resolve it by if there is one, and the conversation with the Privacy Office. Nothing else about the breach.",
           "A rights ticket: the request's reference, what you are asked, what the platform already holds about the person, for an erasure the items you hold and what to do with each, and the conversation. Click [[Answer]], then [[Submit your answer]] when your work is done; the Privacy Office reviews it.",
           "[[My tasks]], your notifications and your profile. Nothing else in the console is open to you.",
           "On a breach ticket, answer as anyone does: write, attach a file, and when you are done choose what was done and tick [[This is my return]].",
+          "If the date will not work, click [[Respond]], then [[Change the date]]. Give the new date and your reason. The Privacy Office is told, and the old date, the new date and your reason stay on the ticket.",
         ],
       },
       {
@@ -729,8 +766,9 @@ export const SECTIONS: HelpSection[] = [
         kind: "list",
         title: "Breach tickets",
         items: [
-          "A breach ticket is the Privacy Office asking for your help with a personal data breach. It shows the breach reference, what you are asked and the date to answer by, if there is one - nothing else about the breach.",
+          "A breach ticket is the Privacy Office asking for your help with a personal data breach. It shows the breach reference, what you are asked and the date to resolve it by, if there is one - nothing else about the breach.",
           "Answer the same way: write on the thread, attach a file, and when you are done choose what was done and tick [[This is my return]].",
+          "If the date will not work, click [[Respond]], then [[Change the date]]. Give the new date and your reason. The Privacy Office is told, and the old date, the new date and your reason stay on the ticket.",
           "Only the Privacy Office closes a breach ticket. They may [[Send back]] a return with a question; it comes back to you, and you are emailed that a ticket is waiting.",
         ],
       },

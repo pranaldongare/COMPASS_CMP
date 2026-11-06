@@ -7,11 +7,11 @@
  * home - a greeting, four figures, what needs it, and its tickets in two
  * lists - all read off the breach tickets addressed to it, which are the only
  * records it may see. Nothing from the register reaches it here either: the
- * breach reference, the ask, the state and the answer-by date (BD-13).
+ * breach reference, the ask, the state and the resolve-by date (BD-13).
  *
  * The design's "Access ends" figure has no data behind it: a grant ends when
  * the breach closes or the ticket is withdrawn, not on a date. The fourth
- * figure is the earliest answer-by date instead, which is the date that
+ * figure is the earliest resolve-by date instead, which is the date that
  * matters to the holder. The design's ticket references (BT-...) do not exist
  * either - a breach ticket carries only its breach's reference - so the lists
  * show the breach reference and the ask.
@@ -34,6 +34,7 @@ import type { ComponentType } from "react";
 import { BarList, StatTile } from "@/components/ui/charts";
 import { PanelHeader } from "@/components/ui/panel";
 import { Button, Card } from "@/components/ui/primitives";
+import { localDay } from "@/features/breach/components/tickets-card";
 import { cn, formatDateTime } from "@/lib/format";
 import type { MyBreachTicket } from "@/types";
 
@@ -51,12 +52,6 @@ const DAY_CHIP = new Intl.DateTimeFormat("en-GB", {
   year: "numeric",
 });
 const DAY_MONTH = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" });
-
-/** An answer-by date (`YYYY-MM-DD`) as a local calendar day. */
-function localDay(value: string): Date {
-  const [y, m, d] = value.slice(0, 10).split("-").map(Number);
-  return new Date(y, m - 1, d);
-}
 
 /** A local calendar day as `YYYY-MM-DD`. */
 function dayKey(d: Date): string {
@@ -151,7 +146,7 @@ export function HolderHome({
         tint={0}
         tickets={f.open}
         empty="Nothing waiting on you."
-        pill={(t) => duePill(t, now)}
+        pill={(t) => resolvePill(t, now)}
       />
       <TicketList
         title="Answered"
@@ -215,22 +210,22 @@ function Figures({ f, now }: { f: Figs; now: Date }) {
           late
             ? `${late} past its date`
             : today
-              ? `${today} due today`
+              ? `${today} to resolve today`
               : f.open.length
-                ? "none due today"
+                ? "none to resolve today"
                 : "nothing open"
         }
         hintTone={late ? "bad" : today ? "warn" : f.open.length ? "neutral" : "good"}
       />
       <StatTile
         className="lg:col-span-3"
-        label="Due today"
+        label="Resolve today"
         value={today}
         tint="amber"
         tone={today > 0 ? "attention" : "neutral"}
         icon={<Clock />}
         href={f.today.length === 1 ? ticketHref(f.today[0]) : ALL}
-        hint={today ? "answer today" : "nothing due today"}
+        hint={today ? "needs you today" : "nothing to resolve today"}
         hintTone={today ? "bad" : "neutral"}
       />
       <StatTile
@@ -244,7 +239,7 @@ function Figures({ f, now }: { f: Figs; now: Date }) {
       />
       <StatTile
         className="lg:col-span-3"
-        label="Earliest answer-by"
+        label="Earliest resolve-by"
         value={f.earliest ? DAY_MONTH.format(localDay(f.earliest)) : "—"}
         tint="violet"
         icon={<CalendarClock />}
@@ -277,13 +272,13 @@ const MARK: Record<Urgency, { dot: string; text: string; tag: string; tagClass: 
     today: {
       dot: "bg-danger ring-4 ring-danger-subtle",
       text: "text-danger-text",
-      tag: "Due today",
+      tag: "Resolve today",
       tagClass: "bg-danger-subtle text-danger-text",
     },
     soon: {
       dot: "bg-warning ring-4 ring-warning-subtle",
       text: "text-warning-text",
-      tag: "Due soon",
+      tag: "Resolve soon",
       tagClass: "bg-warning-subtle text-warning-text",
     },
     open: {
@@ -304,12 +299,12 @@ function Attention({ f }: { f: Figs }) {
     {
       key: "today",
       tickets: f.today,
-      label: plural(f.today.length, "Ticket due today", "Tickets due today"),
+      label: plural(f.today.length, "Ticket to resolve today", "Tickets to resolve today"),
     },
     {
       key: "soon",
       tickets: f.soon,
-      label: plural(f.soon.length, "Ticket due within 7 days", "Tickets due within 7 days"),
+      label: plural(f.soon.length, "Ticket to resolve within 7 days", "Tickets to resolve within 7 days"),
     },
     {
       key: "open",
@@ -377,13 +372,13 @@ function Attention({ f }: { f: Figs }) {
 
 type Pill = { text: string; className: string };
 
-function duePill(t: MyBreachTicket, now: Date): Pill {
+function resolvePill(t: MyBreachTicket, now: Date): Pill {
   const u = urgencyOf(t, now);
   if (u === "late") return { text: "Late", className: "bg-danger-subtle text-danger-text" };
   if (u === "today")
-    return { text: "Due today", className: "bg-danger-subtle text-danger-text" };
+    return { text: "Resolve today", className: "bg-danger-subtle text-danger-text" };
   if (!t.answer_by) return { text: "Open", className: "bg-bg-inset text-text-muted" };
-  const when = `Due ${DAY_MONTH.format(localDay(t.answer_by))}`;
+  const when = `Resolve by ${DAY_MONTH.format(localDay(t.answer_by))}`;
   return u === "soon"
     ? { text: when, className: "bg-warning-subtle text-warning-text" }
     : { text: when, className: "bg-bg-inset text-text-muted" };
@@ -424,7 +419,7 @@ function TicketList({
               <li key={t.ticket_uuid} className="border-b border-border/60 last:border-b-0">
                 <Link
                   href={ticketHref(t)}
-                  className="grid h-12 grid-cols-[minmax(0,8.25rem)_minmax(0,1fr)_6.5rem] items-center gap-2 px-[18px] text-[0.8125rem] transition-colors hover:bg-[var(--row-hover)]"
+                  className="grid h-12 grid-cols-[minmax(0,8.25rem)_minmax(0,1fr)_7.75rem] items-center gap-2 px-[18px] text-[0.8125rem] transition-colors hover:bg-[var(--row-hover)]"
                 >
                   <span className="truncate font-mono text-xs text-text-muted">
                     {t.breach_reference}

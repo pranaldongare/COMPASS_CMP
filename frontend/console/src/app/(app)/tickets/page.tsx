@@ -146,7 +146,7 @@ function TicketsInner() {
           <EmptyState
             illustration={<EmptyQueue />}
             title="Nothing addressed to you"
-            description="When the Privacy Office sends your team a ticket, it appears here with what is asked and the date to answer by."
+            description="When the Privacy Office sends your team a ticket, it appears here with what is asked and the date it is due."
           />
         </Card>
       )}

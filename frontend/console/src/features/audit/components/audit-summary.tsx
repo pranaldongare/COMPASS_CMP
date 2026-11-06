@@ -161,7 +161,7 @@ export function AuditSummaryStrip({
             </dd>
           </div>
           <div>
-            <dt className="text-xs text-text-subtle">Areas touched</dt>
+            <dt className="text-xs text-text-subtle">Areas covered</dt>
             <dd className="text-xl font-semibold tabular-nums">
               {summary.by_group.length}
             </dd>

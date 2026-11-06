@@ -116,7 +116,7 @@ export interface BreachStatusChange {
   changed_by_name: string | null;
 }
 
-export type BreachAttachmentKind = "email" | "proof" | "chat" | "other";
+export type BreachAttachmentKind = "email" | "proof" | "chat" | "other" | "approval" | "sent_mail";
 
 /** A file kept with an incident as evidence (2026-10-06). Never replaced or
  *  removed; the name and the note are sealed. */
@@ -173,6 +173,8 @@ export interface Breach
   /** What else was said when it was logged (0047). */
   logged: BreachLogged;
   cyber_attack: BreachCyberAttack | null;
+  /** Who reported it through the public link. Null if the office logged it. */
+  reported: BreachReported | null;
   recorded_at: Timestamp;
   recorded_by_name: string | null;
   determinations: BreachDetermination[];
@@ -185,6 +187,54 @@ export interface Breach
   transitions: BreachTransition[];
   /** The internal target for "without delay", in hours. Null while unset. */
   without_delay_target_hours: number | null;
+}
+
+/** Who reported an incident through the public link (0058). Sealed. */
+export interface BreachReported {
+  reporter_name: string;
+  reporter_email: string;
+  received_at: Timestamp;
+  /** When they say they noticed it. Nothing is anchored on it. */
+  noticed_at: Timestamp | null;
+  cyber_attack: BreachCyberAttack | null;
+}
+
+/** A report waiting in the shared intake, as the list shows it. */
+export interface IncidentReportRow {
+  report_uuid: Uuid;
+  reference: string;
+  reporter_name: string;
+  reporter_email: string;
+  title: string;
+  noticed_at: Timestamp | null;
+  received_at: Timestamp;
+  cyber_attack: BreachCyberAttack | null;
+}
+
+/** A page of the shared intake, oldest first. */
+export interface IncidentReportPage {
+  items: IncidentReportRow[];
+  /** Every report waiting, not only this page's. */
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+/** One waiting report with everything it said, for an office to read. */
+export interface IncidentReport extends IncidentReportRow {
+  logged: BreachLogged;
+}
+
+/** A report an office did not take up: kept, with who dismissed it and why. */
+export interface DismissedReport {
+  reference: string;
+  reporter_name: string;
+  reporter_email: string;
+  title: string;
+  received_at: Timestamp;
+  dismissed_at: Timestamp;
+  dismissed_by_name: string | null;
+  dismissal_reason: string;
 }
 
 /** What else is known when an incident is logged (0047): every one optional
@@ -221,26 +271,35 @@ export interface BreachAssessmentInput extends Partial<BreachAssessmentFacts> {
   categories: BreachCategory[];
 }
 
-/* ------------------------------------------------ who it touched (S3-02) */
+/* ------------------------------------------------ the people affected (S3-02) */
 
-export type BreachScopeKind = "processor" | "data_source" | "platform";
+export type BreachScopeKind = "project" | "processor" | "data_source";
 
-/** Where to look. A processor or a source by uuid; the platform by tables
- *  and a window of when their rows were written. */
+/** Where to look: a project or activity, a vendor or a data source, by uuid.
+ *  A project may narrow to consents given in a period. */
 export interface BreachScope {
   kind: BreachScopeKind;
+  project_uuid?: Uuid | null;
   processor_uuid?: Uuid | null;
   source_uuid?: Uuid | null;
-  tables?: string[];
   since?: Timestamp | null;
   until?: Timestamp | null;
 }
 
-/** Which exports, assets or tables put a person on the list. Ids only. */
+/** Which records put a person on the list. Ids only. */
 export interface BreachEvidence {
+  projects: string[];
   exports: string[];
   assets: string[];
   tables: string[];
+}
+
+/** A project or activity with people in it, to choose from. */
+export interface BreachProjectOption {
+  project_uuid: Uuid;
+  project_name: string;
+  is_activity: boolean;
+  people: number;
 }
 
 export interface BreachPerson {
@@ -249,12 +308,13 @@ export interface BreachPerson {
   role: string;
   has_email: boolean;
   has_mobile: boolean;
-  /** `upload`: matched by email or mobile in a list somebody sent (2026-10-07). */
-  found_by: BreachScopeKind | "dpo" | "upload";
+  /** `upload`: matched by email or mobile in a list somebody sent (2026-10-07).
+   *  `platform`: listed before tables stopped being a way to look. */
+  found_by: BreachScopeKind | "dpo" | "upload" | "platform";
   evidence: BreachEvidence;
 }
 
-/** A list of the people a breach touched, or of its assets (2026-10-07). */
+/** A list of the people a breach affected, or of its assets (2026-10-07). */
 export type BreachListKind = "contacts" | "assets";
 
 /** What a list comes to: checked (nothing written), or taken. */
@@ -277,7 +337,7 @@ export interface BreachListReport {
   upload_uuid?: Uuid | null;
 }
 
-/** Somebody the breach touched who has no account: told by email and SMS. */
+/** Somebody affected who has no account: told by email and SMS. */
 export interface BreachContact {
   contact_uuid: Uuid;
   full_name: string | null;
@@ -348,7 +408,6 @@ export interface BreachAffected {
   people: BreachAffectedPerson[];
   next_cursor: string | null;
   /** The tables a platform scope may name. */
-  platform_tables: string[];
 }
 
 /* --------------------------------------------- telling the people (S3-03) */
@@ -412,95 +471,6 @@ export interface BreachNotices {
   send_blocked_by: string | null;
 }
 
-/* ----------------------------------------------- the Board's documents (S3-04) */
-
-interface BoardDocument {
-  document: "initial_intimation" | "detailed_report";
-  basis: string;
-  reference: string;
-  incident_reference: string;
-  breach_reference: string | null;
-  title: string;
-  generated_at: Timestamp;
-  determination: BreachOutcome;
-  detected_at: Timestamp;
-  began_at: Timestamp | null;
-  became_aware_at: Timestamp | null;
-  location: BreachLocation;
-  /** What the Rule asks for that the register does not yet hold. */
-  missing: string[];
-  duty: BreachDuty | null;
-}
-
-/** Rule 7(2)(a), drafted from the register. The platform never submits it. */
-export interface BreachIntimation extends BoardDocument {
-  nature_extent: string | null;
-  likely_impact: string | null;
-  assessment_revision: number | null;
-}
-
-export interface BreachChannelCount {
-  channel: "portal" | "email" | "sms";
-  delivered: number;
-  queued: number;
-  failed: number;
-}
-
-/** Rule 7(2)(b)(vi): present whether or not anything was sent. */
-export interface BreachNoticeAccount {
-  sent: boolean;
-  statement: string;
-  listed: number;
-  notified: number;
-  versions: { version: number; approved_at: Timestamp | null; channels: BreachChannelCount[] }[];
-}
-
-/** Rule 7(2)(b), all six items, drafted from the register. */
-export interface BreachReport extends BoardDocument {
-  determinations: BreachDetermination[];
-  assessment: BreachAssessment | null;
-  assessment_revisions: number;
-  facts: { item: "ii" | "iii" | "iv" | "v"; label: string; text: string | null }[];
-  notices: BreachNoticeAccount;
-  duties: BreachDuty[];
-}
-
-/* ---------------------------------------- the organisation's board (S3-07) */
-
-/** A duty as the brief carries it: its clock, and nobody's name. */
-export interface OrgBoardDuty {
-  duty: BreachDutyKind;
-  label: string;
-  basis: string;
-  state: BreachDutyState;
-  due_at: Timestamp | null;
-  anchored_at: Timestamp | null;
-  completed_at: Timestamp | null;
-  clock: BreachClock;
-}
-
-/** For the organisation's board, drafted from the register. Never sent by the platform. */
-export interface OrgBoardBrief {
-  document: "org_board_brief";
-  basis: string;
-  reference: string;
-  incident_reference: string;
-  breach_reference: string | null;
-  title: string;
-  generated_at: Timestamp;
-  detected_at: Timestamp;
-  began_at: Timestamp | null;
-  location: BreachLocation;
-  validation: BreachOutcome;
-  became_aware_at: Timestamp | null;
-  cert_in_reportable: boolean;
-  duties: OrgBoardDuty[];
-  /** Counts only: who it touched is never named in the brief. */
-  touched: { listed: number; notified: number };
-  missing: string[];
-  duty: OrgBoardDuty | null;
-}
-
 /* -------------------------------------------------- breach tickets (S3-08) */
 
 export type BreachTicketState = "issued" | "returned" | "closed" | "withdrawn";
@@ -514,10 +484,13 @@ export interface BreachTicketMove {
 
 export interface BreachTicketEvent {
   event_uuid: Uuid;
-  kind: "returned" | "sent_back" | "closed" | "withdrawn" | "reopened";
+  kind: "returned" | "sent_back" | "closed" | "withdrawn" | "reopened" | "date_changed";
   outcome: "done" | "partial" | "failed" | null;
   summary: string | null;
   reason: string | null;
+  /** With a date_changed: the date it replaced, and the new one. */
+  date_before?: DateOnly | null;
+  date_after?: DateOnly | null;
   occurred_at: Timestamp;
   actor_name: string | null;
 }
@@ -540,6 +513,8 @@ export interface BreachTicket {
   events: BreachTicketEvent[];
   moves: BreachTicketMove[];
   may_write: boolean;
+  /** Whether the date may be changed now. */
+  may_change_date: boolean;
   /** The holder's breach-only login (S3-09): pending until they set a
    *  password, then active, then ended. Null for a member of staff. */
   temporary_access: TemporaryAccess | null;
@@ -566,9 +541,135 @@ export interface MyBreachTicket {
   moves: BreachTicketMove[];
   /** Whether they may bring in a colleague now: while the ticket is open. */
   may_add_colleague: boolean;
+  /** Whether they may change the date now: while the ticket is open. */
+  may_change_date: boolean;
 }
 
 export interface MyBreachTicketDetail {
   ticket: MyBreachTicket;
   messages: TicketMessage[];
+}
+
+/* -------------------------------------------- reports on a breach (0059) */
+
+export type BreachDocumentKind =
+  | "org_board"
+  | "board_intimation"
+  | "cert_in"
+  | "board_report"
+  | "closure";
+export type BreachDocumentState = "draft" | "finalised" | "filed";
+
+export interface BreachDocumentSection {
+  key: string;
+  label: string;
+  required: boolean;
+  /** Sealed; the API client opens it. */
+  body: string | null;
+}
+
+export interface BreachDocumentProof {
+  attachment_uuid: Uuid;
+  kind: "approval" | "sent_mail";
+  note: string | null;
+  file_name: string;
+  sha256: string;
+  size_bytes: number;
+  added_at: Timestamp;
+  added_by_name: string | null;
+}
+
+/** One address a report was mailed to, its latest state. */
+export interface BreachDocumentMailRecipient {
+  recipient_uuid: Uuid;
+  /** Sealed; null where the list holds only an address. */
+  full_name: string | null;
+  /** Sealed. */
+  email: string;
+  status: "queued" | "delivered" | "failed";
+  attempt: number;
+  /** Why it failed, as an error's class. */
+  error: string | null;
+  recorded_at: Timestamp;
+  /** Taken off the list since: sending again leaves it as it stands. */
+  removed: boolean;
+}
+
+/** What became of the mail to the organisation's board. */
+export interface BreachDocumentMail {
+  delivered: number;
+  queued: number;
+  failed: number;
+  /** Of the queued, to addresses still on the list: lost before the worker saw
+   *  them, which sending again queues again. */
+  stale: number;
+  /** How many addresses sending again would queue now. None on a draft, a
+   *  superseded version, a report that may not go, an empty list or a closed
+   *  breach. */
+  retryable: number;
+  recipients: BreachDocumentMailRecipient[];
+}
+
+/** One version of one report. */
+export interface BreachDocument {
+  report_uuid: Uuid;
+  kind: BreachDocumentKind;
+  title: string;
+  version: number;
+  state: BreachDocumentState;
+  sections: BreachDocumentSection[];
+  created_at: Timestamp;
+  created_by_name: string | null;
+  updated_at: Timestamp;
+  finalised_at: Timestamp | null;
+  finalised_by_name: string | null;
+  filed_at: Timestamp | null;
+  filed_reference: string | null;
+  filed_by_name: string | null;
+  evidence: BreachDocumentProof[];
+  mail: BreachDocumentMail;
+}
+
+/** One kind of report, with every version of it, newest first. */
+export interface BreachDocumentKindView {
+  kind: BreachDocumentKind;
+  title: string;
+  basis: string;
+  duty: BreachDutyKind | null;
+  duty_state: BreachDutyState | null;
+  /** Why it may not be written yet, in the server's words. */
+  blocked_by: string | null;
+  goes_to_regulator: boolean;
+  versions: BreachDocument[];
+}
+
+export interface BreachDocuments {
+  kinds: BreachDocumentKindView[];
+  board_recipients: number;
+  proofs: { kind: "approval" | "sent_mail"; label: string }[];
+}
+
+/** What a press of Try again answers: the reports, and how many it queued. */
+export interface BreachDocumentsResent extends BreachDocuments {
+  queued: number;
+}
+
+/* ---------------------------------------------- who hears of a breach (0058) */
+
+export interface BreachBoardRecipient {
+  recipient_uuid: Uuid;
+  full_name: string | null;
+  email: string;
+  added_at: Timestamp;
+  added_by_name: string | null;
+}
+
+export interface BreachSettings {
+  intake_roles: string[];
+  roles: { role: string; title: string }[];
+  /** Always told, whatever is chosen. */
+  officers: string[];
+  board_recipients: BreachBoardRecipient[];
+  /** The public link, to give out. */
+  report_link: string;
 }

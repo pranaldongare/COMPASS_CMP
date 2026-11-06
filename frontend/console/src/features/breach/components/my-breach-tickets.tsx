@@ -3,14 +3,16 @@
  *
  * What the Privacy Office asked of me about a personal data breach, and my
  * answer. Only what BD-13 allows is here: the breach reference, the
- * instruction, the thread, the state and the answer-by date. Nothing else
- * from the register - not its title, not who it touched - reaches this page,
+ * instruction, the thread, the state and the resolve-by date. Nothing else
+ * from the register - not its title, not who it affected - reaches this page,
  * and the register itself is not mine to open.
  *
  * Once the ticket or the breach is closed it stays here to read (2026-10-06).
  * While it is open I can bring in a colleague (S3-09), who gets their own
  * ticket opening with my note. What comes back is my own ticket whatever
  * happened to theirs, so this page never says whether they had an account.
+ * While it is open I can move its date too, saying why: no approval, and the
+ * Privacy Office is told (0061).
  */
 "use client";
 
@@ -36,12 +38,14 @@ import {
 } from "@/components/ui/primitives";
 import {
   addBreachColleague,
+  changeMyBreachTicketDate,
   messageBreachOffice,
   myBreachTicketFileUrl,
   returnBreachTicket,
 } from "@/features/breach/api";
+import { TICKET_REPLY_FILE } from "@/features/breach/components/attachments";
 import { messageOf } from "@/features/breach/components/record-breach";
-import { TicketStateBadge } from "@/features/breach/components/tickets-card";
+import { ChangeResolveBy, localDay, TicketStateBadge } from "@/features/breach/components/tickets-card";
 import { useMyBreachTicket } from "@/features/breach/queries";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { keys } from "@/lib/query";
@@ -53,7 +57,7 @@ export function BreachTicketCard({ ticket: t, openAtFirst }: { ticket: MyBreachT
   const [responding, setResponding] = React.useState(Boolean(openAtFirst));
   const [adding, setAdding] = React.useState(false);
   const canReturn = t.moves.some((m) => m.move === "return");
-  const overdue = t.state === "issued" && t.answer_by && new Date(t.answer_by) < new Date(new Date().toDateString());
+  const overdue = t.state === "issued" && t.answer_by && localDay(t.answer_by) < new Date(new Date().toDateString());
   return (
     <Card data-testid="breach-ticket">
       <CardHeader className="flex flex-wrap items-start justify-between gap-3">
@@ -72,7 +76,7 @@ export function BreachTicketCard({ ticket: t, openAtFirst }: { ticket: MyBreachT
         {t.answer_by && (
           <p className={overdue ? "flex items-center gap-1 text-sm font-medium text-danger-text" : "text-sm text-text-muted"}>
             {overdue && <AlertTriangle className="size-4" aria-hidden="true" />}
-            Answer by {formatDate(t.answer_by)}
+            Resolve by {formatDate(localDay(t.answer_by))}
           </p>
         )}
       </CardHeader>
@@ -129,8 +133,12 @@ function Respond({ ticket: t, onDone }: { ticket: MyBreachTicket; onDone: () => 
       returnBreachTicket(t.ticket_uuid, input),
     onSuccess: after,
   });
+  const redate = useMutation({
+    mutationFn: (body: { answer_by: string; reason: string }) => changeMyBreachTicketDate(t.ticket_uuid, body),
+    onSuccess: after,
+  });
   if (detail.isLoading) return <Skeleton className="h-40" />;
-  if (detail.error) return <Alert tone="danger">{detail.error.userMessage()}</Alert>;
+  if (detail.error && !detail.data) return <Alert tone="danger">{detail.error.userMessage()}</Alert>;
   const live = detail.data?.ticket ?? t;
   const canReturn = live.moves.some((m) => m.move === "return");
   const canWrite = live.state === "issued" || live.state === "returned";
@@ -141,6 +149,14 @@ function Respond({ ticket: t, onDone }: { ticket: MyBreachTicket; onDone: () => 
         you="holder"
         evidenceHref={(m) => (m.evidence_hash ? myBreachTicketFileUrl(t.ticket_uuid, m.message_uuid) : null)}
       />
+      {live.may_change_date && (
+        <ChangeResolveBy
+          current={live.answer_by}
+          told="The Privacy Office is told."
+          pending={redate.isPending}
+          onSave={redate.mutateAsync}
+        />
+      )}
       {canReturn && (
         <Field
           label="When you return the ticket: what was done?"
@@ -159,6 +175,7 @@ function Respond({ ticket: t, onDone }: { ticket: MyBreachTicket; onDone: () => 
         </Field>
       )}
       <ReplyBox
+        {...TICKET_REPLY_FILE}
         pending={send.isPending || ret.isPending}
         placeholder="Write to the Privacy Office: a question, or what you have found."
         disabledReason={canWrite ? null : "This ticket is closed. Nothing further is needed from you."}

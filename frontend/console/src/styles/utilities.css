@@ -203,6 +203,8 @@
   /* A scroll container that says so: the shadow appears only when there is
      more to scroll to, so a wide table never silently hides a column. */
   .scroll-x {
+    /* Positioned, or a hidden heading inside escapes the clip and widens the page. */
+    position: relative;
     overflow-x: auto;
     background:
       /* The covers match what the strip sits on: the surface by default,

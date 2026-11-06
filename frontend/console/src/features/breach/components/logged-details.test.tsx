@@ -15,6 +15,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push, replace: vi.fn(), back: vi.fn(), refresh: vi.fn() }),
 }));
 vi.mock("@/providers", () => ({
+  useAuth: () => ({ me: null }),
   useToast: () => ({ success: vi.fn(), error: vi.fn() }),
 }));
 

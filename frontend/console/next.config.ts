@@ -87,6 +87,25 @@ const nextConfig: NextConfig = {
     return [{ source: "/api/:path*", destination: `${API_ORIGIN}/:path*` }];
   },
 
+  /**
+   * The rewrite proxy above, sized for the uploads the forms allow, as in the
+   * portal.
+   *
+   * Next forwards only the first `proxyClientMaxBodySize` of a proxied body, 10
+   * MB by default, while the Content-Length still promises the rest. The API
+   * waits for bytes that never come, and the proxy gives up at its own 30-second
+   * default with a 500. The forms accept 25 MB, and 26 MB leaves room for the
+   * multipart framing. A long Excel list also takes the API longer than 30
+   * seconds to read, and an answer cut off there says failed about a write that
+   * goes on to finish. The timeout is a ceiling, not a wait, and matches the
+   * client's (`UPLOAD_TIMEOUT_MS`). `e2e/upload-through-the-proxy.spec.ts` holds
+   * the size to it.
+   */
+  experimental: {
+    proxyClientMaxBodySize: "26mb",
+    proxyTimeout: 180_000,
+  },
+
   async headers() {
     return [
       {

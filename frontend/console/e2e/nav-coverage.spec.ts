@@ -90,9 +90,10 @@ const ROLES = [
       "/exports",
       "/imports",
       "/requests",
-      // The breach register (S3-01) is the DPO's alone; every other role is
+      // The breach register (S3-01) is the two officers'; every other role is
       // told it is not there.
       "/breaches",
+      "/breach-settings",
       "/audit",
       "/users",
       "/delegate",
@@ -110,6 +111,7 @@ const ROLES = [
       "/processors",
       "/sources",
       "/requests",
+      "/breach-settings",
       "/audit",
       "/delegate",
       "/messages",

@@ -13,12 +13,12 @@ import { labelFor, sidebarFor } from "@/components/layout/nav";
 import type { Me } from "@/types";
 
 const NAV: Record<string, string[]> = {
-  dpo: ["dashboard", "projects", "approvals", "notices", "purposes", "sites", "collections", "processors", "sources", "consents", "links", "exports", "imports", "requests", "breaches", "audit", "users", "messages", "delegate", "tickets", "notifications", "profile"],
+  dpo: ["dashboard", "projects", "approvals", "notices", "purposes", "sites", "collections", "processors", "sources", "consents", "links", "exports", "imports", "requests", "breaches", "breach-settings", "audit", "users", "messages", "delegate", "tickets", "notifications", "profile"],
   rnd_user: ["dashboard", "projects", "notices", "processors", "approvals", "imports", "collections", "tickets", "notifications", "profile"],
   dco_admin: ["dashboard", "projects", "sites", "sources", "links", "consents", "exports", "imports", "collections", "delegate", "tickets", "notifications", "profile"],
   dco: ["dashboard", "projects", "sites", "sources", "links", "consents", "exports", "imports", "collections", "delegate", "tickets", "notifications", "profile"],
-  admin: ["dashboard", "users", "messages", "processors", "sources", "requests", "audit", "delegate", "tickets", "notifications", "profile"],
-  legal: ["dashboard", "requests", "breaches", "hr-activities", "hr-categories", "templates", "purposes", "consents", "exports", "processors", "users", "audit", "tickets", "notifications", "profile"],
+  admin: ["dashboard", "users", "messages", "processors", "sources", "requests", "breach-settings", "audit", "delegate", "tickets", "notifications", "profile"],
+  legal: ["dashboard", "requests", "breaches", "breach-settings", "hr-activities", "hr-categories", "templates", "purposes", "consents", "exports", "processors", "users", "audit", "tickets", "notifications", "profile"],
   hr_user: ["dashboard", "hr-activities", "hr-categories", "links", "consents", "exports", "tickets", "notifications", "profile"],
 };
 

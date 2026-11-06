@@ -26,6 +26,7 @@ import {
   MapPin,
   MessageSquareText,
   Scale,
+  Settings2,
   ShieldAlert,
   ScrollText,
   ShieldCheck,
@@ -186,6 +187,14 @@ export const SECTIONS: NavSection[] = [
         label: "Breaches",
         icon: ShieldAlert,
         keywords: "incident cert-in board rule 7 personal data breach",
+      },
+      // Who hears of a breach: the administrator keeps it with the two officers.
+      {
+        key: "breach-settings",
+        href: "/breach-settings",
+        label: "Breach settings",
+        icon: Settings2,
+        keywords: "organisation board public link report recipients",
       },
       {
         key: "audit",

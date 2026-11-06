@@ -45,6 +45,7 @@ const ticket = (over: Partial<MyBreachTicket> = {}): MyBreachTicket => ({
   last_activity_at: null,
   moves: [],
   may_add_colleague: true,
+  may_change_date: true,
   ...over,
 });
 
@@ -113,30 +114,32 @@ describe("HolderHome", () => {
       "#breach-tickets",
     );
 
-    // Figures: two open, one due today, one answered, the earliest date today.
+    // Figures: two open, one to resolve today, one answered, the earliest date today.
     const open = screen.getByRole("link", { name: /tickets open/i });
     expect(open).toHaveTextContent("2");
-    expect(open).toHaveTextContent("1 due today");
-    const today = screen.getByRole("link", { name: /^due today/i });
+    expect(open).toHaveTextContent("1 to resolve today");
+    const today = screen.getByRole("link", { name: /^resolve today/i });
     expect(today).toHaveTextContent("1");
     expect(today).toHaveAttribute("href", `/tickets?breach_ticket=${dueToday.ticket_uuid}`);
     expect(screen.getByRole("link", { name: /^answered/i })).toHaveTextContent("1");
-    expect(screen.getByRole("link", { name: /earliest answer-by/i })).toHaveTextContent(
+    expect(screen.getByRole("link", { name: /earliest resolve-by/i })).toHaveTextContent(
       "11 Oct",
     );
 
-    // Needs attention: the one due today, then the one due within the week.
+    // Needs attention: the one for today, then the one within the week.
     const rows = within(screen.getByTestId("holder-attention")).getAllByRole("link");
     expect(rows.map((r) => r.textContent)).toEqual([
-      expect.stringContaining("Ticket due today"),
-      expect.stringContaining("Ticket due within 7 days"),
+      expect.stringContaining("Ticket to resolve today"),
+      expect.stringContaining("Ticket to resolve within 7 days"),
     ]);
+    expect(rows[0]).toHaveTextContent("Resolve today");
+    expect(rows[1]).toHaveTextContent("Resolve soon");
 
     // The lists: open tickets with their dates; returned ones apart.
     const mine = screen.getByRole("list", { name: "Your breach tickets" });
     expect(within(mine).getAllByRole("link")).toHaveLength(2);
-    expect(within(mine).getByText("Due today")).toBeInTheDocument();
-    expect(within(mine).getByText("Due 14 Oct")).toBeInTheDocument();
+    expect(within(mine).getByText("Resolve today")).toBeInTheDocument();
+    expect(within(mine).getByText("Resolve by 14 Oct")).toBeInTheDocument();
     const answered = screen.getByRole("list", { name: "Answered" });
     expect(within(answered).getByText("BR-2026-5310")).toBeInTheDocument();
     expect(within(answered).getByRole("link")).toHaveAttribute(
@@ -155,12 +158,23 @@ describe("HolderHome", () => {
     );
   });
 
+  it("calls the date Resolve by throughout, with nothing still reading Due", () => {
+    const { container } = render(<HolderHome tickets={[dueToday, dueSoon]} name="Vikram" now={NOW} />);
+    expect(container).not.toHaveTextContent(/\bdue\b/i);
+  });
+
+  it("says when nothing is to be resolved today", () => {
+    render(<HolderHome tickets={[dueSoon]} name="Vikram" now={NOW} />);
+    expect(screen.getByRole("link", { name: /tickets open/i })).toHaveTextContent("none to resolve today");
+    expect(screen.getByRole("link", { name: /^resolve today/i })).toHaveTextContent("nothing to resolve today");
+  });
+
   it("marks a ticket past its date late", () => {
     render(<HolderHome tickets={[late]} name="Vikram" now={NOW} />);
     const rows = within(screen.getByTestId("holder-attention")).getAllByRole("link");
     expect(rows).toHaveLength(1);
     expect(rows[0]).toHaveTextContent("Ticket past its date");
-    expect(screen.getByRole("link", { name: /earliest answer-by/i })).toHaveTextContent(
+    expect(screen.getByRole("link", { name: /earliest resolve-by/i })).toHaveTextContent(
       "2 days late",
     );
   });

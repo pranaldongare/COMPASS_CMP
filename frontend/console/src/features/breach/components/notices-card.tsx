@@ -1,11 +1,14 @@
 /**
- * Telling the people a breach touched (S3-03).
+ * Telling the people a breach affected (S3-03).
  *
  * The five things Rule 7(1) requires, drafted, approved, then sent. Nothing
  * sends on its own: the server refuses to send before approval and refuses to
- * approve with any of the five empty, and says which. A send writes the notice
- * to every listed person's account at once and queues her email and SMS; a
- * second send adds only what is missing. An update is a new version.
+ * approve with any of the five empty, and says which. There is one button, and
+ * it asks first, because what it does reaches everyone listed and cannot be
+ * called back. A send writes the notice to every listed person's account at
+ * once and queues her email and SMS; a second send adds only what is missing.
+ * An update is a new version; until it is approved, the button stays and says
+ * which version it sends.
  *
  * The account underneath - per version and channel, how many people are
  * delivered, queued or failed - is what the Board's report quotes
@@ -17,6 +20,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, FilePlus2, Megaphone, Save, Send } from "lucide-react";
 import * as React from "react";
 
+import { ConfirmDialog } from "@/components/ui/dialog";
 import {
   Alert,
   Badge,
@@ -41,6 +45,18 @@ import type { Breach, BreachNotice, BreachNotices, BreachNoticeWords } from "@/t
 
 const CHANNEL: Record<string, string> = { portal: "Their account", email: "Email", sms: "SMS" };
 
+/** What one of a notice's boxes holds, as the API counts it. An assessment's
+ *  boxes hold twice that. */
+const NOTICE_WORDS_MAX = 4000;
+
+/** The send button names who it reaches, so nobody presses it blind, and which
+ *  version when an updated draft is open beside it. */
+function sendLabel(listed: number, version?: number): string {
+  const send = version ? `Send version ${version}` : "Send";
+  if (listed === 0) return `${send} to the affected people`;
+  return listed === 1 ? `${send} to 1 affected person` : `${send} to all ${listed} affected people`;
+}
+
 /** A first draft from the assessment, which says most of it already. */
 function fromAssessment(breach: Breach): BreachNoticeWords {
   const a = breach.assessment;
@@ -51,6 +67,21 @@ function fromAssessment(breach: Breach): BreachNoticeWords {
     protective_steps: a?.protective_steps ?? "",
     contact: a?.contact_point ?? "",
   };
+}
+
+/** The words as a notice can hold them, cut by whole characters so nothing is
+ *  left half a letter, and which boxes that cost. */
+function fitted(full: BreachNoticeWords) {
+  const words = { ...full };
+  const cut: (keyof BreachNoticeWords)[] = [];
+  for (const key of Object.keys(full) as (keyof BreachNoticeWords)[]) {
+    const letters = Array.from(full[key]);
+    if (letters.length > NOTICE_WORDS_MAX) {
+      words[key] = letters.slice(0, NOTICE_WORDS_MAX).join("");
+      cut.push(key);
+    }
+  }
+  return { words, cut };
 }
 
 function wordsOf(n: BreachNotice): BreachNoticeWords {
@@ -125,7 +156,11 @@ export function NoticesCard({ breach }: { breach: Breach }) {
   const draft = data?.versions.find((v) => v.state === "draft") ?? null;
   const approved = [...(data?.versions ?? [])].reverse().find((v) => v.state === "approved") ?? null;
   const [words, setWords] = React.useState<BreachNoticeWords | null>(null);
+  const [cut, setCut] = React.useState<(keyof BreachNoticeWords)[]>([]);
+  const [confirming, setConfirming] = React.useState(false);
   const shown = words ?? (draft ? wordsOf(draft) : null);
+  // Beside an open draft, the button says it is not the draft that goes.
+  const sendsVersion = draft ? approved?.version : undefined;
 
   const after = (fresh: BreachNotices) => {
     qc.setQueryData(keys.breach.notices(breach.breach_uuid), fresh);
@@ -143,10 +178,36 @@ export function NoticesCard({ breach }: { breach: Breach }) {
     try {
       await what();
       setWords(null);
+      setCut([]);
       toast.success(ok, detail);
     } catch (err) {
       toast.error("Not done", messageOf(err, "The server refused."));
     }
+  }
+
+  async function startDraft() {
+    const first = approved ? { words: wordsOf(approved), cut: [] } : fitted(fromAssessment(breach));
+    await act(
+      () => start.mutateAsync(first.words),
+      approved ? "Update started" : "Draft started",
+      "Complete all five, save, then approve.",
+    );
+    setCut(first.cut);
+  }
+
+  async function sendNow(version: number) {
+    // Not through act: what goes is the approved version, so words being typed
+    // into a draft beside it stay where they are.
+    try {
+      await send.mutateAsync();
+      toast.success(
+        `Version ${version} sent`,
+        "Emails and SMS go out in the next few moments. Each delivery shows below.",
+      );
+    } catch (err) {
+      toast.error("Not done", messageOf(err, "The server refused."));
+    }
+    setConfirming(false);
   }
 
   const open = breach.status === "open";
@@ -155,7 +216,7 @@ export function NoticesCard({ breach }: { breach: Breach }) {
       <CardHeader>
         <CardTitle>
           <Megaphone className="mr-2 inline size-4" aria-hidden="true" />
-          Telling the people it touched
+          Notice to the affected people
         </CardTitle>
         <p className="mt-1 text-xs text-text-muted">
           Rule 7(1): concise, clear and plain, without delay, to each person&apos;s account and their registered email or mobile;
@@ -167,13 +228,13 @@ export function NoticesCard({ breach }: { breach: Breach }) {
         {data && (
           <p className="text-sm">
             {data.listed === 0
-              ? "Nobody is listed as touched yet."
+              ? "Nobody is listed as affected yet."
               : `${data.listed - data.unnotified} of ${data.listed} listed ${data.listed === 1 ? "person has" : "people have"} been notified on every channel.` +
                 (data.contacts ? ` ${data.contacts} of them ${data.contacts === 1 ? "has" : "have"} no account and ${data.contacts === 1 ? "is" : "are"} told by email and SMS.` : "")}
           </p>
         )}
 
-        {approved && !draft && (
+        {approved && (
           <div className="rounded-md border border-border p-3 text-sm">
             <p className="font-medium">
               Version {approved.version} <Badge tone="success">Approved</Badge>
@@ -197,13 +258,27 @@ export function NoticesCard({ breach }: { breach: Breach }) {
             <p className="text-sm font-medium">
               Version {draft.version} <Badge tone="info">Draft</Badge>
             </p>
+            {cut.length > 0 && (
+              <Alert tone="warning" title="Cut to fit">
+                The assessment says more than a notice holds, so these stop at{" "}
+                {NOTICE_WORDS_MAX.toLocaleString("en-IN")} characters:{" "}
+                {data.contents
+                  .filter((c) => cut.includes(c.key))
+                  .map((c) => c.label)
+                  .join(", ")}
+                . Read the end of each before approving.
+              </Alert>
+            )}
             {data.contents.map((c) => (
               <Field key={c.key} label={c.label} required>
                 {(p) => (
                   <Textarea
                     {...p}
                     value={shown[c.key]}
-                    disabled={!open}
+                    maxLength={NOTICE_WORDS_MAX}
+                    // What is typed while a save is on its way would be lost
+                    // when the saved words come back.
+                    disabled={!open || save.isPending || approve.isPending}
                     onChange={(e) => setWords({ ...shown, [c.key]: e.target.value })}
                   />
                 )}
@@ -237,36 +312,24 @@ export function NoticesCard({ breach }: { breach: Breach }) {
           </div>
         )}
 
-        {open && data && !draft && (
+        {open && data && (!draft || approved) && (
           <div className="flex flex-wrap gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              loading={start.isPending}
-              onClick={() =>
-                act(
-                  () => start.mutateAsync(approved ? wordsOf(approved) : fromAssessment(breach)),
-                  approved ? "Update started" : "Draft started",
-                  "Complete all five, save, then approve.",
-                )
-              }
-            >
-              <FilePlus2 className="size-4" />
-              {approved ? "Start an updated notice" : "Draft the notice"}
-            </Button>
+            {!draft && (
+              <Button variant="secondary" size="sm" loading={start.isPending} onClick={startDraft}>
+                <FilePlus2 className="size-4" />
+                {approved ? "Start an updated notice" : "Draft the notice"}
+              </Button>
+            )}
             {approved && (
               <Button
                 variant="primary"
                 size="sm"
                 disabled={data.listed === 0 || data.send_blocked_by !== null}
                 title={data.send_blocked_by ?? undefined}
-                loading={send.isPending}
-                onClick={() =>
-                  act(() => send.mutateAsync(), `Version ${approved.version} sent`, "Each email and SMS is sent by the worker.")
-                }
+                onClick={() => setConfirming(true)}
               >
                 <Send className="size-4" />
-                Send version {approved.version}
+                {sendLabel(data.listed, sendsVersion)}
               </Button>
             )}
           </div>
@@ -279,12 +342,36 @@ export function NoticesCard({ breach }: { breach: Breach }) {
           </Alert>
         )}
         {data && data.listed === 0 && open && (
-          <Alert tone="info" title="Confirm who it touched first">
-            A notice goes to the people listed under Who it touched.
+          <Alert tone="info" title="Confirm the affected people first">
+            A notice goes to the people listed under Affected people.
           </Alert>
         )}
 
         {data && <Account data={data} />}
+
+        {data && approved && (
+          <ConfirmDialog
+            open={confirming}
+            onOpenChange={setConfirming}
+            tone="primary"
+            title="Send this notice now?"
+            consequence={
+              <>
+                <p>
+                  Every person on the list who has not yet had version {approved.version} is emailed, and sent an SMS
+                  where a mobile number is on file. Someone with no mail ID on file gets the SMS alone. It also appears
+                  in the account of anyone who has one.
+                </p>
+                <p className="mt-2">
+                  A second press never sends twice: it only tries again what failed, and reaches anyone added since.
+                </p>
+              </>
+            }
+            confirmLabel={sendLabel(data.listed, sendsVersion)}
+            loading={send.isPending}
+            onConfirm={() => void sendNow(approved.version)}
+          />
+        )}
       </CardBody>
     </Card>
   );

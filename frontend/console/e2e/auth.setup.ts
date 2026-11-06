@@ -45,6 +45,9 @@ const STAFF = [
   { role: "rco", login: "rco@cmp.local" },
   { role: "dpo", login: "dpo@cmp.local" },
   { role: "admin", login: "admin@cmp.local" },
+  // The other office's officer: the only seeded account that sees the shared
+  // intake from the far side of the wall (`breach-workflow.spec.ts`).
+  { role: "legal", login: "meera.nair@cmp.local" },
 ];
 
 /**
@@ -69,7 +72,9 @@ async function sessionStillWorks(browser: Browser, role: string): Promise<boolea
     // sign-in is client-side, fired once `/auth/me` resolves, so checking at
     // `domcontentloaded` reports a dead session as a live one - and the run
     // then fails several tests later, somewhere unrelated.
-    await page.waitForLoadState("networkidle").catch(() => {});
+    // Bounded: the Legal PoC's dashboard links to a route with no page, and the
+    // prefetch of it stays open, so that network never goes idle.
+    await page.waitForLoadState("networkidle", { timeout: 5_000 }).catch(() => {});
     return !page.url().includes("sign-in");
   } catch {
     return false;
