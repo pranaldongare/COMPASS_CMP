@@ -6,8 +6,8 @@
  * gives a multipart body `UPLOAD_TIMEOUT_MS` and leaves every other request
  * on the default.
  *
- * Portal-only on purpose: `client.test.ts` is shared byte-for-byte with the
- * console (frontend/shared-files.txt), whose client this change does not touch.
+ * Apart from `client.test.ts`, which is shared byte-for-byte with the console
+ * (frontend/shared-files.txt). The console has its own test of the same rule.
  * The adapter stands in for the network and sees the config exactly as the
  * interceptors left it.
  */

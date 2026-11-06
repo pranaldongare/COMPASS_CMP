@@ -14,11 +14,13 @@
 
 /** Path prefixes reachable with no session at all. */
 /** `/ticket/` is an outside holder's ticket, opened by its link and a code (0049). */
+/** `/report-incident` is the public link for reporting an incident (ADR 0037). */
 /** `/sso-mock` is the development stand-in for an organisation's sign-in (`SSO_MOCK`). */
 export const PUBLIC_PREFIXES = [
   "/sign-in",
   "/sign-up",
   "/rights",
+  "/report-incident",
   "/c/",
   "/ticket/",
   "/help",

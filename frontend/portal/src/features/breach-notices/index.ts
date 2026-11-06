@@ -1,5 +1,5 @@
 /**
- * Notices about a personal data breach that touched her.
+ * Notices about a personal data breach that affected the person reading them.
  */
 
 export * from "@/features/breach-notices/api";

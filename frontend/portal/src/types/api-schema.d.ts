@@ -896,6 +896,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/incident-reports/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** A code to the address given */
+        post: operations["report_code_incident_reports_code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/incident-reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Report an incident, with the code */
+        post: operations["report_incident_incident_reports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/staff": {
         parameters: {
             query?: never;
@@ -5351,6 +5385,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/breaches/intake": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** A page of the reports from the public link no office has taken up */
+        get: operations["incident_reports_breaches_intake_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/intake/dismissed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reports an office dismissed, newest first, with who did it and why */
+        get: operations["dismissed_reports_breaches_intake_dismissed_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/intake/{report_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One waiting report in full */
+        get: operations["incident_report_breaches_intake__report_uuid__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/intake/{report_uuid}/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Take a report into this office's register, as an incident */
+        post: operations["claim_report_breaches_intake__report_uuid__claim_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/intake/{report_uuid}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Dismiss a report, saying why; it is kept */
+        post: operations["dismiss_report_breaches_intake__report_uuid__dismiss_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/breaches/{breach_uuid}": {
         parameters: {
             query?: never;
@@ -5458,7 +5577,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/breaches/{breach_uuid}/obligations/{duty}/complete": {
+    "/breaches/{breach_uuid}/cert-in/not-applicable": {
         parameters: {
             query?: never;
             header?: never;
@@ -5467,8 +5586,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Record a submission made, with the regulator's reference - or, for the organisation's board, the report made and to whom */
-        post: operations["complete_duty_breaches__breach_uuid__obligations__duty__complete_post"];
+        /** Set aside a CERT-In mark made in error, once validated No; nobody is told */
+        post: operations["set_aside_cert_in_breaches__breach_uuid__cert_in_not_applicable_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5533,11 +5652,28 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Who the breach touched, as confirmed, with every revision */
+        /** The people affected, as confirmed, with every revision */
         get: operations["list_affected_breaches__breach_uuid__affected_get"];
         put?: never;
-        /** Confirm who the breach touched: a new revision, adding only the newly found */
+        /** Confirm the people affected: a new revision, adding only the newly found */
         post: operations["confirm_affected_breaches__breach_uuid__affected_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/affected/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The projects and activities to choose from, with how many people each */
+        get: operations["affected_options_breaches__breach_uuid__affected_options_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -5568,7 +5704,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** The CSV to fill in: people (name, email, mobile) or asset IDs */
+        /** The Excel file to fill in: people (name, email, mobile) or asset IDs */
         get: operations["list_template_breaches__breach_uuid__affected_upload_template_get"];
         put?: never;
         post?: never;
@@ -5625,7 +5761,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** People the breach touched who have no account, and the lists they came in */
+        /** People affected who have no account, and the lists they came in */
         get: operations["list_contacts_breaches__breach_uuid__affected_contacts_get"];
         put?: never;
         post?: never;
@@ -5755,6 +5891,126 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/breaches/{breach_uuid}/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Every kind of report on a breach, and where each stands */
+        get: operations["list_reports_breaches__breach_uuid__reports_get"];
+        put?: never;
+        /** Start the next version of a report, drafted from the register */
+        post: operations["draft_report_breaches__breach_uuid__reports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/reports/{report_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Edit a draft report */
+        put: operations["edit_report_breaches__breach_uuid__reports__report_uuid__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/reports/{report_uuid}/finalise": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Freeze a report and mail the organisation's board; never a regulator */
+        post: operations["finalise_report_breaches__breach_uuid__reports__report_uuid__finalise_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/reports/{report_uuid}/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mail the report to every address on the list it has not reached */
+        post: operations["resend_report_breaches__breach_uuid__reports__report_uuid__resend_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/reports/{report_uuid}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Keep the proof of internal approval, or of the mail sent to the regulator */
+        post: operations["add_report_proof_breaches__breach_uuid__reports__report_uuid__evidence_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/reports/{report_uuid}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record that a person sent it to the regulator; needs both proofs */
+        post: operations["file_report_breaches__breach_uuid__reports__report_uuid__file_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/reports/{report_uuid}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The report as a PDF; every read is audited */
+        get: operations["report_pdf_breaches__breach_uuid__reports__report_uuid__pdf_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/breaches/{breach_uuid}/tickets": {
         parameters: {
             query?: never;
@@ -5821,6 +6077,23 @@ export interface paths {
         get: operations["ticket_file_breaches__breach_uuid__tickets__ticket_uuid__messages__message_uuid__evidence_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/tickets/{ticket_uuid}/resolve-by": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change the date to resolve the ticket by, saying why */
+        post: operations["change_ticket_date_breaches__breach_uuid__tickets__ticket_uuid__resolve_by_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5987,6 +6260,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/breach-tickets/{ticket_uuid}/resolve-by": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Change the date to resolve my breach ticket by, saying why */
+        post: operations["change_my_ticket_date_breach_tickets__ticket_uuid__resolve_by_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/breach-tickets/{ticket_uuid}/return": {
         parameters: {
             query?: never;
@@ -5999,6 +6289,74 @@ export interface paths {
         /** Return my breach ticket: what was done, and how it went */
         post: operations["return_my_breach_ticket_breach_tickets__ticket_uuid__return_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breach-settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Who hears of a breach, and how */
+        get: operations["get_settings_breach_settings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breach-settings/intake-roles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Which roles are told of a report from the public link */
+        put: operations["set_intake_roles_breach_settings_intake_roles_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breach-settings/board-recipients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add an address to the organisation's board */
+        post: operations["add_board_recipient_breach_settings_board_recipients_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breach-settings/board-recipients/{recipient_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Take an address off the organisation's board */
+        delete: operations["remove_board_recipient_breach_settings_board_recipients__recipient_uuid__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -6811,6 +7169,32 @@ export interface components {
             /** Days */
             days: number;
         };
+        /** BoardRecipientIn */
+        BoardRecipientIn: {
+            /** Full Name */
+            full_name?: string | null;
+            /** Email */
+            email: string;
+        };
+        /** BoardRecipientOut */
+        BoardRecipientOut: {
+            /**
+             * Recipient Uuid
+             * Format: uuid
+             */
+            recipient_uuid: string;
+            /** Full Name */
+            full_name: string | null;
+            /** Email */
+            email: string;
+            /**
+             * Added At
+             * Format: date-time
+             */
+            added_at: string;
+            /** Added By Name */
+            added_by_name: string | null;
+        };
         /** Body_add_approval_projects__project_uuid__approvals_post */
         Body_add_approval_projects__project_uuid__approvals_post: {
             /** Approval Type */
@@ -6839,6 +7223,21 @@ export interface components {
              * Kind
              * @description email, proof, chat or other
              * @default other
+             */
+            kind: string;
+            /** Note */
+            note?: string | null;
+        };
+        /** Body_add_report_proof_breaches__breach_uuid__reports__report_uuid__evidence_post */
+        Body_add_report_proof_breaches__breach_uuid__reports__report_uuid__evidence_post: {
+            /**
+             * File
+             * @description The file, max 25 MB
+             */
+            file: string;
+            /**
+             * Kind
+             * @description approval or sent_mail
              */
             kind: string;
             /** Note */
@@ -6876,7 +7275,7 @@ export interface components {
             kind: string;
             /**
              * File
-             * @description The filled-in CSV, max 25 MB
+             * @description The filled-in .xlsx or CSV, max 25 MB
              */
             file: string;
         };
@@ -7062,7 +7461,7 @@ export interface components {
             kind: string;
             /**
              * File
-             * @description The filled-in CSV, max 25 MB
+             * @description The filled-in .xlsx or CSV, max 25 MB
              */
             file: string;
         };
@@ -7107,6 +7506,11 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /** BreachAffectedOptionsOut */
+        BreachAffectedOptionsOut: {
+            /** Projects */
+            projects: components["schemas"]["BreachProjectOptionOut"][];
+        };
         /** BreachAffectedOut */
         BreachAffectedOut: {
             /** Total */
@@ -7117,8 +7521,6 @@ export interface components {
             people: components["schemas"]["BreachAffectedPersonOut"][];
             /** Next Cursor */
             next_cursor: string | null;
-            /** Platform Tables */
-            platform_tables: string[];
         };
         /** BreachAffectedPersonOut */
         BreachAffectedPersonOut: {
@@ -7336,23 +7738,9 @@ export interface components {
             /** Past Target */
             past_target: boolean;
         };
-        /** BreachCompletionIn */
-        BreachCompletionIn: {
-            /**
-             * Occurred At
-             * Format: date-time
-             */
-            occurred_at: string;
-            /** Reference */
-            reference?: string | null;
-            /** Reported To */
-            reported_to?: string | null;
-            /** Note */
-            note?: string | null;
-        };
         /**
          * BreachContactOut
-         * @description Somebody the breach touched with no account. Name and contacts sealed.
+         * @description Somebody affected who has no account. Name and contacts sealed.
          */
         BreachContactOut: {
             /**
@@ -7465,6 +7853,186 @@ export interface components {
             /** Determined By Name */
             determined_by_name: string | null;
         };
+        /** BreachDocumentCreateIn */
+        BreachDocumentCreateIn: {
+            /** Kind */
+            kind: string;
+        };
+        /** BreachDocumentFilingIn */
+        BreachDocumentFilingIn: {
+            /**
+             * Filed At
+             * Format: date-time
+             */
+            filed_at: string;
+            /** Reference */
+            reference?: string | null;
+        };
+        /** BreachDocumentIn */
+        BreachDocumentIn: {
+            /** Sections */
+            sections: {
+                [key: string]: string | null;
+            };
+        };
+        /** BreachDocumentKindOut */
+        BreachDocumentKindOut: {
+            /** Kind */
+            kind: string;
+            /** Title */
+            title: string;
+            /** Basis */
+            basis: string;
+            /** Duty */
+            duty: string | null;
+            /** Duty State */
+            duty_state: string | null;
+            /** Blocked By */
+            blocked_by: string | null;
+            /** Goes To Regulator */
+            goes_to_regulator: boolean;
+            /** Versions */
+            versions: components["schemas"]["BreachDocumentOut"][];
+        };
+        /** BreachDocumentMailOut */
+        BreachDocumentMailOut: {
+            /** Delivered */
+            delivered: number;
+            /** Queued */
+            queued: number;
+            /** Failed */
+            failed: number;
+            /** Stale */
+            stale: number;
+            /** Retryable */
+            retryable: number;
+            /** Recipients */
+            recipients: components["schemas"]["BreachDocumentMailRecipientOut"][];
+        };
+        /** BreachDocumentMailRecipientOut */
+        BreachDocumentMailRecipientOut: {
+            /**
+             * Recipient Uuid
+             * Format: uuid
+             */
+            recipient_uuid: string;
+            /** Full Name */
+            full_name: string | null;
+            /** Email */
+            email: string;
+            /** Status */
+            status: string;
+            /** Attempt */
+            attempt: number;
+            /** Error */
+            error: string | null;
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+            /** Removed */
+            removed: boolean;
+        };
+        /** BreachDocumentOut */
+        BreachDocumentOut: {
+            /**
+             * Report Uuid
+             * Format: uuid
+             */
+            report_uuid: string;
+            /** Kind */
+            kind: string;
+            /** Title */
+            title: string;
+            /** Version */
+            version: number;
+            /** State */
+            state: string;
+            /** Sections */
+            sections: components["schemas"]["BreachDocumentSectionOut"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By Name */
+            created_by_name: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Finalised At */
+            finalised_at: string | null;
+            /** Finalised By Name */
+            finalised_by_name: string | null;
+            /** Filed At */
+            filed_at: string | null;
+            /** Filed Reference */
+            filed_reference: string | null;
+            /** Filed By Name */
+            filed_by_name: string | null;
+            /** Evidence */
+            evidence: components["schemas"]["BreachDocumentProofOut"][];
+            mail: components["schemas"]["BreachDocumentMailOut"];
+        };
+        /** BreachDocumentProofOut */
+        BreachDocumentProofOut: {
+            /**
+             * Attachment Uuid
+             * Format: uuid
+             */
+            attachment_uuid: string;
+            /** Kind */
+            kind: string;
+            /** Note */
+            note: string | null;
+            /** File Name */
+            file_name: string;
+            /** Sha256 */
+            sha256: string;
+            /** Size Bytes */
+            size_bytes: number;
+            /**
+             * Added At
+             * Format: date-time
+             */
+            added_at: string;
+            /** Added By Name */
+            added_by_name: string | null;
+        };
+        /** BreachDocumentSectionOut */
+        BreachDocumentSectionOut: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Required */
+            required: boolean;
+            /** Body */
+            body: string | null;
+        };
+        /** BreachDocumentsOut */
+        BreachDocumentsOut: {
+            /** Kinds */
+            kinds: components["schemas"]["BreachDocumentKindOut"][];
+            /** Board Recipients */
+            board_recipients: number;
+            /** Proofs */
+            proofs: components["schemas"]["BreachProofKindOut"][];
+        };
+        /** BreachDocumentsResentOut */
+        BreachDocumentsResentOut: {
+            /** Kinds */
+            kinds: components["schemas"]["BreachDocumentKindOut"][];
+            /** Board Recipients */
+            board_recipients: number;
+            /** Proofs */
+            proofs: components["schemas"]["BreachProofKindOut"][];
+            /** Queued */
+            queued: number;
+        };
         /** BreachDutyEventOut */
         BreachDutyEventOut: {
             /**
@@ -7536,10 +8104,14 @@ export interface components {
         };
         /** BreachEvidenceOut */
         BreachEvidenceOut: {
+            /** Projects */
+            projects?: string[];
             /** Exports */
             exports?: string[];
             /** Assets */
             assets?: string[];
+            /** Activities */
+            activities?: string[];
             /** Tables */
             tables?: string[];
         };
@@ -7869,6 +8441,7 @@ export interface components {
             logged?: components["schemas"]["BreachLoggedOut"];
             /** Cyber Attack */
             cyber_attack?: string | null;
+            reported?: components["schemas"]["BreachReportedOut"] | null;
             /**
              * Recorded At
              * Format: date-time
@@ -7913,6 +8486,27 @@ export interface components {
             would_add: number;
             /** People */
             people: components["schemas"]["BreachCandidateOut"][];
+        };
+        /** BreachProjectOptionOut */
+        BreachProjectOptionOut: {
+            /**
+             * Project Uuid
+             * Format: uuid
+             */
+            project_uuid: string;
+            /** Project Name */
+            project_name: string;
+            /** Is Activity */
+            is_activity: boolean;
+            /** People */
+            people: number;
+        };
+        /** BreachProofKindOut */
+        BreachProofKindOut: {
+            /** Kind */
+            kind: string;
+            /** Label */
+            label: string;
         };
         /** BreachReportFactOut */
         BreachReportFactOut: {
@@ -7971,20 +8565,59 @@ export interface components {
             /** Duties */
             duties: components["schemas"]["BreachDutyOut"][];
         };
+        /**
+         * BreachReportedOut
+         * @description Who reported it through the public link, if somebody did (0058).
+         */
+        BreachReportedOut: {
+            /** Reporter Name */
+            reporter_name: string;
+            /** Reporter Email */
+            reporter_email: string;
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
+            /** Noticed At */
+            noticed_at: string | null;
+            /** Cyber Attack */
+            cyber_attack: string | null;
+        };
+        /** BreachRoleOut */
+        BreachRoleOut: {
+            /** Role */
+            role: string;
+            /** Title */
+            title: string;
+        };
         /** BreachScopeIn */
         BreachScopeIn: {
             /** Kind */
             kind: string;
+            /** Project Uuid */
+            project_uuid?: string | null;
             /** Processor Uuid */
             processor_uuid?: string | null;
             /** Source Uuid */
             source_uuid?: string | null;
-            /** Tables */
-            tables?: string[];
             /** Since */
             since?: string | null;
             /** Until */
             until?: string | null;
+        };
+        /** BreachSettingsOut */
+        BreachSettingsOut: {
+            /** Intake Roles */
+            intake_roles: string[];
+            /** Roles */
+            roles: components["schemas"]["BreachRoleOut"][];
+            /** Officers */
+            officers: string[];
+            /** Board Recipients */
+            board_recipients: components["schemas"]["BoardRecipientOut"][];
+            /** Report Link */
+            report_link: string;
         };
         /** BreachStatusChangeOut */
         BreachStatusChangeOut: {
@@ -8039,6 +8672,16 @@ export interface components {
             /** Tickets Overdue */
             tickets_overdue: number;
         };
+        /** BreachTicketDateIn */
+        BreachTicketDateIn: {
+            /**
+             * Answer By
+             * Format: date
+             */
+            answer_by: string;
+            /** Reason */
+            reason: string;
+        };
         /** BreachTicketDetailOut */
         BreachTicketDetailOut: {
             ticket: components["schemas"]["BreachTicketOut"];
@@ -8062,6 +8705,10 @@ export interface components {
             summary: string | null;
             /** Reason */
             reason: string | null;
+            /** Date Before */
+            date_before?: string | null;
+            /** Date After */
+            date_after?: string | null;
             /**
              * Occurred At
              * Format: date-time
@@ -8166,6 +8813,8 @@ export interface components {
             moves: components["schemas"]["BreachTicketMoveOut"][];
             /** May Write */
             may_write: boolean;
+            /** May Change Date */
+            may_change_date: boolean;
             /** Temporary Access */
             temporary_access: string | null;
         };
@@ -8409,6 +9058,11 @@ export interface components {
             description?: string | null;
             /** Default Person Type */
             default_person_type?: ("external" | "vendor" | "candidate" | "visitor") | null;
+        };
+        /** CertInSetAsideIn */
+        CertInSetAsideIn: {
+            /** Reason */
+            reason: string;
         };
         /** ChannelOut */
         ChannelOut: {
@@ -9259,6 +9913,34 @@ export interface components {
             /** Is Active */
             is_active: boolean;
         };
+        /**
+         * DismissedReportOut
+         * @description A report an office did not take up, and why.
+         */
+        DismissedReportOut: {
+            /** Reference */
+            reference: string;
+            /** Reporter Name */
+            reporter_name: string;
+            /** Reporter Email */
+            reporter_email: string;
+            /** Title */
+            title: string;
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
+            /**
+             * Dismissed At
+             * Format: date-time
+             */
+            dismissed_at: string;
+            /** Dismissed By Name */
+            dismissed_by_name: string | null;
+            /** Dismissal Reason */
+            dismissal_reason: string;
+        };
         /** DisputeIn */
         DisputeIn: {
             /** Text */
@@ -9684,10 +10366,144 @@ export interface components {
             /** Uuid */
             uuid?: string | null;
         };
+        /** IncidentCodeIn */
+        IncidentCodeIn: {
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+        };
+        /** IncidentDismissalIn */
+        IncidentDismissalIn: {
+            /** Reason */
+            reason: string;
+        };
+        /** IncidentReportIn */
+        IncidentReportIn: {
+            /** Name */
+            name: string;
+            /**
+             * Email
+             * Format: email
+             */
+            email: string;
+            /** Code */
+            code: string;
+            /** Title */
+            title: string;
+            /** Incident Details */
+            incident_details: string;
+            /** Noticed At */
+            noticed_at?: string | null;
+            /** Origin */
+            origin?: string | null;
+            /** Discovery */
+            discovery?: string | null;
+            /** Affected Systems */
+            affected_systems?: string | null;
+            /** Impact Scale */
+            impact_scale?: string | null;
+            /** Countries Involved */
+            countries_involved?: string | null;
+            /** Data Nature */
+            data_nature?: string | null;
+            /** Subject Types */
+            subject_types?: string | null;
+            /** Entities Involved */
+            entities_involved?: string | null;
+            /** Third Parties */
+            third_parties?: string | null;
+            /** Cyber Attack */
+            cyber_attack?: string | null;
+        };
+        /**
+         * IncidentReportOut
+         * @description A report waiting in the shared intake, with everything it said.
+         */
+        IncidentReportOut: {
+            /**
+             * Report Uuid
+             * Format: uuid
+             */
+            report_uuid: string;
+            /** Reference */
+            reference: string;
+            /** Reporter Name */
+            reporter_name: string;
+            /** Reporter Email */
+            reporter_email: string;
+            /** Title */
+            title: string;
+            /** Noticed At */
+            noticed_at: string | null;
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
+            /** Cyber Attack */
+            cyber_attack: string | null;
+            logged: components["schemas"]["BreachLoggedOut"];
+        };
+        /**
+         * IncidentReportPageOut
+         * @description A page of the shared intake, oldest first.
+         */
+        IncidentReportPageOut: {
+            /** Items */
+            items: components["schemas"]["IncidentReportRowOut"][];
+            /** Total */
+            total: number;
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+        };
+        /** IncidentReportReceivedOut */
+        IncidentReportReceivedOut: {
+            /** Reference */
+            reference: string;
+            /** Message */
+            message: string;
+        };
+        /**
+         * IncidentReportRowOut
+         * @description A report waiting in the shared intake, as the list shows it.
+         */
+        IncidentReportRowOut: {
+            /**
+             * Report Uuid
+             * Format: uuid
+             */
+            report_uuid: string;
+            /** Reference */
+            reference: string;
+            /** Reporter Name */
+            reporter_name: string;
+            /** Reporter Email */
+            reporter_email: string;
+            /** Title */
+            title: string;
+            /** Noticed At */
+            noticed_at: string | null;
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
+            /** Cyber Attack */
+            cyber_attack: string | null;
+        };
         /** InstructionIn */
         InstructionIn: {
             /** Instruction */
             instruction?: string | null;
+        };
+        /** IntakeRolesIn */
+        IntakeRolesIn: {
+            /** Roles */
+            roles: string[];
         };
         /** IssueTicketsIn */
         IssueTicketsIn: {
@@ -10252,6 +11068,8 @@ export interface components {
             moves: components["schemas"]["BreachTicketMoveOut"][];
             /** May Add Colleague */
             may_add_colleague: boolean;
+            /** May Change Date */
+            may_change_date: boolean;
         };
         /** MyOfficesOut */
         MyOfficesOut: {
@@ -10654,10 +11472,17 @@ export interface components {
             /** Purposes */
             purposes: components["schemas"]["OptionPurpose"][];
         };
+        /** OrgBoardAffectedOut */
+        OrgBoardAffectedOut: {
+            /** Listed */
+            listed: number;
+            /** Notified */
+            notified: number;
+        };
         /**
          * OrgBoardBriefOut
-         * @description For the organisation's board, drafted from the register. The platform
-         *     never reports to the board; a person does, and the DPO records it.
+         * @description For the organisation's board, drafted from the register: what the
+         *     report mailed to it starts from.
          */
         OrgBoardBriefOut: {
             /** Document */
@@ -10693,7 +11518,7 @@ export interface components {
             cert_in_reportable: boolean;
             /** Duties */
             duties: components["schemas"]["OrgBoardDutyOut"][];
-            touched: components["schemas"]["OrgBoardTouchedOut"];
+            affected: components["schemas"]["OrgBoardAffectedOut"];
             /** Missing */
             missing: string[];
             duty: components["schemas"]["OrgBoardDutyOut"] | null;
@@ -10718,13 +11543,6 @@ export interface components {
             /** Completed At */
             completed_at: string | null;
             clock: components["schemas"]["BreachClockOut"];
-        };
-        /** OrgBoardTouchedOut */
-        OrgBoardTouchedOut: {
-            /** Listed */
-            listed: number;
-            /** Notified */
-            notified: number;
         };
         /** OtpBody */
         OtpBody: {
@@ -14839,6 +15657,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    report_code_incident_reports_code_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IncidentCodeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Acknowledged"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    report_incident_incident_reports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IncidentReportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentReportReceivedOut"];
                 };
             };
             /** @description Validation Error */
@@ -23288,6 +24172,155 @@ export interface operations {
             };
         };
     };
+    incident_reports_breaches_intake_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentReportPageOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dismissed_reports_breaches_intake_dismissed_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DismissedReportOut"][];
+                };
+            };
+        };
+    };
+    incident_report_breaches_intake__report_uuid__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IncidentReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    claim_report_breaches_intake__report_uuid__claim_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    dismiss_report_breaches_intake__report_uuid__dismiss_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IncidentDismissalIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Acknowledged"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_breach_breaches__breach_uuid__get: {
         parameters: {
             query?: never;
@@ -23518,19 +24551,18 @@ export interface operations {
             };
         };
     };
-    complete_duty_breaches__breach_uuid__obligations__duty__complete_post: {
+    set_aside_cert_in_breaches__breach_uuid__cert_in_not_applicable_post: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 breach_uuid: string;
-                duty: string;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BreachCompletionIn"];
+                "application/json": components["schemas"]["CertInSetAsideIn"];
             };
         };
         responses: {
@@ -23710,6 +24742,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BreachAffectedOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    affected_options_breaches__breach_uuid__affected_options_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachAffectedOptionsOut"];
                 };
             };
             /** @description Validation Error */
@@ -24152,6 +25215,276 @@ export interface operations {
             };
         };
     };
+    list_reports_breaches__breach_uuid__reports_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachDocumentsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    draft_report_breaches__breach_uuid__reports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreachDocumentCreateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachDocumentsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_report_breaches__breach_uuid__reports__report_uuid__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+                report_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreachDocumentIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachDocumentsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    finalise_report_breaches__breach_uuid__reports__report_uuid__finalise_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+                report_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachDocumentsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    resend_report_breaches__breach_uuid__reports__report_uuid__resend_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+                report_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachDocumentsResentOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_report_proof_breaches__breach_uuid__reports__report_uuid__evidence_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+                report_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_add_report_proof_breaches__breach_uuid__reports__report_uuid__evidence_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachDocumentsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    file_report_breaches__breach_uuid__reports__report_uuid__file_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+                report_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreachDocumentFilingIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachDocumentsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    report_pdf_breaches__breach_uuid__reports__report_uuid__pdf_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+                report_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_tickets_breaches__breach_uuid__tickets_get: {
         parameters: {
             query?: never;
@@ -24306,6 +25639,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_ticket_date_breaches__breach_uuid__tickets__ticket_uuid__resolve_by_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+                ticket_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreachTicketDateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachTicketDetailOut"];
                 };
             };
             /** @description Validation Error */
@@ -24612,6 +25981,41 @@ export interface operations {
             };
         };
     };
+    change_my_ticket_date_breach_tickets__ticket_uuid__resolve_by_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ticket_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreachTicketDateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyBreachTicketDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     return_my_breach_ticket_breach_tickets__ticket_uuid__return_post: {
         parameters: {
             query?: never;
@@ -24634,6 +26038,123 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MyBreachTicketDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_settings_breach_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachSettingsOut"];
+                };
+            };
+        };
+    };
+    set_intake_roles_breach_settings_intake_roles_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["IntakeRolesIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_board_recipient_breach_settings_board_recipients_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardRecipientIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_board_recipient_breach_settings_board_recipients__recipient_uuid__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recipient_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachSettingsOut"];
                 };
             };
             /** @description Validation Error */

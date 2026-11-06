@@ -240,6 +240,20 @@ export async function apiDelete<T>(url: string, cfg?: AxiosRequestConfig): Promi
   return data;
 }
 
+/** The name a download gives itself. `filename*` carries any language; the
+ *  plain `filename` beside it is its stand-in, and all an older route sends. */
+function downloadName(disposition: string): string {
+  const encoded = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded);
+    } catch {
+      // A malformed escape: the plain name still serves.
+    }
+  }
+  return disposition.match(/filename="?([^"]+)"?/)?.[1] ?? "download";
+}
+
 /**
  * Download a file the API returns as an attachment.
  *
@@ -267,11 +281,10 @@ export async function apiDownload(
       ? await http.get(url, { responseType: "blob" })
       : await http.post(url, body, { responseType: "blob" });
   const disposition = String(response.headers["content-disposition"] ?? "");
-  const match = disposition.match(/filename="?([^"]+)"?/);
 
   return {
     blob: response.data as Blob,
-    filename: match?.[1] ?? "download",
+    filename: downloadName(disposition),
     generatedAt: response.headers["x-export-generated-at"] as string | undefined,
     ageDays: response.headers["x-export-age-days"]
       ? Number(response.headers["x-export-age-days"])

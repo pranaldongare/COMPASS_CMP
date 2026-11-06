@@ -242,4 +242,31 @@ describe("a file request that is refused", () => {
     );
     expect((await apiDownload("/files/one")).filename).toBe("one.pdf");
   });
+
+  it("names a download in any language, from the encoded name", async () => {
+    server.use(
+      http.get(`${API}/files/hindi`, () =>
+        HttpResponse.arrayBuffer(new ArrayBuffer(3), {
+          headers: {
+            "content-disposition":
+              "attachment; filename=\"____.pdf\"; filename*=UTF-8''%E0%A4%B8%E0%A5%82%E0%A4%9A%E0%A5%80.pdf",
+          },
+        }),
+      ),
+    );
+    expect((await apiDownload("/files/hindi")).filename).toBe("सूची.pdf");
+  });
+
+  it("keeps the plain name when the encoded one cannot be read", async () => {
+    server.use(
+      http.get(`${API}/files/broken`, () =>
+        HttpResponse.arrayBuffer(new ArrayBuffer(3), {
+          headers: {
+            "content-disposition": "attachment; filename=\"plain.pdf\"; filename*=UTF-8''%E0%A4",
+          },
+        }),
+      ),
+    );
+    expect((await apiDownload("/files/broken")).filename).toBe("plain.pdf");
+  });
 });

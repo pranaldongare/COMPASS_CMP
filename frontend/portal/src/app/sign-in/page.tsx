@@ -68,6 +68,14 @@ export default function SignInPage() {
             </Link>
           </p>
           <p className="text-center text-xs text-text-subtle">
+            <Link
+              href="/report-incident"
+              className="underline underline-offset-2 hover:text-text-muted"
+            >
+              Report a personal data incident
+            </Link>
+          </p>
+          <p className="text-center text-xs text-text-subtle">
             Nominated by someone? Once you have accepted, sign in here with the contact you
             accepted from - or{" "}
             <Link

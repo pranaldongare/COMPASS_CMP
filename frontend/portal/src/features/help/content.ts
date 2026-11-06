@@ -311,6 +311,31 @@ export const SECTIONS: HelpSection[] = [
     ],
   },
   {
+    id: "reporting-an-incident",
+    title: "Reporting an incident",
+    summary: "Tell us about a suspected breach of personal data. No account needed.",
+    blocks: [
+      {
+        kind: "p",
+        text: "Anyone can tell us if they think personal data we hold has been lost, stolen or seen by someone who should not have seen it.",
+      },
+      {
+        kind: "steps",
+        items: [
+          "On the [[Your rights]] page, click [[Report an incident]].",
+          "Fill in [[Your name]], [[Your email]], [[What happened in one line]] and [[What happened]]. Add anything else you know under [[More details (optional)]].",
+          "Click [[Send me a code]]. Type the code we email you in [[The code we sent]].",
+          "Click [[Send the report]]. You are shown a reference, and we email it to you. Quote it if you contact us.",
+        ],
+      },
+      {
+        kind: "note",
+        title: "What happens next",
+        text: "The Privacy Office reads every report, and either takes it up as an incident or closes it and records why. We keep your name and email with the report, and the people handling it may contact you.",
+      },
+    ],
+  },
+  {
     id: "ticket-link",
     title: "If we sent you a link to a ticket",
     summary:

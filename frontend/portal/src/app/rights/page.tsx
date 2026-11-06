@@ -179,6 +179,22 @@ export default function RightsPage() {
 
           <Card>
             <CardHeader>
+              <CardTitle>Reporting an incident</CardTitle>
+            </CardHeader>
+            <CardBody className="space-y-2">
+              <p className="text-sm leading-relaxed text-text-muted">
+                If you think personal data we hold has been lost, stolen or seen by someone who
+                should not have seen it, tell us. You do not need an account.
+              </p>
+              <Link href="/report-incident" className="inline-flex items-center gap-1 text-sm text-accent-text underline underline-offset-2">
+                Report an incident
+                <ArrowRight className="size-3.5" aria-hidden="true" />
+              </Link>
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader>
               <CardTitle>Contacting us</CardTitle>
             </CardHeader>
             <CardBody className="space-y-2">
