@@ -28,7 +28,7 @@ Key `project_submitted` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_project_submitted` (`backend/api/src/cmp/tasks/notifications/alerts.py:36`) |
-| Queued from | - |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:91` |
 | Variables | `project_name` (The project.), `submitted_by` (The R&D User who submitted it.), `project_url` (The project in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{project_name} is waiting for your approval`
@@ -53,7 +53,7 @@ Key `project_approved` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_project_approved` (`backend/api/src/cmp/tasks/notifications/alerts.py:49`) |
-| Queued from | - |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:101` |
 | Variables | `full_name` (The project's owner.), `project_name` (The project.), `project_url` (The project in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{project_name} is approved`
@@ -78,7 +78,7 @@ Key `project_sent_back` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_project_sent_back` (`backend/api/src/cmp/tasks/notifications/alerts.py:62`) |
-| Queued from | - |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:104` |
 | Variables | `full_name` (The project's owner.), `project_name` (The project.), `reason` (What the Privacy Office asked to change.), `project_url` (The project in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{project_name} was sent back for changes`
@@ -103,7 +103,7 @@ Key `project_closed` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_project_closed` (`backend/api/src/cmp/tasks/notifications/alerts.py:76`) |
-| Queued from | - |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:113` |
 | Variables | `full_name` (The project's owner.), `project_name` (The project.), `reason` (Why it was closed, as recorded, or a dash.), `project_url` (The project in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{project_name} is closed`
@@ -128,7 +128,7 @@ Key `project_collector_assigned` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_project_collector_assigned` (`backend/api/src/cmp/tasks/notifications/alerts.py:90`) |
-| Queued from | - |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:125` |
 | Variables | `full_name` (The collection owner.), `project_name` (The project.), `project_url` (The project in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `You now collect for {project_name}`

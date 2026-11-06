@@ -6,6 +6,9 @@ Amended 2026-10-05: an incident is logged first and a breach is recorded on a
 and breach-only logins - see [ADR 0023](0023-breach-tickets-and-breach-only-logins.md).
 Amended 2026-10-07: the people it touched may come from a list sent to the
 office - see the end and [ADR 0027](0027-a-breach-can-reach-people-with-no-account.md).
+Amended 2026-11-06: reports are drafted, finalised and filed with proof, and the
+platform mails the organisation's board, never a regulator - see the end and
+[ADR 0037](0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md).
 
 ## Context
 
@@ -143,3 +146,27 @@ the notice by email and SMS, never to an account they do not have, and
 counts toward *principals notified* exactly as an account does. The file
 itself is not kept. The decision is
 [ADR 0027](0027-a-breach-can-reach-people-with-no-account.md).
+
+## Amended · 2026-11-06
+
+[ADR 0037](0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md)
+changes four things here. **The rule this record is named for stands: the
+platform never submits to a regulator**, and no code sends anything to one.
+
+- **The platform's reach grows by one audience.** This record says who it
+  sends to: the people affected, and nobody else. ADR 0022 extended that to the
+  organisation's board in so many words, that the platform never reports to it.
+  That is reversed: the platform mails it a report the office wrote. The DPDP
+  Board and CERT-In are not mailed.
+- **A submission is not recorded by hand any more.** What is sent is a report
+  the office drafted, finalised and filed here, with the proof of internal
+  approval, the mail sent and the regulator's reference. `POST
+  /breaches/{uuid}/obligations/{duty}/complete` is removed, so the consequence
+  that the evidence is only as good as the entry no longer holds for the
+  regulators' duties.
+- **The Board's documents are written and kept.** The two views this record
+  describes remain, as the register's own; what is sent is the report, frozen
+  when it was finalised, not a document regenerated when it is opened.
+- **The platform's tables are no longer a way to find people.** Who is affected
+  comes from a project or activity, a vendor, a data source, a list or one
+  person added by hand.

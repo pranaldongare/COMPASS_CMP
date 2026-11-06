@@ -39,8 +39,8 @@ that sends it and the code that queues it are listed per module in
 | Rights | `holder_ticket_link` | email | anything happens on an outside holder's ticket - sent, written on, moved or reopened (0049): says what happened, the date to answer by and the link to the ticket on the portal, and nothing of the request |
 | Rights | `holder_ticket_code` | email | somebody opens an outside holder's ticket link: the code, to the address on the ticket, that opens it |
 | Staff | `office_note` | email | the office resends a notification from the console |
-| Breach | `breach_notice` | email, SMS | the DPO sends an approved notice about a personal data breach to the people it touched - only once it is recorded as a breach; the email carries all five Rule 7(1) contents, the SMS points to her account, where the same notice is. `breach_reference` is the breach reference (`BR-`), never the incident's |
-| Breach | `breach_notice_direct` | email, SMS | the same notice to a person the breach touched who has no account, named in a list sent to the Privacy Office (0045): all five Rule 7(1) contents by email, and by SMS |
+| Breach | `breach_notice` | email, SMS | the DPO sends an approved notice about a personal data breach to the people affected - only once it is recorded as a breach; the email carries all five Rule 7(1) contents, the SMS points to her account, where the same notice is. `breach_reference` is the breach reference (`BR-`), never the incident's |
+| Breach | `breach_notice_direct` | email, SMS | the same notice to a person affected who has no account, named in a list sent to the Privacy Office (0045): all five Rule 7(1) contents by email, and by SMS |
 | Breach | `breach_ticket_waiting` | email | a breach ticket is assigned to a member of staff, sent back, or reopened (S3-08): says only that a ticket from the Privacy Office is waiting in the console, and names no breach - no reference, no title, no words (BD-18) |
 | Breach | `breach_ticket_access` | email | somebody without a console login is asked to act on a breach - by the DPO, or as a colleague by a holder - or asked again after an administrator ended their login (S3-09): says the Privacy Office has given them temporary console access to answer a ticket - when the matter is closed they can still read it, no longer answer it (2026-10-06) - with the reset link, the code and how long it lasts. A login that already signs in is sent `breach_ticket_waiting` instead. Sent by the sign-in service, like `staff_invitation`, never from breach code, and names no breach (BD-18) |
 | Projects | `project_submitted` | email | an R&D User submits a project for approval; to every active DPO |
@@ -52,7 +52,13 @@ that sends it and the code that queues it are listed per module in
 | Rights | `rights_due_digest` | email | daily, when open requests are overdue or at risk of missing their date; to every active DPO, and only when there is something on it |
 | Rights | `rights_grievance_about_dpo` | email | a grievance concerns the DPO's own decisions; to every active administrator, so somebody independent reviews it |
 | Breach | `breach_duty_due` | email | a breach duty with a deadline - the organisation's board, CERT-In, the Board's report - is about to fall due, and again if overdue; to every active DPO, once per stage per duty |
-| Breach | `breach_ticket_returned` | email | the holder of a breach ticket returns it with their answer; to every active DPO |
+| Breach | `breach_ticket_returned` | email | the holder of a breach ticket returns it with their answer; to the officers of the breach's office |
+| Breach | `breach_ticket_date_changed` | email | the holder of a breach ticket or the Privacy Office changes the date it is to be resolved by (0061): to whoever did not, the holder or every active officer of the breach's office. It names no breach and no date; both, and the reason, are on the ticket |
+| Breach | `breach_board_report` | email, with the report as a PDF | the Privacy Office notifies the organisation's board of a personal data breach (0059): the report it drafted, to every address on the board's list under Breach settings |
+| Breach | `breach_report_finalised` | email, with the report as a PDF | the Privacy Office finalises a report for the DPDP Board or CERT-In, or a closure report (0059): to the organisation's board, for its information. It says the report has not been sent to the regulator, and does not go to one |
+| Breach | `incident_report_code` | email | somebody reporting an incident through the public link asks for a code (0058), to prove the address they gave. Sent to the address typed |
+| Breach | `incident_report_received` | email | a report arrives through the public link (0058): to the reporter, with the reference it was given |
+| Breach | `incident_reported` | email | a report arrives through the public link (0058): to every active account in the roles named under Breach settings, by default the Data Protection Officer and the Legal PoC. Its number and when it arrived, and nothing of what it says |
 | Accounts | `staff_role_changed` | email | an administrator changes a member of staff's role; to them |
 | Accounts | `staff_access_ended` | email | an administrator ends a member of staff's console access; to them. A consent or request they made as a person is unaffected |
 | Accounts | `delegation_arranged` | email | cover is arranged; to the person away and to the colleague acting for them |
@@ -71,10 +77,11 @@ would hand the key to somebody else, and never one written to a data
 principal about herself, because a copy would disclose her data. The service
 refuses the rest.
 
-Two messages may carry files by email (`ATTACHABLE`), and only files the
-recipient already owns: `consent_receipt` carries her own consent record, and
+Four messages may carry files by email (`ATTACHABLE`), and only files the
+recipient already owns: `consent_receipt` carries her own consent record,
 `ticket_message` carries the file the office put on the message, to the
-ticket's holder only.
+ticket's holder only, and `breach_board_report` and `breach_report_finalised`
+carry the report as a PDF to the organisation's board, whom it was written for.
 
 ## Editing the words
 

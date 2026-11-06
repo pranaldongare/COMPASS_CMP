@@ -121,13 +121,13 @@ reference unique, the row append-only by trigger and grant. A later *no* leaves
 it; nothing withdraws it.
 
 **A report to the organisation's board says to whom, since 0039.** `org_board`
-is a duty kind like the others, created on every incident at logging;
-`trg_breach_org_board_reported_to` refuses a `completed` event on it without
+is a duty kind like the others, created since ADR 0037 by the first validation of
+*yes*; `trg_breach_org_board_reported_to` refuses a `completed` event on it without
 `reported_to`, which is sealed.
 
-**A breach ticket changes only its read markers, since 0040.**
-`cmp_breach_ticket_read_only` refuses any other change to a `breach_ticket` row
-and any delete; `breach_ticket_once` is one ticket per person per breach.
+**A breach ticket changes only its read markers, since 0040, and its date, since
+0061.** `cmp_breach_ticket_read_only` refuses any other change to a `breach_ticket`
+row, a new `answer_by` that no `date_changed` event records, and any delete; `breach_ticket_once` is one ticket per person per breach.
 `breach_ticket_event` is append-only and its CHECKs tie each kind to what it
 must carry - a return its outcome and summary, a send-back, withdrawal or
 reopening its reason. `breach_ticket_message`, the thread, is append-only like
@@ -206,7 +206,18 @@ with her request - the name it came with (sealed), where it is stored, its
 SHA-256, size and type, who and when - append-only by trigger and grant. At
 most ten per request, and only while it is open; that rule is the service's.
 
-**Who a breach touched is only ever added to, since 0035.** Each
+**A report from the public link has one outcome, since 0058.** `incident_report`
+is written once; `cmp_incident_report_outcome_once` lets only its outcome change,
+once, and refuses a delete, and `incident_report_one_outcome` refuses both a claim
+and a dismissal. It carries no office and no policy (ADR 0037).
+
+**A report on a breach is frozen when it is finalised, since 0059.**
+`cmp_breach_report_frozen` and `cmp_breach_report_section_frozen` keep a finalised
+report's words and refuse a delete; filing is written once after it, and
+`breach_report_board_is_not_filed` holds it off a report to the organisation's
+board. `uq_breach_report_one_draft` is one draft of a kind per breach.
+
+**The people a breach affected are only ever added to, since 0035.** Each
 confirmation is a `breach_affected_revision` with its scopes and counts; each
 person is a `breach_affected` row, once per breach (`breach_affected_once`),
 naming the revision that first listed them. Both are append-only.

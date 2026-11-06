@@ -94,7 +94,7 @@ component-level fix, done in the order in section 5.
 | Translations | ❌ | English only (an open decision) |
 | Paging of large lists | ✅ | Cursor paging everywhere |
 | Image and font optimisation, bundle analysis | 🟡 | No bundle analysis |
-| Unit and component tests | ✅ | Vitest: 407 console, 247 portal |
+| Unit and component tests | ✅ | Vitest: 664 console, 294 portal |
 | End-to-end tests | ✅ | Playwright, with screenshot comparisons |
 | Lint, format, pre-commit | ✅ | ESLint, Prettier, Husky, lint-staged |
 

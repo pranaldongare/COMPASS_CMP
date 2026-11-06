@@ -12,6 +12,7 @@ Navigation returned after sign-in: `dashboard`, `hr-activities`, `hr-categories`
 | `asset` | No | No | `none` | Denied |
 | `audit` | No | No | `none` | Denied |
 | `breach` | No | No | `none` | Denied |
+| `breach_settings` | No | No | `none` | Denied |
 | `breach_ticket` | Yes | Yes | `own` | Own or addressed rows |
 | `collection` | No | No | `none` | Denied |
 | `consent` | Yes | No | `scoped` | Assigned project/organisational rows |

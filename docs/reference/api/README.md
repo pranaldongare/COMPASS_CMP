@@ -1,6 +1,6 @@
 # API documentation
 
-Reference for **369 operations over 321 paths**, grouped by OpenAPI module/tag.
+Reference for **391 operations over 342 paths**, grouped by OpenAPI module/tag.
 
 ## How to read an endpoint
 
@@ -19,8 +19,9 @@ Generated values are structural examples, not production credentials or semantic
 |---|---:|---|
 | Audit | 7 | [`modules/audit/api.md`](modules/audit/api.md) |
 | Auth | 15 | [`modules/auth/api.md`](modules/auth/api.md) |
-| Breach Tickets | 6 | [`modules/breach_tickets/api.md`](modules/breach_tickets/api.md) |
-| Breaches | 37 | [`modules/breaches/api.md`](modules/breaches/api.md) |
+| Breach Settings | 4 | [`modules/breach_settings/api.md`](modules/breach_settings/api.md) |
+| Breach Tickets | 7 | [`modules/breach_tickets/api.md`](modules/breach_tickets/api.md) |
+| Breaches | 52 | [`modules/breaches/api.md`](modules/breaches/api.md) |
 | Consent | 15 | [`modules/consent/api.md`](modules/consent/api.md) |
 | Cross-Border Transfers | 3 | [`modules/cross_border_transfers/api.md`](modules/cross_border_transfers/api.md) |
 | Dashboard | 3 | [`modules/dashboard/api.md`](modules/dashboard/api.md) |
@@ -28,6 +29,7 @@ Generated values are structural examples, not production credentials or semantic
 | Exchange | 19 | [`modules/exchange/api.md`](modules/exchange/api.md) |
 | Holder Tickets | 8 | [`modules/holder_tickets/api.md`](modules/holder_tickets/api.md) |
 | Hr | 13 | [`modules/hr/api.md`](modules/hr/api.md) |
+| Incident Reports | 2 | [`modules/incident_reports/api.md`](modules/incident_reports/api.md) |
 | Legal Holds | 3 | [`modules/legal_holds/api.md`](modules/legal_holds/api.md) |
 | Me | 30 | [`modules/me/api.md`](modules/me/api.md) |
 | Messages | 6 | [`modules/messages/api.md`](modules/messages/api.md) |

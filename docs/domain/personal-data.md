@@ -5,8 +5,8 @@ that accepts or returns it. Written for the questions that have to be answered
 quickly and exactly: what do we hold, where does it go, who can see it, and
 which call would expose it.
 
-The counts here are measured, not remembered. **229 of the API's 325
-operations** carry personal data; **28 of those need no session**. They come
+The counts here are measured, not remembered. **279 of the API's 391
+operations** carry personal data; **34 of those need no session**. They come
 from joining three artefacts the repository already keeps current, and the
 last section says how to redo the join after a change.
 
@@ -54,9 +54,9 @@ member of staff who acted.
 
 ## Where it lives: the database
 
-60 objects - 58 application tables, `alembic_version` and the view
-`v_current_consent` - of which **38 tables and the view carry personal data**
-and 21 tables do not ([the generated list](pii-fields-and-endpoints.md)).
+74 objects - 72 application tables, `alembic_version` and the view
+`v_current_consent` - of which **42 tables and the view carry personal data**
+and 31 tables do not ([the generated list](pii-fields-and-endpoints.md)).
 Each table below lists only its personal-data columns; the full column list, with types,
 defaults, constraints and triggers, is in
 [docs/reference/database/table_reference.md](../reference/database/table_reference.md).
@@ -244,18 +244,20 @@ The register the Privacy Office keeps under s.8(6) and Rule 7 (S3-01;
 [breaches.md](breaches.md)). It is about incidents, not people - but every
 word the office writes about an incident may name one: whose laptop, which
 account, who caused it. So **every narrative column is sealed**, and the
-register is the DPO's alone, hidden from every other role (404).
+register is the officers' alone, hidden from every other role (404).
 
 **`breach`** — `title`, `location_detail` (sealed), `recorded_by`; and, as logged (0047), `origin`, `discovery`, `affected_systems`, `incident_details`, `impact_scale`, `countries_involved`, `data_nature`, `subject_types`, `entities_involved`, `third_parties` (sealed) - any may name a person or a company.
 **`breach_recording`** — `recorded_by`: who made the *yes* that recorded it as a breach (S3-06).
 **`breach_ticket`** — `holder_user_id` (a member of staff or a temporary ticket holder, who is a data principal too), `assigned_by`, `instruction` (sealed); `parent_ticket_id` says who added whom (S3-09).
 **`breach_attachment`** — `file_name`, `note` (sealed), `added_by`; the file itself in storage under `breach/`, by hash (2026-10-06). An email or a chat kept as evidence may name anyone.
 
-**`breach_contact`** (0045) — `full_name`, `email`, `mobile` (sealed), `email_hash`, `mobile_hash` (blind indexes): somebody a breach touched who has no account, named in a list sent to the Privacy Office, and told by email and SMS. **`breach_upload`** — the list's `file_name` (sealed) and hash; the file itself is not kept (2026-10-07).
+**`breach_contact`** (0045) — `full_name`, `email`, `mobile` (sealed), `email_hash`, `mobile_hash` (blind indexes): somebody affected who has no account, named in a list sent to the Privacy Office, and told by email and SMS. **`breach_upload`** — the list's `file_name` (sealed) and hash; the file itself is not kept (2026-10-07).
+
+**`incident_report`** (0058) — `reporter_name`, `reporter_email` (sealed): whoever reported an incident through the public link, with the address they proved by a code; `title`, the ten answers of *what is known*, `dismissal_reason` (sealed); `claimed_by`, `dismissed_by`. Somebody who is not on the platform at all may be named here, and may name anybody. **`breach_board_recipient`** (0058) — `full_name`, `email` (sealed), `email_hash` (blind index), `added_by`, `removed_by`: who is on the organisation's board's list. **`breach_report_section`** (0059) — `body` (sealed): a report's words, which are the office's and may name anybody. **`breach_report`** — `created_by`, `finalised_by`, `filed_by`. **`breach_report_delivery`** — `recipient_id`; `detail` holds an error's class, never the address.
 
 **`message_copy`** (0046) — `address` (sealed), `address_hash`: a mailbox the office copies an email to. Usually a team's; sealed because it may be a person's.
 **`breach_temporary_access`** — `user_id`, `granted_by`, `ended_by`: whose temporary login, for a breach ticket or, since 0049, a rights ticket (`holder_id`), and who gave and ended it, with the role the account held before (S3-09). No name and no address: a person without an account is made one in `auth_user`, sealed like every other.
-**`breach_ticket_event`** — `summary`, `reason` (sealed), `actor_user_id`.
+**`breach_ticket_event`** — `summary`, `reason` (sealed), `actor_user_id`; `date_before` and `date_after` are a ticket's dates, not about a person (0061).
 **`breach_ticket_message`** — `body`, `evidence_name` (sealed), `author_user_id` (S3-08).
 **`breach_status_history`** — `reason` (sealed), `changed_by`.
 **`breach_determination`** — `reasoning` (sealed), `determined_by`.
@@ -269,9 +271,10 @@ about a person.
 **`breach_obligation_event`** — `note` (sealed), `reported_to` (sealed: whom the organisation's board was told through, S3-07), `recorded_by`; `reference` is
 what a regulator returned, not about a person.
 **`breach_affected_revision`** — `note` (sealed), `confirmed_by`; `scopes` names
-processors, sources and tables, never a person.
-**`breach_affected`** — `auth_user_id`: **who the breach touched**, one row per
-person per breach (S3-02). `evidence` names exports, assets and tables.
+projects, processors and sources - and tables on revisions from before they
+stopped being a way to look - never a person.
+**`breach_affected`** — `auth_user_id`: **the people affected**, one row per
+person per breach (S3-02). `evidence` names projects, exports and assets.
 **`breach_notice`** — the five words of Rule 7(1), sealed; `created_by`,
 `approved_by`. Written to be sent to everyone listed, and naming nobody - sealed
 because it repeats the assessment and a draft may not yet be right.
@@ -282,9 +285,23 @@ error's class and a count, never her address.
 
 All of it is append-only but for `breach.status`, so an erasure request cannot
 reach it - and should not need to: the rows name staff by id and hold the
-office's account of an incident, which is the accountability record. That she
-was touched by a breach (`breach_affected`) is the record of a duty owed to her,
-and stays for the same reason the consent she gave does. The trail
+office's account of an incident, which is the accountability record. That a
+breach affected her (`breach_affected`) is the record of a duty owed to her,
+and stays for the same reason the consent she gave does. A report from the
+public link and a reporter's name and address stay with the incident for the same
+reason, and reach nothing an erasure request finds through her account.
+
+**An open point: a dismissed report has no incident behind it.** A report an
+officer dismissed (`breach_id` NULL) keeps its reporter's name and email, sealed,
+and that reason does not cover it: no duty or accountability record stands on it.
+Today a rights request can neither find it nor erase it. `incident_report` has no
+hash of the address to look it up by, nothing under the rights code or the
+retention task reads the table, and `cmp_incident_report_outcome_once` refuses
+every update and delete once a report has its outcome. Finding those rows for
+access and erasure, or recording an exception and its legal basis, is undecided
+and not built.
+
+The trail
 records that a breach was recorded, determined, assessed, and each duty's
 movement, with the reference and never the words.
 
@@ -314,6 +331,7 @@ happened; it is state that must disappear on its own.
 | `otpa:<scope>:<identity>` | Attempts against that code | With the code |
 | `mfa:*`, `lfail:*`, `lock:*` | Second-factor state, failed sign-ins, lockouts — keyed by the account's uuid, or the keyed hash of a login that names no account | The staff second factor is 5 minutes (`MFA_TTL_S`) and 5 attempts; 5 failed sign-ins in 30 minutes lock the account for 30 |
 | `rate:*` | Rate-limit counters, keyed by contact or address | The window |
+| `mutex:breach_report:<report>:<blind index>`, `mutex:breach_notice:<notice>:<recipient>:<channel>` | That a task is sending this to this address (2026-11-07): the keyed hash of the address or the id of the person, never the address | Eleven minutes (`CLAIM_TTL_S`), or an hour where a report went and its outcome is not yet on the record; dropped if nothing was sent |
 | `hts:<fingerprint>` | An outside holder's hour on one ticket after the code (0049): the cookie's fingerprint, naming the holder and the link it came through | One hour (`HOLDER_TICKET_SESSION_S`) |
 | `nsrv:*` | That the server showed a particular notice, in a particular rendition, to a particular person through a particular link — the fact a consent is checked against | Six hours (`NOTICE_SERVING_TTL`); past it, a consent is refused as `notice_stale` |
 
@@ -361,7 +379,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-229 of 325 operations accept or return personal data. Each table gives the
+279 of 391 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 
@@ -380,7 +398,7 @@ selected.
 
 ### Authentication — `/auth/*`
 
-11 operations carry personal data.
+12 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
@@ -395,10 +413,11 @@ selected.
 | POST | `/auth/register` | **public** — no session | `dob`, `email`, `full_name`, `mobile` | — |
 | POST | `/auth/register/verify` | **public** — the request carries its own credential (password, link token, one-time code) | `email_code`, `mobile`, `mobile_code` | — |
 | GET | `/auth/sessions` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows, Principal own rows, Temporary holder own rows | — | `ip_address`, `last_seen_at`, `mfa_verified`, `user_agent` |
+| GET | `/auth/sso/callback` | **public** — the request carries its own credential (password, link token, one-time code) | `code` | — |
 
 ### The data principal's own records — `/me/*`
 
-23 operations carry personal data.
+25 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
@@ -410,6 +429,7 @@ selected.
 | GET | `/me/consents/{consent_uuid}/grants` | Principal own rows | `consent_uuid` | — |
 | GET | `/me/consents/{consent_uuid}/history` | Principal own rows | `consent_uuid` | — |
 | GET | `/me/consents/{consent_uuid}/notice` | Principal own rows | `consent_uuid` | — |
+| GET | `/me/consents/{consent_uuid}/record` | Principal own rows | `consent_uuid` | — |
 | GET | `/me/consents/{consent_uuid}/trail` | Principal own rows | `consent_uuid` | — |
 | POST | `/me/consents/{consent_uuid}/withdraw` | Principal own rows | `consent_uuid` | — |
 | POST | `/me/contact/verify` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows, Principal own rows, Temporary holder own rows | `code`, `contact` | — |
@@ -421,6 +441,7 @@ selected.
 | POST | `/me/person-type` | DPO own rows, Admin own rows, Principal own rows | `person_type`, `reason` | — |
 | GET | `/me/requests` | Principal own rows | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `content_type`, `download_available`, `download_expires_at`, `file_name`, `file_uuid`, `refusal_reason`, `remedy_text`, `request_text`, `response_files`, `response_text`, `size_bytes` |
 | POST | `/me/requests` | Principal own rows | `request_text` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `content_type`, `download_available`, `download_expires_at`, `file_name`, `file_uuid`, `refusal_reason`, `remedy_text`, `request_text`, `response_files`, `response_text`, `size_bytes` |
+| GET | `/me/requests/offices` | Principal own rows | — | `code` |
 | GET | `/me/requests/{request_uuid}` | Principal own rows | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `content_type`, `download_available`, `download_expires_at`, `file_name`, `file_uuid`, `refusal_reason`, `remedy_text`, `request_text`, `response_files`, `response_text`, `size_bytes` |
 | POST | `/me/requests/{request_uuid}/attachments` | Principal own rows | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `content_type`, `download_available`, `download_expires_at`, `file_name`, `file_uuid`, `refusal_reason`, `remedy_text`, `request_text`, `response_files`, `response_text`, `size_bytes` |
 | POST | `/me/requests/{request_uuid}/dispute` | Principal own rows | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `content_type`, `download_available`, `download_expires_at`, `file_name`, `file_uuid`, `refusal_reason`, `remedy_text`, `request_text`, `response_files`, `response_text`, `size_bytes` |
@@ -428,7 +449,7 @@ selected.
 
 ### The consent link — `/c/{token}/*`
 
-6 operations carry personal data.
+9 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
@@ -438,6 +459,9 @@ selected.
 | POST | `/c/{token}/otp` | **public** — the request carries its own credential (password, link token, one-time code) | `contact`, `token` | — |
 | POST | `/c/{token}/otp/verify` | **public** — the request carries its own credential (password, link token, one-time code) | `code`, `contact`, `token` | — |
 | POST | `/c/{token}/register` | **public** — the request carries its own credential (password, link token, one-time code) | `dob`, `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `token` | — |
+| POST | `/c/{token}/sso/mobile` | **public** — the request carries its own credential (password, link token, one-time code) | `mobile`, `token` | — |
+| POST | `/c/{token}/sso/mobile/verify` | **public** — the request carries its own credential (password, link token, one-time code) | `code`, `mobile`, `token` | — |
+| GET | `/c/{token}/sso/start` | **public** — the request carries its own credential (password, link token, one-time code) | `token` | — |
 
 ### The public rights surface — `/rights/*`
 
@@ -456,50 +480,52 @@ selected.
 
 ### Rights requests, the office's side — `/requests/*`
 
-40 operations carry personal data.
+42 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
-| GET | `/requests` | DPO every row, Admin rows in scope | — | `consent_project`, `consent_uuid`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name` |
-| POST | `/requests` | DPO yes, Admin yes | `contact`, `request_text`, `subject_uuid` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
-| GET | `/requests/{request_uuid}` | DPO every row, Admin rows in scope | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `contact_log`, `content_type`, `decided_by_name`, `disposition`, `download_expires_at`, `evidence`, `file_name`, `file_uuid`, `instruction`, `nominee_contact`, `nominee_name`, `other_subjects`, `refusal_reason`, `remedy_text`, `request_text`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `response_file_hash`, `response_files`, `response_text`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `reviewer_name`, `reviewer_uuid`, `seen_at`, `sent_back_reason`, `size_bytes`, `subject_email`, `subject_mobile`, `subject_name`, `subject_role`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
-| POST | `/requests/{request_uuid}/acknowledge` | DPO every row, Admin rows in scope | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
-| POST | `/requests/{request_uuid}/classify` | DPO every row, Admin rows in scope | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
-| POST | `/requests/{request_uuid}/decide` | DPO conditional, Admin conditional | `remedy_text`, `response_text` | — |
-| POST | `/requests/{request_uuid}/escalate` | DPO every row, Admin rows in scope | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
-| POST | `/requests/{request_uuid}/event` | DPO every row, Admin rows in scope | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
-| GET | `/requests/{request_uuid}/files/{file_uuid}` | DPO every row, Admin rows in scope | `file_uuid` | — |
-| POST | `/requests/{request_uuid}/holders` | DPO every row, Admin rows in scope | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
-| POST | `/requests/{request_uuid}/holders/derive` | DPO every row, Admin rows in scope | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/accept` | DPO every row, Admin rows in scope | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/confirm` | DPO every row, Admin rows in scope | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/contact` | DPO every row, Admin rows in scope | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/correct-contact` | DPO every row, Admin rows in scope | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/escalate` | DPO every row, Admin rows in scope | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
-| PUT | `/requests/{request_uuid}/holders/{holder_uuid}/instruction` | DPO every row, Admin rows in scope | `instruction` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/reassign` | DPO every row, Admin rows in scope | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/remind` | DPO every row, Admin rows in scope | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/reopen` | DPO every row, Admin rows in scope | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/return` | DPO every row, Admin rows in scope | `evidence` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/send-back` | DPO every row, Admin rows in scope | `reason` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
-| GET | `/requests/{request_uuid}/holders/{holder_uuid}/thread` | DPO every row, Admin rows in scope | — | `accepted_by_name`, `author_name`, `body`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `evidence_hash`, `evidence_name`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/thread` | DPO every row, Admin rows in scope | `body`, `evidence` | `accepted_by_name`, `author_name`, `body`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `evidence_hash`, `evidence_name`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/withdraw` | DPO every row, Admin rows in scope | `reason` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
-| POST | `/requests/{request_uuid}/intent` | DPO every row, Admin rows in scope | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
-| POST | `/requests/{request_uuid}/refuse` | DPO every row, Admin rows in scope | `reason` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
-| POST | `/requests/{request_uuid}/respond` | DPO every row, Admin rows in scope | `files`, `response_text` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+| GET | `/requests` | DPO every row, Admin rows in scope, Legal PoC every row | — | `consent_project`, `consent_uuid`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name` |
+| POST | `/requests` | DPO yes, Admin yes, Legal PoC yes | `contact`, `request_text`, `subject_uuid` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+| GET | `/requests/{request_uuid}` | DPO every row, Admin rows in scope, Legal PoC every row | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `contact_log`, `content_type`, `decided_by_name`, `disposition`, `download_expires_at`, `evidence`, `file_name`, `file_uuid`, `instruction`, `nominee_contact`, `nominee_name`, `other_subjects`, `refusal_reason`, `remedy_text`, `request_text`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `response_file_hash`, `response_files`, `response_text`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `reviewer_name`, `reviewer_uuid`, `seen_at`, `sent_back_reason`, `size_bytes`, `subject_email`, `subject_mobile`, `subject_name`, `subject_role`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+| POST | `/requests/{request_uuid}/acknowledge` | DPO every row, Admin rows in scope, Legal PoC every row | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+| POST | `/requests/{request_uuid}/claim` | DPO every row, Admin rows in scope, Legal PoC every row | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+| POST | `/requests/{request_uuid}/classify` | DPO every row, Admin rows in scope, Legal PoC every row | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+| POST | `/requests/{request_uuid}/decide` | DPO conditional, Admin conditional, Legal PoC conditional | `remedy_text`, `response_text` | — |
+| POST | `/requests/{request_uuid}/escalate` | DPO every row, Admin rows in scope, Legal PoC every row | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+| POST | `/requests/{request_uuid}/event` | DPO every row, Admin rows in scope, Legal PoC every row | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+| GET | `/requests/{request_uuid}/files/{file_uuid}` | DPO every row, Admin rows in scope, Legal PoC every row | `file_uuid` | — |
+| POST | `/requests/{request_uuid}/holders` | DPO every row, Admin rows in scope, Legal PoC every row | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/holders/derive` | DPO every row, Admin rows in scope, Legal PoC every row | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/accept` | DPO every row, Admin rows in scope, Legal PoC every row | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/confirm` | DPO every row, Admin rows in scope, Legal PoC every row | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/contact` | DPO every row, Admin rows in scope, Legal PoC every row | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/correct-contact` | DPO every row, Admin rows in scope, Legal PoC every row | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/escalate` | DPO every row, Admin rows in scope, Legal PoC every row | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| PUT | `/requests/{request_uuid}/holders/{holder_uuid}/instruction` | DPO every row, Admin rows in scope, Legal PoC every row | `instruction` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/reassign` | DPO every row, Admin rows in scope, Legal PoC every row | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/remind` | DPO every row, Admin rows in scope, Legal PoC every row | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/reopen` | DPO every row, Admin rows in scope, Legal PoC every row | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/return` | DPO every row, Admin rows in scope, Legal PoC every row | `evidence` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/send-back` | DPO every row, Admin rows in scope, Legal PoC every row | `reason` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| GET | `/requests/{request_uuid}/holders/{holder_uuid}/thread` | DPO every row, Admin rows in scope, Legal PoC every row | — | `accepted_by_name`, `author_name`, `body`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `evidence_hash`, `evidence_name`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/thread` | DPO every row, Admin rows in scope, Legal PoC every row | `body`, `evidence` | `accepted_by_name`, `author_name`, `body`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `evidence_hash`, `evidence_name`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/withdraw` | DPO every row, Admin rows in scope, Legal PoC every row | `reason` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/intent` | DPO every row, Admin rows in scope, Legal PoC every row | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+| POST | `/requests/{request_uuid}/refuse` | DPO every row, Admin rows in scope, Legal PoC every row | `reason` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+| POST | `/requests/{request_uuid}/respond` | DPO every row, Admin rows in scope, Legal PoC every row | `files`, `response_text` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/reviewer` | Admin rows in scope | `reviewer_uuid` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
-| POST | `/requests/{request_uuid}/scope/derive` | DPO every row, Admin rows in scope | — | `decided_by_name`, `disposition`, `other_subjects`, `subject_role` |
-| PUT | `/requests/{request_uuid}/scope/{item_uuid}` | DPO every row, Admin rows in scope | — | `decided_by_name`, `disposition`, `other_subjects`, `subject_role` |
-| POST | `/requests/{request_uuid}/scope/{item_uuid}/apply` | DPO every row, Admin rows in scope | — | `decided_by_name`, `disposition`, `other_subjects`, `subject_role` |
-| POST | `/requests/{request_uuid}/scope/{item_uuid}/execute` | DPO every row, Admin rows in scope | — | `decided_by_name`, `disposition`, `other_subjects`, `subject_role` |
-| POST | `/requests/{request_uuid}/tickets` | DPO every row, Admin rows in scope | `instruction` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
-| POST | `/requests/{request_uuid}/transition` | DPO every row, Admin rows in scope | `reason` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
-| POST | `/requests/{request_uuid}/verification/code` | DPO every row, Admin rows in scope | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
-| POST | `/requests/{request_uuid}/verification/confirm` | DPO every row, Admin rows in scope | `code` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
-| POST | `/requests/{request_uuid}/verification/fail` | DPO every row, Admin rows in scope | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
-| POST | `/requests/{request_uuid}/verification/manual` | DPO every row, Admin rows in scope | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
-| POST | `/requests/{request_uuid}/withdrawal` | DPO every row, Admin rows in scope | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+| POST | `/requests/{request_uuid}/scope/derive` | DPO every row, Admin rows in scope, Legal PoC every row | — | `decided_by_name`, `disposition`, `other_subjects`, `subject_role` |
+| PUT | `/requests/{request_uuid}/scope/{item_uuid}` | DPO every row, Admin rows in scope, Legal PoC every row | — | `decided_by_name`, `disposition`, `other_subjects`, `subject_role` |
+| POST | `/requests/{request_uuid}/scope/{item_uuid}/apply` | DPO every row, Admin rows in scope, Legal PoC every row | — | `decided_by_name`, `disposition`, `other_subjects`, `subject_role` |
+| POST | `/requests/{request_uuid}/scope/{item_uuid}/execute` | DPO every row, Admin rows in scope, Legal PoC every row | — | `decided_by_name`, `disposition`, `other_subjects`, `subject_role` |
+| POST | `/requests/{request_uuid}/tickets` | DPO every row, Admin rows in scope, Legal PoC every row | `instruction` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/transfer` | DPO every row, Admin rows in scope, Legal PoC every row | `reason` | — |
+| POST | `/requests/{request_uuid}/transition` | DPO every row, Admin rows in scope, Legal PoC every row | `reason` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+| POST | `/requests/{request_uuid}/verification/code` | DPO every row, Admin rows in scope, Legal PoC every row | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+| POST | `/requests/{request_uuid}/verification/confirm` | DPO every row, Admin rows in scope, Legal PoC every row | `code` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+| POST | `/requests/{request_uuid}/verification/fail` | DPO every row, Admin rows in scope, Legal PoC every row | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+| POST | `/requests/{request_uuid}/verification/manual` | DPO every row, Admin rows in scope, Legal PoC every row | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+| POST | `/requests/{request_uuid}/withdrawal` | DPO every row, Admin rows in scope, Legal PoC every row | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 
 ### Legal holds — `/legal-holds/*`
 
@@ -507,58 +533,92 @@ selected.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
-| GET | `/legal-holds` | DPO every row | — | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
-| POST | `/legal-holds` | DPO every row | `reason`, `subject_uuid` | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
-| POST | `/legal-holds/{hold_uuid}/release` | DPO every row | — | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
+| GET | `/legal-holds` | DPO every row, Legal PoC every row | — | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
+| POST | `/legal-holds` | DPO every row, Legal PoC every row | `reason`, `subject_uuid` | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
+| POST | `/legal-holds/{hold_uuid}/release` | DPO every row, Legal PoC every row | — | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
 
 ### Personal data breaches — `/breaches/*`
 
-31 operations carry personal data.
+44 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
-| GET | `/breaches` | DPO every row | — | `recorded_by_name`, `reported_to` |
-| POST | `/breaches` | DPO every row | `affected_systems`, `countries_involved`, `data_nature`, `discovery`, `entities_involved`, `impact_scale`, `incident_details`, `location_detail`, `origin`, `subject_types`, `third_parties` | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
-| GET | `/breaches/{breach_uuid}` | DPO every row | — | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
-| GET | `/breaches/{breach_uuid}/affected` | DPO every row | — | `confirmed_by_name`, `evidence`, `full_name`, `has_email`, `has_mobile`, `person_uuid`, `role` |
-| POST | `/breaches/{breach_uuid}/affected` | DPO every row | — | `confirmed_by_name`, `evidence`, `full_name`, `has_email`, `has_mobile`, `person_uuid`, `role` |
-| GET | `/breaches/{breach_uuid}/affected/contacts` | DPO every row | — | `added_by_name`, `contact_uuid`, `email`, `file_name`, `full_name`, `mobile` |
-| POST | `/breaches/{breach_uuid}/affected/preview` | DPO every row | — | `evidence`, `full_name`, `has_email`, `has_mobile`, `person_uuid`, `role` |
-| GET | `/breaches/{breach_uuid}/assessments` | DPO every row | — | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `remedial_measures`, `revised_by_name` |
-| POST | `/breaches/{breach_uuid}/assessments` | DPO every row | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `remedial_measures` | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
-| POST | `/breaches/{breach_uuid}/attachments` | DPO every row | — | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
-| GET | `/breaches/{breach_uuid}/board/intimation` | DPO every row | — | `document`, `likely_impact`, `nature_extent`, `recorded_by_name`, `reported_to` |
-| GET | `/breaches/{breach_uuid}/board/report` | DPO every row | — | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `document`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name` |
-| POST | `/breaches/{breach_uuid}/cert-in` | DPO every row | — | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
-| POST | `/breaches/{breach_uuid}/determinations` | DPO every row | `reasoning` | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
-| GET | `/breaches/{breach_uuid}/notices` | DPO every row | — | `approved_by_name`, `consequences`, `contact`, `contact_uuid`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
-| POST | `/breaches/{breach_uuid}/notices` | DPO every row | `consequences`, `contact`, `protective_steps` | `approved_by_name`, `consequences`, `contact`, `contact_uuid`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
-| POST | `/breaches/{breach_uuid}/notices/send` | DPO every row | — | `approved_by_name`, `consequences`, `contact`, `contact_uuid`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
-| PUT | `/breaches/{breach_uuid}/notices/{notice_uuid}` | DPO every row | `consequences`, `contact`, `protective_steps` | `approved_by_name`, `consequences`, `contact`, `contact_uuid`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
-| POST | `/breaches/{breach_uuid}/notices/{notice_uuid}/approve` | DPO every row | — | `approved_by_name`, `consequences`, `contact`, `contact_uuid`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
-| POST | `/breaches/{breach_uuid}/obligations/board_report/extension` | DPO every row | — | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
-| POST | `/breaches/{breach_uuid}/obligations/{duty}/complete` | DPO every row | `reported_to` | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
-| GET | `/breaches/{breach_uuid}/org-board/brief` | DPO every row | — | `document` |
-| GET | `/breaches/{breach_uuid}/tickets` | DPO every row | — | `actor_name`, `added_by_name`, `assigned_by_name`, `holder_name`, `reason` |
-| POST | `/breaches/{breach_uuid}/tickets` | DPO every row | `email`, `full_name`, `instruction`, `mobile`, `user_uuid` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
-| GET | `/breaches/{breach_uuid}/tickets/{ticket_uuid}` | DPO every row | — | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
-| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/close` | DPO every row | — | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
-| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/messages` | DPO every row | `body`, `evidence` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
-| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/reopen` | DPO every row | `reason` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
-| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/send-back` | DPO every row | `reason` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
-| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/withdraw` | DPO every row | `reason` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
-| POST | `/breaches/{breach_uuid}/transition` | DPO every row | `reason` | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
+| GET | `/breaches` | DPO every row, Legal PoC every row | — | `recorded_by_name`, `reported_to` |
+| POST | `/breaches` | DPO every row, Legal PoC every row | `affected_systems`, `countries_involved`, `data_nature`, `discovery`, `entities_involved`, `impact_scale`, `incident_details`, `location_detail`, `origin`, `subject_types`, `third_parties` | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `reporter_email`, `reporter_name`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
+| GET | `/breaches/intake` | DPO every row, Legal PoC every row | — | `reporter_email`, `reporter_name` |
+| GET | `/breaches/intake/dismissed` | DPO every row, Legal PoC every row | — | `dismissal_reason`, `dismissed_by_name`, `reporter_email`, `reporter_name` |
+| GET | `/breaches/intake/{report_uuid}` | DPO every row, Legal PoC every row | — | `affected_systems`, `countries_involved`, `data_nature`, `discovery`, `entities_involved`, `impact_scale`, `incident_details`, `origin`, `reporter_email`, `reporter_name`, `subject_types`, `third_parties` |
+| POST | `/breaches/intake/{report_uuid}/claim` | DPO every row, Legal PoC every row | — | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `reporter_email`, `reporter_name`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
+| POST | `/breaches/intake/{report_uuid}/dismiss` | DPO every row, Legal PoC every row | `reason` | — |
+| GET | `/breaches/{breach_uuid}` | DPO every row, Legal PoC every row | — | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `reporter_email`, `reporter_name`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
+| GET | `/breaches/{breach_uuid}/affected` | DPO every row, Legal PoC every row | — | `confirmed_by_name`, `evidence`, `full_name`, `has_email`, `has_mobile`, `person_uuid`, `role` |
+| POST | `/breaches/{breach_uuid}/affected` | DPO every row, Legal PoC every row | — | `confirmed_by_name`, `evidence`, `full_name`, `has_email`, `has_mobile`, `person_uuid`, `role` |
+| GET | `/breaches/{breach_uuid}/affected/contacts` | DPO every row, Legal PoC every row | — | `added_by_name`, `contact_uuid`, `email`, `file_name`, `full_name`, `mobile` |
+| POST | `/breaches/{breach_uuid}/affected/preview` | DPO every row, Legal PoC every row | — | `evidence`, `full_name`, `has_email`, `has_mobile`, `person_uuid`, `role` |
+| GET | `/breaches/{breach_uuid}/assessments` | DPO every row, Legal PoC every row | — | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `remedial_measures`, `revised_by_name` |
+| POST | `/breaches/{breach_uuid}/assessments` | DPO every row, Legal PoC every row | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `remedial_measures` | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `reporter_email`, `reporter_name`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
+| POST | `/breaches/{breach_uuid}/attachments` | DPO every row, Legal PoC every row | — | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `reporter_email`, `reporter_name`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
+| GET | `/breaches/{breach_uuid}/board/intimation` | DPO every row, Legal PoC every row | — | `document`, `likely_impact`, `nature_extent`, `recorded_by_name`, `reported_to` |
+| GET | `/breaches/{breach_uuid}/board/report` | DPO every row, Legal PoC every row | — | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `determined_by_name`, `document`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `revised_by_name` |
+| POST | `/breaches/{breach_uuid}/cert-in` | DPO every row, Legal PoC every row | — | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `reporter_email`, `reporter_name`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
+| POST | `/breaches/{breach_uuid}/cert-in/not-applicable` | DPO every row, Legal PoC every row | `reason` | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `reporter_email`, `reporter_name`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
+| POST | `/breaches/{breach_uuid}/determinations` | DPO every row, Legal PoC every row | `reasoning` | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `reporter_email`, `reporter_name`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
+| GET | `/breaches/{breach_uuid}/notices` | DPO every row, Legal PoC every row | — | `approved_by_name`, `consequences`, `contact`, `contact_uuid`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
+| POST | `/breaches/{breach_uuid}/notices` | DPO every row, Legal PoC every row | `consequences`, `contact`, `protective_steps` | `approved_by_name`, `consequences`, `contact`, `contact_uuid`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
+| POST | `/breaches/{breach_uuid}/notices/send` | DPO every row, Legal PoC every row | — | `approved_by_name`, `consequences`, `contact`, `contact_uuid`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
+| PUT | `/breaches/{breach_uuid}/notices/{notice_uuid}` | DPO every row, Legal PoC every row | `consequences`, `contact`, `protective_steps` | `approved_by_name`, `consequences`, `contact`, `contact_uuid`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
+| POST | `/breaches/{breach_uuid}/notices/{notice_uuid}/approve` | DPO every row, Legal PoC every row | — | `approved_by_name`, `consequences`, `contact`, `contact_uuid`, `created_by_name`, `full_name`, `person_uuid`, `protective_steps` |
+| POST | `/breaches/{breach_uuid}/obligations/board_report/extension` | DPO every row, Legal PoC every row | — | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `reporter_email`, `reporter_name`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
+| GET | `/breaches/{breach_uuid}/org-board/brief` | DPO every row, Legal PoC every row | — | `document` |
+| GET | `/breaches/{breach_uuid}/reports` | DPO every row, Legal PoC every row | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
+| POST | `/breaches/{breach_uuid}/reports` | DPO every row, Legal PoC every row | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
+| PUT | `/breaches/{breach_uuid}/reports/{report_uuid}` | DPO every row, Legal PoC every row | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
+| POST | `/breaches/{breach_uuid}/reports/{report_uuid}/evidence` | DPO every row, Legal PoC every row | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
+| POST | `/breaches/{breach_uuid}/reports/{report_uuid}/file` | DPO every row, Legal PoC every row | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
+| POST | `/breaches/{breach_uuid}/reports/{report_uuid}/finalise` | DPO every row, Legal PoC every row | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
+| POST | `/breaches/{breach_uuid}/reports/{report_uuid}/resend` | DPO every row, Legal PoC every row | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
+| GET | `/breaches/{breach_uuid}/tickets` | DPO every row, Legal PoC every row | — | `actor_name`, `added_by_name`, `assigned_by_name`, `holder_name`, `reason` |
+| POST | `/breaches/{breach_uuid}/tickets` | DPO every row, Legal PoC every row | `email`, `full_name`, `instruction`, `mobile`, `user_uuid` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
+| GET | `/breaches/{breach_uuid}/tickets/{ticket_uuid}` | DPO every row, Legal PoC every row | — | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
+| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/close` | DPO every row, Legal PoC every row | — | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
+| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/messages` | DPO every row, Legal PoC every row | `body`, `evidence` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
+| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/reopen` | DPO every row, Legal PoC every row | `reason` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
+| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/resolve-by` | DPO every row, Legal PoC every row | `reason` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
+| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/send-back` | DPO every row, Legal PoC every row | `reason` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
+| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/withdraw` | DPO every row, Legal PoC every row | `reason` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
+| POST | `/breaches/{breach_uuid}/transition` | DPO every row, Legal PoC every row | `reason` | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `reporter_email`, `reporter_name`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
 
 ### Breach tickets a holder answers — `/breach-tickets/*`
+
+5 operations carry personal data.
+
+| Method | Endpoint | Who may call it | Personal data in | Personal data out |
+|---|---|---|---|---|
+| GET | `/breach-tickets` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows, Temporary holder own rows, Legal PoC own rows, HR PoC own rows | — | `instruction` |
+| GET | `/breach-tickets/{ticket_uuid}` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows, Temporary holder own rows, Legal PoC own rows, HR PoC own rows | — | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
+| POST | `/breach-tickets/{ticket_uuid}/messages` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows, Temporary holder own rows, Legal PoC own rows, HR PoC own rows | `body`, `evidence` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
+| POST | `/breach-tickets/{ticket_uuid}/resolve-by` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows, Temporary holder own rows, Legal PoC own rows, HR PoC own rows | `reason` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
+| POST | `/breach-tickets/{ticket_uuid}/return` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows, Temporary holder own rows, Legal PoC own rows, HR PoC own rows | `evidence` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
+
+### How the office hears of a breach — `/breach-settings/*`
 
 4 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
-| GET | `/breach-tickets` | any signed-in session, own record | — | `instruction` |
-| GET | `/breach-tickets/{ticket_uuid}` | any signed-in session, own record | — | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
-| POST | `/breach-tickets/{ticket_uuid}/messages` | any signed-in session, own record | `body`, `evidence` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
-| POST | `/breach-tickets/{ticket_uuid}/return` | any signed-in session, own record | `evidence` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
+| GET | `/breach-settings` | DPO every row, Admin every row, Legal PoC every row | — | `added_by_name`, `email`, `full_name`, `role` |
+| POST | `/breach-settings/board-recipients` | DPO every row, Admin every row, Legal PoC every row | `email`, `full_name` | `added_by_name`, `email`, `full_name`, `role` |
+| DELETE | `/breach-settings/board-recipients/{recipient_uuid}` | DPO every row, Admin every row, Legal PoC every row | — | `added_by_name`, `email`, `full_name`, `role` |
+| PUT | `/breach-settings/intake-roles` | DPO every row, Admin every row, Legal PoC every row | — | `added_by_name`, `email`, `full_name`, `role` |
+
+### Reporting an incident with no account — `/incident-reports/*`
+
+2 operations carry personal data.
+
+| Method | Endpoint | Who may call it | Personal data in | Personal data out |
+|---|---|---|---|---|
+| POST | `/incident-reports` | **public** — the request carries its own credential (password, link token, one-time code) | `affected_systems`, `code`, `countries_involved`, `data_nature`, `discovery`, `email`, `entities_involved`, `impact_scale`, `incident_details`, `origin`, `subject_types`, `third_parties` | — |
+| POST | `/incident-reports/code` | **public** — the request carries its own credential (password, link token, one-time code) | `email` | — |
 
 ### Cross-border transfers — `/restricted-countries/*`
 
@@ -583,19 +643,20 @@ selected.
 
 ### Consents and links, the office's side
 
-9 operations carry personal data.
+10 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
-| GET | `/consents` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows | — | `action_type`, `affirmative_action_at`, `consent_status`, `consent_uuid`, `granted_count`, `is_withdrawal`, `refused_count`, `served_at`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid` |
-| GET | `/consents/{consent_uuid}` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows | `consent_uuid` | `action_type`, `affirmative_action_at`, `consent_uuid`, `is_withdrawal`, `served_at`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid` |
-| GET | `/consents/{consent_uuid}/assets` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows | `consent_uuid` | `disposition`, `has_unmapped_subjects`, `storage_ref`, `subject_role` |
-| GET | `/consents/{consent_uuid}/grants` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows | `consent_uuid` | `granted` |
-| GET | `/links` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope | — | `registrations`, `url_path` |
-| GET | `/links/{link_uuid}` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope | — | `url_path` |
-| GET | `/links/{link_uuid}/stats` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope | — | `consents`, `registrations`, `withdrawals` |
-| GET | `/projects/{project_uuid}/consents` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows | — | `action_type`, `affirmative_action_at`, `consent_status`, `consent_uuid`, `granted_count`, `is_withdrawal`, `refused_count`, `served_at`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid` |
-| GET | `/projects/{project_uuid}/links` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope | — | `url_path` |
+| GET | `/consents` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | — | `action_type`, `affirmative_action_at`, `consent_status`, `consent_uuid`, `granted_count`, `is_withdrawal`, `refused_count`, `served_at`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid` |
+| GET | `/consents/{consent_uuid}` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | `consent_uuid` | `action_type`, `affirmative_action_at`, `consent_uuid`, `is_withdrawal`, `served_at`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid` |
+| GET | `/consents/{consent_uuid}/assets` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | `consent_uuid` | `disposition`, `has_unmapped_subjects`, `storage_ref`, `subject_role` |
+| GET | `/consents/{consent_uuid}/grants` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | `consent_uuid` | `granted` |
+| GET | `/consents/{consent_uuid}/record` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, Legal PoC every row, HR PoC rows in scope | `consent_uuid` | — |
+| GET | `/links` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, Legal PoC every row, HR PoC rows in scope | — | `registrations`, `url_path` |
+| GET | `/links/{link_uuid}` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, Legal PoC every row, HR PoC rows in scope | — | `url_path` |
+| GET | `/links/{link_uuid}/stats` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, Legal PoC every row, HR PoC rows in scope | — | `consents`, `registrations`, `withdrawals` |
+| GET | `/projects/{project_uuid}/consents` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | — | `action_type`, `affirmative_action_at`, `consent_status`, `consent_uuid`, `granted_count`, `is_withdrawal`, `refused_count`, `served_at`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid` |
+| GET | `/projects/{project_uuid}/links` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, Legal PoC every row, HR PoC rows in scope | — | `url_path` |
 
 ### Exports, imports, collections and assets
 
@@ -606,30 +667,33 @@ selected.
 | GET | `/collections` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows | — | `mapped_asset_count` |
 | GET | `/collections/{collection_uuid}` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows | — | `mapped_asset_count` |
 | GET | `/collections/{collection_uuid}/assets` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows | — | `bystander_count`, `has_unmapped_subjects`, `storage_ref`, `subject_count` |
-| GET | `/exports` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope | — | `exported_by_name` |
-| GET | `/exports/{export_uuid}` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope | — | `exported_by_name` |
+| GET | `/exports` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, Legal PoC every row, HR PoC rows in scope | — | `exported_by_name` |
+| GET | `/exports/{export_uuid}` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, Legal PoC every row, HR PoC rows in scope | — | `exported_by_name` |
 | POST | `/imports` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope | `manifest` | — |
 | POST | `/imports/validate` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope | `manifest` | — |
 | GET | `/imports/{batch_uuid}` | any signed-in session, conditionally | — | `file_name`, `imported_by_name`, `imported_by_uuid` |
-| GET | `/projects/{project_uuid}/exports` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope | — | `exported_by_name` |
-| POST | `/projects/{project_uuid}/exports` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope | — | `exported_by_name` |
+| GET | `/projects/{project_uuid}/exports` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, Legal PoC every row, HR PoC rows in scope | — | `exported_by_name` |
+| POST | `/projects/{project_uuid}/exports` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, Legal PoC every row, HR PoC rows in scope | — | `exported_by_name` |
 
 ### The staff register — `/users/*`
 
-13 operations carry personal data.
+16 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
-| GET | `/users` | DPO every row, Admin every row | `person_type`, `role` | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` |
+| GET | `/users` | DPO every row, Admin every row, Legal PoC every row | `person_type`, `role` | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` |
 | POST | `/users` | Admin every row | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` |
 | GET | `/users/collection-owners` | DPO every row, Admin every row, DCO every row, DCO Admin every row, RCO every row, R&D every row | — | `email`, `full_name`, `role` |
+| GET | `/users/hr-pocs` | Admin every row, Legal PoC every row | — | `email`, `full_name` |
 | GET | `/users/staff` | DPO every row, Admin every row | — | `email`, `full_name`, `role` |
-| GET | `/users/{user_uuid}` | DPO every row, Admin every row | `user_uuid` | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` |
+| GET | `/users/{user_uuid}` | DPO every row, Admin every row, Legal PoC every row | `user_uuid` | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` |
 | PATCH | `/users/{user_uuid}` | Admin every row | `full_name`, `mobile`, `organization_id`, `user_uuid` | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` |
+| PUT | `/users/{user_uuid}/categories` | Admin every row | `user_uuid` | — |
 | POST | `/users/{user_uuid}/deactivate` | Admin every row | `user_uuid` | — |
 | POST | `/users/{user_uuid}/invite` | Admin every row | `user_uuid` | — |
 | POST | `/users/{user_uuid}/mfa/reset` | Admin every row | `user_uuid` | — |
-| GET | `/users/{user_uuid}/person-type-history` | DPO every row, Admin every row | `user_uuid` | `changed_by_name`, `changed_by_uuid`, `from_type`, `reason`, `to_type` |
+| GET | `/users/{user_uuid}/person-type-history` | DPO every row, Admin every row, Legal PoC every row | `user_uuid` | `changed_by_name`, `changed_by_uuid`, `from_type`, `reason`, `to_type` |
+| PUT | `/users/{user_uuid}/processors` | Admin every row | `user_uuid` | — |
 | POST | `/users/{user_uuid}/reactivate` | Admin every row | `user_uuid` | — |
 | POST | `/users/{user_uuid}/role` | Admin every row | `reason`, `role`, `user_uuid` | — |
 | DELETE | `/users/{user_uuid}/sessions` | Admin every row | `user_uuid` | — |
@@ -652,39 +716,48 @@ selected.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
-| GET | `/approvals` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows | — | `proof_file_hash`, `uploaded_by_name`, `uploaded_by_uuid` |
-| GET | `/projects` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows | — | `created_by_name`, `dco_name` |
-| POST | `/projects` | R&D own rows | — | `created_by_name`, `dco_name` |
-| GET | `/projects/{project_uuid}` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows | — | `created_by_name`, `dco_name` |
-| PUT | `/projects/{project_uuid}` | R&D own rows | — | `created_by_name`, `dco_name` |
-| POST | `/projects/{project_uuid}/approvals` | R&D own rows | `proof` | — |
-| POST | `/projects/{project_uuid}/close` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope | `reason` | — |
-| POST | `/projects/{project_uuid}/processors/{processor_uuid}/decision` | DPO every row | `reason` | — |
-| POST | `/projects/{project_uuid}/transition` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows | `reason` | — |
-| PUT | `/sites/{site_uuid}/owner` | DPO every row, DCO Admin rows in scope, R&D own rows | `owner_user_uuid` | — |
+| GET | `/approvals` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | — | `proof_file_hash`, `uploaded_by_name`, `uploaded_by_uuid` |
+| GET | `/projects` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | — | `created_by_name`, `dco_name` |
+| POST | `/projects` | R&D own rows, Legal PoC every row, HR PoC rows in scope | — | `created_by_name`, `dco_name` |
+| GET | `/projects/{project_uuid}` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | — | `created_by_name`, `dco_name` |
+| PUT | `/projects/{project_uuid}` | R&D own rows, Legal PoC every row, HR PoC rows in scope | — | `created_by_name`, `dco_name` |
+| POST | `/projects/{project_uuid}/approvals` | R&D own rows, Legal PoC every row, HR PoC rows in scope | `proof` | — |
+| POST | `/projects/{project_uuid}/close` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, Legal PoC every row, HR PoC rows in scope | `reason` | — |
+| POST | `/projects/{project_uuid}/processors/{processor_uuid}/decision` | DPO every row, Legal PoC every row, HR PoC rows in scope | `reason` | — |
+| POST | `/projects/{project_uuid}/transition` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | `reason` | — |
+| PUT | `/sites/{site_uuid}/owner` | DPO every row, DCO Admin rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | `owner_user_uuid` | — |
 
 ### Notices
 
-21 operations carry personal data.
+30 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
-| GET | `/notice-templates` | DPO every row | — | `created_by_name`, `dpo_contact` |
-| POST | `/notice-templates` | DPO every row | `dpo_contact` | `created_by_name`, `dpo_contact`, `updated_by_name` |
-| GET | `/notice-templates/by-code/{template_code}` | DPO every row, R&D own rows | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
-| GET | `/notice-templates/{template_uuid}` | DPO every row | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
-| PUT | `/notice-templates/{template_uuid}` | DPO every row | `dpo_contact` | `created_by_name`, `dpo_contact`, `updated_by_name` |
-| DELETE | `/notice-templates/{template_uuid}/languages/{code}` | DPO every row | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
-| PUT | `/notice-templates/{template_uuid}/languages/{code}` | DPO every row | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
-| POST | `/notice-templates/{template_uuid}/purposes` | DPO every row | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
-| DELETE | `/notice-templates/{template_uuid}/purposes/{purpose_uuid}` | DPO every row | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
-| POST | `/notice-templates/{template_uuid}/status` | DPO every row | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
-| GET | `/notices/{notice_uuid}` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows | — | `dpo_contact` |
+| GET | `/notice-templates` | DPO every row, Legal PoC every row | — | `created_by_name`, `dpo_contact` |
+| POST | `/notice-templates` | DPO every row, Legal PoC every row | `dpo_contact` | `created_by_name`, `dpo_contact`, `updated_by_name` |
+| GET | `/notice-templates/by-code/{template_code}` | DPO every row, R&D own rows, Legal PoC every row, HR PoC rows in scope | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
+| GET | `/notice-templates/{template_uuid}` | DPO every row, Legal PoC every row | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
+| PUT | `/notice-templates/{template_uuid}` | DPO every row, Legal PoC every row | `dpo_contact` | `created_by_name`, `dpo_contact`, `updated_by_name` |
+| DELETE | `/notice-templates/{template_uuid}/languages/{code}` | DPO every row, Legal PoC every row | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
+| PUT | `/notice-templates/{template_uuid}/languages/{code}` | DPO every row, Legal PoC every row | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
+| POST | `/notice-templates/{template_uuid}/purposes` | DPO every row, Legal PoC every row | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
+| DELETE | `/notice-templates/{template_uuid}/purposes/{purpose_uuid}` | DPO every row, Legal PoC every row | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
+| POST | `/notice-templates/{template_uuid}/status` | DPO every row, Legal PoC every row | — | `created_by_name`, `dpo_contact`, `updated_by_name` |
+| GET | `/notice-templates/{template_uuid}/versions` | DPO every row, Legal PoC every row | — | `approved_by_name`, `created_by_name`, `dpo_contact` |
+| POST | `/notice-templates/{template_uuid}/versions` | DPO every row, Legal PoC every row | — | `approved_by_name`, `created_by_name`, `dpo_contact`, `updated_by_name` |
+| GET | `/notice-templates/{template_uuid}/versions/{number}` | DPO every row, Legal PoC every row | — | `approved_by_name`, `created_by_name`, `dpo_contact`, `updated_by_name` |
+| PATCH | `/notice-templates/{template_uuid}/versions/{number}` | DPO every row, Legal PoC every row | `dpo_contact` | `approved_by_name`, `created_by_name`, `dpo_contact`, `updated_by_name` |
+| POST | `/notice-templates/{template_uuid}/versions/{number}/approve` | DPO every row, Legal PoC every row | — | `approved_by_name`, `created_by_name`, `dpo_contact`, `updated_by_name` |
+| DELETE | `/notice-templates/{template_uuid}/versions/{number}/languages/{code}` | DPO every row, Legal PoC every row | — | `approved_by_name`, `created_by_name`, `dpo_contact`, `updated_by_name` |
+| PUT | `/notice-templates/{template_uuid}/versions/{number}/languages/{code}` | DPO every row, Legal PoC every row | — | `approved_by_name`, `created_by_name`, `dpo_contact`, `updated_by_name` |
+| PUT | `/notice-templates/{template_uuid}/versions/{number}/purposes` | DPO every row, Legal PoC every row | — | `approved_by_name`, `created_by_name`, `dpo_contact`, `updated_by_name` |
+| POST | `/notice-templates/{template_uuid}/versions/{number}/status` | DPO every row, Legal PoC every row | — | `approved_by_name`, `created_by_name`, `dpo_contact`, `updated_by_name` |
+| GET | `/notices/{notice_uuid}` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | — | `dpo_contact` |
 | PUT | `/notices/{notice_uuid}` | DPO every row | `dpo_contact` | `dpo_contact` |
-| POST | `/notices/{notice_uuid}/publish` | DPO every row | — | `dpo_contact` |
-| GET | `/notices/{notice_uuid}/purposes` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows | — | `overridden_by_name` |
-| GET | `/notices/{notice_uuid}/versions` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows | — | `dpo_contact` |
-| GET | `/projects/{project_uuid}/notices` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows | — | `dpo_contact` |
+| POST | `/notices/{notice_uuid}/publish` | DPO every row, Legal PoC every row, HR PoC rows in scope | — | `dpo_contact` |
+| GET | `/notices/{notice_uuid}/purposes` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | — | `overridden_by_name` |
+| GET | `/notices/{notice_uuid}/versions` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | — | `dpo_contact` |
+| GET | `/projects/{project_uuid}/notices` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | — | `dpo_contact` |
 | POST | `/projects/{project_uuid}/notices` | DPO every row | `dpo_contact` | `dpo_contact` |
 | POST | `/projects/{project_uuid}/notices/copy` | DPO every row, R&D own rows | — | `dpo_contact` |
 | POST | `/projects/{project_uuid}/notices/from-template` | DPO every row, R&D own rows | — | `dpo_contact` |
@@ -693,17 +766,33 @@ selected.
 
 ### Purposes, processors and sources
 
+9 operations carry personal data.
+
+| Method | Endpoint | Who may call it | Personal data in | Personal data out |
+|---|---|---|---|---|
+| GET | `/processors/import/template` | Admin every row | `sample` | — |
+| GET | `/processors/{processor_uuid}/respondents` | DPO every row, Admin every row, DCO every row, DCO Admin every row, RCO every row, R&D every row | — | `contact`, `user_role`, `user_uuid` |
+| POST | `/processors/{processor_uuid}/respondents` | DPO every row, Admin every row | `contact`, `user_uuid` | `contact`, `user_role`, `user_uuid` |
+| GET | `/sources` | DPO every row, Admin every row, DCO rows in scope, DCO Admin every row, RCO rows in scope, R&D every row | — | `owner_name`, `owner_role`, `owner_user_uuid` |
+| POST | `/sources` | DPO every row, Admin every row, DCO rows in scope, DCO Admin every row, RCO rows in scope | — | `owner_name`, `owner_role`, `owner_user_uuid` |
+| GET | `/sources/import/template` | Admin every row | `sample` | — |
+| GET | `/sources/{source_uuid}` | DPO every row, Admin every row, DCO rows in scope, DCO Admin every row, RCO rows in scope, R&D every row | — | `owner_name`, `owner_role`, `owner_user_uuid` |
+| PUT | `/sources/{source_uuid}` | DPO every row, Admin every row, DCO rows in scope, DCO Admin every row, RCO rows in scope | — | `owner_name`, `owner_role`, `owner_user_uuid` |
+| PUT | `/sources/{source_uuid}/owner` | DPO every row, Admin every row, DCO rows in scope, DCO Admin every row, RCO rows in scope | `owner_user_uuid` | — |
+
+### The Legal office's categories — `/hr/categories/*`
+
 7 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
-| GET | `/processors/{processor_uuid}/respondents` | DPO every row, Admin every row, DCO every row, DCO Admin every row, RCO every row, R&D every row | — | `contact`, `user_role`, `user_uuid` |
-| POST | `/processors/{processor_uuid}/respondents` | DPO every row, Admin every row | `contact`, `user_uuid` | `contact`, `user_role`, `user_uuid` |
-| GET | `/sources` | DPO every row, Admin every row, DCO every row, DCO Admin every row, RCO every row, R&D every row | — | `owner_name`, `owner_role`, `owner_user_uuid` |
-| POST | `/sources` | DPO every row, Admin every row, DCO every row, DCO Admin every row, RCO every row | — | `owner_name`, `owner_role`, `owner_user_uuid` |
-| GET | `/sources/{source_uuid}` | DPO every row, Admin every row, DCO every row, DCO Admin every row, RCO every row, R&D every row | — | `owner_name`, `owner_role`, `owner_user_uuid` |
-| PUT | `/sources/{source_uuid}` | DPO every row, Admin every row, DCO every row, DCO Admin every row, RCO every row | — | `owner_name`, `owner_role`, `owner_user_uuid` |
-| PUT | `/sources/{source_uuid}/owner` | DPO every row, Admin every row, DCO every row, DCO Admin every row, RCO every row | `owner_user_uuid` | — |
+| GET | `/hr/activities` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | — | `created_by_name` |
+| POST | `/hr/activities` | HR PoC rows in scope | — | `url_path` |
+| GET | `/hr/activities/{activity_uuid}` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | — | `created_by_name`, `url_path` |
+| POST | `/hr/activities/{activity_uuid}/close` | Legal PoC every row, HR PoC rows in scope | `reason` | — |
+| GET | `/hr/categories/{category_uuid}` | Admin every row, Legal PoC every row, HR PoC rows in scope | — | `email`, `full_name`, `respondent_email`, `respondent_name` |
+| GET | `/hr/categories/{category_uuid}/processors` | Admin every row, Legal PoC every row, HR PoC rows in scope | — | `respondent_email`, `respondent_name` |
+| PUT | `/hr/categories/{category_uuid}/processors` | Legal PoC every row | — | `respondent_email`, `respondent_name` |
 
 ### Message templates — `/messages/*`
 
@@ -724,11 +813,11 @@ selected.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
-| GET | `/audit` | DPO every row, Admin every row | `actor_role` | `actor_name`, `actor_role`, `actor_uuid`, `subject_name`, `subject_uuid` |
-| GET | `/audit/export.csv` | DPO every row, Admin every row | `actor_role` | — |
-| GET | `/audit/lookup` | DPO every row, Admin every row | — | `hint` |
-| GET | `/audit/summary` | DPO every row, Admin every row | `actor_role` | — |
-| GET | `/audit/{log_uuid}` | DPO every row, Admin every row | — | `actor_name`, `actor_role`, `actor_uuid`, `subject_name`, `subject_uuid` |
+| GET | `/audit` | DPO every row, Admin every row, Legal PoC every row | `actor_role` | `actor_name`, `actor_role`, `actor_uuid`, `subject_name`, `subject_uuid` |
+| GET | `/audit/export.csv` | DPO every row, Admin every row, Legal PoC every row | `actor_role` | — |
+| GET | `/audit/lookup` | DPO every row, Admin every row, Legal PoC every row | — | `hint` |
+| GET | `/audit/summary` | DPO every row, Admin every row, Legal PoC every row | `actor_role` | — |
+| GET | `/audit/{log_uuid}` | DPO every row, Admin every row, Legal PoC every row | — | `actor_name`, `actor_role`, `actor_uuid`, `subject_name`, `subject_uuid` |
 
 ### Dashboard
 
@@ -744,7 +833,7 @@ selected.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
-| POST | `/breach-tickets/{ticket_uuid}/colleagues` | any signed-in session, own record | `email`, `full_name`, `mobile` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
+| POST | `/breach-tickets/{ticket_uuid}/colleagues` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows, Temporary holder own rows, Legal PoC own rows, HR PoC own rows | `email`, `full_name`, `mobile` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
 
 ### Public_information
 
@@ -761,14 +850,14 @@ selected.
 | GET | `/holder-tickets/{token}/ticket` | **public** — the request carries its own credential (password, link token, one-time code) | `token` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | POST | `/holder-tickets/{token}/verify` | **public** — the request carries its own credential (password, link token, one-time code) | `code`, `token` | — |
 
-<!-- 229 of 325 operations carry personal data; 28 of them need no session. -->
+<!-- 279 of 391 operations carry personal data; 34 of them need no session. -->
 
 ## The public surface
 
-28 operations answer without a session. They are the ones worth re-reading
-after any change, because everything else is behind an authenticated role.
-Nineteen rows below: three of them group sibling endpoints that take the same
-token and are protected the same way.
+34 of the operations that carry personal data answer without a session. They
+are the ones worth re-reading after any change, because everything else is
+behind an authenticated role. The rows below group sibling endpoints that take
+the same token and are protected the same way.
 
 | Endpoint | Anonymous? | What it takes | What stops it being an oracle |
 |---|---|---|---|
@@ -787,6 +876,8 @@ token and are protected the same way.
 | `POST /c/{token}/consent` | Link token, and a session it minted | `grants`, `action_type`, `served_at` | `served_at` in the body is **ignored**: the moment comes from the server's own record of showing her the notice |
 | `POST /rights/requests` | Carries a verification code | `contact`, `request_text` | Rate-limited; verification happens before anything is answered |
 | `POST /rights/requests/verify` | Carries the code | `code` | Five attempts, ten minutes |
+| `POST /incident-reports/code` | Yes | `email` | Rate-limited per contact and address; the reply is the same sentence for any address; nothing is stored |
+| `POST /incident-reports` | Carries the code | `name`, `email`, `code`, `title`, what happened | Rate-limited per address; a wrong code takes nothing; the reply is a number and a sentence, and nothing that is in a report can be read back through it. It starts no clock and no duty |
 | `GET /rights/nominations/{token}` | Nomination token | — | Returns `principal_name` and `nominee_name` — **the one anonymous read that returns two people's names**, and the token is single-purpose, expiring and hashed at rest |
 | `POST /rights/nominations/{token}/accept`, `/decline`, `/code` | Nomination token | `code` | As above |
 | `POST /rights/nominee/start`, `/requests` | Carries a code or a token | `contact`, `request_text`, `evidence` | The nominee proves the trigger event before acting |
@@ -799,7 +890,7 @@ rediscover them.
 
 | Control | Where |
 |---|---|
-| 79 personal columns - people's names and contacts, date of birth, free text, file names, the consent IP - are ciphertext at rest, and the API serves them that way | [docs/dkms/](../dkms/README.md), [encryption at rest](../security/encryption-at-rest.md) |
+| 97 personal columns - people's names and contacts, date of birth, free text, file names, the consent IP - are ciphertext at rest, and the API serves them that way | [docs/dkms/](../dkms/README.md), [encryption at rest](../security/encryption-at-rest.md) |
 | A password is Argon2, and `password_hash` appears in **no** response schema | `auth_user`, and the absence is the point |
 | A one-time code is never stored — Redis holds a keyed digest, and the check, the consumption and the attempt count are one atomic script | `cmp/auth/authentication/otp.py` |
 | A session token is never stored; Redis is keyed by its fingerprint | `cmp/auth/sessions/service.py` |
@@ -818,13 +909,13 @@ rediscover them.
 
 ## Encrypting it: the DKMS layer
 
-Seventy-nine columns, in 30 tables - the people's names and contacts, the
+Ninety-seven columns, in 33 tables - the people's names and contacts, the
 date of birth, the free text and file names about them, every narrative on
 the breach register, and the consent IP - are encrypted by a separate key
 service before they reach the database, and the API serves them as
 ciphertext, `SE::…`. The portals open them in their own server at the moment a person reads them; the
 backend opens a value itself only where it has to act on it - a message,
-an export, a response package, the nomination link. Eleven of the
+an export, a response package, the nomination link. Twelve of the
 columns carry a keyed hash, `*_hash`, so the platform can still find a row
 by a whole contact, and three names carry hashed runs, `*_ngrams`, so staff
 can find a person by part of a name.

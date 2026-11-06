@@ -4,6 +4,8 @@ Reviewed on **2026-09-17** against commit **`1757d5069ba723f260c88c45419c1286261
 
 **Re-reviewed on 2026-10-28 for the HR track (increments 1-8, ADR 0032-0034), on branch `sprint-4/hr-track`:** every table gains the Legal PoC and HR PoC columns from `endpoint_permissions.json`; the two HR modules have pages of their own; the inventory now lists every OpenAPI operation, including eleven it had missed (`GET /offices`, the consent-record PDFs, the registry's Excel import). An officer's `ALL` is its office's all ([roles and scopes](roles_and_scopes.md#what-scopes-mean-in-this-code)). Evidence links for these entries point at `HEAD`.
 
+**Re-reviewed on 2026-11-06 for the breach workflow ([ADR 0037](../../decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md)), on branch `integration/hr-track-sqs-relay`:** two modules are new, Breach settings and Incident reports; Breaches and Breach tickets gain the intake, the reports, the options for finding people and a ticket's date; `POST /breaches/{breach_uuid}/obligations/{duty}/complete` is gone. **Amended on 2026-11-07:** `POST /breaches/{breach_uuid}/cert-in/not-applicable` and `GET /breaches/intake/{report_uuid}` are new, `GET /breaches/intake` is a page, and `GET /notifications` shows the Legal PoC and the HR PoC as the conditional access `CurrentUser` always gave them.
+
 This tree is reviewed by hand, not generated. When a route's guard, scope or conditions change, update the module page, the two matrices and `endpoint_permissions.json` together; `api_docs/` (the request and response shapes) regenerates from `openapi.json` instead.
 
 This folder answers: **which role can call each API, on which records, and under what additional conditions?** It expands the existing `api_docs` using the actual route guards, permission matrix, service checks and repository scopes.
@@ -14,7 +16,7 @@ This folder answers: **which role can call each API, on which records, and under
 - [Implementation notes](implementation_notes.md): places where generic documentation and implemented controls differ.
 - [Machine-readable endpoint inventory](endpoint_permissions.json): guards, roles, conditions and source references.
 
-**Coverage: 23 modules, 369 documented operations over 321 OpenAPI paths, plus 3 registered system operations excluded from OpenAPI (372 total operations).** The breach module (S3-01 onward) is recorded in `endpoint_permissions.json`'s `amended` list; its evidence links point at `HEAD`. No framework-generated Swagger/ReDoc/OpenAPI routes or middleware-generated OPTIONS responses are counted.
+**Coverage: 25 modules, 391 documented operations over 342 OpenAPI paths, plus 3 registered system operations excluded from OpenAPI (394 total operations).** The breach module (S3-01 onward) is recorded in `endpoint_permissions.json`'s `amended` list; its evidence links point at `HEAD`. No framework-generated Swagger/ReDoc/OpenAPI routes or middleware-generated OPTIONS responses are counted.
 
 ## Module details
 
@@ -22,8 +24,9 @@ This folder answers: **which role can call each API, on which records, and under
 | --- | --- | --- |
 | Audit | 7 | [Open module](modules/audit.md) |
 | Auth | 15 | [Open module](modules/auth.md) |
-| Breach tickets | 6 | [Open module](modules/breach_tickets.md) |
-| Breaches | 37 | [Open module](modules/breaches.md) |
+| Breach settings | 4 | [Open module](modules/breach_settings.md) |
+| Breach tickets | 7 | [Open module](modules/breach_tickets.md) |
+| Breaches | 52 | [Open module](modules/breaches.md) |
 | Consent | 15 | [Open module](modules/consent.md) |
 | Cross-border transfers | 3 | [Open module](modules/cross_border_transfers.md) |
 | Dashboard | 3 | [Open module](modules/dashboard.md) |
@@ -31,6 +34,7 @@ This folder answers: **which role can call each API, on which records, and under
 | Exchange | 19 | [Open module](modules/exchange.md) |
 | HR activities | 6 | [Open module](modules/hr_activities.md) |
 | HR categories | 7 | [Open module](modules/hr_categories.md) |
+| Incident reports | 2 | [Open module](modules/incident_reports.md) |
 | Legal holds | 3 | [Open module](modules/legal_holds.md) |
 | Me | 30 | [Open module](modules/me.md) |
 | Messages | 6 | [Open module](modules/messages.md) |
@@ -56,7 +60,7 @@ Paths here are backend paths as declared, without an invented `/v1` prefix. A fr
 
 ## Validation and maintenance
 
-The inventory was matched by method and path against every operation in `backend/api/openapi.json` and the registered router source. All 369 documented operations match exactly once; the three excluded system routes are separately identified. Role dependencies were resolved against `core/permissions.py`, explicit route-role denials were applied, and the service/repository exceptions in the notes were reviewed. This is static source validation, not execution against a live database or a complete security audit.
+The inventory was matched by method and path against every operation in `backend/api/openapi.json` and the registered router source. All 391 documented operations match exactly once; the three excluded system routes are separately identified. Role dependencies were resolved against `core/permissions.py`, explicit route-role denials were applied, and the service/repository exceptions in the notes were reviewed. This is static source validation, not execution against a live database or a complete security audit.
 
 The portals' own `POST /dkms/decrypt` is served by Next.js, not the API, and is outside this inventory; see [implementation notes](implementation_notes.md#the-portals-decrypt-route-is-not-an-api-operation).
 

@@ -1,7 +1,9 @@
 # 0029. The office copies emails and attaches files, never on a code, a link or a person's own record
 
 **Status:** accepted · 2026-10-08; extended 2026-10-08 (copies from the
-deployment's settings - see the end). Migration 0046, commit 0359149; outside
+deployment's settings - see the end); amended 2026-11-06 (two more emails may
+carry a file - see the end, and [ADR 0037](0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md)).
+Migration 0046, commit 0359149; outside
 holders' emails from migration 0049
 ([ADR 0024](0024-a-rights-tickets-holder-is-reached-three-ways.md)). Builds
 on [ADR 0012](0012-side-effects-after-commit.md) (every email after the
@@ -110,4 +112,16 @@ Test mode is the one exception to "never on a code or a link", and it is not
 a copy: `EMAIL_REDIRECT_TO` sends every message *instead of* to its
 recipient, never as well, to a test team's own inbox, and production refuses
 to start with it set. Nobody real receives anything while it is on.
+
+## Amended 2026-11-06: the two reports to the organisation's board
+
+`ATTACHABLE` no longer lists two emails. It lists four: `breach_board_report` and
+`breach_report_finalised` join it, each carrying a report as a PDF to the
+addresses on the organisation's board's list
+([ADR 0037](0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md)).
+`deliver()` still refuses a file on any other email. Neither is copyable, so
+what they carry stays on that list. A report may name somebody other than its
+reader, as the 72-hour report's findings on who caused the breach may: "files
+only where the recipient already owns them" holds for the board only in the
+sense that the report was written for it, and ADR 0037 counts the cost.
 

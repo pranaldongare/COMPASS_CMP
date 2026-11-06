@@ -49,13 +49,14 @@ backend/api/
     main.py               ASGI entrypoint; `python -m cmp` supplies the event loop
     bootstrap/            assembly: factory, lifespan, middleware, routers, container
     api/
-      routers/v1/         audit, auth, breach_tickets, breaches, consents, dashboard,
+      routers/v1/         audit, auth, breach_settings, breach_tickets, breaches, consents, dashboard,
                           delegations, exchange, legal_holds, me, messages,
                           notice_templates, notices, projects, registry, rights,
                           system, transfers, users
       routers/public/     consent (the /c/{token} flow), rights (public pages,
                           nominations, the nominee's entry point, the notice viewer),
                           holder_tickets (an outside holder's /holder-tickets/{token}),
+                          incident_reports (reporting an incident with no account),
                           devcodes (development only: /dev/codes)
       dependencies/       sessions, csrf, authentication, authorization, paging, filters
       middleware/         request context, security headers, body limit, access log
@@ -81,7 +82,7 @@ backend/api/
     core/                 config, enums, permissions, security, errors, pagination,
                           logging - imports nothing local
     tasks/                Celery: authentication, notifications, maintenance, exchange
-  migrations/versions/    0001 to 0049, raw SQL in both directions; 0028 also
+  migrations/versions/    0001 to 0063, raw SQL in both directions; 0028 also
                           computes keyed hashes in Python, and says why
   tests/
     unit/                 pure functions; no I/O
@@ -161,8 +162,8 @@ Both portals share one shape:
 
 | Portal | Routes |
 |---|---|
-| `frontend/console` | dashboard, projects, approvals, notices, purposes, sites, sources, processors, links, consents, exports, imports, collections, requests, breaches, tickets, users, messages, audit, delegate (cover), notifications, account, help; sign-in with MFA and reset |
-| `frontend/portal` | `c/[token]` (the consent flow), sign-up, sign-in, rights, rights/nominee, rights/nominations/[token], `ticket/[token]` (an outside holder's ticket, 0049); signed in: my-consents, my-requests, my-nominations, breach-notices, notifications (Updates), account; help |
+| `frontend/console` | dashboard, projects, approvals, notices, purposes, sites, sources, processors, links, consents, exports, imports, collections, requests, breaches, breach-settings, tickets, users, messages, audit, delegate (cover), notifications, account, help; sign-in with MFA and reset |
+| `frontend/portal` | `c/[token]` (the consent flow), sign-up, sign-in, rights, rights/nominee, rights/nominations/[token], `ticket/[token]` (an outside holder's ticket, 0049), report-incident (the public link, 0058); signed in: my-consents, my-requests, my-nominations, breach-notices, notifications (Updates), account; help |
 
 ## Where to find a thing
 

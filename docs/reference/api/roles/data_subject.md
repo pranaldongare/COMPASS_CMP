@@ -12,6 +12,7 @@ Navigation returned after sign-in: `consents`, `requests`, `notifications`, `pro
 | `asset` | No | No | `none` | Denied |
 | `audit` | No | No | `none` | Denied |
 | `breach` | No | No | `none` | Denied |
+| `breach_settings` | No | No | `none` | Denied |
 | `breach_ticket` | No | No | `none` | Denied |
 | `collection` | No | No | `none` | Denied |
 | `consent` | No | No | `none` | Denied |

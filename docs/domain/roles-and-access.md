@@ -56,6 +56,7 @@ denied: no wildcard, no inheritance.
 | legal_hold | all +w |  |  |  |  |  |  |  | all +w |  |
 | restricted_country | all +w | all |  |  |  |  |  |  |  |  |
 | breach | all +w |  |  |  |  |  |  |  | all +w |  |
+| breach_settings | all +w | all +w |  |  |  |  |  |  | all +w |  |
 | ticket | own +w | own +w | own +w | own +w | own +w | own +w |  | own +w | own +w | own +w |
 | breach_ticket | own +w | own +w | own +w | own +w | own +w | own +w |  | own +w | own +w | own +w |
 | me |  |  |  |  |  |  | own +w |  |  |  |
@@ -106,6 +107,14 @@ on every breach route, not the 403 every other resource gives - the register,
 a breach that exists and a write all read as "not there" - because that a
 breach is being handled is itself what the grant withholds
 ([breaches.md](breaches.md), [ADR 0021](../decisions/0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md)).
+The shared intake of reports from the public link is under `breach`, and both
+officers read it, each office's reports being neither's until one claims them.
+
+`breach_settings` (0058) is deliberately the opposite: it says who is told of a
+report and where the organisation's board is mailed, and nothing about any
+breach. So it is an ordinary resource, not hidden, and the administrator keeps it
+with the DPO and the Legal PoC without gaining sight of the register; everyone
+else is answered 403 ([breaches.md](breaches.md#breach-settings), [ADR 0037](../decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md)).
 
 `breach_ticket` (S3-08) is the other side of that: a ticket addressed to me,
 OWN for every staff role like `ticket`, with the holder in the `WHERE` clause -
@@ -161,13 +170,13 @@ matrix, so it cannot drift into showing a button that answers 403.
 
 | Role | Sections |
 |---|---|
-| DPO | dashboard, projects, approvals, notices, purposes, sites, collections, processors, sources, consents, links, exports, imports, requests, breaches, audit, users, messages, delegate, tickets, notifications, profile |
-| Administrator | dashboard, users, messages, processors, sources, requests, audit, delegate, tickets, notifications, profile |
+| DPO | dashboard, projects, approvals, notices, purposes, sites, collections, processors, sources, consents, links, exports, imports, requests, breaches, breach-settings, audit, users, messages, delegate, tickets, notifications, profile |
+| Administrator | dashboard, users, messages, processors, sources, requests, breach-settings, audit, delegate, tickets, notifications, profile |
 | DCO, DCO Admin, RCO | dashboard, projects, sites, sources, links, consents, exports, imports, collections, delegate, tickets, notifications, profile |
 | R&D User | dashboard, projects, notices, processors, approvals, imports, collections, tickets, notifications, profile |
 | Data principal | consents, requests, notifications, profile |
 | Temporary ticket holder | tickets, notifications, profile |
-| Legal PoC | dashboard, requests, breaches, hr-activities, hr-categories, templates, purposes, consents, exports, processors, users, audit, tickets, notifications, profile |
+| Legal PoC | dashboard, requests, breaches, breach-settings, hr-activities, hr-categories, templates, purposes, consents, exports, processors, users, audit, tickets, notifications, profile |
 | HR PoC | dashboard, hr-activities, hr-categories, links, consents, exports, tickets, notifications, profile |
 
 A temporary ticket holder has no dashboard: the console sends it from
@@ -330,13 +339,15 @@ tested: a count the role can only look at is not on the list. Lockouts
 clear themselves; a suspended source was suspended on purpose; refusals in the
 log are the audit trail's. Those stay in the queues and statistics further down.
 
-For the DPO the first two rows can be about a breach: **Breach duties
-overdue** (a duty past its due time, or past the internal target for "without
-delay" once one is set) and **Breach duties outstanding**, both opening the
-register. Below them, **Open breaches** lists each open breach with every
-duty's state and clock (S3-04). No other role's dashboard carries any of it:
-the server sends the list to the DPO alone. **Breach tickets returned** and
-**Breach tickets past their answer-by** (S3-08) follow, opening the register.
+For the DPO and the Legal PoC the first rows can be about a breach: **Breach
+duties overdue** (a duty past its due time, or past the internal target for
+"without delay" once one is set), **Reported incidents waiting for an office**
+(a report from the public link nobody has claimed or dismissed, the same count
+for both) and **Breach duties outstanding**, all opening the register. Below
+them, **Open breaches** lists each open breach of the reader's own office with
+every duty's state and clock (S3-04). No other role's dashboard carries any of
+it: the server sends the list to those two alone. **Breach tickets returned** and
+**Breach tickets past their resolve-by** (S3-08) follow, opening the register.
 Every staff dashboard's **Tickets addressed to you** lists its reader's open
 breach tickets beside their rights tickets, by the breach reference alone.
 
@@ -358,19 +369,20 @@ review**, apart from **Needs your action** (UX review 2026-10-05).
 
 | Role | Needs attention |
 |---|---|
-| DPO | breach duties past their due time; breach tickets returned or past their answer-by; tickets past their date; rights requests overdue and due within seven days; requests awaiting verification; teams that have written on their tickets; grievances about the DPO not yet escalated; retention floors passed; tickets addressed to them; notice text awaiting approval; projects pending approval; new collectors awaiting a decision |
+| DPO | breach duties past their due time; reported incidents waiting for an office; breach tickets returned or past their resolve-by; tickets past their date; rights requests overdue and due within seven days; requests awaiting verification; teams that have written on their tickets; grievances about the DPO not yet escalated; retention floors passed; tickets addressed to them; notice text awaiting approval; projects pending approval; new collectors awaiting a decision |
 | Administrator | staff invitations not yet accepted (resend them); grievances about the DPO to review; tickets addressed to them |
 | DCO, RCO | tickets past their date; tickets addressed to them; imports that did not reconcile; assets with unmapped subjects |
 | DCO Admin | tickets past their date; sites awaiting a data source; sources with nobody accountable; processors with no collection set up; tickets addressed to them |
 | R&D User | projects needing something from them; tickets addressed to them |
-| Legal PoC | the DPO's rows on the Legal office's own requests and breaches (breach duties, breach tickets, tickets past their date, requests overdue, due within seven days or awaiting verification, teams that have written); requests in the shared intake to claim; grievances about the office to escalate; template versions waiting for approval; tickets addressed to them |
+| Legal PoC | the DPO's rows on the Legal office's own requests and breaches (breach duties, reported incidents waiting for an office, breach tickets, tickets past their date, requests overdue, due within seven days or awaiting verification, teams that have written); requests in the shared intake to claim; grievances about the office to escalate; template versions waiting for approval; tickets addressed to them |
 | HR PoC | activity links ending within a week; tickets addressed to them |
 | Temporary ticket holder | no dashboard: the console sends it to **My tasks**, where its breach and rights tickets are |
 
 Five roles start something from nothing, and its button sits at the top of
-their dashboard (2026-10-06): the DPO **Log an incident** - the organisation's
-board is owed word within thirty minutes of its being first noticed, so it is
-never a menu away - with **New notice template** beside it as a secondary
+their dashboard (2026-10-06): the DPO **Log an incident** - CERT-In's six hours
+run from first noticed, so it is never a menu away, though the organisation's
+board's thirty minutes start only at a validation of *yes* - with **New notice
+template** beside it as a secondary
 button, the Legal PoC **Log an incident** on the Legal office's register, an
 R&D User **Register a project**, an HR PoC **New activity**, an administrator
 **Provision an account**. The collection roles get none: a link, a site or a

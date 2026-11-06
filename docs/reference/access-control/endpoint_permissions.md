@@ -42,18 +42,30 @@ Roles refer to the **effective session role**. A staff account signed in through
 | DELETE | `/auth/sessions/{session_uuid}` | NO | OWN | OWN | OWN | OWN | OWN | OWN | OWN | OWN | NO | NO |
 | GET | `/auth/sso/callback` | COND | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | NO | NO |
 
+## Breach settings
+
+[Conditions and source evidence](modules/breach_settings.md)
+
+| Method | Endpoint | Anonymous | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| GET | `/breach-settings` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
+| PUT | `/breach-settings/intake-roles` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
+| POST | `/breach-settings/board-recipients` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
+| DELETE | `/breach-settings/board-recipients/{recipient_uuid}` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
+
 ## Breach tickets
 
 [Conditions and source evidence](modules/breach_tickets.md)
 
 | Method | Endpoint | Anonymous | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| GET | `/breach-tickets` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | NO | NO |
-| GET | `/breach-tickets/{ticket_uuid}` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | NO | NO |
-| POST | `/breach-tickets/{ticket_uuid}/messages` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | NO | NO |
-| GET | `/breach-tickets/{ticket_uuid}/messages/{message_uuid}/evidence` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | NO | NO |
-| POST | `/breach-tickets/{ticket_uuid}/return` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | NO | NO |
-| POST | `/breach-tickets/{ticket_uuid}/colleagues` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | NO | NO |
+| GET | `/breach-tickets` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | OWN | OWN |
+| GET | `/breach-tickets/{ticket_uuid}` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | OWN | OWN |
+| POST | `/breach-tickets/{ticket_uuid}/messages` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | OWN | OWN |
+| GET | `/breach-tickets/{ticket_uuid}/messages/{message_uuid}/evidence` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | OWN | OWN |
+| POST | `/breach-tickets/{ticket_uuid}/return` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | OWN | OWN |
+| POST | `/breach-tickets/{ticket_uuid}/colleagues` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | OWN | OWN |
+| POST | `/breach-tickets/{ticket_uuid}/resolve-by` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | OWN | OWN |
 
 ## Breaches
 
@@ -68,7 +80,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | GET | `/breaches/{breach_uuid}/assessments` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/breaches/{breach_uuid}/assessments` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/breaches/{breach_uuid}/cert-in` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
-| POST | `/breaches/{breach_uuid}/obligations/{duty}/complete` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+| POST | `/breaches/{breach_uuid}/cert-in/not-applicable` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/breaches/{breach_uuid}/obligations/board_report/extension` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 | GET | `/breaches/{breach_uuid}/transitions` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/breaches/{breach_uuid}/transition` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
@@ -98,6 +110,21 @@ Roles refer to the **effective session role**. A staff account signed in through
 | POST | `/breaches/{breach_uuid}/affected/upload/check` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/breaches/{breach_uuid}/affected/upload` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 | GET | `/breaches/{breach_uuid}/affected/contacts` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+| GET | `/breaches/intake` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+| GET | `/breaches/intake/dismissed` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+| GET | `/breaches/intake/{report_uuid}` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+| POST | `/breaches/intake/{report_uuid}/claim` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+| POST | `/breaches/intake/{report_uuid}/dismiss` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+| GET | `/breaches/{breach_uuid}/affected/options` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+| GET | `/breaches/{breach_uuid}/reports` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+| POST | `/breaches/{breach_uuid}/reports` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+| PUT | `/breaches/{breach_uuid}/reports/{report_uuid}` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+| POST | `/breaches/{breach_uuid}/reports/{report_uuid}/finalise` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+| POST | `/breaches/{breach_uuid}/reports/{report_uuid}/resend` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+| POST | `/breaches/{breach_uuid}/reports/{report_uuid}/evidence` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+| POST | `/breaches/{breach_uuid}/reports/{report_uuid}/file` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+| GET | `/breaches/{breach_uuid}/reports/{report_uuid}/pdf` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/resolve-by` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 
 ## Consent
 
@@ -138,7 +165,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | Method | Endpoint | Anonymous | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | GET | `/dashboard` | NO | COND | COND | COND | COND | COND | COND | COND | COND | NO | NO |
-| GET | `/notifications` | NO | COND | COND | COND | COND | COND | COND | COND | COND | NO | NO |
+| GET | `/notifications` | NO | COND | COND | COND | COND | COND | COND | COND | COND | COND | COND |
 | POST | `/notifications/{log_uuid}/resend` | NO | COND | NO | COND | NO | NO | NO | NO | NO | NO | NO |
 
 ## Delegations
@@ -206,6 +233,15 @@ Roles refer to the **effective session role**. A staff account signed in through
 | POST | `/hr/categories/{category_uuid}/status` | NO | NO | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 | GET | `/hr/categories/{category_uuid}/processors` | NO | NO | ALL | NO | NO | NO | NO | NO | NO | ALL | SCOPED |
 | PUT | `/hr/categories/{category_uuid}/processors` | NO | NO | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+## Incident reports
+
+[Conditions and source evidence](modules/incident_reports.md)
+
+| Method | Endpoint | Anonymous | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| POST | `/incident-reports/code` | COND | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
+| POST | `/incident-reports` | COND | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC |
 
 ## Legal holds
 

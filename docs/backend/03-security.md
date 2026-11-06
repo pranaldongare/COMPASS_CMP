@@ -131,7 +131,7 @@ checked.
 
 ## Authorisation
 
-**The matrix.** `core/permissions.py` `MATRIX` maps 23 resources × 8 roles
+**The matrix.** `core/permissions.py` `MATRIX` maps 26 resources × 10 roles
 to a `Grant(scope, write)`. A resource or role missing from a row is denied.
 
 **Scopes** say *which rows*:

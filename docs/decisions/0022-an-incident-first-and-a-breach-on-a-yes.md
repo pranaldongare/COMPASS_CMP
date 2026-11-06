@@ -1,6 +1,6 @@
 # 0022. An incident is logged first, and a breach is recorded on a yes; the organisation's board is told within 30 minutes
 
-**Status:** accepted · 2026-10-05; amended 2026-10-06 (the team's answers, at the end); amended 2026-10-08 (what is known when an incident is logged, at the end). Amends [ADR 0021](0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md).
+**Status:** accepted · 2026-10-05; amended 2026-10-06 (the team's answers, at the end); amended 2026-10-08 (what is known when an incident is logged, at the end). Amends [ADR 0021](0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md). **The organisation's board clause is superseded by [ADR 0037](0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md)** (2026-11-06, at the end); the rest stands.
 Migrations 0038 (S3-06) and 0039 (S3-07).
 
 ## Context
@@ -100,3 +100,30 @@ in the assessment. A *yes* to "Is it a cyber attack?" creates the CERT-In
 duty at once, in the same transaction, as Mark reportable to CERT-In does
 (`domain/breach/service.py`). That is a person's answer, not an inference:
 the platform still computes no determination.
+
+## Superseded 2026-11-06: the organisation's board
+
+[ADR 0037](0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md)
+replaces what this record says about the organisation's board. The text above
+is left as it was decided; these parts of it no longer hold:
+
+- **"The organisation's board is a duty on every incident."** The duty is
+  created by the first validation of *yes* and is due thirty minutes from that
+  validation, not from first noticed. No duty exists on logging, and a later
+  *no* sets it aside. An incident that is junk or validated *no* must be able to
+  close without telling the board anything.
+- **"The platform never reports to the board."** It now does: **Notify
+  Organization Board** mails a report the office wrote to the addresses on the
+  board's list, and the duty completes when that mail lands. The offline
+  channel, the printed brief and *Record the report* (amended 2026-10-06, above)
+  are gone.
+- **"Only the DPO role can log one."** Anybody may report an incident through
+  the public link. It waits in a shared intake until an officer claims it; only
+  an officer logs one still.
+- **"Validation never touches it."** It does now, as above. CERT-In alone stands
+  on its own test.
+
+Everything else here stands: the incident first, validation, the first *yes*
+recording the breach and issuing its reference, and telling anyone waiting for
+that recording. The platform's never submitting to a regulator is ADR 0021's,
+and stands.

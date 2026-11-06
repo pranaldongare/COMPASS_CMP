@@ -4,7 +4,7 @@ Two questions, deliberately answered by different things.
 
 ## 1. May this role call this at all?
 
-A static matrix: 23 resources × 8 roles → a grant. The whole table is laid out in
+A static matrix: 26 resources × 10 roles → a grant. The whole table is laid out in
 [docs/domain/roles-and-access.md](../domain/roles-and-access.md). Checked before any work is
 done, by `RequireResource` or `RequireRole`.
 

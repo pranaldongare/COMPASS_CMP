@@ -1,6 +1,6 @@
 # The API
 
-One FastAPI service, 325 endpoints over 285 paths, all under the API's root
+One FastAPI service, 391 endpoints over 342 paths, all under the API's root
 with no version prefix. The interactive reference is at `/docs` in local
 development, and `backend/api/openapi.json` is the same document, regenerated
 from the application whenever a route or schema changes. This page is the map;
@@ -24,8 +24,10 @@ the reference is the territory.
 | `/requests/*`, `/tickets/*` | DPO, administrator; respondents for tickets | the rights register and every action on a request; a respondent's own tickets |
 | `/legal-holds/*` | the DPO | holds that stop an erasure of an asset or a person, and their release (S2-03) |
 | `/restricted-countries/*` | the DPO; the administrator reads | the s.16 restricted-country list: read, restrict, lift (S2-04) |
-| `/breaches/*` | the DPO; every other role is answered 404 | incidents and breaches, their duties, who it touched, notices, the Board's and the organisation's board's documents, breach tickets |
-| `/breach-tickets/*` | every member of staff and the temporary ticket holder, their own only | breach tickets addressed to me (S3-08): read, write, return, and bring in a colleague (S3-09). Managing them is `/breaches/{uuid}/tickets/*`, the DPO's and hidden |
+| `/breaches/*` | the DPO and the Legal PoC, each on its own office's records; every other role is answered 404 | incidents and breaches, the shared intake of reports from the public link, their duties, the people affected, notices, the reports and the Board's and the organisation's board's documents, breach tickets |
+| `/breach-tickets/*` | every member of staff and the temporary ticket holder, their own only | breach tickets addressed to me (S3-08): read, write, return, change the date, and bring in a colleague (S3-09). Managing them is `/breaches/{uuid}/tickets/*`, the DPO's and hidden |
+| `/breach-settings/*` | the administrator, the DPO and the Legal PoC | who is told of a report from the public link, and the addresses of the organisation's board (0058) |
+| `/incident-reports/*` | public, with a code to the address given | report an incident with no account (0058, [ADR 0037](../decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md)) |
 | `/delegations/*` | staff | delegation (Delegate in the console): arranging it, ending it, what I hold |
 | `/messages/*` | administrator, DPO | the words of every message the platform sends: list, replace per channel, preview, reset |
 | `/users/*` | administrator, DPO | accounts, roles, sessions |

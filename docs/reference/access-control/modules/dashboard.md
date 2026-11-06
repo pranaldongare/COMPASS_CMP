@@ -2,12 +2,12 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-3 operations; 3 appear in the existing OpenAPI/API docs. Snapshot `1757d50`; `GET /notifications` re-reviewed at `daca825`.
+3 operations; 3 appear in the existing OpenAPI/API docs. Snapshot `1757d50`; `GET /notifications` re-reviewed at `daca825` and on 2026-11-07.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
 | GET | `/dashboard` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
-| GET | `/notifications` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
+| GET | `/notifications` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder`, `legal`, `hr_user` | Full session; anonymous NO |
 | POST | `/notifications/{log_uuid}/resend` | `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
 
 ## GET /dashboard
@@ -29,12 +29,12 @@ Notifications.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| COND | COND | COND | COND | COND | COND | COND | COND | NO | NO |
+| COND | COND | COND | COND | COND | COND | COND | COND | COND | COND |
 
-- **Who:** `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder`.
+- **Who:** `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder`, `legal`, `hr_user`.
 - **Route guard:** `CurrentUser`.
-- **Rules:** Principal sees own audit events. Staff receive selected event types scoped as the project register is: an event about a project, or about a notice, import or export on one, is shown only to a role that could see that project; a lockout is shown to DPO and Admin; a consent withdrawal to DPO only. Plus own ticket events; DPO also gets office ticket events. (Before `79b7fac` the staff query had no project/owner predicate.)
-- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/daca825864313166693c3f2973d50ec5c05d4170/backend/api/src/cmp/api/routers/v1/dashboard.py#L805-L846).
+- **Rules:** Principal sees own audit events. Staff receive selected event types scoped as the project register is: an event about a project, or about a notice, import or export on one, is shown only to a role that could see that project; a lockout is shown to DPO and Admin; a consent withdrawal to DPO only. Plus own ticket events; DPO also gets office ticket events. Each officer, the DPO and the Legal PoC, also gets what holders did on breach tickets of their own office.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/daca825864313166693c3f2973d50ec5c05d4170/backend/api/src/cmp/api/routers/v1/dashboard.py#L805-L846), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/dashboard.py).
 
 ## POST /notifications/{log_uuid}/resend
 

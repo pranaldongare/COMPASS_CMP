@@ -49,7 +49,7 @@ COLUMNS: list[tuple[str, list[str]]] = [
                            "mitigation", "protective_steps", "caused_by_findings",
                            "remedial_measures", "contact_point"]),
     ("breach_obligation_event", ["note", "reported_to"]),
-    # Who a breach touched (S3-02): the person, by account.
+    # The people a breach affected (S3-02): the person, by account.
     ("breach_affected_revision", ["note"]),
     ("breach_affected", ["auth_user_id"]),
     # What every affected person is told, and whether it reached her (S3-03).
@@ -62,6 +62,14 @@ COLUMNS: list[tuple[str, list[str]]] = [
     ("breach_attachment", ["file_name", "note", "storage_ref"]),
     ("breach_contact", ["full_name", "email", "mobile", "email_hash", "mobile_hash"]),
     ("breach_upload", ["file_name"]),
+    # An incident reported through the public link (0058): who, and what they said.
+    ("incident_report", ["reporter_name", "reporter_email", "title", "origin", "discovery",
+                         "affected_systems", "incident_details", "impact_scale",
+                         "countries_involved", "data_nature", "subject_types",
+                         "entities_involved", "third_parties", "dismissal_reason"]),
+    # A report on a breach (0059), and where the organisation's board is mailed (0058).
+    ("breach_report_section", ["body"]),
+    ("breach_board_recipient", ["full_name", "email", "email_hash"]),
     ("message_copy", ["address", "address_hash"]),
     ("consent_artefact", ["ip_address", "auth_user_id"]),
     ("consent_purpose_grant", ["granted"]),
@@ -80,6 +88,7 @@ COLUMNS: list[tuple[str, list[str]]] = [
 ]
 
 ORDER = ["auth", "me", "public consent", "public information", "rights", "legal holds", "breaches",
+         "breach tickets", "breach settings", "incident reports",
          "cross-border transfers", "tickets", "consent", "exchange", "users", "delegations", "projects", "notices",
          "registry", "messages", "audit", "dashboard"]
 TITLE = {
@@ -88,6 +97,9 @@ TITLE = {
     "rights": "Rights requests — Privacy Office (`/requests`)",
     "legal holds": "Legal holds (`/legal-holds`)",
     "breaches": "Personal data breaches (`/breaches`)",
+    "breach tickets": "Breach tickets (`/breach-tickets`)",
+    "breach settings": "Breach settings (`/breach-settings`)",
+    "incident reports": "Reporting an incident (`/incident-reports`)",
     "cross-border transfers": "Cross-border transfers (`/restricted-countries`)", "tickets": "Tickets (`/tickets`)",
     "consent": "Consents and links", "exchange": "Exports, imports, collections, assets",
     "users": "Users (`/users`)", "delegations": "Delegations (`/delegations`)",
@@ -129,11 +141,13 @@ def main() -> None:
                "breach ticket's `instruction`, `summary`, `reason`, `body` and `evidence_name`, and an\n"
                "attached file's `file_name` and `note`; since 0043-0049 also the names of documents\n"
                "sent with a request and of breach uploads, a breach contact's name and contacts,\n"
-               "the incident's *what is known* answers, and the office's copy addresses) — 78\n"
-               "columns in 29 tables. The eleven the platform looks rows up by whole (`email`,\n"
+               "the incident's *what is known* answers, and the office's copy addresses; since\n"
+               "0058-0059 also what an incident report says and who sent it, a report's sections,\n"
+               "and the organisation's board's names and addresses) — 97 columns in 33 tables.\n"
+               "The twelve the platform looks rows up by whole (`email`,\n"
                "`secondary_email`, `mobile`, `username`, `organization_id`, `nominee_email`,\n"
                "`nominee_mobile`, `submitted_contact`, a breach contact's `email` and `mobile`,\n"
-               "and a copy's `address`) carry\n"
+               "a copy's `address`, and a board recipient's `email`) carry\n"
                "a keyed hash beside them - `*_hash`, an HMAC of the normalised value - and three\n"
                "names (`auth_user.full_name`, `rights_request.submitted_name`,\n"
                "`nomination.nominee_name`) carry `*_ngrams`, the hashed three-character runs a\n"

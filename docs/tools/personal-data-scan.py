@@ -57,6 +57,9 @@ IDENTITY = {
     "accepted_by_name",
     # Who answers for a processor on an HR category (0052).
     "respondent_name",
+    # Who reported an incident through the public link (0058), who dismissed
+    # such a report, and who finalised and filed a report on a breach (0059).
+    "reporter_name", "dismissed_by_name", "finalised_by_name", "filed_by_name",
     "username",
 }
 CONTACT = {
@@ -72,6 +75,8 @@ CONTACT = {
     "address", "addresses",
     # Who answers for a processor on an HR category (0052).
     "respondent_email",
+    # The address a reporter proved by a code (0058).
+    "reporter_email",
 }
 DEMOGRAPHIC = {
     "dob", "is_minor", "person_type", "organization_id", "role", "user_role",
@@ -116,6 +121,8 @@ FREE_TEXT = {
     "origin", "discovery", "affected_systems", "incident_details", "impact_scale",
     "countries_involved", "data_nature", "subject_types", "entities_involved",
     "third_parties",
+    # Why a report from the public link was not taken up (0058).
+    "dismissal_reason",
 }
 FILE = {
     "file_name", "file_uuid", "files", "response_files", "evidence_name",
@@ -301,7 +308,7 @@ SHORT = {"dpo": "DPO", "admin": "Admin", "dco": "DCO", "dco_admin": "DCO Admin",
 VALUE = {"ALL": "every row", "SCOPED": "rows in scope", "OWN": "own rows",
          "COND": "conditional"}
 ORDER = ["auth", "me", "public consent", "public information", "rights", "legal holds", "breaches",
-         "breach tickets", "cross-border transfers", "tickets",
+         "breach tickets", "breach settings", "incident reports", "cross-border transfers", "tickets",
          "consent", "exchange", "users", "delegations", "projects", "notices",
          "registry", "hr", "messages", "audit", "dashboard"]
 TITLE = {
@@ -313,6 +320,8 @@ TITLE = {
     "legal holds": "Legal holds — `/legal-holds/*`",
     "breaches": "Personal data breaches — `/breaches/*`",
     "breach tickets": "Breach tickets a holder answers — `/breach-tickets/*`",
+    "breach settings": "How the office hears of a breach — `/breach-settings/*`",
+    "incident reports": "Reporting an incident with no account — `/incident-reports/*`",
     "cross-border transfers": "Cross-border transfers — `/restricted-countries/*`",
     "tickets": "Tickets a holder answers — `/tickets/*`",
     "consent": "Consents and links, the office's side",

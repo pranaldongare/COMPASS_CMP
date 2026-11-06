@@ -301,10 +301,22 @@ time: the register shows the time since awareness, flagged against an internal
 target (`BREACH_WITHOUT_DELAY_TARGET_HOURS`) once Legal sets one.
 
 **Organisation's board.** The organisation's own board, which internal policy
-says hears of every incident within 30 minutes of its being first noticed
-(`BREACH_ORG_BOARD_MINUTES`). A duty on every incident from logging; a person
-reports, and the DPO records when and to whom. Not a regulator, and not a DPDP
-duty: validation never touches it.
+says hears of a personal data breach within 30 minutes of a validation of *yes*
+(`BREACH_ORG_BOARD_MINUTES`). The platform mails it the report the office wrote
+to the addresses kept under Breach settings, and the duty is done when that
+mail lands. Not a regulator, and not a DPDP duty, though a *no* sets it aside
+([ADR 0037](decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md)).
+
+**Incident report.** What somebody says through the public link, with no
+account, once they have proved their email by a code. It carries its `INC-`
+number and waits in the **shared intake**, in no office and on no clock, until an
+officer claims it, which logs an incident, or dismisses it with a reason
+(`incident_report`, 0058).
+
+**Filing.** Recording that a person sent a finalised report to a regulator: when,
+the reference returned, and both proofs, of internal approval and of the mail
+sent. It is the only way a regulator's duty completes, and the platform sends
+nothing (ADR 0037).
 
 **Breach ticket holder.** The person a breach ticket is addressed to: a member
 of staff, or a temporary ticket holder. They see the breach reference, what
@@ -312,7 +324,7 @@ they are asked, the thread and the state - nothing else from the register -
 and can bring in a colleague, who gets a ticket of their own. Not a rights
 request's *holder*, which is a party holding the person's data.
 
-**Breach contact.** Somebody a breach touched who has no account, named in a
+**Breach contact.** Somebody a breach affected who has no account, named in a
 list sent to the Privacy Office (`breach_contact`, 0045). Told by email and
 SMS, with nothing in an account to point to, and counted toward *Principals
 notified* like everyone else listed.

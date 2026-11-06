@@ -37,7 +37,9 @@ through `notice_template`; `project_site`, `project_processor`, `project_approva
 (half its rows name no consent, so not through the link); `rights_request_holder`,
 `rights_request_item`, `rights_item_execution`, `rights_ticket_message`,
 `rights_response_file`, `rights_request_attachment` through
-`rights_request`; every `breach_*` table through `breach`;
+`rights_request`; every `breach_*` table through `breach`, but for those
+named below (0059 adds `breach_report` through `breach`, and
+`breach_report_section` and `breach_report_delivery` through `breach_report`);
 `template_version_language`, `template_version_purpose` through
 `template_version`; `category_processor`, `hr_poc_category` through
 `hr_category`.
@@ -46,8 +48,22 @@ Not policed: `auth_user` and `person_type_history` (one person, both
 tracks), `audit_log` (one chain; the read is filtered), `processor`,
 `processor_respondent`, `data_source`, `collection_owner_processor`,
 `delegation`, `nomination`, `legal_hold`, `message_template`,
-`message_copy`, `restricted_country`, `breach_temporary_access`. These
+`message_copy`, `restricted_country`, `breach_temporary_access`,
+`incident_report`, `breach_settings`, `breach_board_recipient`. These
 hold no office-specific consent evidence or are deliberately shared.
+
+`incident_report` is unpoliced on purpose (0058, [ADR 0037](../decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md)):
+a report from the public link belongs to no office until one claims it, so both
+officers must read it, and it carries no `office_id` for a policy to test.
+Unlike `rights_request`, whose shared intake is a row with no office in the
+policed table itself, a report stays out of `breach` altogether: nothing in it
+is an office's, and no reader of the register has to skip it. Claiming writes
+an ordinary `breach` row in the claimant's office, and that row is policed like
+any other; the report keeps only the link to it. Only the two officers reach the
+intake, through the matrix (`breach`, hidden), and only the administrator and the
+two officers reach `breach_settings` and `breach_board_recipient`, which say
+nothing of any breach and are one organisation's, not an office's.
+
 `legal_hold` carries no office scope in its queries yet (`list_holds()`
 returns every hold); only the matrix, which gives it to the DPO alone,
 keeps it within one office, and increment 7 scopes it before the Legal
@@ -66,7 +82,7 @@ PoC holds it (open point F-21).
 | `admin` | NULL | `all` |
 | `data_subject` (every code or SSO sign-in) | — | `all` |
 | `breach_holder` | — | `all` |
-| no session (public routes: `/c/{token}`, `/auth/*`, the public rights form, `/holder-tickets/*`) | — | `all` |
+| no session (public routes: `/c/{token}`, `/auth/*`, the public rights form, `/holder-tickets/*`, `/incident-reports`) | — | `all` |
 | worker, beat, migrations, seed, `reseal.py`, `docs/tools/*` | — | `all` |
 
 Role scoping *inside* an office stays application scope: an HR PoC's

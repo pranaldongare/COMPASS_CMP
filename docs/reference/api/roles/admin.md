@@ -2,7 +2,7 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `users`, `messages`, `processors`, `sources`, `requests`, `audit`, `delegate`, `tickets`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `users`, `messages`, `processors`, `sources`, `requests`, `breach-settings`, `audit`, `delegate`, `tickets`, `notifications`, `profile`.
 
 ## Resource access
 
@@ -12,6 +12,7 @@ Navigation returned after sign-in: `dashboard`, `users`, `messages`, `processors
 | `asset` | No | No | `none` | Denied |
 | `audit` | Yes | No | `all` | All rows |
 | `breach` | No | No | `none` | Denied |
+| `breach_settings` | Yes | Yes | `all` | All rows |
 | `breach_ticket` | Yes | Yes | `own` | Own or addressed rows |
 | `collection` | No | No | `none` | Denied |
 | `consent` | No | No | `none` | Denied |

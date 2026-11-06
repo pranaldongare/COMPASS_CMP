@@ -112,6 +112,13 @@ MODULES: dict[str, list[str]] = {
         "breach_attachment",
         "breach_upload",
         "breach_contact",
+        # The public link and the reports on a breach (0058, 0059, ADR 0037).
+        "incident_report",
+        "breach_settings",
+        "breach_board_recipient",
+        "breach_report",
+        "breach_report_section",
+        "breach_report_delivery",
     ],
     "platform": ["audit_log", "message_template", "message_copy", "restricted_country", "office"],
 }

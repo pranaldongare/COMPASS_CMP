@@ -63,7 +63,7 @@ flowchart LR
 | Key service | `backend/dkms/` | `python3 -m app.main` in its own virtualenv, port 32688 | nothing; it is called |
 | Staff console | `frontend/console/` | Next.js on port 3000 | the API, through its own `/api` proxy; the key service, from its server |
 | Data-principal portal | `frontend/portal/` | Next.js on port 3001 | the API, through its own `/api` proxy; the key service, from its server |
-| PostgreSQL | native, or `dev-services.yml` | 58 tables, 39 enums, 50 triggers, one view | |
+| PostgreSQL | native, or `dev-services.yml` | 72 tables, 39 enums, 77 triggers, one view | |
 | Redis | native, or `dev-services.yml` | three logical databases: sessions and limits, broker, results | |
 
 ## Two audiences, two portals
@@ -151,7 +151,7 @@ The detail is in
 | Consent | A data principal opens a consent link | A consent artefact per purpose, superseded only by a later withdrawal | [consent-lifecycle.md](../domain/consent-lifecycle.md) |
 | Exchange | A collection owner exports a file or imports a manifest | A disclosure record naming every person in the file; assets reconciled to consents | [collection-and-routing.md](../domain/collection-and-routing.md#exports-imports-and-assets) |
 | Rights | A data principal, a stranger on the public form, or a nominee asks | A response released inside the published period, with every holder's ticket returned or escalated | [rights-requests.md](../domain/rights-requests.md) |
-| Breach | The DPO logs an incident with the time it was first noticed | Validated, every duty done or set aside, everyone it touched notified, every ticket closed - and the reports made by a person, never the platform | [breaches.md](../domain/breaches.md) |
+| Breach | An officer logs an incident with the time it was first noticed, or anybody reports one through the public link | Validated, every duty done or set aside, everyone affected notified, every ticket closed - the platform having mailed the organisation's board, and a person having sent to the DPDP Board and CERT-In and filed the proof | [breaches.md](../domain/breaches.md) |
 
 ## What is enforced where
 

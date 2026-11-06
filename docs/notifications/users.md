@@ -138,7 +138,7 @@ Key `consent_code` · channels: email, sms
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_consent_code` (`backend/api/src/cmp/tasks/authentication/otp.py:61`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/sso.py:233`, `backend/api/src/cmp/domain/consent/service.py:303` |
+| Queued from | `backend/api/src/cmp/auth/authentication/sso.py:256`, `backend/api/src/cmp/auth/authentication/sso_mock.py:50`, `backend/api/src/cmp/domain/consent/service.py:303` |
 | Variables | `code` (The six-digit one-time code.), `minutes` (How many minutes the code is valid for.), `project_name` (The project the notice belongs to.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{code} confirms your contact details`
@@ -310,7 +310,7 @@ Key `office_note` · channels: email
 | CC | Never - it is written to one person about her own data; a copy would disclose it. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_office_note` (`backend/api/src/cmp/tasks/notifications/batch.py:51`) |
-| Queued from | `backend/api/src/cmp/api/routers/v1/dashboard.py:990` |
+| Queued from | `backend/api/src/cmp/api/routers/v1/dashboard.py:1003` |
 | Variables | `event` (What the notification was about.), `occurred_on` (When it happened.), `console_url` (The staff console (CONSOLE_BASE_URL).), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `A message from the {organisation} Privacy Office`
@@ -336,7 +336,7 @@ Key `staff_role_changed` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_staff_role_changed` (`backend/api/src/cmp/tasks/notifications/alerts.py:193`) |
-| Queued from | - |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:352` |
 | Variables | `full_name` (The member of staff.), `old_role` (The role they had.), `new_role` (The role they have now.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Your {organisation} console role is now {new_role}`
@@ -361,7 +361,7 @@ Key `staff_access_ended` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_staff_access_ended` (`backend/api/src/cmp/tasks/notifications/alerts.py:204`) |
-| Queued from | - |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:364` |
 | Variables | `full_name` (The person.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Your {organisation} console access has ended`
@@ -386,7 +386,7 @@ Key `delegation_arranged` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_delegation_arranged` (`backend/api/src/cmp/tasks/notifications/alerts.py:216`) |
-| Queued from | - |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:385` |
 | Variables | `delegator_name` (The person being covered.), `delegate_name` (The colleague covering.), `role_title` (The role covered.), `starts_on` (When it starts.), `ends_on` (When it ends, or 'until it is ended'.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{delegate_name} covers {delegator_name} as {role_title}`

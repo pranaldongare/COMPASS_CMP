@@ -159,7 +159,9 @@ migration named:
 | Append-only, the breach register | `breach_status_history`, `breach_determination`, `breach_assessment`, `breach_obligation`, `breach_obligation_event` / `breach_affected`, `breach_affected_revision` / `breach_notice_delivery` / `breach_recording` / `breach_ticket_event`, `breach_ticket_message` / `breach_attachment` / `breach_upload`, `breach_contact` | 0034 / 0035 / 0036 / 0038 / 0040 / 0042 / 0045 |
 | An approved breach notice is frozen (`cmp_breach_notice_frozen`) | `breach_notice` | 0036 |
 | A report to the organisation's board records to whom (`cmp_breach_org_board_reported_to`) | `breach_obligation_event` | 0039 |
-| A breach ticket changes only its read markers (`cmp_breach_ticket_read_only`) | `breach_ticket` | 0040 |
+| A breach ticket changes only its read markers, and since 0061 its date with the event recording it (`cmp_breach_ticket_read_only`) | `breach_ticket` | 0040, rewritten 0061 |
+| A report from the public link has its outcome once, and nothing else changes (`cmp_incident_report_outcome_once`) | `incident_report` | 0058 |
+| A report on a breach is frozen once finalised and never deleted (`cmp_breach_report_frozen`, `cmp_breach_report_section_frozen`) | `breach_report`, `breach_report_section` | 0059 |
 | A temporary login's grant ends once and is never deleted (`cmp_breach_temporary_access_end_once`; `holder_id` is fixed too since 0049) | `breach_temporary_access` | 0041, rewritten 0049 |
 | Append-only: a document a requester sent | `rights_request_attachment` | 0043 |
 | Project ownership follows its primary site and source (derives, does not refuse) | `project_site`, `data_source` | 0005-0008 |

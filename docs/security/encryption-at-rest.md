@@ -32,7 +32,7 @@ were uploaded with - a response, an import, a requester's document
 uploaded lists (`breach_upload`); the IP address on a consent artefact; the
 respondent's name and contact; the reason columns on history, delegation and
 processor decisions and a legal hold's reason (`legal_hold.reason`); every
-narrative of the breach register and its tickets; a person a breach touched
+narrative of the breach register and its tickets; a person a breach affected
 with no account (`breach_contact`: name, email, mobile); and the office's copy
 addresses (`message_copy.address`). The table-by-table list is
 [docs/dkms/pii-tables-and-fields.md](../dkms/pii-tables-and-fields.md).

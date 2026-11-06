@@ -2,7 +2,7 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-37 operations; 37 appear in the existing OpenAPI/API docs. Added with S3-01 to S3-04; evidence links point at `HEAD`.
+52 operations; 52 appear in the existing OpenAPI/API docs. Added with S3-01 to S3-04; evidence links point at `HEAD`.
 
 An incident is logged first (`POST /breaches`); the first validation of *yes* records it as a breach ([ADR 0022](../../../decisions/0022-an-incident-first-and-a-breach-on-a-yes.md)). Every route is the DPO's and **hidden**: any other role - staff or principal - is answered **404**, on the register, on a breach that exists and on a write alike, where other DPO-only modules answer 403. That a breach is being handled is itself withheld.
 
@@ -15,7 +15,7 @@ An incident is logged first (`POST /breaches`); the first validation of *yes* re
 | GET | `/breaches/{breach_uuid}/assessments` | `dpo`, `legal` | Full session; anonymous NO |
 | POST | `/breaches/{breach_uuid}/assessments` | `dpo`, `legal` | Full session; anonymous NO |
 | POST | `/breaches/{breach_uuid}/cert-in` | `dpo`, `legal` | Full session; anonymous NO |
-| POST | `/breaches/{breach_uuid}/obligations/{duty}/complete` | `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/breaches/{breach_uuid}/cert-in/not-applicable` | `dpo`, `legal` | Full session; anonymous NO |
 | POST | `/breaches/{breach_uuid}/obligations/board_report/extension` | `dpo`, `legal` | Full session; anonymous NO |
 | GET | `/breaches/{breach_uuid}/transitions` | `dpo`, `legal` | Full session; anonymous NO |
 | POST | `/breaches/{breach_uuid}/transition` | `dpo`, `legal` | Full session; anonymous NO |
@@ -45,6 +45,21 @@ An incident is logged first (`POST /breaches`); the first validation of *yes* re
 | POST | `/breaches/{breach_uuid}/affected/upload/check` | `dpo`, `legal` | Full session; anonymous NO |
 | POST | `/breaches/{breach_uuid}/affected/upload` | `dpo`, `legal` | Full session; anonymous NO |
 | GET | `/breaches/{breach_uuid}/affected/contacts` | `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/breaches/intake` | `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/breaches/intake/dismissed` | `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/breaches/intake/{report_uuid}` | `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/breaches/intake/{report_uuid}/claim` | `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/breaches/intake/{report_uuid}/dismiss` | `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/breaches/{breach_uuid}/affected/options` | `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/breaches/{breach_uuid}/reports` | `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/breaches/{breach_uuid}/reports` | `dpo`, `legal` | Full session; anonymous NO |
+| PUT | `/breaches/{breach_uuid}/reports/{report_uuid}` | `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/breaches/{breach_uuid}/reports/{report_uuid}/finalise` | `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/breaches/{breach_uuid}/reports/{report_uuid}/resend` | `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/breaches/{breach_uuid}/reports/{report_uuid}/evidence` | `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/breaches/{breach_uuid}/reports/{report_uuid}/file` | `dpo`, `legal` | Full session; anonymous NO |
+| GET | `/breaches/{breach_uuid}/reports/{report_uuid}/pdf` | `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/breaches/{breach_uuid}/tickets/{ticket_uuid}/resolve-by` | `dpo`, `legal` | Full session; anonymous NO |
 
 ## GET /breaches
 
@@ -99,7 +114,7 @@ Validate: is it a personal data breach? The first yes records it.
 - **Who:** `dpo`, `legal`.
 - **Route guard:** `BreachWriter`.
 - **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
-- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Yes needs the time of awareness and creates the three DPDP duties; no sets aside those not done. Refused on a closed breach (409 `breach_closed`). (S3-01) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Yes needs the time of awareness and creates the three DPDP duties, and the organisation's board's, due thirty minutes from the validation (ADR 0037); no sets aside those not done. Refused on a closed breach (409 `breach_closed`). (S3-01) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
 
 ## GET /breaches/{breach_uuid}/assessments
@@ -141,12 +156,12 @@ Mark as a reportable cyber incident: CERT-In in six hours from detection.
 - **Who:** `dpo`, `legal`.
 - **Route guard:** `BreachWriter`.
 - **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
-- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Once per breach (409 `cert_in_marked`); due six hours from detection. (S3-01) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Once per breach (409 `cert_in_marked`); due six hours from detection. Marked again after it was set aside, the duty comes back on that same clock, citing the latest determination. (S3-01, ADR 0037) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
 
-## POST /breaches/{breach_uuid}/obligations/{duty}/complete
+## POST /breaches/{breach_uuid}/cert-in/not-applicable
 
-Record a submission made, with the regulator's reference - or, for the organisation's board, the report made and to whom.
+Set aside a CERT-In mark made in error, once validated No; nobody is told.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -155,7 +170,7 @@ Record a submission made, with the regulator's reference - or, for the organisat
 - **Who:** `dpo`, `legal`.
 - **Route guard:** `BreachWriter`.
 - **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
-- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. An unknown duty is 422; `principals` is refused (409): it completes by delivery (S3-03). (S3-01) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. A CERT-In mark made in error, set aside with a required reason (at most 8,000 characters), sealed on the duty's event. Only once the latest determination is No, which the event cites (409 `cert_in_not_validated_no`). The duty must be outstanding (409 `duty_not_outstanding`, or `no_such_duty` if it was never marked), no report to CERT-In filed (409 `report_filed`) and the breach open (409 `breach_closed`). Nobody is told, and the organisation's board's duty is left alone. The trail records that a reason was given. A decision for the product owner to confirm. (ADR 0037) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
 
 ## POST /breaches/{breach_uuid}/obligations/board_report/extension
@@ -197,12 +212,12 @@ Close or reopen a breach.
 - **Who:** `dpo`, `legal`.
 - **Route guard:** `BreachWriter`.
 - **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
-- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Closing is refused while undetermined or while any duty is outstanding; reopening needs a reason. (S3-01) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Closing is refused while undetermined or while any duty is outstanding; a closure report is optional and never in the way; reopening needs a reason. (S3-01) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
 
 ## GET /breaches/{breach_uuid}/affected
 
-Who the breach touched, as confirmed, with every revision.
+The people affected, as confirmed, with every revision.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -225,7 +240,7 @@ What the records show for these scopes, before confirming.
 - **Who:** `dpo`, `legal`.
 - **Route guard:** `BreachReader`.
 - **Resolved gate:** `RequireResource(breach, hidden=True)`.
-- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. A read despite the method: derives from the scopes and writes nothing. An unknown table is 422 naming the choices. (S3-02) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. A read despite the method: looks in the chosen projects or activities, vendors and data sources, and writes nothing. An unknown kind is 422 naming the choices. (S3-02; tables removed, ADR 0037) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
 
 ## GET /breaches/{breach_uuid}/notices
@@ -309,7 +324,7 @@ Draft the Board's initial intimation (Rule 7(2)(a)) from the register.
 - **Who:** `dpo`, `legal`.
 - **Route guard:** `BreachReader`.
 - **Resolved gate:** `RequireResource(breach, hidden=True)`.
-- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Rule 7(2)(a), drafted from the register at any point; what it lacks is named in `missing`. Never submitted by the platform. (S3-04) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Rule 7(2)(a), drafted from the register at any point; what it lacks is named in `missing`. Never submitted by the platform; what a person sends is the report under `/reports`. (S3-04) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
 
 ## GET /breaches/{breach_uuid}/board/report
@@ -323,12 +338,12 @@ Draft the Board's detailed report (Rule 7(2)(b)), all six items.
 - **Who:** `dpo`, `legal`.
 - **Route guard:** `BreachReader`.
 - **Resolved gate:** `RequireResource(breach, hidden=True)`.
-- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Rule 7(2)(b)(i)-(vi); item (vi), the account of notices, is stated in words when nothing was sent. Never submitted by the platform. (S3-04) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Rule 7(2)(b)(i)-(vi); item (vi), the account of notices, is stated in words when nothing was sent. Never submitted by the platform; what a person sends is the report under `/reports`. (S3-04) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
 
 ## POST /breaches/{breach_uuid}/affected
 
-Confirm who the breach touched: a new revision, adding only the newly found.
+Confirm the people affected: a new revision, adding only the newly found.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -337,7 +352,7 @@ Confirm who the breach touched: a new revision, adding only the newly found.
 - **Who:** `dpo`, `legal`.
 - **Route guard:** `BreachWriter`.
 - **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
-- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Re-derives from the scopes server-side, leaves out `exclude`, adds `add`; a new revision listing only people not already listed. Refused on a closed breach. (S3-02) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Looks again in the chosen projects or activities, vendors and data sources server-side, leaves out `exclude`, adds `add`; a new revision listing only people not already listed. Refused on a closed breach. (S3-02) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
 
 ## GET /breaches/{breach_uuid}/org-board/brief
@@ -351,7 +366,7 @@ Draft the brief for the organisation's board from the register.
 - **Who:** `dpo`, `legal`.
 - **Route guard:** `BreachReader`.
 - **Resolved gate:** `RequireResource(breach, hidden=True)`.
-- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403. Drafted from the register at any point, from the incident's first minutes; counts only for who it touched, no finding on who caused it, no name or contact. The platform never reports to the organisation's board. (S3-07, ADR 0022) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403. The register as it stands, at any point; counts only for the people affected, no finding on who caused it, no name or contact. What is mailed to the board is the report under `/reports`. (S3-07, ADR 0037) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/board.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
 
 ## GET /breaches/{breach_uuid}/tickets
@@ -510,7 +525,7 @@ Download a file kept with the incident; every download is audited.
 
 ## GET /breaches/{breach_uuid}/affected/upload/template
 
-The CSV to fill in: people (name, email, mobile) or asset IDs.
+The Excel file to fill in: people (name, email, mobile) or asset IDs.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -519,7 +534,7 @@ The CSV to fill in: people (name, email, mobile) or asset IDs.
 - **Who:** `dpo`, `legal`.
 - **Route guard:** `BreachReader`.
 - **Resolved gate:** `RequireResource(breach, hidden=True)`.
-- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records, hidden from every other role (404). `kind` is contacts or assets; a header, guidance lines starting with #, and an example row. (2026-10-07) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records, hidden from every other role (404). `kind` is contacts or assets; an Excel workbook with the columns and how to fill them, and no example row. (2026-10-07; Excel, ADR 0037) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/lists.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
 
 ## POST /breaches/{breach_uuid}/affected/upload/check
@@ -533,7 +548,7 @@ What a list would add, and each row it cannot read - nothing is written.
 - **Who:** `dpo`, `legal`.
 - **Route guard:** `BreachWriter`.
 - **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
-- **Rules:** Multipart `kind` and `file` (a CSV, 25 MB, 50,000 rows; a spreadsheet is refused with how to save it as CSV). Counts what would be added and names each unreadable row by number. Writes nothing. (2026-10-07) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Rules:** Multipart `kind` and `file` (an Excel workbook or a CSV, 25 MB, 50,000 rows; an old .xls is refused with how to save it as .xlsx). Counts what would be added and names each unreadable row by number. Writes nothing. (2026-10-07) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/lists.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
 
 ## POST /breaches/{breach_uuid}/affected/upload
@@ -552,7 +567,7 @@ Add the people a list names, or the people in the assets it names.
 
 ## GET /breaches/{breach_uuid}/affected/contacts
 
-People the breach touched who have no account, and the lists they came in.
+People affected who have no account, and the lists they came in.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -563,3 +578,213 @@ People the breach touched who have no account, and the lists they came in.
 - **Resolved gate:** `RequireResource(breach, hidden=True)`.
 - **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records, hidden from every other role (404). Name, email and mobile sealed; paged by `cursor`. (2026-10-07) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/lists.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## GET /breaches/intake
+
+A page of the reports from the public link no office has taken up.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `BreachReader`.
+- **Resolved gate:** `RequireResource(breach, hidden=True)`.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. The shared intake (0058, ADR 0037): a page of the reports from the public link that no office has claimed or dismissed, oldest first, visible to both officers. `limit` 1 to 200, 50 by default, and `offset`; the answer gives `items` and `total`. Each report by who sent it, its title, when it was noticed and arrived and what the reporter said of a cyber attack: a stranger can fill the intake, so the full text is read one report at a time (`GET /breaches/intake/{report_uuid}`). A report carries no office and no policy. The reporter's name and email and the title are sealed.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/intake.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## GET /breaches/intake/dismissed
+
+Reports an office dismissed, newest first, with who did it and why.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `BreachReader`.
+- **Resolved gate:** `RequireResource(breach, hidden=True)`.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. The reports an office dismissed (0058, ADR 0037), newest first and the latest 200: who sent each, the officer who dismissed it and why. Both officers read all of them whichever office dismissed it, so a report that was the other office's can be raised. A report carries no office and no policy. The reporter's name and email, the title and the reason are sealed.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/intake.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## GET /breaches/intake/{report_uuid}
+
+One waiting report in full.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `BreachReader`.
+- **Resolved gate:** `RequireResource(breach, hidden=True)`.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. One waiting report in full, for either officer (0058, ADR 0037). Not known is 404; a report with its outcome is 409 `already_claimed` or `already_dismissed`, which is how an officer who has it open learns somebody took it up. A report carries no office and no policy. The reporter's name and email, the title and what they said are sealed.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/intake.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /breaches/intake/{report_uuid}/claim
+
+Take a report into this office's register, as an incident.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `BreachWriter`.
+- **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Logs the incident into the claiming officer's office, under the number the report arrived with; first noticed is when it arrived. No duty starts, and a reporter's yes to a cyber attack creates no CERT-In duty. The report's row is held, so a second claim is 409 `already_claimed`, and a dismissed report 409 `already_dismissed`. (0058, ADR 0037)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/intake.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /breaches/intake/{report_uuid}/dismiss
+
+Dismiss a report, saying why; it is kept.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `BreachWriter`.
+- **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. A reason is required (422), sealed; the report stays, and reaches no register. 409 `already_claimed` or `already_dismissed` once it has its outcome. The trail records that a reason was given. (0058, ADR 0037)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/intake.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## GET /breaches/{breach_uuid}/affected/options
+
+The projects and activities to choose from, with how many people each.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `BreachReader`.
+- **Resolved gate:** `RequireResource(breach, hidden=True)`.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. The session's office's projects and activities with a consent in them, each with how many people gave one; counts only, nobody named. (0060, ADR 0037) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/affected.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## GET /breaches/{breach_uuid}/reports
+
+Every kind of report on a breach, and where each stands.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `BreachReader`.
+- **Resolved gate:** `RequireResource(breach, hidden=True)`.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Each of the five kinds of report: where it stands, what it would discharge, why it may not be written yet, and every version with its sealed sections, its proofs and what became of its mail. (0059, ADR 0037) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/reports.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /breaches/{breach_uuid}/reports
+
+Start the next version of a report, drafted from the register.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `BreachWriter`.
+- **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. `kind` is org_board, board_intimation, cert_in, board_report or closure (422 otherwise). The first version is drafted from the register; a later one starts from the last one's words. One draft of a kind at a time (409 `report_draft_open`). Every kind but cert_in waits for the breach to be recorded (409 `breach_not_recorded`); cert_in waits for the duty instead. Refused on a closed breach. (0059, ADR 0037) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/reports.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## PUT /breaches/{breach_uuid}/reports/{report_uuid}
+
+Edit a draft report.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `BreachWriter`.
+- **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. A draft only: a finalised report does not change (409 `report_finalised`, and by trigger). An unknown section is 422. The sections are sealed; the trail records the kind and the version. (0059, ADR 0037) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/reports.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /breaches/{breach_uuid}/reports/{report_uuid}/finalise
+
+Freeze a report and mail the organisation's board; never a regulator.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `BreachWriter`.
+- **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Freezes the words and mails the organisation's board. Refused with a required section empty (422 naming each) or with nobody on the board's list (409 `no_board_recipients`). A report of kind org_board completes that duty when the mail lands, naming who was reached, and a mail that reaches nobody leaves it outstanding; every other kind goes to the board for its information, a report to CERT-In even before a yes. Nothing goes to a regulator (ADR 0021). (0059, ADR 0037) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/reports.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /breaches/{breach_uuid}/reports/{report_uuid}/resend
+
+Mail the report again to every address it has not reached.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `BreachWriter`.
+- **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. After finalising (409 `report_not_finalised`). An `org_board` report's duty is re-read first, whatever follows. Queues a new attempt for every address on the list whose last one failed or stayed queued fifteen minutes, and the first for an address added since; an address the report has reached, whichever row of the list it was mailed under, is left, and one taken off the list is never mailed. Refused with nobody on the list (409 `no_board_recipients`), on a version a later finalised one replaced (409 `report_superseded`) and on a report to CERT-In once that duty is set aside (409 `breach_not_recorded`), unless the re-read completed the duty, which answers 200. The answer adds `queued`, how many this press queued. (0059, ADR 0037) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/reports.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /breaches/{breach_uuid}/reports/{report_uuid}/evidence
+
+Keep the proof of internal approval, or of the mail sent to the regulator.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `BreachWriter`.
+- **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Multipart: `file` (as an incident's attachment; at most 25 MB), `kind` (approval or sent_mail), an optional `note`. Kept with the breach's other files, name and note sealed, never replaced or removed. After finalising and before filing (409 `report_not_finalised`, `report_filed`); never on a report to the organisation's board (409 `report_not_filed`). Checked before the file is stored. (0059, ADR 0037) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/reports.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /breaches/{breach_uuid}/reports/{report_uuid}/file
+
+Record that a person sent it to the regulator; needs both proofs.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `BreachWriter`.
+- **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Records that a person sent it to the regulator: when, and the reference returned, which every report that discharges a duty needs (422). Refused without both proofs (409 `report_proof_missing`), before finalising, or dated before it. The only way a regulator's duty completes: `POST /breaches/{breach_uuid}/obligations/{duty}/complete` is gone. The platform sends nothing. (0059, ADR 0037) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/reports.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## GET /breaches/{breach_uuid}/reports/{report_uuid}/pdf
+
+The report as a PDF; every read is audited.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `BreachReader`.
+- **Resolved gate:** `RequireResource(breach, hidden=True)`.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Any version, draft or finalised. Every read is `breach.report_read` on the trail. (0059, ADR 0037) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/reports.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/resolve-by
+
+Change the date to resolve the ticket by, saying why.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `BreachWriter`.
+- **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
+- **Rules:** The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role - a ticket's holder included: `RequireResource(breach, hidden=True)` answers 404, not 403. Every write takes the breach row first; a closed breach refuses it (409 `breach_closed`). (S3-08) While the ticket is open (409 `ticket_not_open`); a reason is required (422), and a date in the past or the date it already has is refused. The old date, the new one and the sealed reason go on the ticket's events and its thread, the two dates on the trail. No approval. The holder is told, in words that name no breach. (0061, ADR 0037) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/tickets.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).

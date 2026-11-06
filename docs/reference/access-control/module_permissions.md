@@ -8,15 +8,17 @@ Each cell is **GET / non-GET endpoint counts** for which that role is eligible. 
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Audit](modules/audit.md) | 7 | 7 / 0 | 7 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 7 / 0 | 0 / 0 |
 | [Auth](modules/auth.md) | 15 | 3 / 12 | 3 / 12 | 3 / 12 | 3 / 12 | 3 / 12 | 3 / 12 | 3 / 12 | 3 / 12 | 0 / 0 | 0 / 0 |
-| [Breach tickets](modules/breach_tickets.md) | 6 | 3 / 3 | 3 / 3 | 3 / 3 | 3 / 3 | 3 / 3 | 3 / 3 | 0 / 0 | 3 / 3 | 0 / 0 | 0 / 0 |
-| [Breaches](modules/breaches.md) | 37 | 15 / 22 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 15 / 22 | 0 / 0 |
+| [Breach settings](modules/breach_settings.md) | 4 | 1 / 3 | 1 / 3 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 1 / 3 | 0 / 0 |
+| [Breach tickets](modules/breach_tickets.md) | 7 | 3 / 4 | 3 / 4 | 3 / 4 | 3 / 4 | 3 / 4 | 3 / 4 | 0 / 0 | 3 / 4 | 3 / 4 | 3 / 4 |
+| [Breaches](modules/breaches.md) | 52 | 21 / 31 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 21 / 31 | 0 / 0 |
 | [Consent](modules/consent.md) | 15 | 12 / 3 | 0 / 0 | 12 / 3 | 12 / 3 | 12 / 3 | 6 / 0 | 0 / 0 | 0 / 0 | 12 / 3 | 12 / 3 |
 | [Cross-border transfers](modules/cross_border_transfers.md) | 3 | 1 / 2 | 1 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
-| [Dashboard](modules/dashboard.md) | 3 | 2 / 1 | 2 / 0 | 2 / 1 | 2 / 0 | 2 / 0 | 2 / 0 | 2 / 0 | 2 / 0 | 0 / 0 | 0 / 0 |
+| [Dashboard](modules/dashboard.md) | 3 | 2 / 1 | 2 / 0 | 2 / 1 | 2 / 0 | 2 / 0 | 2 / 0 | 2 / 0 | 2 / 0 | 1 / 0 | 1 / 0 |
 | [Delegations](modules/delegations.md) | 6 | 4 / 2 | 4 / 2 | 3 / 2 | 3 / 1 | 3 / 1 | 3 / 1 | 2 / 0 | 2 / 0 | 0 / 0 | 0 / 0 |
 | [Exchange](modules/exchange.md) | 19 | 16 / 3 | 3 / 0 | 16 / 3 | 15 / 3 | 15 / 3 | 9 / 0 | 3 / 0 | 0 / 0 | 5 / 1 | 5 / 1 |
 | [HR activities](modules/hr_activities.md) | 6 | 2 / 0 | 0 / 0 | 2 / 0 | 2 / 0 | 2 / 0 | 2 / 0 | 0 / 0 | 0 / 0 | 2 / 1 | 3 / 3 |
 | [HR categories](modules/hr_categories.md) | 7 | 0 / 0 | 3 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 3 / 4 | 3 / 0 |
+| [Incident reports](modules/incident_reports.md) | 2 | 0 / 2 | 0 / 2 | 0 / 2 | 0 / 2 | 0 / 2 | 0 / 2 | 0 / 2 | 0 / 2 | 0 / 2 | 0 / 2 |
 | [Legal holds](modules/legal_holds.md) | 3 | 1 / 2 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 1 / 2 | 0 / 0 |
 | [Me](modules/me.md) | 30 | 1 / 5 | 1 / 5 | 1 / 4 | 1 / 4 | 1 / 4 | 1 / 4 | 19 / 11 | 1 / 4 | 0 / 0 | 0 / 0 |
 | [Messages](modules/messages.md) | 6 | 2 / 4 | 2 / 4 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |

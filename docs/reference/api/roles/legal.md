@@ -2,7 +2,7 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `requests`, `breaches`, `hr-activities`, `hr-categories`, `templates`, `purposes`, `consents`, `exports`, `processors`, `users`, `audit`, `tickets`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `requests`, `breaches`, `breach-settings`, `hr-activities`, `hr-categories`, `templates`, `purposes`, `consents`, `exports`, `processors`, `users`, `audit`, `tickets`, `notifications`, `profile`.
 
 ## Resource access
 
@@ -12,6 +12,7 @@ Navigation returned after sign-in: `dashboard`, `requests`, `breaches`, `hr-acti
 | `asset` | No | No | `none` | Denied |
 | `audit` | Yes | No | `all` | All rows |
 | `breach` | Yes | Yes | `all` | All rows |
+| `breach_settings` | Yes | Yes | `all` | All rows |
 | `breach_ticket` | Yes | Yes | `own` | Own or addressed rows |
 | `collection` | No | No | `none` | Denied |
 | `consent` | Yes | No | `all` | All rows |

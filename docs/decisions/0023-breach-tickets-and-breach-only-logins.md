@@ -1,6 +1,6 @@
 # 0023. Breach tickets reach internal staff only, through breach-only temporary logins that end with the breach
 
-**Status:** accepted · 2026-10-05; amended 2026-10-06 (a holder keeps a read-only login - see the end); extended 2026-10-08 (rights tickets give the same login - see the end). Amends [ADR 0021](0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md).
+**Status:** accepted · 2026-10-05; amended 2026-10-06 (a holder keeps a read-only login - see the end); extended 2026-10-08 (rights tickets give the same login - see the end); amended 2026-11-06 (a ticket's date may move - see the end, and [ADR 0037](0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md)). Amends [ADR 0021](0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md).
 Migrations 0040 (S3-08) and 0041 (S3-09).
 
 ## Context
@@ -121,3 +121,12 @@ table keeps one answer to "who holds a temporary login, and why", and lets
 End temporary access end them all. A holder outside the organisation gets no
 login: it answers on the portal by a link and a one-time code
 ([rights-requests.md](../domain/rights-requests.md#how-a-holder-is-reached)).
+
+## Amended 2026-11-06: a ticket's date moves with its event
+
+"The ticket row changes only its read markers" no longer holds. Migration 0061
+lets `answer_by` change as well, in the same transaction as the `date_changed`
+event that records it, and the trigger refuses a new date no event records. A
+ticket's state is still folded from its events. Either side may move the date,
+saying why, with no approval, and the label is **Resolve by**
+([ADR 0037](0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md)).

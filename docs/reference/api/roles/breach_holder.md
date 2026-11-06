@@ -12,6 +12,7 @@ Navigation returned after sign-in: `tickets`, `notifications`, `profile`.
 | `asset` | No | No | `none` | Denied |
 | `audit` | No | No | `none` | Denied |
 | `breach` | No | No | `none` | Denied |
+| `breach_settings` | No | No | `none` | Denied |
 | `breach_ticket` | Yes | Yes | `own` | Own or addressed rows |
 | `collection` | No | No | `none` | Denied |
 | `consent` | No | No | `none` | Denied |

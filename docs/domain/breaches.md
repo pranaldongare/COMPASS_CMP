@@ -3,11 +3,13 @@
 What the platform does when personal data it is responsible for is breached:
 section 8(6) of the Act, Rule 7 of the DPDP Rules, and the CERT-In Directions
 of 2022. The decisions behind the shape are
-[ADR 0021](../decisions/0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md)
-and [ADR 0022](../decisions/0022-an-incident-first-and-a-breach-on-a-yes.md),
-which puts the incident first; the code is `cmp.domain.breach`, the routes are
-under `/breaches`, and the console's pages are **Breaches** in the DPO's menu,
-headed **Incidents and personal data breaches**.
+[ADR 0021](../decisions/0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md),
+[ADR 0022](../decisions/0022-an-incident-first-and-a-breach-on-a-yes.md),
+which puts the incident first, and [ADR 0037](../decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md),
+which adds the public link, the reports and the organisation's board's mail;
+the code is `cmp.domain.breach`, the routes are under `/breaches`, and the
+console's pages are **Breaches** in the DPO's menu, headed **Incidents and
+personal data breaches**.
 
 **A breach belongs to an office** (0055). It is logged into the register of
 the office that noticed it, and that office's officer holds it with every
@@ -18,32 +20,43 @@ ticket on a breach answers it whichever office's breach it is. A legal hold is
 likewise an office's to list and release, but what it stops it stops for
 both: erasure of a person stops at a hold either office placed on her.
 
-In order: an **incident** is logged as it was noticed; the DPO team
-**validates** whether it is a personal data breach under s.2(u); the first
-*yes* **records the breach** and starts the DPDP duties. CERT-In runs from the
-moment of noticing whatever validation says.
+In order: an **incident** is logged as it was noticed, or arrives from anybody
+through the **public link**; the office **validates** whether it is a personal
+data breach under s.2(u); the first *yes* **records the breach**, starts the
+DPDP duties and gives the office thirty minutes to **notify the organisation's
+board**; the office finds **the people affected** and tells them; and each
+report the regulators are owed is **drafted, finalised, sent by a person and
+filed with its proof**. CERT-In runs from the moment of noticing whatever
+validation says.
+
+Two boards appear on this page. **The Board** is the Data Protection Board of
+India, a regulator. **The organisation's board** is the organisation's own.
 
 ## Where the platform ends
 
 The platform is the **system of record**. It records the breach, tracks every
-duty's clock, and holds the evidence that each duty was done. **People**
-contain the breach, preserve forensic evidence, decide whether it is a personal
-data breach, tell the organisation's board, and submit to the Board and to
-CERT-In through those bodies' own channels. The platform never contains
-anything, never talks to a regulator and never reports to the organisation's
-board: a submission or report is recorded after a person has made it, with the
-reference the regulator returned or whom the board was told through.
+duty's clock, holds the evidence that each duty was done, and sends mail to two
+audiences: the people affected, and the organisation's board. **People** contain
+the breach, preserve forensic evidence, decide whether it is a personal data
+breach, and submit to the Board and to CERT-In through those bodies' own
+channels. The platform never contains anything and **never talks to a
+regulator**. Finalising a report mails the organisation's board, not the Board;
+a filing is recorded after a person has sent the report, with the proof that it
+was approved, the mail they sent and the reference the regulator returned.
 
 ## Who can see it
 
-The DPO, and nobody else. The resource is `breach`, and its guard answers
-every other role **404**, not 403 - on the register, on a breach that exists,
+The officer of the office that holds it, and nobody else. The resource is
+`breach`, and its guard answers every other role **404**, not 403 - on the register, on a breach that exists,
 and on a write alike - so that a breach being handled is not itself disclosed
 to a colleague walking uuids ([ADR 0004](../decisions/0004-scope-in-the-where-clause.md)).
 The administrator, who reads the audit trail, sees that breach events occurred
 and their reference (`Incident INC-2026-0001`, then `Breach BR-2026-0001
 (INC-2026-0001)` once recorded), never a title or a reason, and cannot follow
 the link.
+
+**Breach settings** is the one page about breaches the administrator may open,
+because nothing on it is about a breach ([below](#breach-settings)).
 
 ## The register
 
@@ -54,25 +67,31 @@ filters ask the register the office's questions: **Show** open, closed or all;
 **Validation**; **Duties** overdue or due within 24 hours; **Recent activity**
 in the last day, week or month - anything written to it, its notices or its
 tickets, from the audit trail; **Tickets** with one open or past its
-answer-by. **Sort** by the most recent activity or by what is due soonest,
+resolve-by date. **Sort** by the most recent activity or by what is due soonest,
 late first. The filters live in the address, so a filtered register can be
 bookmarked or shared; every clock and count is the server's. The register
 holds at most 500 incidents and their titles are sealed, so the narrowing is
 done in the console after the titles are opened.
+
+**Reported through the public link**, above the list, is what waits for an
+office to take it up ([below](#the-public-link)).
 
 ## The page
 
 A breach's page is one workspace, shaped like a project's (2026-10-06). Above
 the tabs, where it stands: **Close** - or **Reopen** - with exactly what still
 stands in the way, beside the details it was logged with (after the tabs on a
-phone). Under the tabs, the work in the order it runs: **Duties** (the
-default: every clock), **Validation**, **People & notices** (who it touched
-and what they are told), **Tickets**, **Assessment** and **Activity** (every
-close and reopening, with its reason). A tab's count says how much is there;
-**Duties** turns red when a duty is late and **Tickets** when one is past its
-answer-by, whichever tab is open. Until it is validated, a prompt above the
-tabs leads to Validation. The address names the tab (`#tickets`, `#people`),
-so the bell's links and older addresses such as `#notices` open the right one.
+phone), and **Notify Organization Board** once the breach is recorded. Under the
+tabs, the work in the order it runs: **Duties** (the default: every clock),
+**Validation**, **Reports** (what the organisation's board and the regulators
+are sent), **People & notices** (the people affected and what they are told),
+**Tickets**, **Assessment**, **Attachments** and **Activity** (every close and
+reopening, with its reason). A tab's count says how much is there; **Duties**
+turns red when a duty is late and **Tickets** when one is past its resolve-by
+date, whichever tab is open. Until it is validated, a prompt above the tabs
+leads to Validation. The address names the tab (`#tickets`, `#people`,
+`#reports`), so the bell's links and older addresses such as `#notices` open the
+right one.
 
 ## Logging an incident
 
@@ -84,17 +103,20 @@ them (below).
 |---|---|---|
 | First noticed (`detected_at`) | When the event was first noticed | CERT-In's six hours |
 | Began (`began_at`) | When it started, if known. An assessment may revise it | the timing in 7(1)(a), 7(2)(a) |
-| Where it occurred | The platform's own database, a processor, a data source, or elsewhere (in words) | 7(2)(a); S3-02 derives who was touched from it |
+| Where it occurred | The platform's own database, a processor, a data source, or elsewhere (in words) | 7(2)(a) |
 
 An incident logged five hours after it was noticed has one hour of CERT-In time
 left, and the register says so. A time in the future is refused, and so is a
 start after detection.
 
 The incident gets a reference, `INC-<year>-<n>`, from its own sequence
-(`breach_incident_ref_seq`), and is quoted by it until it is recorded as a
-breach. Its title and the words describing where it occurred are sealed like
+(`breach_incident_ref_seq`), at least four digits (`cmp_next_number`, 0062), and
+is quoted by it until it is recorded as a breach. Its title and the words describing where it occurred are sealed like
 every other narrative the office writes. The table and the routes keep the
 name `breach`: an incident is a breach row that has not been recorded as one.
+
+Logging starts no duty but CERT-In's, and that only on a *Yes* below: the
+organisation's board's duty waits for validation.
 
 ### What is known so far (2026-10-08)
 
@@ -121,6 +143,63 @@ narrative about a breach, shown under the breach's **Details**, and never
 changed afterwards - `cmp_breach_status_only` now holds every column of the
 row but its status. What is learned later belongs in the assessment.
 
+## The public link
+
+Anybody may report an incident, with no account (2026-11-06, migration 0058,
+[ADR 0037](../decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md)). The one link is
+`/report-incident` on the portal, shown under **Breach settings** to be given
+out.
+
+**What they do.** They give their name and email, and a code goes to that
+address (`POST /incident-reports/code`); the report goes in with the code
+(`POST /incident-reports`). A wrong code takes nothing, so a stranger who never
+answers leaves no row, and there are **no anonymous reports**. They say in a
+line what happened and as much of it as they know; the rest of *What is known so
+far* is theirs to leave, and they may say when they noticed it and whether it is
+a cyber attack. They are given its `INC-` number, on the page and by email, and
+nothing more. It is limited per address and per contact, like every public form.
+
+**It waits apart.** A report is an `incident_report` row, not a `breach` row: it
+has no office and no officer, and nothing should run on it until somebody has
+read it. It takes its number from `breach_incident_ref_seq`, so no incident ever
+shares one, and it waits in the **shared intake**, on no clock, above the list
+under *Incidents and personal data breaches*, as **Reported through the public
+link**. Both offices see it. Everyone in the roles named under **Breach
+settings** is mailed that one has arrived: its number and when, nothing of what
+it says.
+
+**It is read a page at a time** (2026-11-07). The list shows fifty, the oldest
+first, with how many are waiting and **Previous** and **Next**
+(`GET /breaches/intake`, `limit` up to 200), and each row says who sent it, its
+title and when it arrived. **Read it** fetches the rest of that one report
+(`GET /breaches/intake/{report_uuid}`). A stranger with a few mailboxes can fill
+the intake and nothing can be deleted from it, so it has to stay readable while
+they do: served whole, about a hundred long reports were more than the console
+could open at once, and every report, the genuine ones with them, showed sealed.
+**Claim** and **Dismiss** work from the row.
+
+**An officer takes it up, once.** From the report:
+
+- **Claim** logs it as an ordinary incident in that officer's office, under the
+  number it arrived with. First noticed is when it arrived, the first the office
+  could have known; what the reporter says of when they noticed it is kept
+  beside it and anchors nothing. From then on the other office cannot see it, and
+  **Details** on its page shows who reported it.
+- **Dismiss** needs a reason. The report and the reason stay, and nothing reaches
+  the register. **Dismissed reports**, on the register, shows both officers the
+  latest 200 with who sent each, who dismissed it and why, whichever office it
+  was, so a report that was the other office's can still be raised
+  (`GET /breaches/intake/dismissed`).
+
+The second of two officers acting at once is told the other has (409
+`already_claimed`, `already_dismissed`), and so is an officer who has it open: it
+is read again every minute, and once it is taken up it closes with a warning. The
+outcome is written once, by trigger,
+and what the report says never changes. **A stranger's word starts no duty**: a
+reporter's *yes* to a cyber attack is kept as what they said and creates no
+CERT-In duty, which an officer's does. The officer marks it once they have read
+it.
+
 ## Attachments
 
 An incident arrives with what showed it - the email that reported it, a
@@ -132,8 +211,8 @@ saved email (.eml, .msg) or Word, at most 25 MB. Evidence is kept as it came:
 the name and the note are sealed, the hash and size recorded, and a file is
 never replaced or removed - a file added in error stays, with the right one
 beside it. Every download is on the trail, and carries the hash recorded when
-it was kept beside the hash of what was read. The DPO's alone, like the rest
-of the register.
+it was kept beside the hash of what was read. For the officer of the breach's
+office alone, like the rest of the register.
 
 ## Validation
 
@@ -153,11 +232,16 @@ the report.
   personal data breach had occurred. It anchors every DPDP duty and cannot come
   before detection. The first *yes* records the breach (below). It creates the
   three DPDP duties, or reinstates any a previous *no* set aside, with clocks
-  from this time.
-- **No** marks those three duties not applicable, citing this determination.
-  A duty already done stays done.
+  from this time, and the organisation's board's, with thirty minutes from the
+  validation itself.
+- **No** marks those four duties not applicable, citing this determination.
+  A duty already done stays done. An incident validated *no* owes the
+  organisation's board nothing, and can close.
 - **Pending** changes no duty.
-- **CERT-In** is untouched by all three: it stands on its own test.
+- **CERT-In** is untouched by all three: it stands on its own test. A mark made
+  in error is set aside by the office after a *no*
+  ([below](#a-cert-in-mark-made-in-error)), and a later *yes* does not bring it
+  back.
 
 ## Recording the breach
 
@@ -181,11 +265,12 @@ button: one would only be a way to hold back duties due without delay.
 
 **What waits for the recording.** Sending the notice to principals is refused
 before it (409 `breach_not_recorded`, "Record the breach before anyone is
-notified"), and the notices card shows the same words. Deriving who it touched,
-drafting and approving the notice, and drafting either Board document stay
-open during validation; a Board document drafted then lists *Not yet recorded
-as a personal data breach* in what it does not yet hold, and is quoted by the
-incident reference.
+notified"), and the notices card shows the same words. Finding the people
+affected and drafting and approving the notice stay open during validation.
+Writing a report waits for the recording, for the same reason; the report to
+CERT-In alone waits for the CERT-In duty instead, because its clock waits for
+neither, and finalising it mails the organisation's board all the same
+([below](#the-reports)).
 
 **Incidents logged before this order** (migration 0038) keep the `BR-` string
 they were given as their incident reference. Where one of their
@@ -226,7 +311,7 @@ their own clocks; nothing waits for the assessment.
 
 | Duty | Created when | Due | Basis |
 |---|---|---|---|
-| Organisation's board | **every incident, when it is logged** | 30 minutes from first noticed (`BREACH_ORG_BOARD_MINUTES`) | internal policy |
+| Organisation's board | validation *yes* | 30 minutes from that validation (`BREACH_ORG_BOARD_MINUTES`) | internal policy |
 | Report to CERT-In | **Mark reportable to CERT-In**, or *Yes* to *Is it a cyber attack?* when logged | 6 hours from first noticed | CERT-In Directions 2022, IT Act s.70B |
 | Board - initial intimation | validation *yes* | without delay | Rule 7(2)(a) |
 | Board - detailed report | validation *yes* | 72 hours from awareness, or the date the Board allows | Rule 7(2)(b) |
@@ -240,18 +325,30 @@ their own clocks; nothing waits for the assessment.
   `BREACH_WITHOUT_DELAY_TARGET_HOURS`. **That target is not set**: what it should
   be is Legal's and the Programme's decision, and until it is made the register
   shows the elapsed time and flags nothing.
-- **Recording a submission** (Board and CERT-In duties) is a new row: when it
-  was made, as entered, and the reference the regulator returned, which is
-  required. A submission before its clock started is refused.
+- **A regulator's duty completes by filing its report**, and no other way: when
+  it was sent, as entered, and the reference the regulator returned, with both
+  proofs held ([below](#the-reports)). A filing dated before its clock started
+  is refused. The route that recorded a submission by hand is gone, so no duty
+  to a regulator completes without proof.
 - **The Board's extension** of the detailed report records when it was asked
   for and the date allowed, which becomes the report's due time as a new row.
   The initial intimation's clock does not move.
-- **The organisation's board** is policy, not DPDP: validation never sets it
-  aside or moves it, and an incident logged more than thirty minutes after it
-  was noticed starts out overdue, as CERT-In does. **Record the report** on the
-  duty takes when it was made (not before first noticed, not in the future) and
-  **to whom** - required, sealed - and a reference only if there is one.
-  Incidents logged before migration 0039 have no such duty.
+- **The organisation's board** is policy, not DPDP, and starts at a validation
+  of *yes* (ADR 0037): no duty runs before one, and an incident that is junk or
+  validated *no* must be able to close without telling it anything. The first
+  *yes* creates the duty, due thirty minutes from that moment, not from first
+  noticed or from the awareness time entered. A later *no* sets it aside and a
+  later *yes* gives it a new thirty minutes. **It is done when the mail lands**,
+  not when **Notify Organization Board** queues it: once every address has its
+  outcome and somebody was reached, the duty completes, naming those reached and
+  nobody else. The time it records is when the first address was reached, which
+  is what the thirty minutes ask: an address that took its retries past them does
+  not make a duty met in time read late. A mail that reaches nobody leaves it
+  outstanding, and its overdue alert fires. An incident logged before this keeps
+  the duty it has, with its
+  stored due time, until it is done or a *no* sets it aside, and one validated
+  *no* before this changed had it set aside by migration 0063; one logged before
+  migration 0039 has none.
 - **Principals notified** cannot be completed by hand. It completes when every
   affected principal's notice is delivered or its failure recorded after retry
   (S3-03).
@@ -260,35 +357,72 @@ Each duty's clock reads, in the console: time left or overdue for a dated duty;
 time since awareness for one due without delay, and whether it is past the
 target once one is set. Overdue rows are marked.
 
-## Who it touched
+### A CERT-In mark made in error
+
+**Not reportable to CERT-In**, on the duty's row, sets the duty aside (2026-11-07,
+[ADR 0037](../decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md)).
+**This is a decision made for the product owner to confirm.**
+
+A *no* leaves CERT-In alone, so an incident marked by mistake, or logged with *Yes*
+to *Is it a cyber attack?*, keeps its duty. The route that recorded a submission by
+hand was the way out of that, and it is gone: without this, a false alarm could
+close only by mailing the board a report, attaching proof of a mail nobody sent and
+entering a reference nobody returned.
+
+- **Only after a *no*.** The latest validation must be *no*, and the event cites it.
+  While it is pending or *yes* the action is not offered and the route is refused
+  (409 `cert_in_not_validated_no`): there may be something to report.
+- **With a reason**, sealed on the duty's event and shown on its row. The trail says
+  only that one was given.
+- **A duty done or a report filed stands** (409 `duty_not_outstanding`,
+  `report_filed`). Something was reported.
+- **Nobody is told.** It mails nobody, and leaves the organisation's board's duty
+  alone. A report already finalised has been mailed to the board, and that stands.
+- **Set aside, there is no report to CERT-In.** A draft left open stays a draft.
+  Writing one, finalising it, **Try again**, keeping a proof and recording it as
+  sent are all refused (409 `breach_not_recorded`, "CERT-In was set aside as not
+  reportable. Mark it reportable again first"), and the register's brief no longer
+  says it is reportable. If it was sent after all, mark it first and then file the
+  same report, which completes the duty.
+- **Marking it again brings it back**, on the same six hours from first noticed,
+  citing the latest validation. A later *yes* does not: CERT-In stands on its own
+  test, and if a *yes* brought it back a real breach that was never a cyber incident
+  could not close, because setting it aside needs a *no*.
+
+## The people affected
 
 Rule 7(1) asks for a notice to *each* affected principal, to the best of the
-fiduciary's knowledge. **Who it touched** on a breach's page derives the list
-from the records, and the DPO confirms it.
+fiduciary's knowledge. **Affected people**, on the **People & notices** tab,
+builds that list in the words of the work (2026-11-06, ADR 0037): the person
+running a breach knows what it reached, not how the data is stored. There are
+five ways to add to it, and the office uses as many as it needs.
 
-| Where it happened | Who the records place there |
+| Way | Who it finds |
 |---|---|
-| A processor | Everyone in files exported to it (`export_line`, to the line's destination processor) |
-| A data source | Everyone captured in its assets and not yet erased from them (`asset_consent`). Bystanders - people in frame who never consented - have no account and are not listed |
-| The platform's own database | Everyone with a row in the affected tables, written within a window (either end may be open) |
+| **From a project or activity** | Everyone who gave consent in it, including those who later withdrew, between two dates if given. Only the office's own, each shown with how many people are in it |
+| **From a vendor** | Everyone in files exported to that processor (`export_line`, to the line's destination processor), and everyone standing in an HR activity whose category names it. Only those the office can see: the registry is shared, a breach is one office's |
+| **From a data source** | Everyone captured in its assets and not yet erased from them (`asset_consent`). Bystanders - people in frame who never consented - have no account and are not listed |
+| **Upload an Excel list** | [Below](#people-the-records-cannot-show-a-list-sent-to-us): name, mail ID and mobile number |
+| **Add one person** | Somebody the records cannot show, found by their contact or part of their name |
 
-The first two read the same relation a rights request reads to find a
-person's holders (`db/repositories/holdings.py`), from the other end. For the
-database, each table that holds something about a principal is mapped to the
-person it is about and when the row was written
-(`breaches.PLATFORM_TABLES`); a sealed table that cannot be traced to an
-account says why (`NOT_ABOUT_A_PRINCIPAL`), and a test fails for one that does
-neither. No table is ticked for a database breach until the DPO ticks it:
-every table since the beginning is everyone on the platform.
+The vendor and the data source read the same relation a rights request reads to
+find a person's holders (`db/repositories/holdings.py`), from the other end. A
+consent later withdrawn still counts for a project: their data was held, and
+listing too many is the safe side of Rule 7.
 
-**Show what the records say** previews the people, counted and sampled, before
-anything is written. **Confirm the list** records a **revision**: what it was
-derived from, how many the records found, how many were left out, how many were
-added by hand, and how many were newly listed. The DPO may:
+**Tables are not a way to look any more.** Choosing the platform's tables was
+removed: nobody running a breach should have to know them. People already listed
+that way stay listed, shown as *From the platform's records* (`found_by`
+`platform`), and nothing writes it now.
+
+The office sees who the records show, counted and sampled, before anything is
+written. Confirming records a **revision**: where it looked, how many the records
+found, how many were left out, how many were added by hand, and how many were
+newly listed. The office may:
 
 - **leave out** people the records wrongly include - the left-out count is on
   the revision;
-- **add** people the records cannot show, found by contact or part of a name.
+- **add** people the records cannot show, as above.
 
 **Nobody listed is ever removed.** A later revision adds only people not
 already listed - each keeps the revision that first listed them - and every
@@ -300,24 +434,28 @@ notified in turn (S3-03).
 
 The decision: [ADR 0027](../decisions/0027-a-breach-can-reach-people-with-no-account.md).
 
-Often the people a breach touched are not on the platform at all - a
-processor's own participants, a team's contact list - and before 2026-10-07
-the breach could then never close: the notice is owed to everyone listed, and
-nobody could be listed. **Add people from a list** takes the list from
-outside, in one of two forms, each from a template the DPO downloads there:
+Often the people affected are not on the platform at all - a processor's own
+participants, a team's contact list - and before 2026-10-07 the breach could
+then never close: the notice is owed to everyone listed, and nobody could be
+listed. **Upload an Excel list** takes the list from outside, in one of two
+forms, each from an Excel template the office downloads there (a CSV is still
+taken):
 
 | List | Columns | What happens to each row |
 |---|---|---|
-| People | `name`, `email`, `mobile` (either contact, or both; `name` optional) | Somebody whose email or mobile is an account's is listed as that account (*In a list sent to us*), and also sees the notice in their account. Anybody else is kept as a **contact of this breach alone** - name, email and mobile sealed - and is told by email and SMS. |
-| Asset IDs | `asset_id`, `source_code` (only where two sources share an ID) | The asset is found by the platform's asset ID or by the capture tool's own; the people who consented in it are listed. People in it who consented to nothing name nobody and cannot be traced: they are counted, and said. |
+| People | Name, Mail ID, Mobile number (either contact, or both; the name optional) | Somebody whose email or mobile is an account's is listed as that account (*In a list sent to us*), and also sees the notice in their account. Anybody else is kept as a **contact of this breach alone** - name, email and mobile sealed - and is told by email and SMS. |
+| Asset IDs | Asset ID, Source code (only where two sources share an ID) | The asset is found by the platform's asset ID or by the capture tool's own; the people who consented in it are listed. People in it who consented to nothing name nobody and cannot be traced: they are counted, and said. |
 
 - **Checked, then taken.** *Check the file* writes nothing: it counts what
   the file would add - on the platform, not on the platform, already listed or
   repeated (skipped), unreadable, untraceable - and names each row it cannot
   read by its row number, with why (no contact, not an email, an unknown or
   ambiguous asset). *Add N to the list* takes the rows that can be read; a
-  corrected file can be sent again, and rows already listed are skipped. A
-  spreadsheet is refused with how to save it as CSV.
+  corrected file can be sent again, and rows already listed are skipped. The
+  headings people use instead of ours - *Mail ID*, *Phone*, *Full name* - are
+  understood, and a file of more than 50,000 rows is refused. An old `.xls`
+  workbook is refused with how to save it as `.xlsx`, and so is one that cannot
+  be read.
 - **The file is not kept.** It is a list of contacts in the clear; what matters
   is now sealed in the rows. Its sealed name, hash and counts are kept
   (`breach_upload`), and listed under *Lists taken*.
@@ -328,11 +466,13 @@ outside, in one of two forms, each from a template the DPO downloads there:
   they do not have), and each outcome counts toward the duty exactly as an
   account's does. Contacts added after the duty completed reopen it.
 
-## Telling the people it touched
+## Telling the people affected
 
 Rule 7(1): each affected principal is told, concisely, clearly and plainly and
-without delay, five things - and **Telling the people it touched** on a
-breach's page is where they are written, approved and sent.
+without delay, five things - and **Notice to the affected people** on the
+**People & notices** tab is where they are written, approved and sent. Once it
+is approved, one button, **Send to all *n* affected people**, reaches everybody
+listed, on the platform or not.
 
 | Content | Rule |
 |---|---|
@@ -363,7 +503,9 @@ breach's page is where they are written, approved and sent.
   attempt where the last one failed. Two sends at once write each state once
   (`breach_notice_delivery_once`). An email or SMS still queued fifteen minutes
   after it was sent was lost before the worker saw it - a broker that dropped
-  it after the commit - and Send queues the same delivery again.
+  it after the commit - and Send queues the same delivery again. Each task
+  claims what it sends to first (below, for a report), so the two together send
+  once.
 - **An update is a new version**, approved like the first and sent to everyone
   listed, the people already notified included. Her portal shows the latest
   above the earlier.
@@ -383,59 +525,206 @@ The words are sealed, like every narrative about the breach; the console and
 her portal open them, and the worker opens them at `deliver()`. They go to
 everyone listed, so they must name nobody.
 
+## The reports
+
+Every report a breach calls for is written here, on the **Reports** tab, and goes
+one path (2026-11-06, migration 0059, [ADR 0037](../decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md)).
+
+| Report | Goes to | May be written | Discharges |
+|---|---|---|---|
+| Report to the organisation's board | The organisation's board, mailed by the platform | once recorded | Organisation's board |
+| Initial intimation to the DPDP Board | The Board, by a person. Rule 7(2)(a) | once recorded | Board - initial intimation |
+| Report to CERT-In | CERT-In, by a person | once it is marked reportable, whatever validation says | Report to CERT-In |
+| 72-hour report to the DPDP Board | The Board, by a person. Rule 7(2)(b) | once recorded | Board - detailed report |
+| Closure report | The Board, by a person, if the office sends one | once recorded | Nothing: it is optional, and never stands in the way of closing |
+
+**Draft.** A report starts from the register, section by section, and from there
+it is the office's: what is drafted is what a person read and meant, and it is
+never regenerated underneath them. What the register does not hold stays empty.
+A section may be rewritten as often as wanted while it is a draft; there is one
+draft of a kind at a time, and the next version starts from the last one's
+words. The words are sealed. Any version comes out as a PDF, and every read is
+on the trail.
+
+| Report | Sections |
+|---|---|
+| Organisation's board | What happened; when; where it occurred; people affected, as counts; where the duties stand; what happens next (optional). Its first draft names nobody, and never carries the finding on who caused it |
+| Initial intimation | The nature and extent of the breach; its timing; where it occurred; its likely impact |
+| CERT-In | The incident; when it occurred and was noticed; systems affected; what shows it (logs, addresses, files; optional); action taken so far |
+| 72-hour report | Rule 7(2)(b)(i) to (vi): updated and detailed information; the events, circumstances and reasons; measures to mitigate the risk; findings on the person who caused the breach; remedial measures; the account of notices to Data Principals |
+| Closure report | Summary; root cause; measures taken; measures to prevent recurrence; Data Principals notified; conclusion |
+
+**Finalise.** Finalising is refused while a required section is empty, and names
+each one. It freezes the words, by trigger, and mails the organisation's board,
+one delivery per address, with the words in the mail and the report as a PDF.
+The words are quoted in the mail: they are somebody's words, so a link or a code
+in them stays text and becomes no button. Finalising is refused with nobody on
+the board's list (409 `no_board_recipients`): add the addresses under **Breach
+settings** first. A finalised report is corrected by a new version, which mails
+the board again.
+
+**The mail, address by address.** Every address has an account like a notice's -
+delivered, queued or failed - with one line for one address. An address taken off
+the list and put back is a new row of the list and the same person: delivered under
+either is delivered, and what it was sent it is not sent again. Taken off and not
+put back it reads as neither failed nor on its way, and stays in the list marked.
+
+**Try again** shows when sending again would do something, on the newest finalised
+version of a report on an open breach. The server says how many addresses it would
+queue (`mail.retryable`): those not reached, any added to the list since, and a mail
+lost on its way. A mail still queued fifteen minutes on was lost before the worker
+saw it, and takes a new attempt: the account is only added to, and that row is what
+makes it read as moving. If the first task ever runs it finds the later attempt and
+stands down. An address taken off the list is never mailed, whatever was waiting for
+it. What was queued to it is recorded failed (`RecipientRemoved`) and the duty is
+re-read then, so a report does not wait on an address nobody will try again.
+
+A press re-reads the board's duty first, whatever follows, and answers how many it
+queued. It is refused, and `retryable` is 0, on a version a later finalised one
+replaced (409 `report_superseded`), on an empty list (409 `no_board_recipients`) and
+on a report to CERT-In set aside (409 `breach_not_recorded`); a closed breach also
+serves 0 and answers 409 `breach_closed`. If the re-read completed the duty, a press
+that would be refused answers 200 with nothing queued. So the duty can stand with
+`retryable` at 0 after a re-read failed; the console then offers **Try again** for
+an `org_board` report's newest version once something was delivered and nothing is
+queued.
+
+**One send to one address at a time.** Two tasks can hold one address, and after an
+outage they start together, so reading that no outcome is recorded stops neither.
+Each claims the report and the address in Redis before it sends, for eleven minutes:
+longer than a task may run, shorter than a mail takes to read as lost. A task that
+loses stands down, and one that sends nothing lets the claim go. A worker killed
+mid-task is not a second sender: its message comes back under the same task id and
+takes its own claim back, because standing down there would leave nothing alive to
+send the mail. A kill after the send can therefore mail one address twice, and so
+can a broker connection lost in the middle of a send, when the message comes back
+while the first run is still going: the cost every task here accepts. A claim nobody
+comes back for runs out by itself, and a Try again pressed before it does stands
+down with it.
+
+**Delivered stands.** An address's line reads delivered once any attempt has been,
+whatever is written after it. Recording takes no breach row, so a re-queue or a
+removal can land just behind the delivered row, and neither unsends a mail.
+
+**A mail that has gone is never sent again to get it on the record.** What follows
+the send is only recording. If that fails, `cmp.notifications.record_breach_report_result`
+retries it and nothing else, eight times over about a quarter of an hour, and the
+claim is kept for an hour so that Try again stands down meanwhile. The account and
+the board's duty are two transactions, so a key service that cannot open a name for
+the duty cannot undo the account of a mail. Writing the account takes no breach row,
+so it does not wait behind a long list being uploaded; if the re-read of the duty
+still fails, Try again runs it.
+
+**The one report the board may read before a *yes*** is the report to CERT-In. It
+may be written and finalised on the mark alone, whatever validation says, because
+its six hours wait for neither, and finalising mails the board as it does for any
+report. So the board can read the whole of it, under an `INC-` number, on an
+incident later validated *no*. Every other report waits for the recording.
+
+**What the board reads may name somebody.** A report goes to every address on the
+list as it was written, in the mail and as a PDF, outside the sealed register. The
+72-hour report's section on the person who caused the breach is drafted from the
+assessment's findings, which may name an employee ([ADR 0037](../decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md)
+counts the cost). Neither mail may be copied.
+
+**File.** For the four that go to a regulator, finalising only tells the
+organisation's board, for its information; it says so, and **it does not mail the
+DPDP Board or CERT-In**. A person sends the report through the regulator's own
+channel, then records it, with both proofs attached: the **proof of internal
+approval** and **the mail sent to the regulator**. Filing takes when it was sent,
+not when it is being recorded, and that may be before it was finalised here: a
+person may have sent it first. It also takes the reference the regulator returned,
+which a closure report need not have. It is refused without both proofs (409
+`report_proof_missing`), and it is what completes the duty. There is no other way
+to complete a regulator's duty. The proofs are kept with the breach's other
+files, never replaced or removed.
+
 ## The organisation's board
 
-**Brief for the organisation's board**, from an incident's page, drafts what
-to tell the board from the register as it stands, at any point from the first
-minutes on: the reference, the title, first noticed, began, where it occurred,
-the validation and time of awareness if any, whether it is marked reportable
-to CERT-In, every duty with its clock, and who it touched **as counts only**.
-It names what the register does not yet hold. It never carries the finding on
-who caused it, anybody's name or contact, or who recorded what. **Print**
-produces the copy to hand over. The platform never sends it: the report goes
-through the organisation's own offline channel, and the DPO is accountable for
-it and records it (decided 2026-10-06). The DPO team is several `dpo`
-accounts, so the thirty minutes never wait on one person.
+**Notify Organization Board**, at the top of a recorded breach's page, opens its
+report in a pop-up, drafted from the register. Submitting it finalises it, which
+queues a mail to every address on the board's list. The duty is done when that
+mail lands, naming who was reached; if it reaches nobody the duty stays
+outstanding, and **Try again** on the **Reports** tab sends it again. The button
+stands while the duty does, and follows the same rule as **Try again**. While the
+mail is on its way it says so. Where Try again would do something it leads to
+**Reports**: *Not reached* if nobody was, and *Delivered: finish on the Reports tab*
+if the mail landed and only the duty is waiting. With nobody on the list and nobody
+reached it says there is nowhere to send this, with a link to **Breach settings**
+for those who may open it. Otherwise it offers a new report, and a further version
+is written on the **Reports** tab. The thirty minutes run from the validation, and
+the DPO team is several `dpo` accounts, so they never wait on one person.
+
+`GET /breaches/{uuid}/org-board/brief` remains as the register's own view: its
+counts, its clocks, what it does not yet hold, and no name. It is not what is
+mailed.
 
 ## The Board and CERT-In
 
-**The platform never submits to the Board or to CERT-In.** It drafts the
-Board's documents, tracks every clock, and records a submission after a person
-has made it through the regulator's own channel. A source test holds that
-nothing in the breach code imports a way to reach anywhere else, and that the
-breach tasks send only the principals' notice (`breach_notice`, or
-`breach_notice_direct` to a person with no account) and, to a member of staff
-holding a ticket, `breach_ticket_waiting`. The office's own reminders -
-`breach_duty_due` and `breach_ticket_returned`, to every active DPO - go from
+**The platform never submits to the Board or to CERT-In.** It drafts, tracks
+every clock, and keeps what a person sent and the proof of it. A source test
+holds that nothing in the breach code imports a way to reach anywhere else, and
+that the breach tasks send only the principals' notice (`breach_notice`, or
+`breach_notice_direct` to a person with no account); to a member of staff holding
+a ticket, `breach_ticket_waiting` and `breach_ticket_date_changed`; and a report,
+`breach_board_report` or `breach_report_finalised`, to the addresses on the
+board's list. The office's own reminders - `breach_duty_due` and
+`breach_ticket_returned`, to the officers of the breach's office - go from
 `tasks/notifications/alerts.py`, with every other module's notices to staff.
 
-**Documents for the Board**, from a breach's page, drafts both from the
-register as it stands - at any point, as often as wanted; each says when it was
-drafted, and names what the register does not yet hold rather than leaving it
-blank. **Print** produces the copy to file.
-
-| Document | Carries | Rule |
-|---|---|---|
-| Initial intimation | Nature and extent, timing (noticed, aware, began), where it occurred, likely impact | 7(2)(a) |
-| Detailed report | (i) updated and detailed information - the latest assessment, its categories, every determination; (ii) events, circumstances and reasons; (iii) mitigation; (iv) findings on who caused it; (v) remedial measures; (vi) the account of notices to principals | 7(2)(b) |
-
-Item (vi) is always present. Before any notice has gone it says so, in words,
+**The account of notices** in the 72-hour report (item (vi)) comes from the
+register when it is drafted. Before any notice has gone it says so, in words,
 with how many people are listed; after, it gives per version and channel how
 many were delivered, queued and failed, and how many listed people have been
-notified on every channel.
+notified on every channel. A report that outlives the facts is brought up to
+date by rewriting the section, or a new version.
 
-**Recording a submission** - **Record submission** on the duty - is a new row
-with when it was made and the reference the regulator returned; the Board's
-extension of the detailed report moves only that duty's due time. **CERT-In**
-is the duty created by **Mark reportable to CERT-In**, or by *Yes* to *Is it a
-cyber attack?* when the incident is logged, due six hours from detection; whoever files follows CERT-In's own format and records the filing
-the same way. Who files with CERT-In - the DPO or corporate security - is not
-yet decided; today only the DPO can record it.
+**The Board's extension** of the detailed report moves only that duty's due time.
+**CERT-In** is the duty created by **Mark reportable to CERT-In**, or by *Yes* to
+*Is it a cyber attack?* when an officer logs the incident, due six hours from
+detection; whoever files follows CERT-In's own format and records the filing the
+same way. A mark made in error is [set aside](#a-cert-in-mark-made-in-error). Who
+files with CERT-In - the officer or corporate security - is not
+yet decided; today only the officer of the breach's office can record it.
 
-**The dashboard.** The DPO's dashboard lists every open breach with each duty's
-state and time remaining or elapsed, and its **Needs attention** counts
-**Breach duties overdue** (critical) and **Breach duties outstanding**. No other
-role's dashboard carries any of it.
+`GET /breaches/{uuid}/board/intimation` and `/board/report` remain as the
+register's own views, rebuilt each time they are read. What is sent is the report
+above, frozen when it was finalised.
+
+**The dashboard.** The DPO's dashboard and the Legal PoC's each list their own
+office's open breaches with each duty's state and time remaining or elapsed, and
+their **Needs attention** counts **Breach duties overdue** (critical), **Reported
+incidents waiting for an office**, in both, and **Breach duties outstanding**. No
+other role's dashboard carries any of it. These figures read the register, which
+holds 500, so past 500 open incidents they count the 500 noticed last and leave the
+oldest out. The overdue mail reads every open breach.
+
+## Breach settings
+
+**Breach settings** in the console (resource `breach_settings`, 0058) is how the
+office hears of a breach. The administrator, the DPO and the Legal PoC keep it;
+every other role is answered 403. It says nothing about any breach, so the
+administrator keeps it without seeing one.
+
+- **The public link**, to give out.
+- **Who is told when a report arrives**: roles, not people; every active account
+  in them is mailed. The two officers are always among them, because a report
+  nobody who may claim it hears of would wait for ever. Anybody else it names is
+  told a report arrived and can do no more about it than their role already
+  allows. A breach-only login and a data principal cannot be chosen.
+- **The organisation's board**: the addresses its reports are mailed to, each
+  with an optional name. Name and address are sealed, an address is listed once,
+  by its blind index, and one taken off the list stays, with who took it off and
+  when, because reports already mailed name it.
+
+The trail says what changed, never an address.
+
+**It is one list.** Both offices and the administrator keep it, and it has no
+office. A report on either office's breach reaches every address on it, and
+anyone who keeps the list could add an address, their own included, and be mailed
+reports they could not otherwise read: the administrator sees no breach here, but
+an address on the list would. An entry is checked only as an address, and nobody
+else is told. ADR 0037 records this as the product owner's decision to revisit.
 
 ## Breach tickets
 
@@ -447,35 +736,49 @@ breach's page.
 
 - **Assign a ticket** to a member of staff - or, choosing **Someone without a
   console login**, to anyone internal named by an email (below) - with what you
-  are asking and an optional **answer-by** date. Refused before the breach is recorded (409
+  are asking, an optional **Resolve by** date and, if it helps, a document. The
+  document goes on the ticket's thread as it is raised; if the file is refused,
+  the ticket stands and the office is told. Refused before the breach is recorded (409
   `breach_not_recorded`); refused for anyone whose address is not on
   `BREACH_TICKET_EMAIL_DOMAINS` - internal staff only - without repeating the
   address; one ticket per person per breach (409 `ticket_exists`).
 - **The holder** finds it on **Tickets** in the console, beside their rights
   tickets. They see the breach reference, the instruction, the thread, the
-  state and the answer-by date - nothing else from the register, which still
+  state and the resolve-by date - nothing else from the register, which still
   answers them 404. Their email says only that a ticket from the Privacy Office
   is waiting; it names no breach.
 - **Both sides write** on the thread, with a file if it helps; files are kept
   like a rights ticket's, with their hash and sealed name, and every download is
   on the trail. The holder **returns** it - *done*, *partial* or *failed*, with a
-  summary - and the DPO **sends it back** with a reason or **closes** it. Only the
-  DPO closes a ticket, **withdraws** one, or **reopens** a closed or withdrawn
-  one. The moves come from the server with each ticket.
+  summary - and the office **sends it back** with a reason or **closes** it. Only
+  the officer of the breach's office closes a ticket, **withdraws** one, or
+  **reopens** a closed or withdrawn one. The moves come from the server with each
+  ticket.
+- **Either side may change the date** while the ticket is open (0061, ADR 0037).
+  **Change the date** takes the new date and a reason, which is required, and
+  needs nobody's approval. The date before, the date after and the sealed reason
+  go on the ticket's events and on its thread, and the two dates on the trail. A
+  date in the past, or the date it already has, is refused. The other side is
+  told by email in words that name no breach: the holder, or every active officer
+  of the breach's office. A trigger refuses a new date that no event records.
+  The label is **Resolve by** on breach tickets only; `answer_by` keeps its name
+  in the code, and a rights ticket's date is unchanged.
 
 | From | Event | To | Who |
 |---|---|---|---|
-| (assignment) | | issued | DPO |
+| (assignment) | | issued | officer |
 | issued | returned (outcome, summary, optional file) | returned | holder |
-| returned | sent back (reason) | issued | DPO |
-| returned | closed | closed | **DPO only** |
-| issued, returned | withdrawn (reason) | withdrawn | DPO |
-| closed, withdrawn | reopened (reason) | issued | DPO |
+| returned | sent back (reason) | issued | officer |
+| returned | closed | closed | **officer only** |
+| issued, returned | withdrawn (reason) | withdrawn | officer |
+| closed, withdrawn | reopened (reason) | issued | officer |
+| issued, returned | date changed (date, reason) | as it was | either |
 
 The holder is emailed when a ticket is assigned, sent back or reopened. The
 bell tells them what the office did and wrote, linking to their ticket; it tells
-the DPO what holders wrote and returned. The DPO's **Needs you today** counts
-**Breach tickets returned** and **Breach tickets past their answer-by**, and
+each officer, the DPO and the Legal PoC, what holders wrote and returned and any
+date they moved on their own office's tickets. The officers' **Needs you today**
+counts **Breach tickets returned** and **Breach tickets past their resolve-by**, and
 every staff dashboard lists the breach tickets addressed to its reader.
 
 ### Temporary logins
@@ -550,18 +853,24 @@ nothing about it can be recorded.
 | `breach_determination` | Every determination, with its reasoning and, for *yes*, the time of awareness. Append-only |
 | `breach_assessment` | Every revision of the facts. Append-only |
 | `breach_obligation` | One row per duty per breach - `org_board`, `cert_in` and the three DPDP duties - with its stored due time and the moment its clock runs from. Append-only; one of each kind per breach, by unique constraint |
-| `breach_obligation_event` | Everything that happens to a duty afterwards: completed (with `reported_to`, sealed, for the organisation's board - required there by trigger), not applicable, reinstated, extended, reopened. Append-only |
-| `breach_affected_revision` | Each confirmation of who it touched: the scopes, the counts, a sealed note. Append-only |
+| `breach_obligation_event` | Everything that happens to a duty afterwards: completed (with `reported_to`, sealed, for the organisation's board - required there by trigger), not applicable (with a sealed `note` where a CERT-In mark was set aside), reinstated, extended, reopened. Append-only |
+| `breach_affected_revision` | Each confirmation of the people affected: where it looked, the counts, a sealed note. Append-only |
 | `breach_notice` | Each version of the five Rule 7(1) contents, sealed. A draft is editable; an approved one is frozen by trigger (`cmp_breach_notice_frozen`) |
 | `breach_notice_delivery` | Every state of every attempt on every channel for every person. Append-only; `breach_notice_delivery_once` makes resends idempotent |
-| `breach_ticket` | One per person per breach: the holder, who assigned it, what it opened with (sealed), the answer-by date. Only the read markers change, by trigger (`cmp_breach_ticket_read_only`) |
-| `breach_ticket_event` | What happened to a ticket: returned (outcome, sealed summary), sent back, closed, withdrawn, reopened (each but close with a sealed reason). Append-only |
+| `breach_ticket` | One per person per breach: the holder, who assigned it, what it opened with (sealed), the date to resolve it by (`answer_by`). Only the read markers and that date change, the date only with the event recording it, by trigger (`cmp_breach_ticket_read_only`) |
+| `breach_ticket_event` | What happened to a ticket: returned (outcome, sealed summary), sent back, closed, withdrawn, reopened (each but close with a sealed reason), and a date changed (`date_before`, `date_after`, a sealed reason). Append-only |
 | `breach_ticket_message` | The ticket's thread: office, holder or platform; sealed body and file name. Append-only |
-| `breach_attachment` | A file kept with the incident: its kind, sealed name and note, where it is stored, its hash and size, who added it and when. Append-only: never replaced or removed |
+| `breach_attachment` | A file kept with the incident: its kind, sealed name and note, where it is stored, its hash and size, who added it and when. A proof names its report (`report_id`), with the kinds `approval` and `sent_mail`. Append-only: never replaced or removed |
+| `breach_report` | One version of one kind of report: who drafted it, and once each, who finalised it and when, and who recorded it as sent, when it was sent and the reference. One draft of a kind at a time, by partial unique index; frozen once finalised and again once filed, by trigger (`cmp_breach_report_frozen`) |
+| `breach_report_section` | A report's words, a section at a time, sealed. Frozen with the report (`cmp_breach_report_section_frozen`), and a finalised report gains no section (`cmp_breach_report_section_no_late_words`, 0063) |
+| `breach_report_delivery` | Every state of every attempt to mail a report to an address on the board's list, shaped like `breach_notice_delivery`; a failure's error class, never the address. A lost mail takes a new attempt, not the same row. Append-only |
+| `breach_board_recipient` | An address on the organisation's board's list: name and email sealed, a blind index, who added it and, once, who took it off. Never deleted. Not an office's |
+| `breach_settings` | One row: the roles told of a report from the public link. Not an office's |
+| `incident_report` | A report from the public link: who sent it and what they said, sealed; its `INC-` number; and its one outcome, claimed (`breach_id`) or dismissed with a sealed reason. Nothing but the outcome changes, once, by trigger (`cmp_incident_report_outcome_once`); never deleted. No office and no policy: both offices see it until it has its outcome |
 | `breach_temporary_access` | One grant of a temporary login: whose, on which breach, through which ticket, whether the account was made for it, the role it held before, who granted it, and - once - when, by whom and why it ended (`breach_closed`, `request_closed`, `ticket_withdrawn`, `reassigned`, `account_deactivated`). Since 0049 a grant may instead be for a rights ticket, `holder_id`, with `breach_id` and `ticket_id` then empty - exactly one of the two, by CHECK. One open grant per person per breach, or per rights ticket, by partial unique index; the end is written once and nothing else changes, by trigger; never deleted |
-| `breach_affected` | Each person listed, once per breach (`breach_affected_once`), with the revision that first listed them and what put them there - exports, assets, tables or an uploaded list (`found_by` upload), never a value. Append-only |
+| `breach_affected` | Each person listed, once per breach (`breach_affected_once`), with the revision that first listed them and what put them there - a project or activity, exports, assets, an uploaded list (`found_by` project, processor, data_source, upload, dpo) or, on people listed before they stopped being a way to look, tables (`platform`), never a value. Append-only |
 | `breach_upload` | Each list taken (0045): people or assets, its sealed file name and hash, and what it came to - rows read, matched, new contacts, skipped, unreadable, untraceable. The file is not kept. Append-only |
-| `breach_contact` | Somebody the breach touched with no account (0045): name, email and mobile sealed, with blind indexes so each is listed once per breach. Append-only. A delivery addresses an account or one of these, exactly one (`breach_notice_delivery_one_recipient`), and never writes a contact to an account (`breach_notice_delivery_portal_is_an_account`) |
+| `breach_contact` | Somebody affected with no account (0045): name, email and mobile sealed, with blind indexes so each is listed once per breach. Append-only. A delivery addresses an account or one of these, exactly one (`breach_notice_delivery_one_recipient`), and never writes a contact to an account (`breach_notice_delivery_portal_is_an_account`) |
 
 Every write takes the breach row first (`FOR UPDATE`), so two people recording
 at once act one after the other: two determinations of *yes* sent together
@@ -571,9 +880,9 @@ create each duty once and issue one breach reference.
 
 Every change writes an audit row against `breach`: `breach.recorded` (an
 incident logged - the key predates the incident-first order), `.determined`,
-`.confirmed` (recorded as a breach, with its BR), `.assessed`, `.cert_in_marked`, `.obligation_created`,
+`.confirmed` (recorded as a breach, with its BR), `.assessed`, `.cert_in_marked`, `.cert_in_set_aside` (that a reason was given), `.obligation_created`,
 `.obligation_completed`, `.obligation_not_applicable`,
-`.obligation_reinstated`, `.obligation_extended`, `.affected_revised` (with the counts, and nobody's name or id), `.affected_uploaded` (a list taken: its kind and counts), `.obligation_reopened`, `.notice_drafted`, `.notice_edited`, `.notice_approved`, `.notice_sent` (with counts), `.closed`, `.reopened`, `.attachment_added` (the kind, never the name), `.attachment_read`. A breach ticket's events are against `breach_ticket`, with the holder as subject: `breach_ticket.assigned`, `.message`, `.returned` (with the outcome), `.sent_back`, `.closed`, `.withdrawn`, `.reopened`, `.file_read`, `.colleague_added` (with the adder's ticket's uuid); the administrator's trail names them by the breach reference only. A breach-only login's grant and end are against the account: `user.temporary_access_granted` and `user.temporary_access_ended`, with the breach reference and the cause, never a name or an address. Each person whose account a notice is written to gets `breach_notice.delivered` against her, naming the breach reference (the BR) and the version: that is her portal's notification, and the only breach event she is shown. The
+`.obligation_reinstated`, `.obligation_extended`, `.affected_revised` (with the counts, and nobody's name or id), `.affected_uploaded` (a list taken: its kind and counts), `.obligation_reopened`, `.notice_drafted`, `.notice_edited`, `.notice_approved`, `.notice_sent` (with counts), `.closed`, `.reopened`, `.attachment_added` (the kind, never the name), `.attachment_read`, `.report_drafted`, `.report_edited`, `.report_finalised` (with how many addresses were mailed), `.report_resent` (with how many it queued, and only if it queued any), `.report_proof_added`, `.report_filed`, `.report_read` (each with the kind and the version). A report from the public link is against `incident_report`: `incident_report.received`, `.claimed` (with the office), `.dismissed` (that a reason was given). A change under Breach settings is `breach_settings.changed`, never naming an address. A breach ticket's events are against `breach_ticket`, with the holder as subject: `breach_ticket.assigned`, `.message`, `.returned` (with the outcome), `.sent_back`, `.closed`, `.withdrawn`, `.reopened`, `.date_changed` (with the two dates), `.file_read`, `.colleague_added` (with the adder's ticket's uuid); the administrator's trail names them by the breach reference only. A breach-only login's grant and end are against the account: `user.temporary_access_granted` and `user.temporary_access_ended`, with the breach reference and the cause, never a name or an address. Each person whose account a notice is written to gets `breach_notice.delivered` against her, naming the breach reference (the BR) and the version: that is her portal's notification, and the only breach event she is shown. The
 detail carries the reference, the outcome, which duty, a due time and that a
 reason was given - never the office's words, which are sealed on their rows
 ([ADR 0015](../decisions/0015-nothing-erasable-in-a-trail-nobody-can-erase.md)).
@@ -584,7 +893,10 @@ Owned by people, and not decided by the code:
 
 | Question | Owner |
 |---|---|
+| Whether a *yes* should complete a regulator's duty from a report filed while a *no* had set it aside, as it does not ([ADR 0037](../decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md)) | The product owner, to confirm |
 | Whether an event is a personal data breach - above all a leak of sealed data whose key was not exposed | Legal |
 | The internal target for "without delay" | Legal and the Programme |
 | Who answers principals' questions (Rule 7(1)(e)) | Legal |
-| Who files with CERT-In - the DPO or corporate security. Today only the DPO can record it | Security and Legal |
+| Who files with CERT-In - the officer or corporate security. Today only the officer of the breach's office can record it | Security and Legal |
+| Whether a CERT-In mark may be set aside only after a *no*, as it is today, and whether a later *yes* should bring it back, as it does not ([above](#a-cert-in-mark-made-in-error)) | The product owner, to confirm |
+| Whether a board report's earlier mail may complete a duty a *no* and a *yes* brought back. Today Try again completes it from that mail, dated before the duty came back; a new version tells the board again | The product owner |

@@ -58,7 +58,7 @@ The options considered were these:
 - **The collector enforces the relay's rules.** Anyone allowed to send to the
   request queue can seal a request, so the collector treats every message as
   untrusted. It re-applies the bridge's checks and adds its own:
-  - the public route allow-list: 64 routes, and every staff route refused.
+  - the public route allow-list: 66 routes, and every staff route refused.
     A test reads the portal's calls and the API's OpenAPI document, so a
     portal call with no row, or a row with no operation, fails the relay's
     suite;

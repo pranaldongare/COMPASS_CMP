@@ -216,10 +216,10 @@ list does not send today; the audit trail's About picker is where a request
 is found by name in practice. `nominee_name_ngrams` is written with every
 nomination and read by no query yet.
 
-## The endpoints that carry personal data — 229 of 325
+## The endpoints that carry personal data — 277 of 389
 
 The documentation generator, `docs/tools/pii-fields-and-endpoints.py`, counts
-229 of the API's 325 operations whose request or response holds a personal
+277 of the API's 389 operations whose request or response holds a personal
 field, in 22 modules, 28 of them public. The count by module and the fields
 each one carries are in
 [pii-fields-and-endpoints.md](../domain/pii-fields-and-endpoints.md), which
@@ -233,7 +233,8 @@ is `SE::…` or null, and nothing under a contact's name looks like an address.
 
 Each hands a value to somebody who is not looking at a portal page, or
 needs the plaintext to compute what is stored beside it. Nothing here is
-handed to a session-bearing response, except a download's file name.
+handed to a session-bearing response, except a download's file name and a
+breach report's PDF.
 
 | Where | What is opened | Why |
 |---|---|---|
@@ -248,6 +249,10 @@ handed to a session-bearing response, except a download's file name.
 | `rights/reach.address()`; `reach.place()` | A holder's contact and name | The code and the ticket's mail go to that address; an internal address is matched to, or made, a console login |
 | `breach/tickets._require_internal()` | A colleague's email | Its domain decides whether they may hold a breach ticket; the address is never repeated |
 | `rights/service`, `breach/service`, `breach/tickets` — the file downloads | The name a file was uploaded with (`rights_request_attachment`, `breach_attachment`, `breach_ticket_message.evidence_name`) | A download is binary and bypasses the portal's opening, so the name for `Content-Disposition` is opened here |
+| `breach/intake.claim()` | What a report from the public link says | It becomes the incident, sealed again under `breach`'s types; ciphertext copied across would carry the wrong type |
+| `breach/reports._facts()`, `draft()` | The register's narrative, and the last version's words | A draft is written from them, and sealed again section by section |
+| `breach/reports._document()` → `GET /breaches/{uuid}/reports/{uuid}/pdf` and the worker | A report's words | **A document.** The organisation's board reads it outside the platform, in the mail and as a PDF; an officer's download of it is on the trail |
+| `breach/reports._whom()` | The board's names, or addresses where there is no name | Whom the duty says was told; sealed again on the duty |
 | `auth/authentication/service.invite_staff()` | The invited address | It goes into the invitation's URL, which `deliver()` never sees |
 | `api/routers/v1/registry.add_respondent()` | A staff account's name and email | The respondent row seals its own copy under its own types; ciphertext copied across would carry the wrong type |
 | `db/repositories/rights.create()` | A contact copied off another row | Its `submitted_contact_hash` has to be computed from the plaintext |

@@ -504,7 +504,7 @@ Key `rights_request_received` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_rights_request_received` (`backend/api/src/cmp/tasks/notifications/alerts.py:103`) |
-| Queued from | - |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:151` |
 | Variables | `reference` (The rights request reference.), `request_type` (Access, erasure or a grievance.), `channel` (Where it came from.), `due_date` (When the response is due.), `request_url` (The request in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `New rights request {reference}: {request_type}`
@@ -529,7 +529,7 @@ Key `rights_due_digest` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_rights_due_digest` (`backend/api/src/cmp/tasks/notifications/alerts.py:141`) |
-| Queued from | - |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:225` |
 | Variables | `count` (How many requests are on the list.), `items` (One line per request: reference, kind, due date and state.), `requests_url` (Rights requests in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{count} rights requests need attention`
@@ -554,7 +554,7 @@ Key `rights_transfer_received` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_rights_transfer_received` (`backend/api/src/cmp/tasks/notifications/alerts.py:126`) |
-| Queued from | - |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:169` |
 | Variables | `reference` (The rights request reference.), `request_type` (Access, erasure or a grievance.), `received_at` (When it arrived: the clock still runs from here.), `due_date` (When the response is due.), `from_office` (The office that transferred it.), `reason` (Why, in the transferring officer's words.), `request_url` (The request in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Rights request {reference} transferred to your office`
@@ -585,7 +585,7 @@ Key `rights_grievance_about_dpo` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_rights_grievance_about_dpo` (`backend/api/src/cmp/tasks/notifications/alerts.py:152`) |
-| Queued from | - |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:187` |
 | Variables | `reference` (The rights request reference.), `request_url` (The request in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Grievance {reference} is about the DPO and needs a reviewer`

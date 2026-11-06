@@ -1,18 +1,19 @@
 # Testing
 
-Seven suites, each answering a different question. Counts are as of
-2026-10-08 (rights tickets phase 2, migration 0049) and change with every
-feature; the commands do not.
+Seven suites, each answering a different question. The backend's and the
+portals' unit counts are as of 2026-11-07 (the breach workflow, migration 0063),
+the browser suites' as of 2026-10-08 (rights tickets phase 2, migration 0049).
+They change with every feature; the commands do not.
 
 | Suite | Where | Runs against | Count |
 |---|---|---|---|
-| Backend unit | `backend/api/tests/unit` | nothing; pure functions | 726 |
-| Backend integration | `backend/api/tests/integration` | real PostgreSQL, Redis and key service | 528 |
-| Backend security | `backend/api/tests/security` | the ASGI app with real datastores | 488 |
-| Backend HTTP | `backend/api/tests/http` | the ASGI app over HTTP, real datastores and key service; **commits** | 145 |
+| Backend unit | `backend/api/tests/unit` | nothing; pure functions | 1123 |
+| Backend integration | `backend/api/tests/integration` | real PostgreSQL, Redis and key service | 1063 |
+| Backend security | `backend/api/tests/security` | the ASGI app with real datastores | 576 |
+| Backend HTTP | `backend/api/tests/http` | the ASGI app over HTTP, real datastores and key service; **commits** | 189 |
 | Key service | `backend/dkms/tests` | the service in-process; nothing else | 58 |
-| Portal unit | `src/**/*.test.ts*` in each portal | vitest with MSW | 382 console, 247 portal |
-| Browser | `e2e/` in each portal | the running stack in a real browser | on 2026-10-08, the `chromium` project: console 92 (90 pass; the two project-form specs fail on a development database with more processors than the form loads), portal 33 |
+| Portal unit | `src/**/*.test.ts*` in each portal | vitest with MSW | 664 console, 294 portal |
+| Browser | `e2e/` in each portal | the running stack in a real browser | on 2026-11-07: console `chromium` 139 (136 pass, 1 is skipped, and the two project-form specs fail on a development database with more processors than the form loads); portal `chromium` and `mobile` 84 (72 pass, 11 skip, and `consent-flow.spec.ts:183` fails on `mobile`, where the sign-in page has shown COMPASS alone since 2026-10-11); portal through the relay 15 |
 
 ### Which suites need the key service
 
@@ -180,7 +181,7 @@ dev servers on 3000 and 3001 are left alone. The build reads the portal's
 `backend/api/var/outbox.log` by `e2e/support/outbox.ts`.
 
 Run the console suite before the portal's. The console's `breaches.spec.ts`
-records a breach, lists the seeded principal (`subject@cmp.local`) as touched
+records a breach, lists the seeded principal (`subject@cmp.local`) as affected
 and sends her a notice, and waits - up to a minute - for the worker to record
 her email and SMS delivered; the portal's `breach-notices.spec.ts` then reads
 that notice in her account. With no notice there it checks only the empty

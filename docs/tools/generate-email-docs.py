@@ -34,9 +34,19 @@ SRC = API / "src"
 OUT = ROOT / "docs" / "email" / "messages.md"
 sys.path.insert(0, str(SRC))
 
-from cmp.core.messages import ATTACHABLE, CATALOGUE, COPYABLE, Channel, Junction  # noqa: E402
+from cmp.core.messages import (  # noqa: E402
+    ATTACHABLE,
+    CATALOGUE,
+    COPYABLE,
+    Channel,
+    Junction,
+    Message,
+)
 
 NOTIFICATIONS = ROOT / "docs" / "notifications"
+
+#: Mailed to a list, not to one person about herself: `_cc` says why not for these.
+BOARD_REPORTS = {Message.BREACH_BOARD_REPORT, Message.BREACH_REPORT_FINALISED}
 
 #: Which module file each catalogue group is written to, and in what words.
 MODULES: list[tuple[str, str, tuple[str, ...], str]] = [
@@ -72,8 +82,8 @@ MODULES: list[tuple[str, str, tuple[str, ...], str]] = [
         "breach.md",
         "Personal data breaches",
         ("Breach",),
-        "The people a breach touched, the staff asked to help on a ticket, and the DPO's "
-        "alerts on the breach's duties.",
+        "The people a breach affected, the staff asked to help on a ticket, the DPO's alerts "
+        "on the breach's duties, reports to the organisation's board, and the public link.",
     ),
 ]
 
@@ -123,6 +133,13 @@ def queued_from(functions: set[str]) -> dict[str, list[str]]:
                 getattr(node, "ctx", None), ast.Store
             ):
                 places[node.id].append(f"{rel(path)}:{node.lineno}")
+            # The alerts queue theirs through the package: `tasks.send_x`.
+            elif (
+                isinstance(node, ast.Attribute)
+                and node.attr in functions
+                and getattr(node.value, "id", "") == "tasks"
+            ):
+                places[node.attr].append(f"{rel(path)}:{node.lineno}")
             # The rights service queues its tasks by name: `_notify("send_x", ...)`.
             elif isinstance(node, ast.Constant) and node.value in functions:
                 places[str(node.value)].append(f"{rel(path)}:{node.lineno}")
@@ -215,6 +232,11 @@ def _cc(j: Junction) -> str:
     own = {"portal_url", "withdraw_url", "console_url"}
     if "code" in names or any(n.endswith("_url") and n not in own for n in names):
         return "Never - it carries a code or a link, and a copy would hand it to somebody else."
+    if j.key in BOARD_REPORTS:
+        return (
+            "Never - a report on a breach goes to the addresses on the organisation's board's "
+            "list and nobody else, and it may name a person; a copy would take it off that list."
+        )
     return "Never - it is written to one person about her own data; a copy would disclose it."
 
 

@@ -294,54 +294,74 @@ erased item is scrubbed or left to expire is waiting on Legal.
 
 The platform logs the incident, records whether it is a breach and tracks
 every duty; people contain it, validate it and submit to the regulators
-([breaches.md](../domain/breaches.md), [ADR 0022](../decisions/0022-an-incident-first-and-a-breach-on-a-yes.md)).
+([breaches.md](../domain/breaches.md), [ADR 0037](../decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md)).
 Who may declare a breach, how evidence is preserved and whom to escalate to
 belong to the manual breach procedure (backlog P-06, with Legal); this entry is
-only the platform's part. Only the DPO can see or use the register.
+only the platform's part. Only the two officers can see or use the register.
+
+Anybody may report through the public link; before the first breach, fill in
+**Breach settings**, so that the right people hear of a report and the
+organisation's board has addresses to be mailed at.
 
 1. **Log it at once** - **Breaches → Log an incident** - with the time it was
-   *first noticed*, not the time you are typing. It gets an `INC-` reference.
+   *first noticed*, not the time you are typing. It gets an `INC-` reference. A
+   report from the public link is already waiting under **Reported through the
+   public link**: read it, and **Claim** it for your office or **Dismiss** it
+   with a reason. Claiming logs it under the number it arrived with, on no clock.
    If it may be a reportable cyber incident, press **Mark reportable to
-   CERT-In**: the six hours run from the time you entered, and the page shows
-   what is left.
-2. **Tell the organisation's board now** - within thirty minutes of first
-   noticed, by internal policy; the duty's clock is already running. **Brief
-   for the organisation's board** on the incident's page drafts what to say,
-   names nobody, and prints. Tell the board through the organisation's own
-   channel, then **Record the report** on the duty: when, and to whom. The
-   platform never tells the board itself.
-3. **Record the validation** as soon as it is made: is it a personal data
+   CERT-In**: the six hours run from first noticed, and the page shows what is
+   left. A reporter saying it is one does not do this for you.
+2. **Record the validation** as soon as it is made: is it a personal data
    breach under s.2(u)? The first *yes* needs the time the organisation became
    aware, **records the breach** with a `BR-` reference - quote that one from
-   now on - and creates the Board and principals duties with their clocks. *No*
-   marks them not applicable and keeps the reasoning. Revise it as a new
-   validation if it changes; nothing is edited, and a breach reference once
-   issued stays.
+   now on - and creates the Board, principals and organisation's board duties
+   with their clocks. *No* marks them not applicable and keeps the reasoning,
+   and the incident can close. Revise it as a new validation if it changes;
+   nothing is edited, and a breach reference once issued stays. **CERT-In does
+   not go with a *no*.** If the mark was a mistake, press **Not reportable to
+   CERT-In** on its row after the *no* and say why: the duty is set aside and
+   nobody is mailed. It is refused until the latest validation is *no*, and once
+   a report has been filed. **Mark reportable to CERT-In** brings it back on the
+   same clock; a later *yes* does not.
+3. **Notify the organisation's board** - within thirty minutes of that *yes*, by
+   internal policy. **Notify Organization Board** at the top of the page drafts
+   the report; read it, change what needs changing and submit it. The addresses
+   under **Breach settings** are mailed, and the duty completes when the mail
+   lands, naming who was reached. If it reached nobody the duty stays outstanding.
+   An address it did not reach shows on **Reports**, with **Try again**, which
+   also reaches an address added to the list since
+   ([below](#a-report-did-not-reach-the-organisations-board)).
 4. **Keep the assessment current** - each revision is a new row - with the
    categories exposed and, per category, whether it was sealed and whether its
-   key was exposed. None of that delays or removes a duty. Who it touched and
-   the notice may be prepared while validation is pending; **Send** waits until
-   the breach is recorded.
-5. **Draft the Board's documents** - **Documents for the Board** on the
-   breach's page - and check what they say is not yet recorded. **Submit
-   through the regulator's own channel**, then **Record submission**
-   on the duty with when it was made and the reference returned. The platform
-   never submits. If the Board allows longer for the detailed report, record
-   the **Extension**; its due time moves, the intimation's does not.
+   key was exposed. None of that delays or removes a duty. The people affected
+   and the notice may be prepared while validation is pending; **Send** waits
+   until the breach is recorded.
+5. **Write the reports** on the **Reports** tab: the initial intimation and the
+   72-hour report for the Board, the report to CERT-In if it is reportable, and
+   a closure report if one is wanted. **Finalising** one freezes it and mails the
+   organisation's board for its information; it does not reach the regulator.
+   **Send it through the regulator's own channel yourself**, then **record it as
+   sent** with the proof of internal approval, the mail you sent, when you sent
+   it and the reference returned. That is what completes the duty: the platform
+   never submits, and there is no other way to mark it done. If the Board allows
+   longer for the detailed report, record the **Extension**; its due time moves,
+   the intimation's does not.
 6. **Close it** once validated and every duty is done or not applicable. The
-   page lists what is in the way. Reopen it with a reason if more is found.
+   page lists what is in the way. A closure report never is. Reopen it with a
+   reason if more is found.
 
 If a duty shows overdue, it is overdue: the due time was stored when the duty
 was created and the page is not wrong. The record of a late submission is the
-submission with its real time. A time mistyped at recording cannot be edited -
-the clocks were stored from it; note the correct time on the duty's submission
-and in the next assessment revision.
+filing with the real time it was sent. A time mistyped at recording cannot be
+edited - the clocks were stored from it; note the correct time in the report and
+in the next assessment revision.
 
 
 ## A breach ticket is not being answered
 
-A ticket past its answer-by shows on the DPO's dashboard and in red on the
-breach's **Tickets** card.
+A ticket past its **Resolve by** date counts under **Breach tickets past their
+resolve-by** on the officers' dashboards and shows in red on the breach's
+**Tickets** card.
 
 1. **Open it** and read the thread: a question the holder asked may be waiting
    on you.
@@ -400,7 +420,7 @@ the record says somebody may still act on a matter that is over.
    report it as a defect.
 ## A breach notice did not reach somebody
 
-**Telling the people it touched** on the breach's page shows, per version and
+**Notice to the affected people** on the breach's page shows, per version and
 channel, how many notices are delivered, queued and failed, and lists each
 failure with its error's class. Her account is written to at the send and
 cannot fail; email and SMS are sent by the worker.
@@ -422,6 +442,42 @@ cannot fail; email and SMS are sent by the worker.
 has an outcome, so a queued delivery holds it open, and a recorded failure does
 not. The worker log carries `breach.notice_failed` with the delivery, never the
 address.
+
+## A report did not reach the organisation's board
+
+**Reports** on the breach's page shows, per version, how many addresses are
+delivered, on the way and failed, and lists each with its error's class under
+**Address by address**. **Try again** shows when pressing it would do something,
+and the answer says what it did: how many addresses it is mailing, that the duty
+completed, or that there was nothing to send. A press mails nobody the account
+shows has the report, so pressing it twice sends nothing twice.
+
+- **On the way and not moving.** The worker is down, or not listening on the
+  `notifications` queue: see "The worker is running but nothing happens". After
+  fifteen minutes the line reads **held up**. Press **Try again** once: it queues a
+  new attempt and the line reads on the way again. If the first task ever runs, it
+  stands down.
+- **Held up, with `breach.report_unrecorded` in the worker log.** The mail has very
+  likely gone, and only its outcome was not written. A task is retrying that for
+  about a quarter of an hour; bring back the database or the key service. The claim
+  is kept for an hour, so **Try again** stands down meanwhile and nobody is mailed
+  twice. If the retries run out the address stays held up, and after the hour **Try
+  again** mails it again. That one duplicate is the price of putting it on the
+  record.
+- **Failed - `DkmsUnavailable`, `ConnectionError`, `TimeoutError`.** The key service
+  or the transport was away for longer than the worker's retries (about two and a
+  half minutes). Bring it back and press **Try again**.
+- **Failed - `EmailRejected`, anything else.** No retry will mend it: the address
+  is wrong or refused. Take it off the list under **Breach settings**, add the right
+  one and press **Try again**, which mails only the new address.
+- **Delivered: finish on the Reports tab**, with the duty outstanding. The mail
+  landed, and re-reading the duty failed. Press **Try again**: it re-reads the duty,
+  which completes, and mails nobody.
+- **Nobody is on the organisation's board list.** Add the addresses under **Breach
+  settings**, then **Try again**.
+
+The duty's time is when the first address was reached, so a late last address does
+not make it late. The worker log carries the delivery, never the address.
 
 ## Somebody asks what happened to a record
 

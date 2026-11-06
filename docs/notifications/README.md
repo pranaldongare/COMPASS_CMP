@@ -13,7 +13,7 @@ the template; this folder explains the messages.
 | [projects.md](projects.md) | A project submitted, approved, sent back, closed; a collector assigned |
 | [consent.md](consent.md) | Consent given and withdrawn |
 | [rights.md](rights.md) | Rights requests: the requester's emails, the nominee's, the holders' tickets, and the office's alerts |
-| [breach.md](breach.md) | The breach notice, breach tickets, and the DPO's duty alerts |
+| [breach.md](breach.md) | The breach notice, breach tickets, the DPO's duty alerts, reports to the organisation's board, and the public link |
 
 The five module files are **generated from the code** by
 `docs/tools/generate-email-docs.py`. Each one lists every email of its module,
@@ -26,7 +26,7 @@ cannot drift: `--check` fails when one is out of date.
 
 ### 1. One path
 
-Every email - all 41 - goes the same way:
+Every email - all 50 - goes the same way:
 
 | # | Step | Where (backend/api/src/cmp/…) |
 |---|---|---|
@@ -100,17 +100,24 @@ about whom, what was written and any file are behind a one-time code sent to
 the same address (**Code to open a ticket**). A holder inside the organisation
 is sent the ticket in full, with a link to it in the console.
 
-### 4. Attachments: only what the recipient already owns
+### 4. Attachments: only what the recipient owns, or what was written for it
 
-Emails carry no files by default. Two may (`ATTACHABLE`), and each carries only
-something its recipient owns:
+Emails carry no files by default. Four may (`ATTACHABLE`), and each carries only
+something its recipient owns or that was written for it:
 
 | Email | Attachment |
 |---|---|
 | Consent receipt | Her own consent record, `consent-record.txt`: what she agreed to and refused, when, how, against which notice version and language, and the fingerprint of the exact text she was shown |
 | Ticket message (to a rights ticket's holder) | The file the Privacy Office put on that message, for that holder |
+| A report to the organisation's board | The report as a PDF, to every address on the board's list |
+| A report for the regulator is ready | The report as a PDF, to every address on the board's list, for its information |
 
-Personal data of anyone else never travels as an attachment. A **rights
+Those two reports are the one place somebody else's personal data travels as an
+attachment. A report finalised for a regulator goes to the board with its
+findings, in the mail and as a PDF, and the 72-hour report's findings on who
+caused the breach may name a person
+([ADR 0037](../decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md)
+counts the cost). Neither may be copied. A **rights
 response** in particular stays **download-only** from her account: the
 download is audited and its window closes, neither of which an attachment
 could do. At most 10 MB of files per email; an SMS carries none.
@@ -150,9 +157,9 @@ is recorded, because the principals' duty counts them.
 |---|---|---|
 | [Users and accounts](users.md) | 12 | The person signing in or up; staff being invited, reset, changed, ended, covered; whoever the office resends a note to |
 | [Projects](projects.md) | 5 | Every DPO (submitted), the owner (approved, sent back, closed), the collector (assigned) |
-| [Consent](consent.md) | 2 | The data principal |
-| [Rights requests](rights.md) | 16 | The requester, the nominee, the holder's responder (inside the organisation in full; outside, the link and the code), every DPO, every administrator |
-| [Breaches](breach.md) | 6 | Each person a breach touched, the ticket holder, every DPO |
+| [Consent](consent.md) | 4 | The data principal; an HR activity's participants and respondents |
+| [Rights requests](rights.md) | 17 | The requester, the nominee, the holder's responder (inside the organisation in full; outside, the link and the code), every DPO, every administrator |
+| [Breaches](breach.md) | 12 | The people affected, the ticket holder, the breach office's officers, the organisation's board, and the reporter |
 
 ## Adding an email
 

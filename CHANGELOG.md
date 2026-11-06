@@ -8,6 +8,30 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **The breach workflow of 2026-11-06** (ADR 0037): anybody may report an
+  incident through one public link, `/report-incident`, with a name and an email
+  proved by a code. The report takes its `INC-` number and waits in a shared
+  intake, on no clock; both offices are mailed and see it until one claims it,
+  which logs the incident, or dismisses it with a reason, and both officers can
+  read what was dismissed. **Notify Organization Board** drafts a report and mails
+  the addresses kept under **Breach settings** by the administrator, the DPO and
+  the Legal PoC, and the duty is done when that mail lands, naming who was
+  reached. The initial intimation, the report to CERT-In, the 72-hour report and
+  an optional closure report are each drafted, finalised, which mails the
+  organisation's board and never the DPDP Board, and filed with the proof of
+  internal approval and the mail sent. People
+  are found by project or activity, vendor, data source, an Excel list or one at
+  a time. A breach ticket takes a document when it is raised, and its **Resolve
+  by** date may be moved by its holder or the office, with a reason, on the
+  trail. Migrations 0058 to 0063.
+- **A CERT-In mark made in error can be set aside** (2026-11-07, ADR 0037, for
+  the product owner to confirm). A *no* leaves CERT-In alone, and removing the
+  by-hand route took away the only way out of a false alarm, which could then
+  close only by mailing the board and filing proof of a mail nobody sent. **Not
+  reportable to CERT-In** sets the duty aside with a sealed reason, once the
+  latest validation is *no* (`POST /breaches/{uuid}/cert-in/not-applicable`). It
+  tells nobody. Marking it again brings it back on the same clock; a later *yes*
+  does not.
 - **Offices as tenants** (ADR 0032): every governance record names its office
   (`rnd`, `hr`); an officer's connection is set to its office and
   PostgreSQL's row-level security refuses every other office's rows; two
@@ -973,6 +997,19 @@ as a release yet.
 - `CONTRIBUTING.md`.
 
 ### Changed
+- **The shared intake is read a page at a time** (2026-11-07, ADR 0037).
+  `GET /breaches/intake` now answers `{items, total, limit, offset}`, the oldest
+  first, each report by who sent it and its title, and
+  `GET /breaches/intake/{report_uuid}` reads one in full. Served whole, about a
+  hundred long reports passed what the console could open at once, and every
+  report showed sealed. A client of the old list has to change.
+- **The organisation's board's duty starts at a validation of yes** (ADR 0037),
+  thirty minutes from it, not on logging, and a later *no* sets it aside: a junk
+  incident can close. The platform now mails the board, reversing ADR 0022's
+  clause; it still never submits to a regulator (ADR 0021).
+- **Finding people no longer offers the platform's tables**, and "who it
+  touched" reads "Affected people" on the card and the people affected elsewhere.
+- **Lists of people arrive as Excel**, from a template; a CSV is still taken.
 - **Three requests, about everything** (DPO, 2026-10-07). A new rights
   request is access, erasure or a grievance - correction is no longer offered
   on any form or channel, nor as a reclassification; a correction to a name is
@@ -1202,7 +1239,44 @@ as a release yet.
 - Every README and backend document brought up to the current counts, the
   22-migration chain, Node 22, the two portals and the rights module.
 
+### Removed
+- **`POST /breaches/{uuid}/obligations/{duty}/complete`**: a regulator's duty
+  completes only by filing a report with both proofs.
+
 ### Fixed
+- **A breach report is sent once, and what happened to it is not lost**
+  (2026-11-07, ADR 0037). A task claims the report and the address in Redis before
+  it sends, as a notice's does, so two tasks together send once. A mail that has
+  gone is never sent again to get it on the record: a new task,
+  `cmp.notifications.record_breach_report_result`, retries the recording alone, and
+  the account and the board's duty are two transactions. A lost mail takes a new
+  attempt, so it reads as moving again. An address taken off the list stops being
+  waited for at once, and one put back is not mailed again. The board's duty
+  records when it was first reached, not when the last outcome came in. A worker
+  killed mid-task takes its own claim back when its message returns, and a delivered
+  address stays delivered whatever is written after it.
+- **Try again says what it will do** (2026-11-07). `mail.retryable` is how many
+  addresses it would queue, and the check that refuses the press sets it. It is no
+  longer offered on a superseded version, with an empty list or for an address taken
+  off the list, and it is offered when a new address could be reached. The press
+  answers `queued`, and always re-reads the board's duty. New 409s:
+  `report_superseded`, `no_board_recipients`.
+- **Console uploads get the portal's three minutes** (2026-11-07), not thirty
+  seconds, for the 25 MB files and 50,000-row lists the screens promise, and the
+  console's `/api` rewrite takes 26 MB, where everything over 10 MB answered 500. A
+  CERT-In report set aside takes no proof and is not filed until it is marked again;
+  the row and the draft say so rather than offering what the server refuses. A failed
+  background read no longer throws away an open ticket reply. A report draft another
+  officer finalised closes with a warning. An over-long report section is stopped at
+  the box. **Notify Organization Board** waits for the breach to be recorded on
+  incidents from before the change.
+- **The Legal PoC's bell shows her office's breach tickets** (2026-11-07), and a
+  holder's date change with them. The route read the feed for the DPO alone.
+- **A reference outlives four digits** (2026-11-06). `INC-`, `BR-` and `TPL-`
+  numbers were padded with `lpad`, which cuts a longer value to the width, so
+  from 10000 they lost a digit and collided on the unique index. The public link
+  draws on the incidents' sequence, so that could have stopped an office logging
+  one. They now grow past four digits (`cmp_next_number`). Migration 0062.
 - **A notice code is always found** (2026-10-09). The generated code starts
   from the project name's first words, so projects whose names start alike
   share one base; once its 26 numbered codes were taken, making a notice

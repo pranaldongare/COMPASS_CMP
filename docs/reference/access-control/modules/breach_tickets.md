@@ -2,18 +2,19 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-6 operations; 6 appear in the existing OpenAPI/API docs. Added with S3-08; evidence links point at `HEAD`.
+7 operations; 7 appear in the existing OpenAPI/API docs. Added with S3-08; evidence links point at `HEAD`.
 
 The holder's side of a breach ticket ([ADR 0023](../../../decisions/0023-breach-tickets-and-breach-only-logins.md)). Resource `breach_ticket`, OWN for every staff role - the same rows as `ticket` - and OWN is the holder in the `WHERE` clause, so another person's ticket is **404**. A holder sees the breach reference, their instruction, the thread, the state and the answer-by date, and nothing else from the register; the register itself answers them 404. Managing tickets - assigning, sending back, closing, withdrawing, reopening - is the DPO's, under `/breaches/{breach_uuid}/tickets`.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
-| GET | `/breach-tickets` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
-| GET | `/breach-tickets/{ticket_uuid}` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
-| POST | `/breach-tickets/{ticket_uuid}/messages` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
-| GET | `/breach-tickets/{ticket_uuid}/messages/{message_uuid}/evidence` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
-| POST | `/breach-tickets/{ticket_uuid}/return` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
-| POST | `/breach-tickets/{ticket_uuid}/colleagues` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
+| GET | `/breach-tickets` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`, `legal`, `hr_user` | Full session; anonymous NO |
+| GET | `/breach-tickets/{ticket_uuid}` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`, `legal`, `hr_user` | Full session; anonymous NO |
+| POST | `/breach-tickets/{ticket_uuid}/messages` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`, `legal`, `hr_user` | Full session; anonymous NO |
+| GET | `/breach-tickets/{ticket_uuid}/messages/{message_uuid}/evidence` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`, `legal`, `hr_user` | Full session; anonymous NO |
+| POST | `/breach-tickets/{ticket_uuid}/return` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`, `legal`, `hr_user` | Full session; anonymous NO |
+| POST | `/breach-tickets/{ticket_uuid}/colleagues` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`, `legal`, `hr_user` | Full session; anonymous NO |
+| POST | `/breach-tickets/{ticket_uuid}/resolve-by` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`, `legal`, `hr_user` | Full session; anonymous NO |
 
 ## GET /breach-tickets
 
@@ -21,9 +22,9 @@ Breach tickets addressed to me.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | NO | NO |
+| OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | OWN | OWN |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`.
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`, `legal`, `hr_user`.
 - **Route guard:** `BreachTicketReader`.
 - **Resolved gate:** `RequireResource(breach_ticket)`.
 - **Rules:** Resource `breach_ticket`, OWN for every staff role: the holder is this account, in the WHERE clause, so another person's ticket is 404. What a holder sees is the breach reference, their instruction, the thread, the state and the answer-by date (BD-13). A closed breach refuses every write. (S3-08)
@@ -35,9 +36,9 @@ One breach ticket addressed to me, with its thread.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | NO | NO |
+| OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | OWN | OWN |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`.
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`, `legal`, `hr_user`.
 - **Route guard:** `BreachTicketReader`.
 - **Resolved gate:** `RequireResource(breach_ticket)`.
 - **Rules:** Resource `breach_ticket`, OWN for every staff role: the holder is this account, in the WHERE clause, so another person's ticket is 404. What a holder sees is the breach reference, their instruction, the thread, the state and the answer-by date (BD-13). A closed breach refuses every write. (S3-08) Reading it marks the office's messages read.
@@ -49,9 +50,9 @@ Write to the Privacy Office on my breach ticket, with a file if it helps.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | NO | NO |
+| OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | OWN | OWN |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`.
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`, `legal`, `hr_user`.
 - **Route guard:** `BreachTicketWriter`.
 - **Resolved gate:** `RequireResource(breach_ticket, write=True)`.
 - **Rules:** Resource `breach_ticket`, OWN for every staff role: the holder is this account, in the WHERE clause, so another person's ticket is 404. What a holder sees is the breach reference, their instruction, the thread, the state and the answer-by date (BD-13). A closed breach refuses every write. (S3-08)
@@ -63,9 +64,9 @@ Download a file attached to a message on my breach ticket.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | NO | NO |
+| OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | OWN | OWN |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`.
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`, `legal`, `hr_user`.
 - **Route guard:** `BreachTicketReader`.
 - **Resolved gate:** `RequireResource(breach_ticket)`.
 - **Rules:** Resource `breach_ticket`, OWN for every staff role: the holder is this account, in the WHERE clause, so another person's ticket is 404. What a holder sees is the breach reference, their instruction, the thread, the state and the answer-by date (BD-13). A closed breach refuses every write. (S3-08) Every read is audited.
@@ -77,9 +78,9 @@ Return my breach ticket: what was done, and how it went.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | NO | NO |
+| OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | OWN | OWN |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`.
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`, `legal`, `hr_user`.
 - **Route guard:** `BreachTicketWriter`.
 - **Resolved gate:** `RequireResource(breach_ticket, write=True)`.
 - **Rules:** Resource `breach_ticket`, OWN for every staff role: the holder is this account, in the WHERE clause, so another person's ticket is 404. What a holder sees is the breach reference, their instruction, the thread, the state and the answer-by date (BD-13). A closed breach refuses every write. (S3-08) Outcome done, partial or failed; only while the ticket is issued.
@@ -87,14 +88,28 @@ Return my breach ticket: what was done, and how it went.
 
 ## POST /breach-tickets/{ticket_uuid}/colleagues
 
-Bring in a colleague, who gets their own ticket on the same breach.
+Bring a colleague into my breach ticket: they get their own.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | NO | NO |
+| OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | OWN | OWN |
 
-- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`.
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`, `legal`, `hr_user`.
 - **Route guard:** `BreachTicketWriter`.
 - **Resolved gate:** `RequireResource(breach_ticket, write=True)`.
 - **Rules:** Resource `breach_ticket`, OWN: the holder is this account, in the WHERE clause. Only while the ticket and the breach are open (409 `ticket_not_open`, `breach_closed`). The colleague follows the same flow as a DPO assignment by email (BD-05, BD-14): the address must be on `BREACH_TICKET_EMAIL_DOMAINS` (422); active staff get an ordinary ticket, anyone else a breach-only login. Their ticket opens with the adder's note, not the DPO's instruction, and records who added whom. The answer is the adder's own ticket whatever happened to the colleague's account; somebody who already holds a ticket on the breach is a neutral 409 `colleague_not_added`. (S3-09)
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breach_tickets.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/tickets.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /breach-tickets/{ticket_uuid}/resolve-by
+
+Change the date to resolve my breach ticket by, saying why.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | OWN | OWN |
+
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `breach_holder`, `legal`, `hr_user`.
+- **Route guard:** `BreachTicketWriter`.
+- **Resolved gate:** `RequireResource(breach_ticket, write=True)`.
+- **Rules:** Resource `breach_ticket`, OWN for every staff role: the holder is this account, in the WHERE clause, so another person's ticket is 404. What a holder sees is the breach reference, their instruction, the thread, the state and the answer-by date (BD-13). A closed breach refuses every write. (S3-08) While the ticket is open (409 `ticket_not_open`); a reason is required (422), and a date in the past or the date it already has is refused. The old date, the new one and the sealed reason go on the ticket's events and its thread, the two dates on the trail. No approval. The officers of the breach's office are told. (0061, ADR 0037)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breach_tickets.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/tickets.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).

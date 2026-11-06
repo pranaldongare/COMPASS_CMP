@@ -45,6 +45,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | rights_request | RW / ALL | RW / SCOPED | NO | NO | NO | NO | NO | NO | RW / ALL | NO |
 | legal_hold | RW / ALL | NO | NO | NO | NO | NO | NO | NO | RW / ALL | NO |
 | breach | RW / ALL (others 404) | NO | NO | NO | NO | NO | NO | NO | RW / ALL (others 404) | NO |
+| breach_settings | RW / ALL | RW / ALL | NO | NO | NO | NO | NO | NO | RW / ALL | NO |
 | restricted_country | RW / ALL | R / ALL | NO | NO | NO | NO | NO | NO | NO | NO |
 | notice_template | RW / ALL | NO | NO | NO | NO | NO | NO | NO | RW / ALL | NO |
 | hr_category | NO | R / ALL | NO | NO | NO | NO | NO | NO | RW / ALL | R / SCOPED |
