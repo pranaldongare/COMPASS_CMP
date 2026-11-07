@@ -73,6 +73,8 @@ SUBJECT_VISIBLE: frozenset[str] = frozenset(
         "rights.response_downloaded",
         "rights.grievance_decided",
         "rights.closed",
+        # What was done with her name and email on a report she sent (0065).
+        "incident_report.reporter_erased",
     }
 )
 

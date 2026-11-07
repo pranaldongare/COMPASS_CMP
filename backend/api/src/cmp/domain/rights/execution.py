@@ -18,6 +18,11 @@ change rather than a copy:
 * **Nothing done at all is not complete** - no item and no holder's return is a
   request nobody carried out, however it is worded. `no_records` is the honest
   answer when nothing is held.
+* **A report she sent through the public link** that an office dismissed is
+  done when her name and email are erased from it (0065). It is not an item,
+  because items are her appearances in assets; an erasure that still leaves
+  her on one is not complete, and one whose only act was erasing her from a
+  report is.
 
 Everything else closes `partial`, and the response says, item by item, what
 happened, in words that never say "erased" for what was not.
@@ -28,6 +33,7 @@ the evidence allows the response to say.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from enum import StrEnum
 from typing import Any
 
@@ -43,6 +49,12 @@ KEPT_AS_EVIDENCE = (
     "Kept, because they are the record of what happened and are never rewritten: "
     "your consent records, the audit trail, the files of data sent to processors "
     "before your request, and earlier responses given to you."
+)
+
+KEPT_OF_A_REPORT = (
+    "Of a report you sent through the public link that was not taken up, these are kept: "
+    "its reference, what you wrote, why it was not taken up and who decided. They are the "
+    "office's record of what it did with what it was told."
 )
 
 
@@ -125,8 +137,19 @@ def describe(item: Row) -> str:
     return "Erased." if done else f"Decided for erasure{held_back}; not yet carried out."
 
 
-def account(kind: str, items: list[Row], holders: list[Row]) -> dict[str, Any] | None:
-    """The record's account of what was done, for erasure and correction."""
+def erased(report: Row) -> bool:
+    """Her name and email are off this report."""
+    return report.get("reporter_erased_at") is not None
+
+
+def account(
+    kind: str, items: list[Row], holders: list[Row], reports: Sequence[Row] = ()
+) -> dict[str, Any] | None:
+    """The record's account of what was done, for erasure and correction.
+
+    `reports` are the dismissed reports from the public link found for her and
+    those erased under this request; only an erasure reaches them.
+    """
     if kind not in (Kind.ERASURE, Kind.CORRECTION):
         return None
     entries = [
@@ -138,12 +161,27 @@ def account(kind: str, items: list[Row], holders: list[Row]) -> dict[str, Any] |
         }
         for i in items
     ]
+    reported = [
+        {
+            "report": str(r["reference"]),
+            "done": erased(r),
+            "outcome": (
+                "Your name and email were erased from it."
+                if erased(r)
+                else "Not yet erased: it still carries your name and email."
+            ),
+        }
+        for r in (reports if kind == Kind.ERASURE else ())
+    ]
     return {
         "items": entries,
-        "not_done": [e["asset"] for e in entries if not e["done"]],
+        "public_reports": reported,
+        "not_done": [e["asset"] for e in entries if not e["done"]]
+        + [e["report"] for e in reported if not e["done"]],
         # Decided with the user for S2-03: records of what happened are not
         # rewritten by an erasure, and the response says so rather than hiding it.
         "kept_as_evidence": KEPT_AS_EVIDENCE if kind == Kind.ERASURE else None,
+        "kept_of_a_report": KEPT_OF_A_REPORT if reported else None,
         "holders_confirmed": [str(h["label"]) for h in holders if returned_done(h)],
         # Back, but saying they could not do all of it: named, never counted as done.
         "holders_short": [
@@ -154,8 +192,15 @@ def account(kind: str, items: list[Row], holders: list[Row]) -> dict[str, Any] |
     }
 
 
-def why_not_complete(kind: str, items: list[Row], holders: list[Row]) -> str | None:
-    """None when `complete` is earned; otherwise the sentence that says why not."""
+def why_not_complete(
+    kind: str, items: list[Row], holders: list[Row], reports: Sequence[Row] | None = ()
+) -> str | None:
+    """None when `complete` is earned; otherwise the sentence that says why not.
+
+    `reports` is None when they could not be looked for. The sentence about them
+    gives a count and never a report's number: an administrator may read it on
+    a request about the office, and the reports are the officers' to see.
+    """
     if kind not in (Kind.ERASURE, Kind.CORRECTION):
         return None
     returned = [h for h in holders if returned_done(h)]
@@ -174,7 +219,20 @@ def why_not_complete(kind: str, items: list[Row], holders: list[Row]) -> str | N
             + ", ".join(undone)
             + ". The response can go out on time, but it is partial and says what remains."
         )
-    if not items and not returned:
+    # Only an erasure reaches a report from the public link.
+    if kind == Kind.ERASURE and reports is None:
+        return (
+            "Whether she sent a report through the public link could not be checked just "
+            "now. Reload before answering complete."
+        )
+    reached = list(reports or ()) if kind == Kind.ERASURE else []
+    naming = [r for r in reached if not erased(r)]
+    if naming:
+        return (
+            f"Her name and email are still on {len(naming)} report(s) she sent through the "
+            "public link. Erase them from the Holders tab, or answer partial."
+        )
+    if not items and not returned and not any(erased(r) for r in reached):
         what = "corrected" if kind == Kind.CORRECTION else "erased"
         return (
             f"Nothing in this request has been {what}: no item in scope has been carried "
@@ -199,11 +257,13 @@ def unreturned_reason(holders: list[Row]) -> str | None:
     )
 
 
-def complete_blocked_by(kind: str, items: list[Row], holders: list[Row]) -> str | None:
+def complete_blocked_by(
+    kind: str, items: list[Row], holders: list[Row], *, reports: Sequence[Row] | None = ()
+) -> str | None:
     """Why this request may not close as `complete`, or None when it may.
 
     The one answer to the question, used by `respond` to refuse and served on
     the request so the console can say so before anybody presses the button -
     the console holds no copy of the rule.
     """
-    return unreturned_reason(holders) or why_not_complete(kind, items, holders)
+    return unreturned_reason(holders) or why_not_complete(kind, items, holders, reports)

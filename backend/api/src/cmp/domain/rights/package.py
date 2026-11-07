@@ -26,7 +26,7 @@ from cmp.db.repositories import exchange as exchange_repo
 from cmp.db.repositories import rights as rights_repo
 from cmp.db.repositories import users as user_repo
 from cmp.db.sql import Conn
-from cmp.domain.rights import execution
+from cmp.domain.rights import execution, public_reports
 from cmp.domain.rights.scope import consent_scope, scope_text
 from cmp.infrastructure.dkms import unseal, unseal_many
 
@@ -37,6 +37,12 @@ _SCOPE_NOTE = (
     "notice text as served, every disclosure recorded, and the returns from every "
     "party ticketed. Data held by a processor is described by that processor's "
     "return, not reproduced here. Consent records are evidence and are never erased."
+)
+
+#: Added when the response carries reports she sent through the public link (0065).
+_REPORTS_NOTE = (
+    " It also holds the reports you sent through the public link that the Privacy Office "
+    "did not take up."
 )
 
 #: Added when the request was confined to one consent.
@@ -128,6 +134,11 @@ async def build_response(
         for d in await exchange_repo.disclosures_for_user(conn, subject_id)
         if scope_ids is None or int(d["consent_id"]) in scope_ids
     ]
+    # The dismissed reports she sent through the public link, found by her
+    # proved addresses once identity is verified (0065): her own words back to
+    # her on an access request, and on an erasure what became of each.
+    found = await public_reports.found(conn, request, strict=True)
+    reports = await public_reports.for_package(conn, request, result=found)
     trail = [
         _clean(e, drop=("detail_json",))
         for e in await audit_repo.for_subject(conn, subject_id, limit=500)
@@ -152,7 +163,9 @@ async def build_response(
         },
         "response": response_text,
         "outcome": request.get("outcome"),
-        "scope": _SCOPE_NOTE + (_CONFINED_NOTE if scope else ""),
+        "scope": _SCOPE_NOTE
+        + (_REPORTS_NOTE if reports else "")
+        + (_CONFINED_NOTE if scope else ""),
         "summary": {
             "confined_to_consent": scope is not None,
             "consents": len(consents),
@@ -160,9 +173,11 @@ async def build_response(
             "disclosures": len(disclosures),
             "holders": len(holders),
             "holders_returned": sum(1 for h in holders if h["ticket_status"] == "returned"),
+            "reports_from_the_public_link": len(reports),
         },
         "consents": consents,
         "disclosures": disclosures,
+        "reports_from_the_public_link": reports,
         "holders": [
             {
                 "holder": h["label"],
@@ -183,7 +198,12 @@ async def build_response(
         ],
         # What was carried out, item by item, for a correction or an erasure -
         # never "erased" for what was only decided (S2-02).
-        "execution": execution.account(str(request["request_type"]), items or [], holders),
+        "execution": execution.account(
+            str(request["request_type"]),
+            items or [],
+            holders,
+            reports=found["open"] + found["erased"],
+        ),
         "files": [
             {
                 "file_uuid": str(a["file_uuid"]),
@@ -270,6 +290,13 @@ def digest_text(package: dict[str, Any]) -> str:
     else:
         lines.append("- None recorded.")
 
+    # What was kept of them is said with what was done, below.
+    reported = public_reports.digest_lines(
+        package.get("reports_from_the_public_link") or [], erasure=False
+    )
+    if reported:
+        lines += ["", *reported]
+
     lines += ["", "WHAT EACH PARTY HOLDING YOUR DATA RETURNED"]
     holders = package.get("holders", [])
     if holders:
@@ -298,11 +325,14 @@ def digest_text(package: dict[str, Any]) -> str:
             + ". This response is partial; the gap is named rather than hidden.",
         ]
     done = package.get("execution") or {}
-    if done.get("items"):
+    if done.get("items") or done.get("public_reports"):
         lines += ["", "WHAT WAS DONE WITH EACH ITEM"]
-        lines += [f"- {e['asset']}: {e['outcome']}" for e in done["items"]]
+        lines += [f"- {e['asset']}: {e['outcome']}" for e in done.get("items") or []]
+        lines += [f"- {e['report']}: {e['outcome']}" for e in done.get("public_reports") or []]
     if done.get("kept_as_evidence"):
         lines += ["", str(done["kept_as_evidence"])]
+    if done.get("kept_of_a_report"):
+        lines += ["", str(done["kept_of_a_report"])]
     if done.get("not_done"):
         lines += [
             "",

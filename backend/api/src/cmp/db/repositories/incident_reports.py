@@ -1,9 +1,10 @@
 """Incidents reported through the public link, and how the office is set up to
 hear of them (0058).
 
-A report is written once and its outcome once, by trigger. It belongs to no
-office, so every reader here is one the caller's role has already been let
-through to: the two officers, on the shared intake.
+A report is written once and its outcome once, by trigger, and a dismissed
+report's reporter may be erased once more, under a rights request (0065). It
+belongs to no office, so every reader here is one the caller's role has already
+been let through to: the two officers, on the shared intake or on a request.
 """
 
 from __future__ import annotations
@@ -21,7 +22,7 @@ Row = dict[str, Any]
 _COLUMNS = f"""
   r.report_id, r.report_uuid, r.reference, r.reporter_name, r.reporter_email, r.title,
   r.noticed_at, {", ".join("r." + c for c in LOGGED_TEXT)}, r.cyber_attack, r.received_at,
-  r.breach_id, r.claimed_at, r.dismissed_at
+  r.breach_id, r.claimed_at, r.dismissed_at, r.reporter_erased_at
 """
 
 
@@ -36,7 +37,9 @@ async def create(
     cyber_attack: str | None,
 ) -> Row:
     """The report, with its INC number: the same sequence the console's
-    incidents draw on, so no two share one."""
+    incidents draw on, so no two share one. The address's blind index is
+    computed from the plaintext in the same statement, so a rights request can
+    find the report without opening it (0065)."""
     sealed = await seal(
         "incident_report",
         {
@@ -51,15 +54,17 @@ async def create(
     row = await fetch_one(
         conn,
         f"""INSERT INTO incident_report
-              (reference, reporter_name, reporter_email, title, noticed_at, {columns}, cyber_attack)
+              (reference, reporter_name, reporter_email, reporter_email_hash, title, noticed_at,
+               {columns}, cyber_attack)
             VALUES ('INC-' || to_char(now(), 'YYYY') || '-'
                       || cmp_next_number('breach_incident_ref_seq'),
-                    %s, %s, %s, %s, {marks}, %s)
+                    %s, %s, %s, %s, %s, {marks}, %s)
             RETURNING report_id, report_uuid, reference, reporter_name, reporter_email,
                       received_at""",
         (
             sealed["reporter_name"],
             sealed["reporter_email"],
+            index_of("email", reporter_email),
             sealed["title"],
             noticed_at,
             *(sealed[c] for c in LOGGED_TEXT),
@@ -97,11 +102,14 @@ async def count_waiting(conn: Conn) -> int:
 
 
 async def dismissed(conn: Conn, *, limit: int) -> list[Row]:
-    """The reports an office dismissed, latest first, with who did it and why."""
+    """The reports an office dismissed, latest first, with who did it and why,
+    and when their reporter was erased. Not under which request, or by whom:
+    the request is an office's, and this list is both offices'."""
     return await fetch_all(
         conn,
         """SELECT r.reference, r.reporter_name, r.reporter_email, r.title, r.received_at,
-                  r.dismissed_at, r.dismissal_reason, u.full_name AS dismissed_by_name
+                  r.dismissed_at, r.dismissal_reason, u.full_name AS dismissed_by_name,
+                  r.reporter_erased_at
              FROM incident_report r JOIN auth_user u ON u.id = r.dismissed_by
             WHERE r.dismissed_at IS NOT NULL
             ORDER BY r.dismissed_at DESC, r.report_id DESC
@@ -153,6 +161,76 @@ async def set_dismissed(conn: Conn, report_id: int, *, reason: str, dismissed_by
             WHERE report_id = %s""",
         (sealed["dismissal_reason"], dismissed_by, report_id),
     )
+
+
+# ------------------------------------------------------- a reporter's rights
+#
+# A dismissed report is found by the blind index of the address it came from,
+# never by the address: nothing here compares or opens a sealed value.
+
+#: Dismissed, and its reporter not erased: the reports a rights request reaches.
+_REACHED = "r.dismissed_at IS NOT NULL AND r.reporter_erased_at IS NULL"
+
+
+async def found_for(conn: Conn, email_hashes: list[str], *, limit: int | None) -> list[Row]:
+    """The dismissed reports still naming whoever holds one of these
+    addresses, oldest first. A waiting or claimed report is never among them."""
+    return await fetch_all(
+        conn,
+        f"""SELECT {_COLUMNS} FROM incident_report r
+             WHERE {_REACHED} AND r.reporter_email_hash = ANY(%s)
+             ORDER BY r.received_at, r.report_id"""
+        + (" LIMIT %s" if limit is not None else ""),
+        (email_hashes, limit) if limit is not None else (email_hashes,),
+    )
+
+
+async def erased_under(conn: Conn, request_id: int) -> list[Row]:
+    """The reports whose reporter was erased under this request, oldest first:
+    how a request still shows what it erased once the index has gone. Their
+    name and email come back NULL."""
+    return await fetch_all(
+        conn,
+        """SELECT r.report_id, r.report_uuid, r.reference, r.title, r.received_at,
+                  r.dismissed_at, r.reporter_erased_at, r.reporter_name, r.reporter_email
+             FROM incident_report r
+            WHERE r.reporter_erased_request_id = %s
+            ORDER BY r.received_at, r.report_id""",
+        (request_id,),
+    )
+
+
+async def erase_reporters(
+    conn: Conn, email_hashes: list[str], *, request_id: int, erased_by: int
+) -> list[Row]:
+    """Blank the name, the address and its index on every dismissed report
+    still naming these addresses, in one statement: of two officers erasing at
+    once, the second waits on the rows, finds them erased, and blanks none. The
+    trigger allows this write once and nothing else with it."""
+    return await fetch_all(
+        conn,
+        f"""UPDATE incident_report r
+               SET reporter_name = NULL, reporter_email = NULL, reporter_email_hash = NULL,
+                   reporter_erased_at = now(), reporter_erased_by = %s,
+                   reporter_erased_request_id = %s
+             WHERE {_REACHED} AND r.reporter_email_hash = ANY(%s)
+         RETURNING r.report_id, r.reference""",
+        (erased_by, request_id, email_hashes),
+    )
+
+
+async def reporter_address(conn: Conn, email_hash: str) -> str | None:
+    """The address a dismissed report came from, sealed, for a code to a
+    reporter with no account: the stored one, never the one typed. The latest
+    report's, which is as proved as any."""
+    row = await fetch_one(
+        conn,
+        f"""SELECT r.reporter_email FROM incident_report r
+             WHERE {_REACHED} AND r.reporter_email_hash = %s
+             ORDER BY r.report_id DESC LIMIT 1""",
+        (email_hash,),
+    )
+    return str(row["reporter_email"]) if row else None
 
 
 # ------------------------------------------------------------------- settings

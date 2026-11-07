@@ -96,7 +96,12 @@ NOT_POLICED = {
     "breach_temporary_access": "the grant of a login, read by the account and the administrator",
     # A report from the public link is nobody's office's until one claims it
     # (0058): both officers read the intake, and `breach_id` is what it became.
-    "incident_report": "breach_id; it belongs to no office until claimed",
+    # An erasure of its reporter names the request it was done under (0065),
+    # which the shared dismissed list never joins.
+    "incident_report": (
+        "breach_id and reporter_erased_request_id; it belongs to no office until claimed, "
+        "and an erasure names the request it was done under"
+    ),
     # The registry is shared (offices-and-tenancy.md): a source belongs to a
     # processor; `site_id` is the site it was first registered for.
     "data_source": "site_id; the registry of sources is shared by both offices",

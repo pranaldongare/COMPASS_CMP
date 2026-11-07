@@ -3,13 +3,17 @@
 Anybody may report, once they have proved their email. What arrives waits in
 the shared intake with its INC number and starts nothing: both officers see it
 until one claims it, which logs the incident under that number in that office,
-or dismisses it with a reason.
+or dismisses it with a reason. A dismissed report's reporter may be erased once,
+under a rights request, and nothing else about it moves (0065).
 """
 
 from __future__ import annotations
 
+import importlib.util
+import pathlib
 import uuid
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 from typing import Any
 
 import psycopg
@@ -30,10 +34,13 @@ from cmp.db.sql import execute, fetch_one
 from cmp.domain import alerts
 from cmp.domain.breach import intake, service
 from cmp.domain.breach import settings as breach_settings
+from cmp.infrastructure.dkms import unseal_values_sync
+from cmp.infrastructure.dkms.blind import index_of
 from cmp.tasks import dispatch as dispatch_mod
 from cmp.tasks.notifications.incident_reports import send_incident_report_code
-from tests.conftest import plain
+from tests.conftest import hashed, plain
 from tests.integration.hr_world import staff
+from tests.integration.test_rights_flows import _portal_request
 
 pytestmark = pytest.mark.integration
 
@@ -100,6 +107,23 @@ async def test_a_report_takes_its_number_and_waits_on_no_clock(
         (made["reference"],),
     )
     assert row is not None and all(str(v).startswith("SE::") for v in row.values()), "sealed"
+
+
+async def test_a_report_takes_the_index_of_its_address(conn: Any, request_context: Any) -> None:
+    """The same index an account's email has, so a rights request finds the
+    report by the address it holds, however the reporter typed it (0065)."""
+    address = f"Reporter.{uuid.uuid4().hex[:8]}@Example.ORG "
+    made = await _report(conn, email=address)
+    account = await staff(conn, "dpo", address.strip().lower())
+    row = await fetch_one(
+        conn,
+        """SELECT r.reporter_email_hash, u.email_hash
+             FROM incident_report r, auth_user u
+            WHERE r.reference = %s AND u.id = %s""",
+        (made["reference"], account["id"]),
+    )
+    assert row is not None
+    assert row["reporter_email_hash"] == index_of("email", address) == row["email_hash"]
 
 
 class TestTheListIsAPage:
@@ -418,6 +442,7 @@ async def test_what_was_dismissed_can_be_read_with_who_did_it_and_why(
     assert [r["reference"] for r in rows[:2]] == [second["reference"], first["reference"]]
     assert still["reference"] not in {r["reference"] for r in rows}
     newest = rows[0]
+    assert newest["reporter_erased_at"] is None
     assert str(newest["dismissal_reason"]).startswith("SE::"), "sealed"
     assert plain(newest["dismissal_reason"]) == "A test"
     assert plain(newest["title"]) == "Junk"
@@ -488,6 +513,255 @@ class TestWhatWasReportedStaysAsItWasSaid:
                 "UPDATE incident_report SET dismissal_reason = 'x' WHERE reference = %s",
                 (made["reference"],),
             )
+
+
+class TestADismissedReporterIsErasedOnce:
+    """Raw SQL, past the service: the rule is the trigger's and the CHECKs'."""
+
+    ERASE = """UPDATE incident_report
+                  SET reporter_name = NULL, reporter_email = NULL, reporter_email_hash = NULL,
+                      reporter_erased_at = now(), reporter_erased_by = %s,
+                      reporter_erased_request_id = %s
+                WHERE report_id = %s"""
+
+    @staticmethod
+    async def _dismissed(conn: Any, seeded: dict[str, Any]) -> int:
+        made = await _report(conn)
+        report = str((await _waiting(conn, made["reference"]))["report_uuid"])
+        await intake.dismiss(conn, report_uuid=report, reason="Not ours", actor_id=_dpo(seeded))
+        return await TestADismissedReporterIsErasedOnce._id(conn, made["reference"])
+
+    @staticmethod
+    async def _id(conn: Any, reference: str) -> int:
+        row = await fetch_one(
+            conn, "SELECT report_id FROM incident_report WHERE reference = %s", (reference,)
+        )
+        assert row is not None
+        return int(row["report_id"])
+
+    @staticmethod
+    async def _request(conn: Any, seeded: dict[str, Any]) -> int:
+        return int((await _portal_request(conn, seeded, "erasure"))["request_id"])
+
+    @staticmethod
+    async def _row(conn: Any, report_id: int) -> dict[str, Any]:
+        row = await fetch_one(
+            conn,
+            "SELECT to_jsonb(r) AS r FROM incident_report r WHERE report_id = %s",
+            (report_id,),
+        )
+        assert row is not None
+        return dict(row["r"])
+
+    async def test_its_name_and_address_go_once_and_nothing_else_moves(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        report = await self._dismissed(conn, seeded)
+        request = await self._request(conn, seeded)
+        before = await self._row(conn, report)
+        await conn.execute(self.ERASE, (_dpo(seeded), request, report))
+        after = await self._row(conn, report)
+        erasure = {
+            "reporter_name",
+            "reporter_email",
+            "reporter_email_hash",
+            "reporter_erased_at",
+            "reporter_erased_by",
+            "reporter_erased_request_id",
+        }
+        assert {k: v for k, v in after.items() if k not in erasure} == {
+            k: v for k, v in before.items() if k not in erasure
+        }
+        assert (after["reporter_name"], after["reporter_email"], after["reporter_email_hash"]) == (
+            None,
+            None,
+            None,
+        )
+        assert after["reporter_erased_request_id"] == request and after["reporter_erased_at"]
+        with pytest.raises(psycopg.errors.RestrictViolation, match="has its outcome"):
+            async with conn.transaction():
+                await conn.execute(self.ERASE, (_dpo(seeded), request, report))
+        with pytest.raises(psycopg.errors.RestrictViolation, match="has its outcome"):
+            async with conn.transaction():
+                await conn.execute(
+                    """UPDATE incident_report
+                          SET reporter_name = 'SE::back', reporter_email = 'SE::back',
+                              reporter_email_hash = 'back', reporter_erased_at = NULL,
+                              reporter_erased_by = NULL, reporter_erased_request_id = NULL
+                        WHERE report_id = %s""",
+                    (report,),
+                )
+
+    @pytest.mark.parametrize(
+        "change",
+        [
+            "title = 'SE::other'",
+            "dismissal_reason = 'SE::other'",
+            "dismissed_by = (SELECT id FROM auth_user WHERE email = 'admin@test.local' LIMIT 1)",
+            "noticed_at = now()",
+            "incident_details = 'SE::other'",
+        ],
+    )
+    async def test_nothing_else_may_change_with_it(
+        self, conn: Any, seeded: dict[str, Any], change: str
+    ) -> None:
+        report = await self._dismissed(conn, seeded)
+        request = await self._request(conn, seeded)
+        other = int(seeded["users"]["admin"]["id"])
+        with pytest.raises(psycopg.errors.RestrictViolation, match="changes nothing else"):
+            await conn.execute(
+                f"""UPDATE incident_report
+                       SET reporter_name = NULL, reporter_email = NULL,
+                           reporter_email_hash = NULL, reporter_erased_at = now(),
+                           reporter_erased_by = %s, reporter_erased_request_id = %s, {change}
+                     WHERE report_id = %s""",
+                (other, request, report),
+            )
+
+    @pytest.mark.parametrize("outcome", ["waiting", "claimed"])
+    async def test_only_a_dismissed_report_is_blanked(
+        self, conn: Any, seeded: dict[str, Any], outcome: str
+    ) -> None:
+        made = await _report(conn)
+        if outcome == "claimed":
+            report = str((await _waiting(conn, made["reference"]))["report_uuid"])
+            await intake.claim(conn, report_uuid=report, office="rnd", actor_id=_dpo(seeded))
+        report_id = await self._id(conn, made["reference"])
+        request = await self._request(conn, seeded)
+        with pytest.raises(psycopg.errors.RestrictViolation):
+            await conn.execute(self.ERASE, (_dpo(seeded), request, report_id))
+
+    async def test_the_address_does_not_stay_behind(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        """The trigger refuses an erasure that leaves the address; the CHECK
+        refuses a row written that way, which the trigger never sees."""
+        report = await self._dismissed(conn, seeded)
+        request = await self._request(conn, seeded)
+        with pytest.raises(psycopg.errors.RestrictViolation):
+            async with conn.transaction():
+                await conn.execute(
+                    """UPDATE incident_report
+                          SET reporter_name = NULL, reporter_email_hash = NULL,
+                              reporter_erased_at = now(), reporter_erased_by = %s,
+                              reporter_erased_request_id = %s
+                        WHERE report_id = %s""",
+                    (_dpo(seeded), request, report),
+                )
+        for kept in ("reporter_email", "reporter_email_hash", "reporter_name"):
+            values = {
+                "reporter_name": "NULL",
+                "reporter_email": "NULL",
+                "reporter_email_hash": "NULL",
+                kept: "'SE::kept'",
+            }
+            with pytest.raises(psycopg.errors.CheckViolation, match="reporter_until_erased"):
+                async with conn.transaction():
+                    await conn.execute(
+                        f"""INSERT INTO incident_report
+                              (reference, reporter_name, reporter_email, reporter_email_hash,
+                               title, dismissed_by, dismissed_at, dismissal_reason,
+                               reporter_erased_at, reporter_erased_by,
+                               reporter_erased_request_id)
+                            VALUES (%s, {values["reporter_name"]}, {values["reporter_email"]},
+                                    {values["reporter_email_hash"]}, 'SE::t', %s, now(),
+                                    'SE::r', now(), %s, %s)""",
+                        (f"INC-T-{uuid.uuid4().hex[:8]}", _dpo(seeded), _dpo(seeded), request),
+                    )
+
+    async def test_an_address_never_goes_without_an_erasure(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        with pytest.raises(psycopg.errors.CheckViolation, match="reporter_until_erased"):
+            await conn.execute(
+                """INSERT INTO incident_report (reference, reporter_name, reporter_email,
+                                                reporter_email_hash, title)
+                   VALUES (%s, 'SE::n', 'SE::e', NULL, 'SE::t')""",
+                (f"INC-T-{uuid.uuid4().hex[:8]}",),
+            )
+
+    async def test_an_erasure_names_the_request_it_was_done_under(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        report = await self._dismissed(conn, seeded)
+        with pytest.raises(psycopg.errors.CheckViolation, match="erasure_whole"):
+            await conn.execute(self.ERASE, (_dpo(seeded), None, report))
+
+    async def test_only_a_dismissed_report_may_be_written_erased(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        request = await self._request(conn, seeded)
+        with pytest.raises(psycopg.errors.CheckViolation, match="erased_once_dismissed"):
+            await conn.execute(
+                """INSERT INTO incident_report
+                     (reference, title, reporter_erased_at, reporter_erased_by,
+                      reporter_erased_request_id)
+                   VALUES (%s, 'SE::t', now(), %s, %s)""",
+                (f"INC-T-{uuid.uuid4().hex[:8]}", _dpo(seeded), request),
+            )
+
+    async def test_an_erased_report_is_still_never_deleted(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        report = await self._dismissed(conn, seeded)
+        await conn.execute(self.ERASE, (_dpo(seeded), await self._request(conn, seeded), report))
+        with pytest.raises(psycopg.errors.RestrictViolation, match="never deleted"):
+            await conn.execute("DELETE FROM incident_report WHERE report_id = %s", (report,))
+
+
+def _migration(name: str) -> Any:
+    path = pathlib.Path(__file__).parents[2] / "migrations" / "versions" / name
+    spec = importlib.util.spec_from_file_location(path.stem, path)
+    assert spec and spec.loader
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+M0058 = _migration("0058_public_incident_report.py")
+M0065 = _migration("0065_a_dismissed_reporter_is_found_and_erased.py")
+
+
+class TestTheWayDownFrom0065:
+    def test_the_guard_comes_first_and_0058s_rule_comes_back_word_for_word(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Run as it would be, with nothing executed: the DDL would hold the
+        shared database's table until the rollback."""
+        said: list[str] = []
+        monkeypatch.setattr(M0065, "op", SimpleNamespace(execute=said.append))
+        M0065.downgrade()
+        assert said.index(M0065.GUARD) < said.index(M0065.DOWNGRADE)
+
+        def body(sql: str, opening: str) -> str:
+            start = sql.index(opening) + len(opening)
+            return sql[start : sql.index("$$;", start)]
+
+        name = "FUNCTION cmp_incident_report_outcome_once()"
+        assert body(M0065.DOWNGRADE, f"CREATE OR REPLACE {name}") == body(
+            M0058.UPGRADE, f"CREATE {name}"
+        )
+
+    async def test_an_erased_reporter_refuses_it(self, conn: Any, seeded: dict[str, Any]) -> None:
+        report = await TestADismissedReporterIsErasedOnce._dismissed(conn, seeded)
+        request = await TestADismissedReporterIsErasedOnce._request(conn, seeded)
+        await conn.execute(
+            TestADismissedReporterIsErasedOnce.ERASE, (_dpo(seeded), request, report)
+        )
+        with pytest.raises(psycopg.errors.RaiseException, match="a reporter was erased"):
+            async with conn.transaction():
+                await conn.execute(M0065.GUARD)
+
+    async def test_every_report_carries_the_index_of_its_address(self, conn: Any) -> None:
+        """What the backfill wrote for the reports before 0065, and what every
+        report since was written with: the oldest are the backfilled ones."""
+        cur = await conn.execute(
+            """SELECT reporter_email, reporter_email_hash FROM incident_report
+                WHERE reporter_erased_at IS NULL ORDER BY report_id LIMIT 200"""
+        )
+        rows = await cur.fetchall()
+        opened = unseal_values_sync([str(r["reporter_email"]) for r in rows])
+        assert [r["reporter_email_hash"] for r in rows] == [hashed("email", a) for a in opened]
 
 
 class TestWhoIsTold:

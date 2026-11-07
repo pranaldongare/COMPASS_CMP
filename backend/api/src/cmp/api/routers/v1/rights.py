@@ -38,7 +38,7 @@ from cmp.db.repositories import audit as audit_repo
 from cmp.db.repositories import entities as entity_repo
 from cmp.db.repositories import rights as repo
 from cmp.db.repositories import users as user_repo
-from cmp.domain.rights import execution, service, tickets
+from cmp.domain.rights import execution, public_reports, service, tickets
 from cmp.infrastructure.storage.service import storage
 from cmp.schemas.common import LongText, OtpCode, Out, Page, Schema, ShortText
 from cmp.validation import Email, Mobile
@@ -383,6 +383,43 @@ class ItemOut(Out):
     execution: list[ExecutionOut] = Field(default_factory=list)
 
 
+class PublicReportOut(Out):
+    """A report she sent through the public link that an office dismissed
+    (0065). Never the office's reason or who dismissed it."""
+
+    report_uuid: UUID
+    reference: str
+    #: Sealed; null once erased under a rights request.
+    reporter_name: str | None
+    #: Sealed; null once erased under a rights request.
+    reporter_email: str | None
+    #: Sealed.
+    title: str
+    received_at: datetime
+    dismissed_at: datetime
+    reporter_erased_at: datetime | None
+
+
+class PublicReportsOut(Out):
+    """What an access or erasure request finds of the reports she sent through
+    the public link, by her proved addresses' blind indexes, once identity is
+    verified. The server's answer to whether they may be erased now, so the
+    console holds no copy of the rule."""
+
+    looked: bool
+    #: Why nothing was looked for: identity not verified, a request of another
+    #: kind or confined to one consent, or the key service not answering.
+    not_looked_because: str | None
+    #: Up to 50 still naming her, oldest first, then those erased under this request.
+    items: list[PublicReportOut]
+    #: All still naming her, however many are listed.
+    total: int
+    #: How many were erased under this request.
+    erased: int
+    may_erase: bool
+    erase_blocked_by: str | None
+
+
 class LinkedRefOut(Out):
     """A request that points at this one: the grievance that disputes it, or
     the re-run a grievance ordered."""
@@ -464,6 +501,10 @@ class RequestDetail(RequestOut):
     #: own instruction starts from (2026-10-08). The kind's words and the
     #: confinement - nothing the request page does not already show.
     default_instruction: str | None = None
+    #: The dismissed reports she sent through the public link (0065). Null for
+    #: a role that does not read the register: the administrator, on a request
+    #: about the office.
+    public_reports: PublicReportsOut | None = None
 
 
 class TransitionsOut(Out):
@@ -716,12 +757,19 @@ async def _detail(conn: Any, row: dict[str, Any], principal: Any) -> dict[str, A
     items = await repo.items_of(conn, request_id)
     executions = await repo.executions_of(conn, request_id)
     items = [{**i, "execution": executions.get(int(i["item_id"]), [])} for i in items]
+    # Looked for once, and the page still opens when the key service does not
+    # answer: complete is then held until they can be.
+    found = await public_reports.found(conn, row)
+    reports = None if found["unavailable"] else found["open"] + found["erased"]
     return {
         **_with_clock(row),
         "holders": holders,
         "items": items,
         "transitions": service.transitions(row, role=principal.role),
-        "complete_blocked_by": execution.complete_blocked_by(row["request_type"], items, holders),
+        "complete_blocked_by": execution.complete_blocked_by(
+            row["request_type"], items, holders, reports=reports
+        ),
+        "public_reports": await public_reports.view(conn, row, role=principal.role, result=found),
         "linked_request": await _linked(conn, row, principal),
         "linked_from": await repo.linked_from(conn, request_id),
         "response_files": await repo.response_files_of(conn, request_id),
@@ -1719,6 +1767,26 @@ async def execute_item(
         )
         executions = await repo.executions_of(conn, int(row["request_id"]))
         return {**item, "execution": executions.get(int(item["item_id"]), [])}
+
+
+@router.post(
+    "/{request_uuid}/public-reports/erase",
+    response_model=PublicReportsOut,
+    summary=(
+        "Erase her name and email from the reports she sent through the public link "
+        "that an office dismissed"
+    ),
+)
+async def erase_public_reports(request_uuid: UUID, principal: RightsWriter) -> dict[str, Any]:
+    """No report is named: they are found again by her proved addresses, so
+    nothing a caller sends can reach another person's. The officers' alone;
+    the administrator, who may hold a request about the office, is answered
+    404, as the register is hidden from them."""
+    async with transaction() as conn:
+        row = await _load(conn, request_uuid, principal)
+        return await public_reports.erase(
+            conn, row, role=principal.role, actor_id=principal.user_id
+        )
 
 
 # ----------------------------------------------------------- staff: closure

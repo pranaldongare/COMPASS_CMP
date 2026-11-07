@@ -83,6 +83,9 @@ INDEX_KIND = {
     "nominee_email": "email",
     "nominee_mobile": "mobile",
     "submitted_contact": "contact",
+    # A copy address (0046) and a reporter's (0065), each hashed as an email.
+    "address": "email",
+    "reporter_email": "email",
 }
 
 BATCH = 200
@@ -130,8 +133,9 @@ APPEND_ONLY = {
     "breach_contact": "trg_breach_contact_append_only",
     "breach_upload": "trg_breach_upload_append_only",
     "rights_request_attachment": "trg_rights_request_attachment_append_only",
-    # What was reported stays as it was said (0058); a finalised report's words
-    # do not change (0059). Sealed when written, like the rest.
+    # What was reported stays as it was said (0058), but for a dismissed
+    # report's reporter, erased once under a rights request (0065); a finalised
+    # report's words do not change (0059). Sealed when written, like the rest.
     "incident_report": "trg_incident_report_outcome_once",
     "breach_report_section": "trg_breach_report_section_frozen",
     # An entry on the board's list is written once, and only its removal and

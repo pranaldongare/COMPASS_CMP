@@ -1,6 +1,8 @@
 """`scripts/reseal.py` walks every table in ENCRYPTED_FIELDS by its primary key.
 
-A table added there and not here is a KeyError on the runbook's `--check`.
+A table added there and not here is a KeyError on the runbook's `--check`, and
+an indexed column whose kind it does not know is a KeyError on the first
+plaintext row it seals.
 """
 
 from __future__ import annotations
@@ -9,7 +11,7 @@ import importlib.util
 import pathlib
 from typing import Any
 
-from cmp.infrastructure.dkms.fields import ENCRYPTED_FIELDS
+from cmp.infrastructure.dkms.fields import BLIND_INDEXED, ENCRYPTED_FIELDS
 
 
 def _reseal() -> Any:
@@ -27,3 +29,15 @@ def test_every_sealed_table_has_its_key() -> None:
 
 def test_every_guarded_table_it_names_is_a_sealed_table() -> None:
     assert sorted(set(_reseal().APPEND_ONLY) - set(ENCRYPTED_FIELDS)) == []
+
+
+def test_every_blind_index_has_its_kind() -> None:
+    """`message_copy.address` had none until 0065, and a reporter's address is new."""
+    kinds = _reseal().INDEX_KIND
+    missing = sorted(
+        (table, column)
+        for table, columns in BLIND_INDEXED.items()
+        for column in columns
+        if column not in kinds
+    )
+    assert missing == []

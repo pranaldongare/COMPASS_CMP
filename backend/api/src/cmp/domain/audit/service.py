@@ -367,6 +367,10 @@ class Event:
     INCIDENT_REPORT_RECEIVED = "incident_report.received"
     INCIDENT_REPORT_CLAIMED = "incident_report.claimed"
     INCIDENT_REPORT_DISMISSED = "incident_report.dismissed"
+    #: A dismissed report's reporter erased under a rights request (0065). Its
+    #: `reference` is the request's, so the request's trail carries it; the
+    #: report's own number is `incident_reference`.
+    INCIDENT_REPORT_REPORTER_ERASED = "incident_report.reporter_erased"
     # A report on a breach (0059), against the breach.
     BREACH_REPORT_DRAFTED = "breach.report_drafted"
     BREACH_REPORT_EDITED = "breach.report_edited"

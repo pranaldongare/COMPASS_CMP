@@ -10400,6 +10400,50 @@
       ]
     },
     {
+      "module": "rights",
+      "method": "POST",
+      "path": "/requests/{request_uuid}/public-reports/erase",
+      "summary": "Erase her name and email from the reports she sent through the public link that an office dismissed",
+      "function": "erase_public_reports",
+      "operation_id": "erase_public_reports_requests__request_uuid__public_reports_erase_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RightsWriter",
+      "resolved_gate": "RequireResource(rights_request, write=True)",
+      "route_roles": [
+        "admin",
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [
+        "public_reports.erase: Role(role) not in (Role.DPO, Role.LEGAL) -> NotFound"
+      ],
+      "resource": "rights_request",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "The officers' alone, on their own office's request: the DPO and the Legal PoC. RightsWriter lets the administrator through on a request about the office, and the service answers 404, as the register of incident reports is hidden from them. Every other role is 403.",
+        "Names no report: the dismissed reports still naming her are found again by the blind index of her proved addresses (the account's email, its second email once proved, or a request with no account's email), so a caller cannot reach another person's. Blanks the name, the email and its index on each in one statement; the number, the words, the reason and who dismissed it stay. 409 not_erasure, request_closed, request_not_started or legal_hold; 503 when the key service cannot open a request with no account's contact. Nothing left to erase is a 200 with no trail row. (0065, ADR 0037, amended 2026-11-07)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/public_reports.py"
+      ]
+    },
+    {
       "module": "cross-border transfers",
       "method": "GET",
       "path": "/restricted-countries",

@@ -12,6 +12,9 @@ still close as `complete`, and a complete erasure reads to her as "erased". So
   holder's return - cannot call itself complete either;
 * otherwise the request closes `partial`, and the response names what was done
   and what was not, in words that do not say "erased" for what was not.
+
+A dismissed report she sent through the public link counts the same way (0065):
+her name erased from it is something done, and a report still naming her is not.
 """
 
 from __future__ import annotations
@@ -24,7 +27,8 @@ import pytest
 
 from cmp.core.errors import TransitionNotPermitted, ValidationFailed
 from cmp.core.permissions import Role
-from cmp.domain.rights import package, service
+from cmp.domain.rights import package, public_reports, service
+from tests.integration.test_public_reports_and_rights import _dismissed
 from tests.integration.test_rights_flows import _asset_with_her, _consent, _portal_request
 
 pytestmark = pytest.mark.integration
@@ -232,3 +236,42 @@ async def test_an_access_request_is_untouched(conn: Any, seeded: dict[str, Any])
     row = await service.transition(conn, row, to="in_progress", reason=None, role=DPO, actor_id=dpo)
     row = await _respond(conn, seeded, await _collating(conn, seeded, row), "complete")
     assert row["outcome"] == "complete"
+
+
+async def test_an_erasure_whose_only_act_was_a_report_closes_complete_and_says_so(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    reference = await _dismissed(conn, seeded, "subject@test.local")
+    row, items = await _erasure_in_scope(conn, seeded, refs=())
+    assert items == []
+    await public_reports.erase(conn, row, role=DPO, actor_id=seeded["users"]["dpo"]["id"])
+    row = await _respond(conn, seeded, await _collating(conn, seeded, row), "complete")
+
+    assert row["outcome"] == "complete"
+    record = await _record(conn, seeded, row)
+    [entry] = [e for e in record["execution"]["public_reports"] if e["report"] == reference]
+    assert entry["done"] is True and "were erased" in entry["outcome"]
+    assert reference not in record["execution"]["not_done"]
+    assert record["execution"]["kept_of_a_report"]
+    assert "your name and email were erased" in package.digest_text(record)
+
+
+async def test_a_report_still_naming_her_closes_partial_and_is_named_as_not_done(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    reference = await _dismissed(conn, seeded, "subject@test.local")
+    row, _items = await _erasure_in_scope(conn, seeded, refs=())
+    row = await _collating(conn, seeded, row)
+    with pytest.raises(ValidationFailed) as refused:
+        await _respond(conn, seeded, row, "complete")
+    assert refused.value.code == "response_partial_required"
+    assert "report(s) she sent through the public link" in refused.value.message
+
+    row = await _respond(conn, seeded, row, "partial")
+    record = await _record(conn, seeded, row)
+    assert reference in record["execution"]["not_done"]
+    [entry] = [e for e in record["execution"]["public_reports"] if e["report"] == reference]
+    assert entry["done"] is False and "still carries your name" in entry["outcome"]
+    [given] = [e for e in record["reports_from_the_public_link"] if e["reference"] == reference]
+    assert given["reported_by"]["email"] == "subject@test.local"
+    assert "NOT YET DONE" in package.digest_text(record)

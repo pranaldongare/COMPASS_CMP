@@ -320,6 +320,11 @@ BLIND_INDEXED: dict[str, dict[str, str]] = {
     "breach_board_recipient": {
         "email": "email_hash",
     },
+    # The address a report from the public link came from: a rights request
+    # finds a dismissed report by it (0065). The same index as auth_user.email.
+    "incident_report": {
+        "reporter_email": "reporter_email_hash",
+    },
 }
 
 #: Columns that also carry a *substring* index: `<column>_ngrams`, a text

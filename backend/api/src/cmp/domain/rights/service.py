@@ -45,7 +45,7 @@ from cmp.db.sql import Conn
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.domain.breach import access
-from cmp.domain.rights import clock, erasure, execution, reach
+from cmp.domain.rights import clock, erasure, execution, public_reports, reach
 from cmp.domain.rights import state_machine as sm
 from cmp.domain.rights.scope import consent_scope, scope_text
 from cmp.domain.rights.state_machine import RequestFacts
@@ -443,6 +443,11 @@ async def submit_public(
     to the *stored* channel for that person - never to the contact typed on the
     form, which is the whole point of verifying - and the reply is the same
     neutral sentence either way.
+
+    A contact that matches no account, but is the address a dismissed report
+    from the public link came from, is one we hold records for too (0065): the
+    code goes to the address stored on the report, so the neutral sentence
+    stays true for that reporter.
     """
     contact = contact.strip()
     await ratelimit.enforce(
@@ -472,6 +477,8 @@ async def submit_public(
     )
     if subject_id is not None and matched is not None:
         await _issue_code(conn, row, to=str(matched.get("email") or matched.get("mobile")))
+    elif subject_id is None and (held := await public_reports.reporter_address(conn, contact)):
+        await _issue_code(conn, row, to=held)
     return {"reference": row["reference"], "message": NEUTRAL_MESSAGE}
 
 
@@ -484,7 +491,14 @@ async def _issue_code(conn: Conn, row: Row, *, to: str) -> None:
 async def verify_public_code(conn: Conn, *, reference: str, code: str) -> dict[str, Any]:
     """The second half of the public form. One message for every failure."""
     row = await repo.by_reference(conn, reference.strip().upper())
-    if not row or row["verification_status"] != "pending" or row["subject_user_id"] is None:
+    if (
+        not row
+        or row["verification_status"] != "pending"
+        or (
+            row["subject_user_id"] is None
+            and not await public_reports.reporter_address_for(conn, row)
+        )
+    ):
         # No code was ever issued for this reference. Same words as a wrong code:
         # distinguishing them would say whether the contact matched somebody.
         raise BadRequest("Invalid or expired code", code="otp_invalid", field="code")
@@ -521,11 +535,18 @@ async def _mark_verified(
 
 # ------------------------------------------------------- staff: verification
 async def send_verification_code(conn: Conn, row: Row, *, role: Role | str, actor_id: int) -> Row:
-    """A code to the channel we already hold for her - never one she supplies now."""
+    """A code to the channel we already hold for her - never one she supplies now.
+    With no account, that is the address a dismissed report she sent came from,
+    if the contact on the request is one (0065)."""
     _may_act(row, role)
     _before_collation(row)
     if row["verification_status"] == "verified":
         raise Conflict("Identity is already verified", code="already_verified")
+    if row["subject_user_id"] is None and (
+        held := await public_reports.reporter_address_for(conn, row)
+    ):
+        await _issue_code(conn, row, to=held)
+        return await reload(conn, row)
     if row["subject_user_id"] is None:
         raise ValidationFailed(
             "The contact matches nobody we hold records for, so there is no stored channel "
@@ -3108,9 +3129,13 @@ async def respond(
         raise ValidationFailed(waiting, field="outcome", code="response_partial_required")
     # S2-02: a correction or erasure is complete only when what it asked for
     # was carried out, with evidence - not when it was decided (`execution`).
+    # A dismissed report still naming her is something not yet done (0065).
     items = await items_for_execution(conn, row)
+    found = await public_reports.found(conn, row, strict=True)
     if result is Outcome.COMPLETE:
-        reason = execution.complete_blocked_by(row["request_type"], items, holders)
+        reason = execution.complete_blocked_by(
+            row["request_type"], items, holders, reports=found["open"] + found["erased"]
+        )
         if reason:
             raise ValidationFailed(reason, field="outcome", code="response_partial_required")
 
@@ -3160,6 +3185,15 @@ async def respond(
             payload, subdir="responses", suggested_name=f"{row['reference']}.json"
         )
         expires = now + timedelta(days=settings.rights_download_ttl_days)
+    else:
+        # No account to download a file from: the mail, to the address the
+        # reports came from, lists them by number, dates and title (0065).
+        digest_for_mail = "\n".join(
+            public_reports.digest_lines(
+                await public_reports.for_package(conn, row, result=found),
+                erasure=row["request_type"] == Kind.ERASURE,
+            )
+        )
 
     gap = await repo.mark_unreturned(conn, int(row["request_id"]))
     # Temporary logins for its tickets end with it; they can still read (0049).

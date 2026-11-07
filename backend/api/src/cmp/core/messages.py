@@ -627,7 +627,10 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "{organisation}: {code} confirms request {reference} is yours. Expires in "
             "{minutes} minutes. Not you? Ignore this message."
         ),
-        to="The requester, at the contact already on file - never one typed into the form.",
+        to=(
+            "The requester, at the contact already on file: an account's, or the address a "
+            "dismissed report from the public link came from. Never one typed into the form."
+        ),
     ),
     Junction(
         key=Message.RIGHTS_RESPONSE_READY,
@@ -679,7 +682,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             ),
             Variable(
                 "digest",
-                "Her record as held by the platform: consents, disclosures, returns.",
+                "Her record as held by the platform: consents, disclosures, returns, and the "
+                "reports she sent through the public link that were not taken up. With no "
+                "account, those reports alone, by number, dates and title.",
                 "CONSENTS\n  - Gait Study 2026: agreed on 1 September 2026",
             ),
             Variable(

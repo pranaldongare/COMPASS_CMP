@@ -323,10 +323,10 @@ class DismissedReportOut(Out):
     """A report an office did not take up, and why."""
 
     reference: str
-    #: Sealed.
-    reporter_name: str
-    #: Sealed.
-    reporter_email: str
+    #: Sealed; null once erased under a rights request.
+    reporter_name: str | None
+    #: Sealed; null once erased under a rights request.
+    reporter_email: str | None
     #: Sealed.
     title: str
     received_at: datetime
@@ -335,6 +335,9 @@ class DismissedReportOut(Out):
     dismissed_by_name: str | None
     #: Sealed.
     dismissal_reason: str
+    #: When the reporter's name and email were erased at their request (0065).
+    #: Never under which request or by whom: the request is one office's.
+    reporter_erased_at: datetime | None
 
 
 class CertInSetAsideIn(Schema):

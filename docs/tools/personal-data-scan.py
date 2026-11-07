@@ -79,6 +79,9 @@ CONTACT = {
     "respondent_email",
     # The address a reporter proved by a code (0058).
     "reporter_email",
+    # Not a contact, but the state of one: when a reporter's name and address
+    # were erased from a dismissed report (0065).
+    "reporter_erased_at",
 }
 DEMOGRAPHIC = {
     "dob", "is_minor", "person_type", "organization_id", "role", "user_role",
@@ -155,6 +158,8 @@ DERIVED = {
     "submitted_contact_hash", "submitted_name_ngrams",
     "nominee_email_hash", "nominee_mobile_hash", "nominee_name_ngrams",
     "address_hash",
+    # How a rights request finds a dismissed report by its reporter's address (0065).
+    "reporter_email_hash",
 }
 
 CATEGORIES = [
@@ -196,6 +201,13 @@ NOT_PERSONAL = {
     "office_name": "the DPO office or the Legal office (ADR 0032)",
     "category_name": "a kind of HR activity, like wellness (0052)",
     "default_person_type": "a category's setting: who its links reach, not a person (0054)",
+    # What a rights request found of a person's dismissed reports (0065): the
+    # container and whether it looked and may erase, never a report's words.
+    "public_reports": "the container of a request's reports from the public link",
+    "looked": "whether a request looked for its subject's reports",
+    "not_looked_because": "why a request did not look, in the office's words",
+    "may_erase": "whether an erasure may run now",
+    "erase_blocked_by": "why an erasure may not run now, in the office's words",
 }
 
 #: Shapes that suggest a person. Anything matching and unclassified is reported.

@@ -28,12 +28,13 @@ def test_every_hash_column_is_named_hash() -> None:
             assert hashed == f"{source}_hash", f"{table}.{source} maps to {hashed}"
 
 
-#: Tables whose hash columns were created with them, after 0029 renamed the
-#: rest - and the migration that created each.
+#: Tables whose hash columns were created with them, or given after 0029
+#: renamed the rest - and the migration that created each.
 BORN_HASHED = {
     "breach_contact": "0045_breach_contact_upload.py",
     "message_copy": "0046_message_copy.py",
     "breach_board_recipient": "0058_public_incident_report.py",
+    "incident_report": "0065_a_dismissed_reporter_is_found_and_erased.py",
 }
 
 

@@ -85,3 +85,80 @@ def test_a_return_that_says_it_fell_short_blocks_complete(outcome: str) -> None:
 def test_access_is_never_blocked_by_execution() -> None:
     assert execution.complete_blocked_by("access", [], []) is None
     assert execution.account("access", [], []) is None
+
+
+# ------------------------------------------- reports from the public link (0065)
+def _report(reference: str, *, erased: bool = False) -> dict[str, Any]:
+    return {
+        "reference": reference,
+        "reporter_erased_at": "2026-11-07T10:00:00Z" if erased else None,
+    }
+
+
+def test_a_report_still_naming_her_blocks_complete() -> None:
+    reason = execution.complete_blocked_by("erasure", [], [], reports=[_report("INC-2026-0001")])
+    assert reason is not None and "still on 1 report(s)" in reason
+
+
+def test_the_blocker_counts_reports_and_names_none() -> None:
+    """An administrator may read it on a request about the office."""
+    reports = [
+        _report("INC-2026-0001"),
+        _report("INC-2026-0002"),
+        _report("INC-2026-0003", erased=True),
+    ]
+    reason = execution.complete_blocked_by("erasure", [_item("quarantine")], [], reports=reports)
+    assert reason is not None and "2 report(s)" in reason
+    assert "INC-" not in reason
+
+
+def test_an_erased_report_is_something_done() -> None:
+    """No item and no holder, and her name taken off one report: that is complete."""
+    reports = [_report("INC-2026-0001", erased=True)]
+    assert execution.complete_blocked_by("erasure", [], [], reports=reports) is None
+    assert execution.complete_blocked_by("erasure", [], []) is not None
+
+
+def test_reports_that_could_not_be_looked_for_block_complete() -> None:
+    reason = execution.complete_blocked_by("erasure", [_item("quarantine")], [], reports=None)
+    assert reason is not None and "could not be checked" in reason
+
+
+def test_access_is_never_blocked_by_reports() -> None:
+    for reports in ([_report("INC-2026-0001")], None):
+        assert execution.complete_blocked_by("access", [], [], reports=reports) is None
+
+
+def test_a_correction_is_not_reached_by_reports() -> None:
+    """Only an erasure takes her off a report, so only an erasure waits for it."""
+    returned = [
+        {
+            "label": "Lab A",
+            "ticket_status": "returned",
+            "accepted_at": "x",
+            "return_outcome": "done",
+        }
+    ]
+    reports = [_report("INC-2026-0001")]
+    assert execution.complete_blocked_by("correction", [], returned, reports=reports) is None
+    assert execution.complete_blocked_by("correction", [], [], reports=None) is not None
+    assert execution.account("correction", [], [], reports)["public_reports"] == []
+
+
+def test_the_account_lists_each_report_and_not_done_names_the_unerased() -> None:
+    done = execution.account(
+        "erasure",
+        [_item("quarantine")],
+        [],
+        [_report("INC-2026-0001", erased=True), _report("INC-2026-0002")],
+    )
+    assert done is not None
+    assert [(e["report"], e["done"]) for e in done["public_reports"]] == [
+        ("INC-2026-0001", True),
+        ("INC-2026-0002", False),
+    ]
+    assert "erased" in done["public_reports"][0]["outcome"]
+    assert "Not yet erased" in done["public_reports"][1]["outcome"]
+    assert done["not_done"] == ["INC-2026-0002"]
+    assert done["kept_of_a_report"] == execution.KEPT_OF_A_REPORT
+    assert execution.account("erasure", [], [])["kept_of_a_report"] is None

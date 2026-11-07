@@ -13,6 +13,7 @@ never the SQL - it is a decision taken in the wrong order.
 
 from __future__ import annotations
 
+import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -29,6 +30,7 @@ from cmp.db.redis import key as rkey
 from cmp.db.repositories import audit as audit_repo
 from cmp.db.repositories import rights as repo
 from cmp.db.repositories import users as user_repo
+from cmp.domain.breach import intake
 from cmp.domain.consent import service as consent_service
 from cmp.domain.rights import service
 from tests.conftest import hashed, plain
@@ -1235,6 +1237,138 @@ class TestPublicForm:
         assert closed and plain(closed[0][1]) == "stranger@example.org"
         assert closed[0][3] == "not_verified"
         assert "could not verify" in closed[0][4] and "match" not in closed[0][4].lower()
+
+    # A reporter with no account (0065): the report they sent is records we
+    # hold for that address, and the code goes to it as stored.
+    @staticmethod
+    async def _reported(
+        conn: Any, seeded: dict[str, Any], outcome: str = "dismissed"
+    ) -> tuple[str, str]:
+        """A report from a fresh address, with that outcome. The address and
+        the report's number."""
+        email = f"reporter.{uuid.uuid4().hex[:10]}@example.org"
+        issued = await otp.issue(otp.Scope.INCIDENT_REPORT, contact_key(email))
+        made = await intake.submit(
+            conn,
+            reporter_name="Asha Rao",
+            email=email,
+            code=issued.code,
+            title="A laptop left on a train",
+            noticed_at=None,
+            told={"incident_details": "It had the participant list on it"},
+            cyber_attack=None,
+            ip_address=None,
+        )
+        reference = str(made["reference"])
+        cur = await conn.execute(
+            "SELECT report_uuid, report_id FROM incident_report WHERE reference = %s",
+            (reference,),
+        )
+        report = await cur.fetchone()
+        dpo = seeded["users"]["dpo"]["id"]
+        if outcome == "claimed":
+            await intake.claim(
+                conn, report_uuid=str(report["report_uuid"]), office="rnd", actor_id=dpo
+            )
+        elif outcome in ("dismissed", "erased"):
+            await intake.dismiss(
+                conn, report_uuid=str(report["report_uuid"]), reason="Not ours", actor_id=dpo
+            )
+        if outcome == "erased":
+            request = await _portal_request(conn, seeded, "erasure")
+            await conn.execute(
+                """UPDATE incident_report
+                      SET reporter_name = NULL, reporter_email = NULL,
+                          reporter_email_hash = NULL, reporter_erased_at = now(),
+                          reporter_erased_by = %s, reporter_erased_request_id = %s
+                    WHERE report_id = %s""",
+                (dpo, request["request_id"], report["report_id"]),
+            )
+        return email, reference
+
+    @staticmethod
+    async def _from_the_form(
+        conn: Any, redis_conn: Any, contact: str
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        await _unthrottle(redis_conn, contact)
+        result = await service.submit_public(
+            conn,
+            request_type="erasure",
+            contact=contact,
+            name=None,
+            request_text="Take my name off what I sent",
+            ip_address="127.0.0.1",
+        )
+        row = await repo.by_reference(conn, result["reference"])
+        assert row is not None and row["subject_user_id"] is None
+        return result, row
+
+    async def test_a_reporter_with_no_account_is_sent_a_code_at_the_address_their_report_came_from(
+        self, conn: Any, seeded: dict[str, Any], redis_conn: Any, monkeypatch: Any
+    ) -> None:
+        sent: list[tuple[Any, ...]] = []
+        monkeypatch.setattr(service, "_dispatch", lambda *a: sent.append(a))
+        email, _ = await self._reported(conn, seeded)
+        result, _row = await self._from_the_form(conn, redis_conn, f"  {email.upper()} ")
+        assert result["message"] == service.NEUTRAL_MESSAGE
+        [code] = [a for a in sent if a[0] == "send_rights_verification_code"]
+        assert str(code[1]).startswith("SE::"), "the stored address, sealed"
+        assert plain(code[1]) == email, "the address on the report, not the one typed"
+        assert code[3] == result["reference"]
+
+    @pytest.mark.parametrize("outcome", ["waiting", "claimed", "erased"])
+    async def test_a_waiting_claimed_or_erased_report_sends_no_code(
+        self,
+        conn: Any,
+        seeded: dict[str, Any],
+        redis_conn: Any,
+        monkeypatch: Any,
+        outcome: str,
+    ) -> None:
+        sent: list[tuple[Any, ...]] = []
+        monkeypatch.setattr(service, "_dispatch", lambda *a: sent.append(a))
+        email, _ = await self._reported(conn, seeded, outcome)
+        result, row = await self._from_the_form(conn, redis_conn, email)
+        assert result["message"] == service.NEUTRAL_MESSAGE
+        assert not [a for a in sent if a[0] == "send_rights_verification_code"]
+        with pytest.raises(BadRequest) as raised:
+            await service.verify_public_code(conn, reference=row["reference"], code="123456")
+        assert raised.value.code == "otp_invalid"
+        with pytest.raises(ValidationFailed):
+            await service.send_verification_code(
+                conn, row, role=DPO, actor_id=seeded["users"]["dpo"]["id"]
+            )
+
+    async def test_that_code_verifies_the_request(
+        self, conn: Any, seeded: dict[str, Any], redis_conn: Any, monkeypatch: Any
+    ) -> None:
+        monkeypatch.setattr(service, "_dispatch", lambda *a: None)
+        email, _ = await self._reported(conn, seeded)
+        _result, row = await self._from_the_form(conn, redis_conn, email)
+        issued = await otp.issue(otp.Scope.RIGHTS_VERIFY, row["reference"])
+        verified = await service.verify_public_code(
+            conn, reference=row["reference"], code=issued.code
+        )
+        assert verified["ok"] is True
+        row = await repo.by_reference(conn, row["reference"])
+        assert row is not None
+        assert row["verification_status"] == "verified" and row["verification_method"] == "code"
+        assert row["subject_user_id"] is None
+
+    async def test_the_office_can_send_that_code_too(
+        self, conn: Any, seeded: dict[str, Any], redis_conn: Any, monkeypatch: Any
+    ) -> None:
+        sent: list[tuple[Any, ...]] = []
+        monkeypatch.setattr(service, "_dispatch", lambda *a: sent.append(a))
+        email, _ = await self._reported(conn, seeded)
+        _result, row = await self._from_the_form(conn, redis_conn, email)
+        sent.clear()
+        row = await service.send_verification_code(
+            conn, row, role=DPO, actor_id=seeded["users"]["dpo"]["id"]
+        )
+        [code] = [a for a in sent if a[0] == "send_rights_verification_code"]
+        assert plain(code[1]) == email
+        assert row["verification_status"] == "pending"
 
 
 # ----------------------------------------------------------------- the register

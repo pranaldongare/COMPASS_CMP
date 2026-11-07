@@ -15473,6 +15473,50 @@
         }
       }
     },
+    "/requests/{request_uuid}/public-reports/erase": {
+      "post": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "Erase her name and email from the reports she sent through the public link that an office dismissed",
+        "description": "No report is named: they are found again by her proved addresses, so\nnothing a caller sends can reach another person's. The officers' alone;\nthe administrator, who may hold a request about the office, is answered\n404, as the register is hidden from them.",
+        "operationId": "erase_public_reports_requests__request_uuid__public_reports_erase_post",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicReportsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/requests/{request_uuid}/respond": {
       "post": {
         "tags": [
@@ -29608,11 +29652,25 @@
             "title": "Reference"
           },
           "reporter_name": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Reporter Name"
           },
           "reporter_email": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Reporter Email"
           },
           "title": {
@@ -29643,6 +29701,18 @@
           "dismissal_reason": {
             "type": "string",
             "title": "Dismissal Reason"
+          },
+          "reporter_erased_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Erased At"
           }
         },
         "type": "object",
@@ -29654,7 +29724,8 @@
           "received_at",
           "dismissed_at",
           "dismissed_by_name",
-          "dismissal_reason"
+          "dismissal_reason",
+          "reporter_erased_at"
         ],
         "title": "DismissedReportOut",
         "description": "A report an office did not take up, and why."
@@ -35768,6 +35839,141 @@
         "type": "object",
         "title": "ProjectUpdate"
       },
+      "PublicReportOut": {
+        "properties": {
+          "report_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Report Uuid"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "reporter_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Name"
+          },
+          "reporter_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Email"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "received_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Received At"
+          },
+          "dismissed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Dismissed At"
+          },
+          "reporter_erased_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reporter Erased At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report_uuid",
+          "reference",
+          "reporter_name",
+          "reporter_email",
+          "title",
+          "received_at",
+          "dismissed_at",
+          "reporter_erased_at"
+        ],
+        "title": "PublicReportOut",
+        "description": "A report she sent through the public link that an office dismissed\n(0065). Never the office's reason or who dismissed it."
+      },
+      "PublicReportsOut": {
+        "properties": {
+          "looked": {
+            "type": "boolean",
+            "title": "Looked"
+          },
+          "not_looked_because": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Not Looked Because"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PublicReportOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "erased": {
+            "type": "integer",
+            "title": "Erased"
+          },
+          "may_erase": {
+            "type": "boolean",
+            "title": "May Erase"
+          },
+          "erase_blocked_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Erase Blocked By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "looked",
+          "not_looked_because",
+          "items",
+          "total",
+          "erased",
+          "may_erase",
+          "erase_blocked_by"
+        ],
+        "title": "PublicReportsOut",
+        "description": "What an access or erasure request finds of the reports she sent through\nthe public link, by her proved addresses' blind indexes, once identity is\nverified. The server's answer to whether they may be erased now, so the\nconsole holds no copy of the rule."
+      },
       "PublicRequestIn": {
         "properties": {
           "request_type": {
@@ -37338,6 +37544,16 @@
               }
             ],
             "title": "Default Instruction"
+          },
+          "public_reports": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PublicReportsOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",

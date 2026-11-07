@@ -25,6 +25,7 @@ from cmp.db.repositories import consent as consent_repo
 from cmp.db.repositories import notices as notice_repo
 from cmp.db.repositories import projects as project_repo
 from cmp.db.repositories import registry as registry_repo
+from cmp.domain.rights import service as rights_service
 
 pytestmark = pytest.mark.integration
 
@@ -56,6 +57,23 @@ async def _dpo_office_breach(conn: Any, seeded: dict[str, Any]) -> str:
     row = await cur.fetchone()
     assert row is not None
     return str(row["breach_uuid"])
+
+
+async def _dpo_office_erasure(conn: Any, seeded: dict[str, Any]) -> str:
+    """An erasure request in the DPO office: what an officer erases a
+    reporter's name through (0065)."""
+    row = await rights_service.create(
+        conn,
+        request_type="erasure",
+        channel="portal",
+        request_text="Take my name off the report I sent",
+        submitted_contact="subject@test.local",
+        subject_user_id=seeded["subject"]["id"],
+        actor_id=seeded["subject"]["id"],
+        verification_method="session",
+        office="rnd",
+    )
+    return str(row["request_uuid"])
 
 
 class TestTheLegalOfficeCannotReachTheDpoOffice:
@@ -111,6 +129,18 @@ class TestTheLegalOfficeCannotReachTheDpoOffice:
         await as_office("hr")
         assert await breach_repo.by_uuid(conn, breach_uuid) is None
 
+    async def test_a_request_is_not_found_so_nobody_is_erased_through_it(
+        self, conn: Any, seeded: dict[str, Any], as_office: Any
+    ) -> None:
+        """The erasure of a reporter's name loads the request first, scoped,
+        and the reports it reaches are found through it alone."""
+        request_uuid = await _dpo_office_erasure(conn, seeded)
+        await as_office("hr")
+        with pytest.raises(NotFound):
+            await rights_service.require(
+                conn, request_uuid, role=Role.LEGAL, user_id=seeded["users"]["dpo"]["id"]
+            )
+
 
 class TestTheDpoOfficeStillReachesItsOwn:
     """The control has to permit the legitimate case, or it is only an outage."""
@@ -133,3 +163,13 @@ class TestTheDpoOfficeStillReachesItsOwn:
         breach_uuid = await _dpo_office_breach(conn, seeded)
         await as_office("rnd")
         assert await breach_repo.by_uuid(conn, breach_uuid) is not None
+
+    async def test_its_request_is_found(
+        self, conn: Any, seeded: dict[str, Any], as_office: Any
+    ) -> None:
+        request_uuid = await _dpo_office_erasure(conn, seeded)
+        await as_office("rnd")
+        found = await rights_service.require(
+            conn, request_uuid, role=Role.DPO, user_id=seeded["users"]["dpo"]["id"]
+        )
+        assert str(found["request_uuid"]) == request_uuid

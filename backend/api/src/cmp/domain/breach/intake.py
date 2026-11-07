@@ -204,7 +204,9 @@ async def waiting_count(conn: Conn) -> int:
 async def dismissed(conn: Conn) -> list[Row]:
     """What became of the reports an office did not take up, newest first: who
     sent each, who dismissed it and why. For both officers, so a report that
-    was the other office's can be raised. Sealed; the console opens it."""
+    was the other office's can be raised. Sealed; the console opens it. A
+    reporter erased under a rights request shows with no name or address, and
+    when it was done (0065)."""
     return await repo.dismissed(conn, limit=DISMISSED_SHOWN)
 
 
