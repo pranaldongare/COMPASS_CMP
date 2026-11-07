@@ -229,6 +229,13 @@ class TestAReporterWithAnAccount:
         )
 
 
+async def _request_uuid(http: httpx.AsyncClient, world: World, reference: str) -> str:
+    listed = await call(http, "GET", "/requests", session=world.dpo, params={"q": reference})
+    return str(
+        next(r for r in listed.json()["items"] if r["reference"] == reference)["request_uuid"]
+    )
+
+
 class TestAReporterWithNoAccount:
     async def test_a_code_goes_to_the_report_s_address_and_her_name_comes_off(
         self, http: httpx.AsyncClient, world: World, queued: Any
@@ -251,14 +258,17 @@ class TestAReporterWithNoAccount:
         [sent] = [args for name, args in queued if name == VERIFY and args[2] == reference]
         assert plain(sent[0]) == address, "the address stored on the report"
         code = last_code(queued, VERIFY, position=1)
+
+        ruuid = await _request_uuid(http, world, reference)
+        waiting = await call(http, "GET", f"/requests/{ruuid}", template=RIGHTS, session=world.dpo)
+        assert waiting.json()["code_channel"] is True, "the office may send that code too"
+        assert address not in waiting.text.lower()
+
         await call(
             http, "POST", "/rights/requests/verify", json={"reference": reference, "code": code}
         )
-
-        listed = await call(http, "GET", "/requests", session=world.dpo, params={"q": reference})
-        ruuid = next(r for r in listed.json()["items"] if r["reference"] == reference)[
-            "request_uuid"
-        ]
+        verified = await call(http, "GET", f"/requests/{ruuid}", template=RIGHTS, session=world.dpo)
+        assert verified.json()["code_channel"] is None, "nothing waits for a code now"
         await _started(http, world, ruuid, "erasure")
         one = await call(http, "GET", f"/requests/{ruuid}", template=RIGHTS, session=world.dpo)
         assert [i["reference"] for i in one.json()["public_reports"]["items"]] == [mine]
@@ -270,3 +280,24 @@ class TestAReporterWithNoAccount:
             session=world.dpo,
         )
         assert (await _dismissed_list(http, world))[mine]["reporter_email"] is None
+
+    async def test_a_contact_nobody_holds_has_no_channel_for_a_code(
+        self, http: httpx.AsyncClient, world: World, queued: Any
+    ) -> None:
+        made = await call(
+            http,
+            "POST",
+            "/rights/requests",
+            expect=(200, 201),
+            json={
+                "request_type": "erasure",
+                "contact": fresh_email("stranger"),
+                "name": "Nobody Known",
+                "request_text": "Please take my name off what I sent",
+            },
+        )
+        reference = made.json()["reference"]
+        assert not [args for name, args in queued if name == VERIFY and args[2] == reference]
+        ruuid = await _request_uuid(http, world, reference)
+        one = await call(http, "GET", f"/requests/{ruuid}", template=RIGHTS, session=world.dpo)
+        assert one.json()["code_channel"] is False

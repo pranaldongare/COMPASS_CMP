@@ -30,7 +30,14 @@ from cmp.core.enums import RightsRequestType as Kind
 from cmp.core.enums import RightsScopeDecision as Decision
 from cmp.core.enums import RightsTicketStatus as Ticket
 from cmp.core.enums import RightsTriggerEvent as TriggerEvent
-from cmp.core.errors import BadRequest, Conflict, Forbidden, NotFound, ValidationFailed
+from cmp.core.errors import (
+    BadRequest,
+    Conflict,
+    Forbidden,
+    NotFound,
+    RateLimited,
+    ValidationFailed,
+)
 from cmp.core.logging import get_logger
 from cmp.core.permissions import OFFICE_TITLES, Role
 from cmp.core.security import new_token, token_fingerprint
@@ -49,7 +56,7 @@ from cmp.domain.rights import clock, erasure, execution, public_reports, reach
 from cmp.domain.rights import state_machine as sm
 from cmp.domain.rights.scope import consent_scope, scope_text
 from cmp.domain.rights.state_machine import RequestFacts
-from cmp.infrastructure.dkms import opened, seal, unseal_value
+from cmp.infrastructure.dkms import DkmsUnavailable, opened, seal, unseal_value
 from cmp.infrastructure.dkms.blind import index_of
 from cmp.validation import choice, mask_contact, normalise_contact, normalise_mobile
 
@@ -491,6 +498,7 @@ async def _issue_code(conn: Conn, row: Row, *, to: str) -> None:
 async def verify_public_code(conn: Conn, *, reference: str, code: str) -> dict[str, Any]:
     """The second half of the public form. One message for every failure."""
     row = await repo.by_reference(conn, reference.strip().upper())
+    refused = BadRequest("Invalid or expired code", code="otp_invalid", field="code")
     if (
         not row
         or row["verification_status"] != "pending"
@@ -501,8 +509,17 @@ async def verify_public_code(conn: Conn, *, reference: str, code: str) -> dict[s
     ):
         # No code was ever issued for this reference. Same words as a wrong code:
         # distinguishing them would say whether the contact matched somebody.
-        raise BadRequest("Invalid or expired code", code="otp_invalid", field="code")
-    await otp.require(otp.Scope.RIGHTS_VERIFY, row["reference"], code)
+        raise refused
+    try:
+        await otp.require(otp.Scope.RIGHTS_VERIFY, row["reference"], code)
+    except (BadRequest, RateLimited):
+        # A spent budget too, and a code of the wrong length, which a stranger is
+        # never told apart from a wrong one: five tries answered "too many" would
+        # say a code was issued, so that the contact is somebody's or sent a
+        # report an office dismissed. The code is discarded with its budget, so
+        # guessing stays bounded, and the route's limit per IP address is what
+        # stops more tries.
+        raise refused from None
     row = await _mark_verified(conn, row, method="code", actor_id=None, note=None)
     return {
         "ok": True,
@@ -534,6 +551,31 @@ async def _mark_verified(
 
 
 # ------------------------------------------------------- staff: verification
+async def code_channel(conn: Conn, row: Row, *, role: Role | str) -> bool | None:
+    """Whether a code can go to a channel already held for this request: the
+    account's, or, with no account, the address stored on a dismissed report
+    the contact sent (0065). The console offers Send a code on it.
+
+    None when the answer is not asked for: a role that does not read the
+    register, which is the officers' (whether the contact sent a report is a
+    fact about the register), a request no longer waiting for its identity to
+    be verified, and a key service that did not answer, so the page opens
+    anyway. Never the address."""
+    if not public_reports.is_officer(role):
+        return None
+    if row["verification_status"] != "pending" or (
+        Status(row["status"]) not in sm.OPEN_BEFORE_COLLATION
+    ):
+        return None
+    if row["subject_user_id"] is not None:
+        return True
+    try:
+        return await public_reports.reporter_address_for(conn, row) is not None
+    except DkmsUnavailable:
+        log.warning("rights.code_channel_unknown", reference=str(row["reference"]))
+        return None
+
+
 async def send_verification_code(conn: Conn, row: Row, *, role: Role | str, actor_id: int) -> Row:
     """A code to the channel we already hold for her - never one she supplies now.
     With no account, that is the address a dismissed report she sent came from,
@@ -3134,7 +3176,11 @@ async def respond(
     found = await public_reports.found(conn, row, strict=True)
     if result is Outcome.COMPLETE:
         reason = execution.complete_blocked_by(
-            row["request_type"], items, holders, reports=found["open"] + found["erased"]
+            row["request_type"],
+            items,
+            holders,
+            reports=found["open"] + found["erased"],
+            officer=public_reports.is_officer(role),
         )
         if reason:
             raise ValidationFailed(reason, field="outcome", code="response_partial_required")
@@ -3231,7 +3277,8 @@ async def respond(
     contact = contact_for(row)
     if contact:
         # The response itself, not a pointer to it: the decision, the words,
-        # and the record - with the file waiting on her account.
+        # and the record - with the file waiting on her account. A request with
+        # no account is never listed on one, so it is pointed at none.
         _dispatch(
             "send_rights_response",
             contact,
@@ -3240,7 +3287,11 @@ async def respond(
             response_text.strip(),
             digest_for_mail,
             expires.date().isoformat() if expires else None,
-            f"{settings.public_base_url.rstrip('/')}/my-requests",
+            (
+                f"{settings.public_base_url.rstrip('/')}/my-requests"
+                if row.get("subject_user_id") is not None
+                else None
+            ),
         )
     return row
 

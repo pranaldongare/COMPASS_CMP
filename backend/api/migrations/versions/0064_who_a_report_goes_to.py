@@ -31,11 +31,15 @@ bundled three.
   backfill included, so nothing is backfilled.
 
 The way down is refused once anybody has chosen anything: a one-off address
-read by the older code would be on the list and mailed every report, and a
-mark or a held mail would be lost. Otherwise everything goes back as it was,
-but for the CHECK, which comes back NOT VALID: a CERT-In event already written
-without a determination is evidence and stays, and the narrower rule binds the
-rows written after. Nobody should VALIDATE it.
+read by the older code would be on the list and mailed every report, a mark or
+a held mail would be lost, and an entry a sender left out of a version would
+be mailed it by the older Try again, which sends a version to everybody on
+the list it has not reached. A version that went to everybody on the list as
+it stood, as every version finalised before this migration did, is no choice:
+its addressees are what the backfill wrote. Otherwise everything goes back as
+it was, but for the CHECK, which comes back NOT VALID: a CERT-In event already
+written without a determination is evidence and stays, and the narrower rule
+binds the rows written after. Nobody should VALIDATE it.
 
 Revision ID: 0064
 Revises: 0063
@@ -211,7 +215,11 @@ COMMENT ON COLUMN breach_obligation_event.determination_id IS
 """
 
 #: Nothing below can carry a choice about who a report goes to: a one-off
-#: address would read as on the list, and a mark or a held mail would go.
+#: address would read as on the list, a mark or a held mail would go, and an
+#: entry left out of a version would be mailed it by 0063's Try again. Left
+#: out is an entry on the list when the version was finalised whose address
+#: none of the version's addressees has; matched by address, so an entry
+#: taken off and put back is the same one.
 GUARD = """DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM breach_board_recipient WHERE one_off)
@@ -219,7 +227,18 @@ BEGIN
      OR EXISTS (SELECT 1 FROM breach_report_addressee a
                  WHERE NOT EXISTS (SELECT 1 FROM breach_report_delivery d
                                     WHERE d.report_id = a.report_id
-                                      AND d.recipient_id = a.recipient_id)) THEN
+                                      AND d.recipient_id = a.recipient_id))
+     OR EXISTS (SELECT 1 FROM breach_report r
+                  JOIN breach_board_recipient x
+                    ON NOT x.one_off
+                   AND x.added_at <= r.finalised_at
+                   AND (x.removed_at IS NULL OR x.removed_at > r.finalised_at)
+                 WHERE r.finalised_at IS NOT NULL
+                   AND NOT EXISTS (SELECT 1 FROM breach_report_addressee a
+                                     JOIN breach_board_recipient y
+                                       ON y.recipient_id = a.recipient_id
+                                    WHERE a.report_id = r.report_id
+                                      AND y.email_hash = x.email_hash)) THEN
     RAISE EXCEPTION 'choices were made about who reports go to; downgrading would lose them';
   END IF;
 END $$;"""

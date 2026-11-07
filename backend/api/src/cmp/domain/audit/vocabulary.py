@@ -66,7 +66,7 @@ EVENT_LABELS: Final[dict[str, str]] = {
     "breach.report_filed": "Report recorded as sent to the regulator",
     "breach.report_read": "Report downloaded as a PDF",
     "breach.report_released": "Report held for the board sent at the validation",
-    "breach.report_withheld": "Report held for the board not sent: CERT-In set aside",
+    "breach.report_withheld": "Report held for the board not sent at the validation",
     "incident_report.reporter_erased": "Reporter's name and email erased",
 }
 

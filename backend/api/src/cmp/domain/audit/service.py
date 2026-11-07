@@ -379,8 +379,9 @@ class Event:
     BREACH_REPORT_PROOF_ADDED = "breach.report_proof_added"
     BREACH_REPORT_FILED = "breach.report_filed"
     BREACH_REPORT_READ = "breach.report_read"
-    #: A report to CERT-In held for the first yes, sent at it, or not sent
-    #: because the mark was set aside then (0064).
+    #: A report to CERT-In held for the first yes, sent at it, or not sent:
+    #: the mark was set aside then, or nobody it was chosen for was still on
+    #: the list (`why`, 0064).
     BREACH_REPORT_RELEASED = "breach.report_released"
     BREACH_REPORT_WITHHELD = "breach.report_withheld"
     #: Who is told of a report, or who is on the organisation's board.

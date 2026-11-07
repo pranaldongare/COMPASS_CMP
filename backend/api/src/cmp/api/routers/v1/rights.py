@@ -505,6 +505,13 @@ class RequestDetail(RequestOut):
     #: a role that does not read the register: the administrator, on a request
     #: about the office.
     public_reports: PublicReportsOut | None = None
+    #: Whether a code can be sent to a channel already held for the requester:
+    #: true with an account, or with none when the contact is the address a
+    #: dismissed report came from (0065); false when there is no such channel.
+    #: Null for a role that does not read the register, for a request not
+    #: waiting for its identity to be verified, and when the key service did
+    #: not answer. Never the address itself.
+    code_channel: bool | None = None
 
 
 class TransitionsOut(Out):
@@ -767,9 +774,14 @@ async def _detail(conn: Any, row: dict[str, Any], principal: Any) -> dict[str, A
         "items": items,
         "transitions": service.transitions(row, role=principal.role),
         "complete_blocked_by": execution.complete_blocked_by(
-            row["request_type"], items, holders, reports=reports
+            row["request_type"],
+            items,
+            holders,
+            reports=reports,
+            officer=public_reports.is_officer(principal.role),
         ),
         "public_reports": await public_reports.view(conn, row, role=principal.role, result=found),
+        "code_channel": await service.code_channel(conn, row, role=principal.role),
         "linked_request": await _linked(conn, row, principal),
         "linked_from": await repo.linked_from(conn, request_id),
         "response_files": await repo.response_files_of(conn, request_id),

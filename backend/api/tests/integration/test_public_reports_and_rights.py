@@ -26,7 +26,9 @@ import pytest
 from cmp.api.routers.v1 import rights as rights_router
 from cmp.auth.authentication import otp
 from cmp.auth.rate_limit import service as ratelimit
-from cmp.core.errors import Conflict, NotFound, ValidationFailed
+from cmp.core.config import settings
+from cmp.core.errors import BadRequest, CmpError, Conflict, NotFound, ValidationFailed
+from cmp.core.pagination import PageRequest
 from cmp.core.permissions import Role
 from cmp.db.repositories import audit as audit_repo
 from cmp.db.sql import fetch_all, fetch_one
@@ -50,18 +52,29 @@ def _address(tag: str = "reporter") -> str:
 
 
 async def _person(
-    conn: Any, *, email: str | None = None, secondary: str | None = None, proved: bool = False
+    conn: Any,
+    *,
+    email: str | None = None,
+    secondary: str | None = None,
+    proved: bool = False,
+    email_proved: bool = True,
+    mobile_proved: bool = False,
 ) -> dict[str, Any]:
-    """A data principal of her own, with a second email, proved or not."""
+    """A data principal of the test's own whose email a code came back from,
+    with a second email, proved or not. `email_proved=False` leaves the email
+    as somebody typed it: with `mobile_proved`, the shape of a nominee's
+    account; without, a row from before each medium's proof was stamped."""
     email = email or _address("principal")
     mobile = f"+9196{uuid.uuid4().int % 10**8:08d}"
+    now = datetime.now(UTC)
     row = await fetch_one(
         conn,
         """INSERT INTO auth_user (full_name, email, email_hash, mobile, mobile_hash, role,
                                   status, minor_until, secondary_email, secondary_email_hash,
-                                  secondary_email_verified_at)
+                                  secondary_email_verified_at, email_verified_at,
+                                  mobile_verified_at)
            VALUES ('Asha Rao', %s, %s, %s, %s, 'data_subject', 'active', DATE '2008-05-17',
-                   %s, %s, %s)
+                   %s, %s, %s, %s, %s)
            RETURNING id, uuid""",
         (
             email,
@@ -70,7 +83,9 @@ async def _person(
             hashed("mobile", mobile),
             secondary,
             hashed("email", secondary),
-            datetime.now(UTC) if proved else None,
+            now if proved else None,
+            now if email_proved else None,
+            now if mobile_proved else None,
         ),
     )
     assert row is not None
@@ -264,6 +279,44 @@ async def test_a_verified_secondary_email_finds_and_an_unverified_one_does_not(
     )
 
 
+async def test_an_email_only_the_mobile_s_proof_stands_behind_finds_nothing(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    """A nominee's account carries the email the principal typed and proves the
+    mobile alone, so its email may be a stranger's who sent a report. That
+    report is not this account's to read or to erase."""
+    stranger = _address("stranger")
+    theirs = await _dismissed(conn, seeded, stranger)
+    before = await _report_row(conn, theirs)
+    person = await _person(conn, email=stranger, email_proved=False, mobile_proved=True)
+
+    access = await _request(conn, seeded, person, "access")
+    assert await public_reports.address_hashes(conn, access) == []
+    assert theirs not in _found(await public_reports.found(conn, access))
+    built = await package.build_response(
+        conn, access, holders=[], response_text="Our answer.", generated_at=datetime.now(UTC)
+    )
+    assert built["reports_from_the_public_link"] == []
+    assert built["summary"]["reports_from_the_public_link"] == 0
+
+    erasure = await _request(conn, seeded, person)
+    shown = await public_reports.erase(conn, erasure, role=DPO, actor_id=_dpo(seeded))
+    assert shown["total"] == 0 and shown["erased"] == 0
+    assert await _report_row(conn, theirs) == before, "nothing blanked"
+
+
+async def test_a_row_from_before_the_proofs_were_stamped_finds_by_its_email(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    """Neither medium carries a stamp: the account is older than them, and its
+    email counts, as a receipt is sent to it."""
+    person = await _person(conn, email_proved=False, mobile_proved=False)
+    mine = await _dismissed(conn, seeded, person["email"])
+    assert mine in _found(
+        await public_reports.found(conn, await _request(conn, seeded, person, "access"))
+    )
+
+
 async def test_a_grievance_finds_nothing(conn: Any, seeded: dict[str, Any]) -> None:
     person = await _person(conn)
     await _dismissed(conn, seeded, person["email"])
@@ -305,6 +358,36 @@ async def test_a_request_with_no_account_finds_by_the_email_it_gave_once_verifie
     assert mine in _found(await public_reports.found(conn, row))
 
 
+async def test_a_dismissed_reporter_and_a_stranger_fail_verification_alike(
+    conn: Any, seeded: dict[str, Any], redis_conn: Any, sent: Any
+) -> None:
+    """Five wrong codes, and a sixth, answer the same for a contact a code was
+    sent to and for one nobody holds: otherwise the tries would say that an
+    address sent a report an office dismissed. The code is spent with its
+    budget, so guessing stays bounded."""
+    email = _address()
+    await _dismissed(conn, seeded, email)
+    reporter = await _from_the_form(conn, seeded, redis_conn, email)
+    [code] = [a[2] for a in sent if a[0] == "send_rights_verification_code"]
+    stranger = await _from_the_form(conn, seeded, redis_conn, _address("stranger"))
+    wrong = "111111" if code == "000000" else "000000"
+    seen = []
+    for row in (reporter, stranger):
+        out = []
+        for attempt in ("12345", *[wrong] * (settings.otp_max_verify_attempts + 1)):
+            try:
+                await service.verify_public_code(conn, reference=row["reference"], code=attempt)
+            except CmpError as refused:
+                out.append(
+                    (type(refused).__name__, refused.status_code, refused.code, refused.message)
+                )
+        seen.append(out)
+    assert seen[0] == seen[1]
+    assert set(seen[0]) == {("BadRequest", 400, "otp_invalid", "Invalid or expired code")}
+    with pytest.raises(BadRequest):
+        await service.verify_public_code(conn, reference=reporter["reference"], code=code)
+
+
 async def test_a_mobile_contact_finds_nothing(
     conn: Any, seeded: dict[str, Any], redis_conn: Any, sent: Any
 ) -> None:
@@ -336,6 +419,82 @@ async def test_the_key_service_down_leaves_the_page_and_holds_complete(
     assert "could not be checked" in str(detail["complete_blocked_by"])
     with pytest.raises(DkmsUnavailable):
         await public_reports.erase(conn, row, role=DPO, actor_id=_dpo(seeded))
+
+
+# ------------------------------------------------------- a code's channel
+async def _channel(conn: Any, seeded: dict[str, Any], row: dict[str, Any], role: Role = DPO) -> Any:
+    who = seeded["users"]["admin" if role is Role.ADMIN else "dpo"]["id"]
+    detail = await rights_router._detail(conn, row, SimpleNamespace(role=role, user_id=who))
+    return detail["code_channel"]
+
+
+async def test_the_page_says_whether_a_code_has_somewhere_to_go(
+    conn: Any, seeded: dict[str, Any], redis_conn: Any, sent: Any
+) -> None:
+    """The console offers Send a code on it: an account's channel, the address
+    a dismissed report came from, or nothing held at all."""
+    person = await _person(conn)
+    theirs = await _from_the_form(conn, seeded, redis_conn, person["email"])
+    assert theirs["subject_user_id"] is not None
+    assert await _channel(conn, seeded, theirs) is True
+
+    reporter = _address()
+    await _dismissed(conn, seeded, reporter)
+    from_a_report = await _from_the_form(conn, seeded, redis_conn, reporter)
+    assert from_a_report["subject_user_id"] is None
+    assert await _channel(conn, seeded, from_a_report) is True
+
+    nobody = await _from_the_form(conn, seeded, redis_conn, _address("stranger"))
+    assert await _channel(conn, seeded, nobody) is False
+
+    detail = await rights_router._detail(
+        conn, from_a_report, SimpleNamespace(role=DPO, user_id=_dpo(seeded))
+    )
+    assert reporter not in json.dumps(detail, default=str), "never the address"
+
+
+async def test_the_channel_is_asked_only_while_identity_waits_and_only_by_an_officer(
+    conn: Any, seeded: dict[str, Any], redis_conn: Any, sent: Any
+) -> None:
+    reporter = _address()
+    await _dismissed(conn, seeded, reporter)
+    row = await _from_the_form(conn, seeded, redis_conn, reporter)
+    await conn.execute(
+        "UPDATE rights_request SET about_dpo = true WHERE request_id = %s",
+        (int(row["request_id"]),),
+    )
+    row = await service.reload(conn, row)
+    assert await _channel(conn, seeded, row, Role.ADMIN) is None, "the register is the officers'"
+    assert await _channel(conn, seeded, row) is True
+    other = await _from_the_form(conn, seeded, redis_conn, reporter)
+    verified = await _verified_by_hand(conn, seeded, other)
+    assert await _channel(conn, seeded, verified) is None, "nothing waits for a code"
+
+
+async def test_a_key_service_down_leaves_the_channel_unknown_and_the_page_open(
+    conn: Any,
+    seeded: dict[str, Any],
+    redis_conn: Any,
+    sent: Any,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    reporter = _address()
+    await _dismissed(conn, seeded, reporter)
+    row = await _from_the_form(conn, seeded, redis_conn, reporter)
+
+    async def down(*_: Any) -> Any:
+        raise DkmsUnavailable("the key service is down")
+
+    logged: list[tuple[str, dict[str, Any]]] = []
+
+    class Log:
+        def warning(self, event: str, **fields: Any) -> None:
+            logged.append((event, fields))
+
+    monkeypatch.setattr(public_reports, "unseal_value", down)
+    monkeypatch.setattr(service, "log", Log())
+    assert await _channel(conn, seeded, row) is None
+    assert logged == [("rights.code_channel_unknown", {"reference": row["reference"]})]
 
 
 # ------------------------------------------------------------------- access
@@ -471,6 +630,49 @@ async def test_a_hold_on_her_stops_it_and_its_release_lets_it_go(
     assert (await _report_row(conn, mine))["reporter_email"] is None
 
 
+async def _held_without_an_account(
+    conn: Any, seeded: dict[str, Any], redis_conn: Any, email: str, person_uuid: str
+) -> None:
+    """A report from this address, a hold on the account it is on, and an
+    erasure from the public form, which opens it with no account: the hold
+    stops it all the same."""
+    mine = await _dismissed(conn, seeded, email)
+    await holds.place(
+        conn,
+        asset_uuid=None,
+        subject_uuid=person_uuid,
+        reason="Evidence in a live matter",
+        actor_id=_dpo(seeded),
+    )
+    row = await _from_the_form(conn, seeded, redis_conn, email)
+    assert row["subject_user_id"] is None, "the form gives this request no account"
+    row = await _start(conn, seeded, await _verified_by_hand(conn, seeded, row))
+    shown = await public_reports.view(conn, row, role=DPO)
+    assert shown is not None and mine in {i["reference"] for i in shown["items"]}
+    assert shown["may_erase"] is False and shown["erase_blocked_by"] == public_reports.HELD
+    with pytest.raises(Conflict) as refused:
+        await public_reports.erase(conn, row, role=DPO, actor_id=_dpo(seeded))
+    assert refused.value.code == "legal_hold"
+    assert (await _report_row(conn, mine))["reporter_email"] is not None
+
+
+async def test_a_hold_on_the_staff_account_a_contact_is_stops_a_form_erasure(
+    conn: Any, seeded: dict[str, Any], redis_conn: Any, sent: Any
+) -> None:
+    staff = seeded["users"]["dco"]
+    await _held_without_an_account(conn, seeded, redis_conn, "dco@test.local", str(staff["uuid"]))
+
+
+async def test_a_hold_on_whoever_typed_the_address_as_a_second_email_stops_it_too(
+    conn: Any, seeded: dict[str, Any], redis_conn: Any, sent: Any
+) -> None:
+    """An unproved second email signs nobody in, so the form takes it as no
+    account; a hold on the account that claims it is still reason to stop."""
+    second = _address("second")
+    person = await _person(conn, secondary=second, proved=False)
+    await _held_without_an_account(conn, seeded, redis_conn, second, person["uuid"])
+
+
 async def _erasures(conn: Any, reference: str) -> list[dict[str, Any]]:
     return await fetch_all(
         conn,
@@ -505,9 +707,12 @@ async def test_the_trail_names_the_references_and_never_the_address(
     await public_reports.erase(conn, row, role=DPO, actor_id=_dpo(seeded))
     [logged] = await _erasures(conn, mine)
     detail = logged["detail_json"]
-    # Beside what the audit adds to every row: its chain and the request's origin.
-    said = {k: v for k, v in detail.items() if k not in {"_hash", "_prev", "ip", "request_id"}}
+    # Beside what the audit adds to every row: its chain, the request's origin,
+    # and the office whose record it is - the rights request's.
+    added = {"_hash", "_prev", "ip", "request_id", "office"}
+    said = {k: v for k, v in detail.items() if k not in added}
     assert said == {"reference": row["reference"], "incident_reference": mine}
+    assert detail["office"] == "rnd"
     text = json.dumps(detail)
     assert "@" not in text and "Asha" not in text
     trail = await audit_repo.for_reference(conn, str(row["reference"]))
@@ -516,6 +721,31 @@ async def test_the_trail_names_the_references_and_never_the_address(
     assert audit_repo.visible_to_subject(erased) == erased, "what was done with her name"
     feed = await audit_repo.for_subject(conn, person["id"])
     assert "incident_report.reporter_erased" in {e["event_type"] for e in feed}
+
+
+async def test_the_erasure_is_on_its_own_office_s_trail_and_not_the_other_s(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    """The row names the request and who acted under it, and the request is
+    one office's: the other office's trail must not carry it."""
+    person = await _person(conn)
+    mine = await _dismissed(conn, seeded, person["email"])
+    row = await _request(conn, seeded, person)  # in the DPO's office
+    await public_reports.erase(conn, row, role=DPO, actor_id=_dpo(seeded))
+
+    async def read_by(office: str) -> list[dict[str, Any]]:
+        items, _, _ = await audit_repo.search(
+            conn,
+            PageRequest(limit=50, cursor=None, sort_field="occurred_at", descending=True),
+            audit_repo.AuditFilters(
+                office=office, event_type="incident_report.reporter_erased", q=mine
+            ),
+        )
+        return [i for i in items if (i.get("detail") or {}).get("incident_reference") == mine]
+
+    assert await read_by("hr") == [], "the Legal office's trail does not carry it"
+    [own] = await read_by("rnd")
+    assert own["detail"].get("office") == "rnd"
 
 
 async def test_complete_is_held_back_until_she_is_erased_and_allowed_after(
@@ -615,7 +845,14 @@ async def test_an_administrator_on_a_request_about_the_office_sees_none_and_cann
     assert await public_reports.view(conn, row, role=Role.ADMIN) is None
     detail = await rights_router._detail(conn, row, SimpleNamespace(role=Role.ADMIN, user_id=admin))
     assert detail["public_reports"] is None
-    assert mine not in str(detail["complete_blocked_by"]), "a count, never a number"
+    said = str(detail["complete_blocked_by"])
+    assert mine not in said, "a count, never a number"
+    assert "Holders tab" not in said, "no card of theirs to erase from"
+    assert "Only the DPO or the Legal office can take them off" in said and "partial" in said
+    officer = await rights_router._detail(
+        conn, row, SimpleNamespace(role=DPO, user_id=_dpo(seeded))
+    )
+    assert "Erase them from the Holders tab" in str(officer["complete_blocked_by"])
     with pytest.raises(NotFound):
         await public_reports.erase(conn, row, role=Role.ADMIN, actor_id=admin)
     assert (await _report_row(conn, mine))["reporter_email"] is not None
@@ -649,3 +886,91 @@ async def test_a_request_with_no_account_is_answered_by_mail_with_its_reports(
     assert mine in digest and "your name and email were erased" in digest
     assert "@" not in digest and "Asha" not in digest
     assert digest.endswith(execution.KEPT_OF_A_REPORT)
+
+
+def _rendered(mail: tuple[Any, ...], monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
+    """The response the task would send for these queued arguments, as each
+    channel's default words render it."""
+    from cmp.core.messages import Message
+    from cmp.infrastructure import messaging
+    from cmp.tasks.notifications import rights as rights_tasks
+
+    given: dict[str, Any] = {}
+
+    def deliver(key: Any, *, to: str, **variables: Any) -> dict[str, Any]:
+        given.update(variables)
+        return {}
+
+    monkeypatch.setattr(rights_tasks, "deliver", deliver)
+    rights_tasks.send_rights_response.run(*mail[1:])
+    return {
+        channel: messaging.render(Message.RIGHTS_RESPONSE, channel, given, overrides={})[1]
+        for channel in ("email", "sms")
+    }
+
+
+async def test_a_request_with_no_account_is_pointed_at_no_account(
+    conn: Any,
+    seeded: dict[str, Any],
+    redis_conn: Any,
+    sent: Any,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """There is none to sign in to, and the portal's list of requests would
+    never show it: the message says it is the answer, by mail and by text."""
+    email = _address()
+    await _dismissed(conn, seeded, email)
+    row = await _from_the_form(conn, seeded, redis_conn, email)
+    row = await _start(conn, seeded, await _verified_by_hand(conn, seeded, row))
+    row = await service.transition(
+        conn, row, to="collating", reason=None, role=DPO, actor_id=_dpo(seeded)
+    )
+    await service.respond(
+        conn, row, outcome="partial", response_text="Partly.", role=DPO, actor_id=_dpo(seeded)
+    )
+    [mail] = [a for a in sent if a[0] == "send_rights_response"]
+    assert mail[7] is None, "no account to point at"
+    for channel, body in _rendered(mail, monkeypatch).items():
+        assert "your account" not in body and "my-requests" not in body, channel
+        assert "Sign in" not in body, channel
+        assert "this message is our answer" in body, channel
+
+
+async def test_a_request_with_an_account_is_still_pointed_at_it(
+    conn: Any, seeded: dict[str, Any], sent: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    person = await _person(conn)
+    row = await _request(conn, seeded, person, "access")
+    row = await service.transition(
+        conn, row, to="collating", reason=None, role=DPO, actor_id=_dpo(seeded)
+    )
+    await service.respond(
+        conn, row, outcome="complete", response_text="Here.", role=DPO, actor_id=_dpo(seeded)
+    )
+    [mail] = [a for a in sent if a[0] == "send_rights_response"]
+    assert str(mail[7]).endswith("/my-requests")
+    for channel, body in _rendered(mail, monkeypatch).items():
+        assert "from your account until" in body and "/my-requests" in body, channel
+
+
+async def test_a_no_account_erasure_answered_partial_says_the_name_is_still_there(
+    conn: Any, seeded: dict[str, Any], redis_conn: Any, sent: Any
+) -> None:
+    """Answered before anybody erased: the mail must not read as though the
+    name and email were gone."""
+    email = _address()
+    mine = await _dismissed(conn, seeded, email)
+    row = await _from_the_form(conn, seeded, redis_conn, email)
+    row = await _start(conn, seeded, await _verified_by_hand(conn, seeded, row))
+    row = await service.transition(
+        conn, row, to="collating", reason=None, role=DPO, actor_id=_dpo(seeded)
+    )
+    await service.respond(
+        conn, row, outcome="partial", response_text="Partly.", role=DPO, actor_id=_dpo(seeded)
+    )
+    [mail] = [a for a in sent if a[0] == "send_rights_response"]
+    digest = str(mail[5])
+    [line] = [x for x in digest.splitlines() if mine in x]
+    assert "not yet erased: it still carries your name and email" in line
+    assert "were erased" not in digest
+    assert execution.KEPT_OF_A_REPORT not in digest

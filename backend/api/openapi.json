@@ -37554,6 +37554,17 @@
                 "type": "null"
               }
             ]
+          },
+          "code_channel": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code Channel"
           }
         },
         "type": "object",

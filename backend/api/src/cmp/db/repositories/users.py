@@ -173,6 +173,28 @@ async def by_contact(conn: Conn, contact: str) -> Row | None:
     )
 
 
+async def ids_on_contact(conn: Conn, contact: str) -> list[int]:
+    """Every account a contact is on, whatever its role or status: as its
+    email, its mobile, or its second email, proved or not.
+
+    Never a way in, as `by_contact` is. It answers a question that must not
+    miss the person behind a contact, such as whether a legal hold covers
+    them, where a claim nobody proved is reason enough to stop.
+    """
+    email_hash, mobile_hash = contact_indexes(contact)
+    rows = await fetch_all(
+        conn,
+        """
+        SELECT u.id FROM auth_user u
+        WHERE (%s::text IS NOT NULL AND (u.email_hash = %s OR u.secondary_email_hash = %s))
+           OR (%s::text IS NOT NULL AND u.mobile_hash = %s)
+        ORDER BY u.id
+        """,
+        (email_hash, email_hash, email_hash, mobile_hash, mobile_hash),
+    )
+    return [int(r["id"]) for r in rows]
+
+
 def medium_of(user: Row, contact: str) -> str | None:
     """Which of this row's own contacts the given one is, or None if it is not
     one of them. Compared by blind index, so spacing and case do not matter and

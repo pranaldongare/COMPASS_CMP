@@ -193,13 +193,20 @@ def account(
 
 
 def why_not_complete(
-    kind: str, items: list[Row], holders: list[Row], reports: Sequence[Row] | None = ()
+    kind: str,
+    items: list[Row],
+    holders: list[Row],
+    reports: Sequence[Row] | None = (),
+    *,
+    officer: bool = True,
 ) -> str | None:
     """None when `complete` is earned; otherwise the sentence that says why not.
 
     `reports` is None when they could not be looked for. The sentence about them
     gives a count and never a report's number: an administrator may read it on
     a request about the office, and the reports are the officers' to see.
+    `officer` is whether the reader is one: anybody else is shown no reports
+    and may not erase them, so is not sent to a card they do not have.
     """
     if kind not in (Kind.ERASURE, Kind.CORRECTION):
         return None
@@ -228,10 +235,16 @@ def why_not_complete(
     reached = list(reports or ()) if kind == Kind.ERASURE else []
     naming = [r for r in reached if not erased(r)]
     if naming:
-        return (
+        still = (
             f"The requester's name and email are still on {len(naming)} report(s) they sent "
-            "through the public link. Erase them from the Holders tab, or answer partial."
+            "through the public link."
         )
+        if not officer:
+            return (
+                f"{still} Only the DPO or the Legal office can take them off those reports; "
+                "you can answer partial."
+            )
+        return f"{still} Erase them from the Holders tab, or answer partial."
     if not items and not returned and not any(erased(r) for r in reached):
         what = "corrected" if kind == Kind.CORRECTION else "erased"
         return (
@@ -258,12 +271,21 @@ def unreturned_reason(holders: list[Row]) -> str | None:
 
 
 def complete_blocked_by(
-    kind: str, items: list[Row], holders: list[Row], *, reports: Sequence[Row] | None = ()
+    kind: str,
+    items: list[Row],
+    holders: list[Row],
+    *,
+    reports: Sequence[Row] | None = (),
+    officer: bool = True,
 ) -> str | None:
     """Why this request may not close as `complete`, or None when it may.
 
     The one answer to the question, used by `respond` to refuse and served on
     the request so the console can say so before anybody presses the button -
-    the console holds no copy of the rule.
+    the console holds no copy of the rule. `officer` is whether the reader
+    reads the register (`public_reports.is_officer`); the words differ, the
+    answer does not.
     """
-    return unreturned_reason(holders) or why_not_complete(kind, items, holders, reports)
+    return unreturned_reason(holders) or why_not_complete(
+        kind, items, holders, reports, officer=officer
+    )

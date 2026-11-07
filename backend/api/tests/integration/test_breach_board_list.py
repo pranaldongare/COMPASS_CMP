@@ -273,7 +273,7 @@ class TestTheWayDown:
         await _finalise(conn, seeded, uuid, "board_intimation")
         assert not await self._refused(conn), "a report sent to the list as it stood is none"
 
-    @pytest.mark.parametrize("choice", ["one_off", "mark", "held"])
+    @pytest.mark.parametrize("choice", ["one_off", "mark", "held", "left_out"])
     async def test_a_choice_refuses_it(
         self,
         conn: Any,
@@ -281,17 +281,36 @@ class TestTheWayDown:
         mailed: list[str],  # noqa: F811
         choice: str,
     ) -> None:
-        await _board(conn, seeded, "chair@example.org")
+        """Each choice alone closes the way down. On a database whose way down
+        is closed already nothing here would show which clause did it, so it
+        proves its clause only on one that still may go down."""
+        if await self._refused(conn):
+            pytest.skip("this database holds choices tests/http made; its way down is closed")
+        await _board(conn, seeded, "chair@example.org", "member@example.org")
+        assert not await self._refused(conn), "a list alone is no choice"
         if choice == "one_off":
             uuid = await _breach(conn, seeded)
             doc = await _draft(conn, seeded, uuid, "board_intimation")
-            await _send(conn, seeded, uuid, doc, to=[], extra=[{"email": "a@elsewhere.org"}])
+            await _send(
+                conn,
+                seeded,
+                uuid,
+                doc,
+                to=["chair@example.org", "member@example.org"],
+                extra=[{"email": "a@elsewhere.org"}],
+            )
         elif choice == "mark":
             await _mark(conn, seeded, "chair@example.org")
-        else:
+        elif choice == "held":
             uuid = await _incident(conn, seeded)
             doc = await _cert_in_draft(conn, seeded, uuid)
             await _send(conn, seeded, uuid, doc, to=None)
+        else:
+            # The member is implicated, so the sender leaves them out: the
+            # older Try again would mail them the version all the same.
+            uuid = await _breach(conn, seeded)
+            doc = await _draft(conn, seeded, uuid, "board_intimation")
+            await _send(conn, seeded, uuid, doc, to=["chair@example.org"])
         assert await self._refused(conn)
 
 

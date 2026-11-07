@@ -1331,8 +1331,11 @@ class TestPublicForm:
         result, row = await self._from_the_form(conn, redis_conn, email)
         assert result["message"] == service.NEUTRAL_MESSAGE
         assert not [a for a in sent if a[0] == "send_rights_verification_code"]
+        # A code that is really there, as one issued while the report could
+        # still be found would be: the gate refuses it, not the code store.
+        issued = await otp.issue(otp.Scope.RIGHTS_VERIFY, row["reference"])
         with pytest.raises(BadRequest) as raised:
-            await service.verify_public_code(conn, reference=row["reference"], code="123456")
+            await service.verify_public_code(conn, reference=row["reference"], code=issued.code)
         assert raised.value.code == "otp_invalid"
         with pytest.raises(ValidationFailed):
             await service.send_verification_code(

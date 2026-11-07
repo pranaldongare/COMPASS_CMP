@@ -2765,6 +2765,27 @@ class TestACertInReportBeforeAYes:
         [trail] = await _trail(conn, uuid, "breach.report_released")
         assert (trail["detail_json"]["queued"], trail["detail_json"]["left_out"]) == (1, 1)
 
+    async def test_with_everybody_it_was_chosen_for_taken_off_it_is_withheld_not_sent(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        """Nothing went, so the trail must not say it was sent."""
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _incident(conn, seeded)
+        doc = await _cert_in_draft(conn, seeded, uuid)
+        await _send(conn, seeded, uuid, doc, to=None)
+        await _take_off(conn, seeded, "chair@example.org")
+        await _determine(conn, seeded, uuid, "yes")
+        assert mailed == []
+        assert await _trail(conn, uuid, "breach.report_released") == []
+        [trail] = await _trail(conn, uuid, "breach.report_withheld")
+        assert trail["actor_user_id"] == _dpo(seeded)
+        assert {k: trail["detail_json"][k] for k in ("kind", "version", "why", "left_out")} == {
+            "kind": "cert_in",
+            "version": 1,
+            "why": "nobody_on_the_list",
+            "left_out": 1,
+        }
+
     async def test_a_second_yes_releases_nothing_and_the_release_runs_once(
         self, conn: Any, seeded: dict[str, Any], mailed: list[str]
     ) -> None:
@@ -3030,6 +3051,90 @@ class TestWhatAYesFindsDone:
         assert duty["state"] == "done"
         assert plain(duty["reported_to"]) == "By email: chair@example.org"
         assert len(mailed) == 1
+
+    async def test_try_again_on_a_later_version_finds_the_first_that_reached_the_board(
+        self,
+        conn: Any,
+        seeded: dict[str, Any],
+        mailed: list[str],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """The key service was down at the yes. The version that reached the
+        board while the no stood is an older one, which the console offers no
+        button on; Try again on the newest reads them all, oldest first, and
+        still tries its own address."""
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        await _finalise(conn, seeded, uuid, "org_board")
+        await _determine(conn, seeded, uuid, "no")
+        await _reached(conn, *mailed)
+        [delivered] = await _delivery_rows(conn, uuid, "delivered")
+        await _board(conn, seeded, "bad@example.org")
+        second = await _send(
+            conn,
+            seeded,
+            uuid,
+            await _draft(conn, seeded, uuid, "org_board"),
+            to=["bad@example.org"],
+        )
+        await _not_reached(conn, mailed[-1])
+        with monkeypatch.context() as down:
+            TestTheAccountOfTheMailComesFirst._key_service_down(down)
+            read = await _yes_aware_now(conn, seeded, uuid)
+        assert _duty(read, "org_board")["state"] == "outstanding"
+        mailed.clear()
+
+        again = await _resend(conn, seeded, uuid, second)
+
+        duty = _duty(await service.detail(conn, uuid), "org_board")
+        assert duty["state"] == "done"
+        assert plain(duty["reported_to"]) == "By email: chair@example.org"
+        assert duty["completed_at"] == delivered["recorded_at"]
+        [trail] = await self._completions(conn, uuid, "org_board")
+        assert trail["actor_user_id"] == _dpo(seeded), "the person who pressed"
+        assert self._said(trail, "by", "version", "reached") == {
+            "by": "try_again",
+            "version": 1,
+            "reached": 1,
+        }
+        assert await _addresses(conn, mailed) == ["bad@example.org"], "its own retry goes on"
+        assert again["mail"]["queued"] == 1
+
+    async def test_a_later_version_landing_after_that_failure_still_records_the_first(
+        self,
+        conn: Any,
+        seeded: dict[str, Any],
+        mailed: list[str],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """The worker re-reads as Try again does: the version that reached the
+        board first is the one the duty is done from, whichever lands next."""
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        await _finalise(conn, seeded, uuid, "org_board")
+        await _determine(conn, seeded, uuid, "no")
+        await _reached(conn, *mailed)
+        await _board(conn, seeded, "late@example.org")
+        await _send(
+            conn,
+            seeded,
+            uuid,
+            await _draft(conn, seeded, uuid, "org_board"),
+            to=["late@example.org"],
+        )
+        with monkeypatch.context() as down:
+            TestTheAccountOfTheMailComesFirst._key_service_down(down)
+            read = await _yes_aware_now(conn, seeded, uuid)
+        assert _duty(read, "org_board")["state"] == "outstanding"
+
+        await _reached(conn, mailed[-1])
+
+        duty = _duty(await service.detail(conn, uuid), "org_board")
+        assert duty["state"] == "done"
+        assert plain(duty["reported_to"]) == "By email: chair@example.org"
+        [trail] = await self._completions(conn, uuid, "org_board")
+        assert trail["actor_user_id"] is None
+        assert self._said(trail, "by", "version") == {"by": "delivery", "version": 1}
 
     async def test_a_try_that_fails_part_way_is_undone_whole(
         self,

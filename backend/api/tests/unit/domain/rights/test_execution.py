@@ -162,3 +162,17 @@ def test_the_account_lists_each_report_and_not_done_names_the_unerased() -> None
     assert done["not_done"] == ["INC-2026-0002"]
     assert done["kept_of_a_report"] == execution.KEPT_OF_A_REPORT
     assert execution.account("erasure", [], [])["kept_of_a_report"] is None
+
+
+def test_the_administrator_is_not_sent_to_a_card_they_do_not_have() -> None:
+    """On a request about the office the administrator is shown no reports
+    and may not erase them: the sentence says who can, and still never a
+    report's number."""
+    reports = [_report("INC-2026-0001")]
+    officer = execution.complete_blocked_by("erasure", [], [], reports=reports)
+    assert officer is not None and "Erase them from the Holders tab" in officer
+    other = execution.complete_blocked_by("erasure", [], [], reports=reports, officer=False)
+    assert other is not None and "INC-2026-0001" not in other
+    assert "Holders tab" not in other and "1 report(s)" in other
+    assert "Only the DPO or the Legal office can take them off" in other
+    assert "answer partial" in other

@@ -103,9 +103,18 @@ def test_a_mail_gives_the_number_the_dates_and_the_title_and_never_a_name_or_an_
     assert "It had the participant list" not in text, "the words are in the file, not the mail"
     first, second = lines[1], lines[2]
     assert "INC-2026-0001" in first and "2026-11-01" in first and "2026-11-02" in first
-    assert "A laptop left on a train" in first and "erased" not in first
+    assert "A laptop left on a train" in first
+    assert first.endswith(public_reports.NOT_YET_ERASED) and "were erased" not in first
     assert "INC-2026-0002" in second and "your name and email were erased" in second
     assert lines[-1] == execution.KEPT_OF_A_REPORT
+
+
+def test_an_erasure_that_erased_nothing_says_so_and_claims_nothing_was_kept() -> None:
+    """Answered partial before anybody erased: what was kept is said of an
+    erased report, and nothing here was."""
+    lines = public_reports.digest_lines([_entry("INC-2026-0001")], erasure=True)
+    assert lines[1].endswith("not yet erased: it still carries your name and email")
+    assert execution.KEPT_OF_A_REPORT not in lines
 
 
 def test_an_access_mail_says_nothing_of_what_was_kept() -> None:
@@ -131,7 +140,9 @@ def _listed(n: int, *, erased: bool = False) -> dict[str, Any]:
     }
 
 
-async def test_a_request_lists_fifty_and_counts_them_all() -> None:
+async def test_a_request_lists_fifty_and_counts_them_all(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """A stranger can send many: the page lists the oldest fifty still naming
     her, then those already erased, and says how many there are."""
     found = {
@@ -141,7 +152,12 @@ async def test_a_request_lists_fifty_and_counts_them_all() -> None:
         "open": [_listed(n) for n in range(60)],
         "erased": [_listed(99, erased=True)],
     }
-    # A request with no account: no hold to look up, so no database is needed.
+
+    # No hold, and so no database: the hold is the integration tests'.
+    async def no_hold(*_: Any) -> bool:
+        return False
+
+    monkeypatch.setattr(public_reports, "_held", no_hold)
     shown = await public_reports.view(
         None,  # type: ignore[arg-type]
         _request(subject_user_id=None),
@@ -154,3 +170,22 @@ async def test_a_request_lists_fifty_and_counts_them_all() -> None:
         "INC-2026-0099",
     ]
     assert (shown["total"], shown["erased"], shown["may_erase"]) == (60, 1, True)
+
+
+@pytest.mark.parametrize(
+    ("email_at", "mobile_at", "counts"),
+    [
+        (datetime(2026, 1, 1, tzinfo=UTC), None, True),
+        (datetime(2026, 1, 1, tzinfo=UTC), datetime(2026, 1, 1, tzinfo=UTC), True),
+        (None, datetime(2026, 1, 1, tzinfo=UTC), False),
+        (None, None, True),
+    ],
+    ids=["email-proved", "both-proved", "only-the-mobile", "from-before-the-stamps"],
+)
+def test_an_account_s_email_counts_once_proved_or_from_before_the_proofs(
+    email_at: datetime | None, mobile_at: datetime | None, counts: bool
+) -> None:
+    """The legacy rule a receipt keeps: never an email beside a proved mobile
+    when the email itself was never proved."""
+    person = {"email_verified_at": email_at, "mobile_verified_at": mobile_at}
+    assert public_reports.email_proved(person) is counts

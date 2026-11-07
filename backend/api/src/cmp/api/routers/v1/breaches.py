@@ -176,8 +176,9 @@ class BreachDutyEventOut(Out):
     due_at: datetime | None
     requested_at: datetime | None
     #: The determination that set the duty aside or brought it back. None on
-    #: completions and extensions, and on a CERT-In duty's events, which a
-    #: person moves.
+    #: completions and extensions, and on CERT-In events written since 0064,
+    #: which a person moves; earlier CERT-In set-asides and re-marks cite the
+    #: determination then latest.
     determination_uuid: UUID | None
     recorded_at: datetime
     recorded_by_name: str | None

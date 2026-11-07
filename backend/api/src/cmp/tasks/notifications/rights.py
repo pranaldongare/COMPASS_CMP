@@ -67,6 +67,10 @@ _CLOSED_HEADLINES = {
 }
 
 
+#: Where the rest of a response is, for a request with no account behind it.
+NO_ACCOUNT = "There is no account behind this request to sign in to, so this message is our answer."
+
+
 def _plural(n: int, word: str) -> str:
     return f"{n} {word}{'s' if n != 1 else ''}"
 
@@ -121,21 +125,26 @@ def send_rights_response(
     response_text: str,
     digest: str,
     expires_on: str | None,
-    account_url: str,
+    account_url: str | None,
 ) -> dict[str, Any]:
     """The response itself, in the mail - not a note that it exists.
 
     The decision, the Privacy Office's words, and the record the platform
     holds about her. The full file is downloaded from her account, where it is
     authenticated and time-limited; the mail carries what a person needs to
-    read to know what was answered.
+    read to know what was answered. `account_url` is None for a request with
+    no account behind it: there is nothing to sign in to, and the message is
+    the answer.
     """
-    availability = (
-        f"The full record, as a file, is available from your account until {expires_on}: "
-        f"{account_url}"
-        if expires_on
-        else f"The full record is available from your account: {account_url}"
-    )
+    if account_url is None:
+        availability = NO_ACCOUNT
+    elif expires_on:
+        availability = (
+            f"The full record, as a file, is available from your account until {expires_on}: "
+            f"{account_url}"
+        )
+    else:
+        availability = f"The full record is available from your account: {account_url}"
     return deliver(
         Message.RIGHTS_RESPONSE,
         to=contact,

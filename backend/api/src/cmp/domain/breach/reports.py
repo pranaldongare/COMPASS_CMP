@@ -612,7 +612,12 @@ async def resend(conn: Conn, *, breach_uuid: str, report_uuid: str, actor_id: in
     queued anything. The answer says how many it queued.
 
     The board's duty is re-read first, whatever follows: a settling that failed
-    after the mail was recorded is waiting on nobody but this."""
+    after the mail was recorded is waiting on nobody but this. Pressed on any
+    version of the board's own report, it reads every version, oldest first,
+    as a yes does (`_first_reached`): the version that reached the board while
+    a no stood may be an older one, which the console offers no button on. A
+    key service that cannot open a name for the duty fails the press, so the
+    person pressing knows to press again."""
     from cmp.tasks.dispatch import dispatch_optional
     from cmp.tasks.notifications.breach_reports import send_breach_report
 
@@ -623,8 +628,11 @@ async def resend(conn: Conn, *, breach_uuid: str, report_uuid: str, actor_id: in
     kind = Kind(report["kind"])
     breach_id = int(breach["breach_id"])
     report_id = int(report["report_id"])
-    completed = kind == Kind.ORG_BOARD and await _settle(conn, report_id, breach_id)
-    mine = [r for r in await repo.on_breach(conn, breach_id) if r["kind"] == kind]
+    written = await repo.on_breach(conn, breach_id)
+    completed = kind == Kind.ORG_BOARD and await _first_reached(
+        conn, breach_id, written, by="try_again", actor_id=actor_id
+    )
+    mine = [r for r in written if r["kind"] == kind]
     refused = _resend_refused(kind, report, mine, breach, await service.duties_of(conn, breach_id))
     if refused:
         if completed:
@@ -1153,9 +1161,9 @@ async def _settle(
 
     Past `service.complete_duty`, as `notices.settle` is: what is recorded is
     what the mail did, and it is nobody's entry. `by` is what read it - the
-    worker after an outcome, or a yes that found it done while a no had the
-    duty aside (`after_yes`) - and `actor_id` whose request that was, None for
-    the worker."""
+    worker after an outcome, a yes that found it done while a no had the duty
+    aside (`after_yes`), or a person's Try again (`resend`) - and `actor_id`
+    whose request that was, None for the worker."""
     report = await repo.by_id(conn, report_id)
     if report is None or report["kind"] != Kind.ORG_BOARD:
         return False  # another kind's mail tells this duty nothing
@@ -1212,27 +1220,36 @@ def _first_filing(written: list[Row], kind: Kind) -> Row | None:
     return min(filed, key=lambda r: (r["filed_recorded_at"], r["version"]), default=None)
 
 
-async def _told_already(conn: Conn, breach: Row, written: list[Row], *, actor_id: int) -> None:
+async def _first_reached(
+    conn: Conn, breach_id: int, written: list[Row], *, by: str, actor_id: int | None
+) -> bool:
     """The board's duty, from the first of its own reports to have run its
     course and reached somebody, oldest first, as it would have been recorded
-    had nothing set it aside. Each try is a savepoint: a key service that cannot
-    open a name for the duty must not undo a validation, and Try again reads
-    the duty again after."""
-    breach_id = int(breach["breach_id"])
+    had nothing set it aside. `written` is every report on the breach. Returns
+    whether it completed now; a duty that is not outstanding is left alone.
+    Raises `DkmsUnavailable` when a name for the duty cannot be opened, before
+    anything is written."""
     own = sorted(
         (r for r in written if r["kind"] == Kind.ORG_BOARD and r["finalised_at"] is not None),
         key=lambda r: int(r["version"]),
     )
     for report in own:
-        try:
-            async with conn.transaction():
-                if await _settle(
-                    conn, int(report["report_id"]), breach_id, by="earlier_mail", actor_id=actor_id
-                ):
-                    return
-        except DkmsUnavailable:
-            log.warning("breach.board_duty_unsettled", reference=str(breach["reference"]))
-            return
+        if await _settle(conn, int(report["report_id"]), breach_id, by=by, actor_id=actor_id):
+            return True
+    return False
+
+
+async def _told_already(conn: Conn, breach: Row, written: list[Row], *, actor_id: int) -> None:
+    """`_first_reached` at a yes, in a savepoint: a key service that cannot
+    open a name for the duty must not undo a validation, and Try again on any
+    version of the board's report reads the duty again after."""
+    try:
+        async with conn.transaction():
+            await _first_reached(
+                conn, int(breach["breach_id"]), written, by="earlier_mail", actor_id=actor_id
+            )
+    except DkmsUnavailable:
+        log.warning("breach.board_duty_unsettled", reference=str(breach["reference"]))
 
 
 async def after_yes(conn: Conn, breach: Row, *, first: bool, actor_id: int) -> None:
@@ -1286,9 +1303,11 @@ async def _release_held(conn: Conn, breach: Row, *, actor_id: int) -> None:
     goes; an older one was replaced before it went, and stays unsent.
 
     If the mark is set aside at this moment it does not go, and the trail says
-    so. Nothing sends it later by itself: marked again, a person sends it with
-    Try again, or writes a new version. Once only, and idempotent under the
-    lock: a version with any delivery was never held."""
+    so; nor if everybody it was chosen for has been taken off the list since,
+    and the trail says it was withheld, not sent. Nothing sends it later by
+    itself: marked again, a person sends it with Try again, or writes a new
+    version. Once only, and idempotent under the lock: a version with any
+    delivery was never held."""
     from cmp.tasks.dispatch import dispatch_optional
     from cmp.tasks.notifications.breach_reports import send_breach_report
 
@@ -1327,6 +1346,23 @@ async def _release_held(conn: Conn, breach: Row, *, actor_id: int) -> None:
         if row:
             queued += 1
             dispatch_optional(send_breach_report, str(row["delivery_uuid"]))
+    left_out = sum(bool(line["removed"]) for line in lines)
+    if not queued:
+        # Nobody it was chosen for is on the list any more: nothing went, and
+        # a row saying it was sent would tell the office the board has it.
+        await service.record_event(
+            conn,
+            breach,
+            Event.BREACH_REPORT_WITHHELD,
+            actor_id=actor_id,
+            detail={
+                "kind": Kind.CERT_IN.value,
+                "version": version,
+                "why": "nobody_on_the_list",
+                "left_out": left_out,
+            },
+        )
+        return
     await service.record_event(
         conn,
         breach,
@@ -1336,7 +1372,7 @@ async def _release_held(conn: Conn, breach: Row, *, actor_id: int) -> None:
             "kind": Kind.CERT_IN.value,
             "version": version,
             "queued": queued,
-            "left_out": sum(bool(line["removed"]) for line in lines),
+            "left_out": left_out,
         },
     )
 
@@ -1366,15 +1402,23 @@ async def record_result(
 
 
 async def settle(conn: Conn, *, delivery_uuid: str) -> None:
-    """The board's duty re-read after an outcome, under the breach's row."""
+    """The board's duty re-read after an outcome, under the breach's row.
+
+    Every version of the board's own report is read, oldest first, not only
+    this delivery's: an older one that reached the board while nothing could
+    record it (a no had the duty aside, and the key service failed at the yes
+    that came after) is the one the duty is done from, not a later one that
+    lands first."""
     row = await repo.job(conn, delivery_uuid)
     if not row:
         return
     report = await repo.by_id(conn, int(row["report_id"]))
     assert report is not None
     if report["kind"] == Kind.ORG_BOARD:
-        await breach_repo.lock(conn, int(row["breach_id"]))
-        await _settle(conn, int(row["report_id"]), int(row["breach_id"]))
+        breach_id = int(row["breach_id"])
+        await breach_repo.lock(conn, breach_id)
+        written = await repo.on_breach(conn, breach_id)
+        await _first_reached(conn, breach_id, written, by="delivery", actor_id=None)
 
 
 async def taken_off(conn: Conn, recipient_uuid: str) -> None:

@@ -689,7 +689,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             ),
             Variable(
                 "availability",
-                "Where and until when the full file can be downloaded, as a sentence.",
+                "Where and until when the full record can be read from the requester's account, "
+                "as a sentence; with no account behind the request, that this message is the "
+                "answer.",
                 "The full record, as a file, is available from your account until 9 January 2027: https://portal.example.org/my-requests",
             ),
             ORGANISATION,
@@ -700,10 +702,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "FROM THE PRIVACY OFFICE\n{response_text}\n\n"
             "{digest}\n\n{availability}" + _BOARD_ROUTE + _SIGN_OFF_EMAIL
         ),
-        sms_body=(
-            "{organisation}: regarding request {reference}: {headline} Sign in to read the "
-            "full response. {availability}"
-        ),
+        # Where to read the rest is the availability's to say: with no account
+        # behind the request there is nothing to sign in to.
+        sms_body="{organisation}: regarding request {reference}: {headline} {availability}",
         to="The requester, at the contact on file.",
     ),
     Junction(
