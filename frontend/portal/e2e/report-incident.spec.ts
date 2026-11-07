@@ -22,6 +22,8 @@ test("a stranger reports an incident and is given a reference", async ({ page },
   await page.goto("/report-incident");
   await expect(page.getByRole("heading", { name: /report an incident/i })).toBeVisible();
   await expect(page.getByText(/we keep your name and email/i)).toBeVisible();
+  // And what they may ask if it is not taken up (2026-11-07).
+  await expect(page.getByText(/to see it or to erase your name and email from it/i)).toBeVisible();
 
   await page.getByLabel(/your name/i).fill("A Reporter");
   await page.getByLabel(/your email/i).fill(email);

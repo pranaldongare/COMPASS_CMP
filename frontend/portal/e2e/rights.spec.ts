@@ -6,12 +6,14 @@
  * principal asks from her account and names a nominee; the nominee accepts
  * through the link in the outbox. The DPO's half - walking the request down
  * the path and releasing the response - is on the staff console, a separate
- * deployment with its own suite.
+ * deployment with its own suite. And somebody whose report through the public
+ * link was dismissed, with no account, asks on the rights page and is sent a
+ * code at the address the report came from (2026-11-07).
  *
  * Serial, because the journeys share one request and one nomination, and
  * because the public form is rate limited.
  */
-import { expect, test, type Page } from "@playwright/test";
+import { expect, request, test, type Page } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -67,6 +69,72 @@ const NOMINEE = `nominee-${stamp}@example.org`;
 // Unique per run: a nominee's mobile is unique on the table.
 const NOMINEE_MOBILE = `+91555${Date.now().toString().slice(-7)}`;
 
+const API = process.env.E2E_API_URL ?? "http://127.0.0.1:8000";
+
+/**
+ * The console suite's DPO session, which dismissing a report needs: this suite
+ * signs in no staff of its own. It runs after the console suite, as the testing
+ * guide orders them, and skips the one journey that needs it when it is absent.
+ */
+const CONSOLE_DPO = path.join(__dirname, "..", "..", "console", "e2e", ".auth", "dpo.json");
+
+/** A report through the public link from this address, dismissed by the DPO,
+ *  or null when the console's DPO session cannot be used. */
+async function dismissedReport(email: string): Promise<string | null> {
+  const open = await request.newContext({ baseURL: API });
+  let reference: string;
+  try {
+    const before = latestCodeFor(email);
+    expect((await open.post("/incident-reports/code", { data: { email } })).status()).toBe(
+      200,
+    );
+    const sent = await open.post("/incident-reports", {
+      data: {
+        name: "A Reporter",
+        email,
+        code: await freshCode(email, before),
+        title: `A stranger's report ${stamp}`,
+        incident_details: "A badge found in the car park",
+        cyber_attack: "unknown",
+      },
+    });
+    expect(sent.status()).toBe(201);
+    reference = ((await sent.json()) as { reference: string }).reference;
+  } finally {
+    await open.dispose();
+  }
+  const state = JSON.parse(fs.readFileSync(CONSOLE_DPO, "utf8")) as {
+    cookies: Array<{ name: string; value: string }>;
+  };
+  const dpo = await request.newContext({
+    baseURL: API,
+    storageState: CONSOLE_DPO,
+    extraHTTPHeaders: {
+      "X-CSRF-Token": state.cookies.find((c) => c.name === "cmp_csrf")?.value ?? "",
+    },
+  });
+  try {
+    const first = await dpo.get("/breaches/intake?limit=1");
+    if (first.status() === 401) return null;
+    // Oldest first: this run's report is on the last page.
+    const total = ((await first.json()) as { total: number }).total;
+    const page = (await (
+      await dpo.get(`/breaches/intake?limit=200&offset=${Math.max(0, total - 200)}`)
+    ).json()) as {
+      items: Array<{ report_uuid: string; reference: string }>;
+    };
+    const mine = page.items.find((r) => r.reference === reference);
+    expect(mine, "the report waits in the intake").toBeDefined();
+    const dismissed = await dpo.post(`/breaches/intake/${mine?.report_uuid}/dismiss`, {
+      data: { reason: "Not an incident of ours" },
+    });
+    expect(dismissed.status()).toBe(200);
+    return reference;
+  } finally {
+    await dpo.dispose();
+  }
+}
+
 /** Shared across the serial journeys below. */
 const shared: { reference: string | null } = { reference: null };
 
@@ -100,6 +168,40 @@ test.describe("public rights page", () => {
     // The second half is offered at once.
     await expect(form.getByLabel(/the code we sent/i)).toBeVisible();
     await shot(page, "rights-public-recorded");
+  });
+
+  test("a reporter with no account asks on the rights page and is sent a code at their report's address", async ({
+    page,
+  }) => {
+    test.setTimeout(90_000);
+    test.skip(
+      !fs.existsSync(CONSOLE_DPO),
+      "needs the console suite's DPO session to dismiss the report",
+    );
+    const email = `dismissed-${stamp}@example.org`;
+    const report = await dismissedReport(email);
+    test.skip(report === null, "the console suite's DPO session has expired");
+
+    await page.goto("/rights");
+    const form = page.locator("#request");
+    await form.getByLabel(/what are you asking for/i).selectOption("erasure");
+    // As they remember it: the code goes to the address kept with the report.
+    await form.getByLabel(/email or mobile you registered with/i).fill(email.toUpperCase());
+    await form.getByLabel(/your name/i).fill("A Reporter");
+    await form
+      .getByLabel(/^your request/i)
+      .fill("Please take my name and email off the report I sent you.");
+    const before = latestCodeFor(email);
+    await form.getByRole("button", { name: /send the request/i }).click();
+
+    // The same neutral words as for anybody, and the code all the same.
+    await expect(form.getByText(/^RR-\d{4}-\d{6}$/)).toBeVisible({ timeout: 10_000 });
+    await expect(form).toContainText(/if we hold records for the contact you gave/i);
+    await form.getByLabel(/the code we sent/i).fill(await freshCode(email, before));
+    await form.getByRole("button", { name: /confirm it is me/i }).click();
+    await expect(page.getByText("Verified", { exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
   });
 
   test("the nominee entry point exists and stays neutral", async ({ page }) => {

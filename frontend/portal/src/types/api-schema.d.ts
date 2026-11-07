@@ -5243,6 +5243,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/requests/{request_uuid}/public-reports/erase": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Erase the requester's name and email from the reports they sent through the public link that an office dismissed
+         * @description No report is named: they are found again by her proved addresses, so
+         *     nothing a caller sends can reach another person's. The officers' alone;
+         *     the administrator, who may hold a request about the office, is answered
+         *     404, as the register is hidden from them.
+         */
+        post: operations["erase_public_reports_requests__request_uuid__public_reports_erase_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/requests/{request_uuid}/respond": {
         parameters: {
             query?: never;
@@ -5586,7 +5609,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Set aside a CERT-In mark made in error, once validated No; nobody is told */
+        /** Set aside a CERT-In mark made in error, whatever validation says; nobody is told */
         post: operations["set_aside_cert_in_breaches__breach_uuid__cert_in_not_applicable_post"];
         delete?: never;
         options?: never;
@@ -5891,6 +5914,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/breaches/{breach_uuid}/reports/recipients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The organisation's board list, as the finalise window offers it */
+        get: operations["report_recipients_breaches__breach_uuid__reports_recipients_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/breaches/{breach_uuid}/reports": {
         parameters: {
             query?: never;
@@ -5935,7 +5975,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Freeze a report and mail the organisation's board; never a regulator */
+        /** Freeze a report and mail the addresses chosen; a CERT-In report before a yes waits for it; never a regulator */
         post: operations["finalise_report_breaches__breach_uuid__reports__report_uuid__finalise_post"];
         delete?: never;
         options?: never;
@@ -5952,7 +5992,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Mail the report to every address on the list it has not reached */
+        /** Mail the report again to the addresses it was sent to that it has not reached */
         post: operations["resend_report_breaches__breach_uuid__reports__report_uuid__resend_post"];
         delete?: never;
         options?: never;
@@ -6357,6 +6397,23 @@ export interface paths {
         post?: never;
         /** Take an address off the organisation's board */
         delete: operations["remove_board_recipient_breach_settings_board_recipients__recipient_uuid__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breach-settings/board-recipients/{recipient_uuid}/mandatory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Make an address on the organisation's board mandatory, or optional again */
+        put: operations["set_board_recipient_mandatory_breach_settings_board_recipients__recipient_uuid__mandatory_put"];
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -7176,6 +7233,11 @@ export interface components {
             /** Email */
             email: string;
         };
+        /** BoardRecipientMandatoryIn */
+        BoardRecipientMandatoryIn: {
+            /** Mandatory */
+            mandatory: boolean;
+        };
         /** BoardRecipientOut */
         BoardRecipientOut: {
             /**
@@ -7194,6 +7256,12 @@ export interface components {
             added_at: string;
             /** Added By Name */
             added_by_name: string | null;
+            /** Mandatory */
+            mandatory: boolean;
+            /** Mandatory Changed At */
+            mandatory_changed_at: string | null;
+            /** Mandatory Changed By Name */
+            mandatory_changed_by_name: string | null;
         };
         /** Body_add_approval_projects__project_uuid__approvals_post */
         Body_add_approval_projects__project_uuid__approvals_post: {
@@ -7670,6 +7738,25 @@ export interface components {
             /** Added By Name */
             added_by_name: string | null;
         };
+        /** BreachBoardListEntryOut */
+        BreachBoardListEntryOut: {
+            /**
+             * Recipient Uuid
+             * Format: uuid
+             */
+            recipient_uuid: string;
+            /** Full Name */
+            full_name: string | null;
+            /** Email */
+            email: string;
+            /** Mandatory */
+            mandatory: boolean;
+        };
+        /** BreachBoardListOut */
+        BreachBoardListOut: {
+            /** Recipients */
+            recipients: components["schemas"]["BreachBoardListEntryOut"][];
+        };
         /** BreachCandidateOut */
         BreachCandidateOut: {
             /**
@@ -7858,6 +7945,13 @@ export interface components {
             /** Kind */
             kind: string;
         };
+        /** BreachDocumentExtraRecipientIn */
+        BreachDocumentExtraRecipientIn: {
+            /** Full Name */
+            full_name?: string | null;
+            /** Email */
+            email: string;
+        };
         /** BreachDocumentFilingIn */
         BreachDocumentFilingIn: {
             /**
@@ -7867,6 +7961,13 @@ export interface components {
             filed_at: string;
             /** Reference */
             reference?: string | null;
+        };
+        /** BreachDocumentFinaliseIn */
+        BreachDocumentFinaliseIn: {
+            /** Recipients */
+            recipients: string[];
+            /** Extra */
+            extra?: components["schemas"]["BreachDocumentExtraRecipientIn"][];
         };
         /** BreachDocumentIn */
         BreachDocumentIn: {
@@ -7891,6 +7992,8 @@ export interface components {
             blocked_by: string | null;
             /** Goes To Regulator */
             goes_to_regulator: boolean;
+            /** Holds Mail */
+            holds_mail: boolean;
             /** Versions */
             versions: components["schemas"]["BreachDocumentOut"][];
         };
@@ -7902,6 +8005,10 @@ export interface components {
             queued: number;
             /** Failed */
             failed: number;
+            /** Unsent */
+            unsent: number;
+            /** Held */
+            held: number;
             /** Stale */
             stale: number;
             /** Retryable */
@@ -7926,13 +8033,14 @@ export interface components {
             attempt: number;
             /** Error */
             error: string | null;
-            /**
-             * Recorded At
-             * Format: date-time
-             */
-            recorded_at: string;
+            /** Recorded At */
+            recorded_at: string | null;
             /** Removed */
             removed: boolean;
+            /** Mandatory */
+            mandatory: boolean;
+            /** Added For This Send */
+            added_for_this_send: boolean;
         };
         /** BreachDocumentOut */
         BreachDocumentOut: {
@@ -7949,6 +8057,8 @@ export interface components {
             version: number;
             /** State */
             state: string;
+            /** Superseded */
+            superseded: boolean;
             /** Sections */
             sections: components["schemas"]["BreachDocumentSectionOut"][];
             /**
@@ -9921,9 +10031,9 @@ export interface components {
             /** Reference */
             reference: string;
             /** Reporter Name */
-            reporter_name: string;
+            reporter_name: string | null;
             /** Reporter Email */
-            reporter_email: string;
+            reporter_email: string | null;
             /** Title */
             title: string;
             /**
@@ -9940,6 +10050,8 @@ export interface components {
             dismissed_by_name: string | null;
             /** Dismissal Reason */
             dismissal_reason: string;
+            /** Reporter Erased At */
+            reporter_erased_at: string | null;
         };
         /** DisputeIn */
         DisputeIn: {
@@ -11995,6 +12107,61 @@ export interface components {
             requesting_team?: string | null;
         };
         /**
+         * PublicReportOut
+         * @description A report she sent through the public link that an office dismissed
+         *     (0065). Never the office's reason or who dismissed it.
+         */
+        PublicReportOut: {
+            /**
+             * Report Uuid
+             * Format: uuid
+             */
+            report_uuid: string;
+            /** Reference */
+            reference: string;
+            /** Reporter Name */
+            reporter_name: string | null;
+            /** Reporter Email */
+            reporter_email: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Received At
+             * Format: date-time
+             */
+            received_at: string;
+            /**
+             * Dismissed At
+             * Format: date-time
+             */
+            dismissed_at: string;
+            /** Reporter Erased At */
+            reporter_erased_at: string | null;
+        };
+        /**
+         * PublicReportsOut
+         * @description What an access or erasure request finds of the reports she sent through
+         *     the public link, by her proved addresses' blind indexes, once identity is
+         *     verified. The server's answer to whether they may be erased now, so the
+         *     console holds no copy of the rule.
+         */
+        PublicReportsOut: {
+            /** Looked */
+            looked: boolean;
+            /** Not Looked Because */
+            not_looked_because: string | null;
+            /** Items */
+            items: components["schemas"]["PublicReportOut"][];
+            /** Total */
+            total: number;
+            /** Erased */
+            erased: number;
+            /** May Erase */
+            may_erase: boolean;
+            /** Erase Blocked By */
+            erase_blocked_by: string | null;
+        };
+        /**
          * PublicRequestIn
          * @description From the notice link. Nothing here identifies anyone to the caller.
          */
@@ -12444,6 +12611,7 @@ export interface components {
             attachments?: components["schemas"]["AttachmentOut"][];
             /** Default Instruction */
             default_instruction?: string | null;
+            public_reports?: components["schemas"]["PublicReportsOut"] | null;
         };
         /** RequestOut */
         RequestOut: {
@@ -23844,6 +24012,37 @@ export interface operations {
             };
         };
     };
+    erase_public_reports_requests__request_uuid__public_reports_erase_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicReportsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     respond_requests__request_uuid__respond_post: {
         parameters: {
             query?: never;
@@ -25215,6 +25414,37 @@ export interface operations {
             };
         };
     };
+    report_recipients_breaches__breach_uuid__reports_recipients_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachBoardListOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_reports_breaches__breach_uuid__reports_get: {
         parameters: {
             query?: never;
@@ -25327,7 +25557,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreachDocumentFinaliseIn"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -26147,6 +26381,41 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_board_recipient_mandatory_breach_settings_board_recipients__recipient_uuid__mandatory_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recipient_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardRecipientMandatoryIn"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

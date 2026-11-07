@@ -89,6 +89,7 @@ export const TYPE_BY_FIELD: Readonly<Record<string, DataType>> = {
   filed_by_name: "NAME",
   finalised_by_name: "NAME",
   imported_by_name: "NAME",
+  mandatory_changed_by_name: "NAME",
   nominee_contact: "CONTACT",
   overridden_by_name: "NAME",
   owner_name: "NAME",
