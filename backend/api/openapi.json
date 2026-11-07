@@ -16518,7 +16518,7 @@
         "tags": [
           "breaches"
         ],
-        "summary": "Set aside a CERT-In mark made in error, once validated No; nobody is told",
+        "summary": "Set aside a CERT-In mark made in error, whatever validation says; nobody is told",
         "operationId": "set_aside_cert_in_breaches__breach_uuid__cert_in_not_applicable_post",
         "parameters": [
           {

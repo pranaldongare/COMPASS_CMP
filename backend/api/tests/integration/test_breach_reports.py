@@ -365,8 +365,8 @@ async def _cert_in_draft(conn: Any, seeded: dict[str, Any], uuid: str) -> dict[s
     return doc
 
 
-async def _set_aside_after_a_no(conn: Any, seeded: dict[str, Any], uuid: str) -> None:
-    await _determine(conn, seeded, uuid, "no")
+async def _set_aside_cert_in(conn: Any, seeded: dict[str, Any], uuid: str) -> None:
+    """Whatever validation says, as it may be since 2026-11-07."""
     await service.set_aside_cert_in(
         conn, breach_uuid=uuid, reason="A false alarm", actor_id=_dpo(seeded)
     )
@@ -1834,20 +1834,6 @@ class TestTheAccountOfTheMailComesFirst:
 
 
 class TestACertInReportOnceTheDutyIsSetAside:
-    @staticmethod
-    async def _set_aside(conn: Any, seeded: dict[str, Any], uuid: str) -> None:
-        await service.determine(
-            conn,
-            breach_uuid=uuid,
-            outcome="no",
-            reasoning="Not a breach",
-            became_aware_at=None,
-            actor_id=_dpo(seeded),
-        )
-        await service.set_aside_cert_in(
-            conn, breach_uuid=uuid, reason="A false alarm", actor_id=_dpo(seeded)
-        )
-
     async def test_an_open_draft_cannot_be_finalised_into_a_mail(
         self, conn: Any, seeded: dict[str, Any], mailed: list[str]
     ) -> None:
@@ -1862,7 +1848,7 @@ class TestACertInReportOnceTheDutyIsSetAside:
             bodies={s["key"]: "Said" for s in doc["sections"]},
             actor_id=_dpo(seeded),
         )
-        await self._set_aside(conn, seeded, uuid)
+        await _set_aside_cert_in(conn, seeded, uuid)
         read = _kind(await reports.overview(conn, breach_uuid=uuid), "cert_in")
         assert "Mark it reportable again" in str(read["blocked_by"])
         with pytest.raises(Conflict) as refused:
@@ -1890,7 +1876,7 @@ class TestACertInReportOnceTheDutyIsSetAside:
             bodies={s["key"]: "Said" for s in doc["sections"]},
             actor_id=_dpo(seeded),
         )
-        await self._set_aside(conn, seeded, uuid)
+        await _set_aside_cert_in(conn, seeded, uuid)
         await service.mark_cert_in(conn, breach_uuid=uuid, actor_id=_dpo(seeded))
         done = await reports.finalise(
             conn,
@@ -1906,8 +1892,8 @@ class TestACertInReportOnceTheDutyIsSetAside:
     async def test_a_finalised_one_is_not_mailed_again(
         self, conn: Any, seeded: dict[str, Any], mailed: list[str]
     ) -> None:
-        """Finalised on a recorded breach, so mailed at once; a No and the
-        set-aside after it stop the next press, and leave what went."""
+        """Finalised on a recorded breach, so mailed at once; setting the mark
+        aside under that yes stops the next press, and leaves what went."""
         await _board(conn, seeded, "chair@example.org")
         uuid = await _breach(conn, seeded)
         await service.mark_cert_in(conn, breach_uuid=uuid, actor_id=_dpo(seeded))
@@ -1928,7 +1914,7 @@ class TestACertInReportOnceTheDutyIsSetAside:
         )
         [sent] = mailed
         await _not_reached(conn, sent)
-        await self._set_aside(conn, seeded, uuid)
+        await _set_aside_cert_in(conn, seeded, uuid)
         read = _latest(await reports.overview(conn, breach_uuid=uuid), "cert_in")
         assert read["mail"]["failed"] == 1 and read["mail"]["retryable"] == 0
         mailed.clear()
@@ -1967,7 +1953,7 @@ class TestACertInReportOnceTheDutyIsSetAside:
         doc = await self._finalised(conn, seeded, uuid)
         await _proof(conn, seeded, uuid, doc, "approval")
         await _proof(conn, seeded, uuid, doc, "sent_mail")
-        await self._set_aside(conn, seeded, uuid)
+        await _set_aside_cert_in(conn, seeded, uuid)
         with pytest.raises(Conflict) as filing:
             await _file(conn, seeded, uuid, doc, reference="CERT/1")
         assert "Mark it reportable again" in filing.value.message
@@ -1990,7 +1976,7 @@ class TestACertInReportOnceTheDutyIsSetAside:
         doc = await self._finalised(conn, seeded, uuid)
         await _proof(conn, seeded, uuid, doc, "approval")
         await _proof(conn, seeded, uuid, doc, "sent_mail")
-        await self._set_aside(conn, seeded, uuid)
+        await _set_aside_cert_in(conn, seeded, uuid)
         await service.mark_cert_in(conn, breach_uuid=uuid, actor_id=_dpo(seeded))
         await _file(conn, seeded, uuid, doc, reference="CERT/1")
         assert _duty(await service.detail(conn, uuid), "cert_in")["state"] == "done"
@@ -2501,7 +2487,7 @@ class TestTryAgainTriesTheReportsOwn:
         uuid = await _incident(conn, seeded)
         doc = await _cert_in_draft(conn, seeded, uuid)
         await _send(conn, seeded, uuid, doc, to=None)
-        await _set_aside_after_a_no(conn, seeded, uuid)
+        await _set_aside_cert_in(conn, seeded, uuid)
         await _determine(conn, seeded, uuid, "yes")
         assert mailed == []
         withheld = _latest(await reports.overview(conn, breach_uuid=uuid), "cert_in")
@@ -2625,7 +2611,7 @@ class TestACertInReportBeforeAYes:
         uuid = await _incident(conn, seeded)
         doc = await _cert_in_draft(conn, seeded, uuid)
         await _send(conn, seeded, uuid, doc, to=None)
-        await _set_aside_after_a_no(conn, seeded, uuid)
+        await _set_aside_cert_in(conn, seeded, uuid)
         await _determine(conn, seeded, uuid, "yes")
         assert mailed == []
         [trail] = await _trail(conn, uuid, "breach.report_withheld")
@@ -2651,7 +2637,7 @@ class TestACertInReportBeforeAYes:
         uuid = await _incident(conn, seeded)
         doc = await _cert_in_draft(conn, seeded, uuid)
         await _send(conn, seeded, uuid, doc, to=None)
-        await _set_aside_after_a_no(conn, seeded, uuid)
+        await _set_aside_cert_in(conn, seeded, uuid)
         await _determine(conn, seeded, uuid, "yes")
         await service.mark_cert_in(conn, breach_uuid=uuid, actor_id=_dpo(seeded))
         await _determine(conn, seeded, uuid, "yes")
@@ -2666,7 +2652,7 @@ class TestACertInReportBeforeAYes:
         uuid = await _incident(conn, seeded)
         doc = await _cert_in_draft(conn, seeded, uuid)
         await _send(conn, seeded, uuid, doc, to=None)
-        await _set_aside_after_a_no(conn, seeded, uuid)
+        await _set_aside_cert_in(conn, seeded, uuid)
         await service.mark_cert_in(conn, breach_uuid=uuid, actor_id=_dpo(seeded))
         assert mailed == []
         await _determine(conn, seeded, uuid, "yes")

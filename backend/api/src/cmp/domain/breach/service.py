@@ -596,7 +596,9 @@ async def assessments(conn: Conn, *, breach_uuid: str) -> list[Row]:
 async def mark_cert_in(conn: Conn, *, breach_uuid: str, actor_id: int) -> Row:
     """A reportable cyber incident: CERT-In is due six hours from detection.
     Marked again after it was set aside, the duty comes back with that same
-    clock, citing the latest determination as a reinstatement must."""
+    clock. A person brings it back, as a person set it aside, so the event
+    cites no determination: there may be none yet, and what validation says
+    has no bearing on CERT-In."""
     breach = await locked_open(conn, breach_uuid)
     breach_id = int(breach["breach_id"])
     found = (await duties_of(conn, breach_id)).get(Duty.CERT_IN)
@@ -604,14 +606,12 @@ async def mark_cert_in(conn: Conn, *, breach_uuid: str, actor_id: int) -> Row:
         raise Conflict("Already marked as reportable to CERT-In", code="cert_in_marked")
     due = clock.due_for(Duty.CERT_IN, breach["detected_at"])
     if found:
-        latest = (await repo.determinations(conn, breach_id))[-1]
         await repo.add_obligation_event(
             conn,
             int(found[0]["obligation_id"]),
             kind=EventKind.REINSTATED,
             due_at=due,
             anchored_at=breach["detected_at"],
-            determination_id=int(latest["determination_id"]),
             recorded_by=actor_id,
         )
         await record_event(
@@ -646,11 +646,15 @@ async def set_aside_cert_in(conn: Conn, *, breach_uuid: str, reason: str, actor_
     it stands on its own test, and without this a false alarm could only close
     by mailing the board a report nobody will send and filing proof of it.
 
-    Only once the latest determination is No: until then there may be something
-    to report, and it is that No this cites. A duty done, or a report filed,
-    says something was reported, and stands. It mails nobody and leaves the
-    organisation's board alone. The reason is sealed on the event, and the trail
-    says only that one was given."""
+    At any time, whatever validation says (the product owner, 2026-11-07): the
+    six hours wait for no validation, and nor does knowing they were never
+    owed. For the same reason the event cites no determination, since none set
+    it aside; the reason is its ground, sealed on the event, and the trail says
+    only that one was given. A duty done, or a report filed, says something was
+    reported, and stands. It mails nobody and leaves validation, the
+    organisation's board and every DPDP duty alone. A report to CERT-In whose
+    mail to the board waits for a yes does not go while the mark stays set
+    aside (`cmp.domain.breach.reports`)."""
     reason_given = _text(reason)
     if not reason_given:
         raise ValidationFailed("Say why it is not reportable to CERT-In", field="reason")
@@ -664,19 +668,11 @@ async def set_aside_cert_in(conn: Conn, *, breach_uuid: str, reason: str, actor_
     ]
     if filed:
         raise Conflict("A report to CERT-In has been filed, so it stands", code="report_filed")
-    determinations = await repo.determinations(conn, breach_id)
-    latest = determinations[-1] if determinations else None
-    if latest is None or latest["outcome"] != Outcome.NO:
-        raise Conflict(
-            "CERT-In can be set aside only once the incident is validated as No",
-            code="cert_in_not_validated_no",
-        )
     await repo.add_obligation_event(
         conn,
         int(row["obligation_id"]),
         kind=EventKind.NOT_APPLICABLE,
         note=reason_given,
-        determination_id=int(latest["determination_id"]),
         recorded_by=actor_id,
     )
     await record_event(

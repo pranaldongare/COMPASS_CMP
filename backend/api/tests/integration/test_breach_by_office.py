@@ -96,14 +96,6 @@ class TestACertInMarkIsTheOffices:
         await _as_office(conn, "hr")
         uuid = await _incident(conn, actor_id=legal, office="hr")
         await service.mark_cert_in(conn, breach_uuid=uuid, actor_id=legal)
-        await service.determine(
-            conn,
-            breach_uuid=uuid,
-            outcome="no",
-            reasoning="Nothing in it",
-            became_aware_at=None,
-            actor_id=legal,
-        )
         await _as_office(conn, "rnd")
         with pytest.raises(NotFound):
             await service.set_aside_cert_in(

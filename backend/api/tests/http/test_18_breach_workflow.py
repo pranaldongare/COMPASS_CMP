@@ -227,7 +227,7 @@ class TestTheSharedIntake:
 
 
 class TestACertInMarkMadeInError:
-    async def test_it_is_set_aside_after_a_no_and_the_incident_closes(
+    async def test_it_is_set_aside_whatever_validation_says_and_the_incident_closes(
         self, http: httpx.AsyncClient, world: World, session_for: SessionFactory
     ) -> None:
         made = await call(
@@ -247,10 +247,30 @@ class TestACertInMarkMadeInError:
         aside = f"{path}/cert-in/not-applicable"
         template = f"{B}/cert-in/not-applicable"
         word = {"reason": "The scanner set it off"}
-        early = await call(
+        await call(http, "POST", aside, template=template, session=world.dpo, json={}, expect=422)
+        legal = await session_for("legal")
+        for who in (legal, world.dco):
+            await call(http, "POST", aside, template=template, session=who, json=word, expect=404)
+        done = await call(http, "POST", aside, template=template, session=world.dpo, json=word)
+        assert done.json()["determinations"] == [], "set aside before any validation"
+        [duty] = [d for d in done.json()["obligations"] if d["duty"] == "cert_in"]
+        assert duty["state"] == "not_applicable"
+        assert plain(duty["events"][-1]["note"]) == word["reason"]
+        assert str(duty["events"][-1]["note"]).startswith("SE::")
+        assert duty["events"][-1]["determination_uuid"] is None
+        again = await call(
             http, "POST", aside, template=template, session=world.dpo, json=word, expect=409
         )
-        assert "cert_in_not_validated_no" in early.text
+        assert "duty_not_outstanding" in again.text
+        back = await call(
+            http, "POST", f"{path}/cert-in", template=f"{B}/cert-in", session=world.dpo
+        )
+        [duty] = [d for d in back.json()["obligations"] if d["duty"] == "cert_in"]
+        assert duty["state"] == "outstanding"
+        assert {k: duty["events"][-1][k] for k in ("kind", "determination_uuid")} == {
+            "kind": "reinstated",
+            "determination_uuid": None,
+        }
         await call(
             http,
             "POST",
@@ -259,20 +279,6 @@ class TestACertInMarkMadeInError:
             session=world.dpo,
             json={"outcome": "no", "reasoning": "Nothing was reached"},
         )
-        await call(http, "POST", aside, template=template, session=world.dpo, json={}, expect=422)
-        legal = await session_for("legal")
-        for who in (legal, world.dco):
-            await call(http, "POST", aside, template=template, session=who, json=word, expect=404)
-        done = await call(http, "POST", aside, template=template, session=world.dpo, json=word)
-        [duty] = [d for d in done.json()["obligations"] if d["duty"] == "cert_in"]
-        assert duty["state"] == "not_applicable"
-        assert plain(duty["events"][-1]["note"]) == word["reason"]
-        assert str(duty["events"][-1]["note"]).startswith("SE::")
-        back = await call(
-            http, "POST", f"{path}/cert-in", template=f"{B}/cert-in", session=world.dpo
-        )
-        [duty] = [d for d in back.json()["obligations"] if d["duty"] == "cert_in"]
-        assert duty["state"] == "outstanding"
         await call(http, "POST", aside, template=template, session=world.dpo, json=word)
         closed = await call(
             http,

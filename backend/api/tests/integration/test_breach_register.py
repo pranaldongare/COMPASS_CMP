@@ -149,8 +149,9 @@ async def test_a_breach_recorded_late_shows_the_cert_in_time_actually_left(
 
 
 class TestACertInMarkMadeInError:
-    """A false alarm validated No has nothing to report and nobody to report it
-    to, and must be able to close without saying otherwise."""
+    """A mark made in error, set aside at any time with a reason: a false alarm
+    must be able to close without saying otherwise, and a real breach that was
+    never a cyber incident without a No it does not mean."""
 
     @staticmethod
     async def _marked(conn: Any, seeded: dict[str, Any], *outcomes: str) -> str:
@@ -179,6 +180,15 @@ class TestACertInMarkMadeInError:
             conn, breach_uuid=uuid, reason=reason, actor_id=_dpo(seeded)
         )
 
+    @staticmethod
+    def _the_rest(detail: dict[str, Any]) -> dict[str, Any]:
+        """Every duty but CERT-In, as far as setting CERT-In aside could move it."""
+        return {
+            d["duty"]: (d["state"], d["due_at"], d["events"])
+            for d in detail["obligations"]
+            if d["duty"] != "cert_in"
+        }
+
     async def test_after_a_no_it_is_set_aside_and_the_incident_closes(
         self, conn: Any, seeded: dict[str, Any]
     ) -> None:
@@ -193,20 +203,21 @@ class TestACertInMarkMadeInError:
         )
         assert closed["status"] == "closed"
 
-    async def test_it_cites_the_no_and_seals_the_reason(
-        self, conn: Any, seeded: dict[str, Any]
+    @pytest.mark.parametrize("outcomes", [(), ("pending",), ("no",), ("yes",)])
+    async def test_it_cites_no_validation_and_seals_the_reason(
+        self, conn: Any, seeded: dict[str, Any], outcomes: tuple[str, ...]
     ) -> None:
-        uuid = await self._marked(conn, seeded, "no")
+        uuid = await self._marked(conn, seeded, *outcomes)
         detail = await self._set_aside(conn, seeded, uuid)
         [event] = _duty(detail, "cert_in")["events"]
-        assert event["determination_uuid"] == detail["determinations"][-1]["determination_uuid"]
+        assert event["determination_uuid"] is None, "no validation set it aside"
         assert str(event["note"]).startswith("SE::")
         assert plain(event["note"]) == "It was a false alarm"
 
     async def test_the_trail_says_a_reason_was_given_and_not_what_it_said(
         self, conn: Any, seeded: dict[str, Any]
     ) -> None:
-        uuid = await self._marked(conn, seeded, "no")
+        uuid = await self._marked(conn, seeded)
         await self._set_aside(conn, seeded, uuid)
         [row] = await fetch_all(
             conn,
@@ -223,31 +234,36 @@ class TestACertInMarkMadeInError:
 
     @pytest.mark.parametrize("reason", ["", "   "])
     async def test_it_needs_a_reason(self, conn: Any, seeded: dict[str, Any], reason: str) -> None:
-        uuid = await self._marked(conn, seeded, "no")
+        uuid = await self._marked(conn, seeded)
         with pytest.raises(ValidationFailed) as refused:
             await self._set_aside(conn, seeded, uuid, reason)
         assert refused.value.field == "reason"
 
-    @pytest.mark.parametrize("outcomes", [(), ("pending",), ("no", "pending"), ("no", "yes")])
-    async def test_it_waits_for_the_latest_determination_to_be_no(
+    @pytest.mark.parametrize(
+        "outcomes",
+        [(), ("pending",), ("no", "pending"), ("no", "yes"), ("yes",), ("yes", "no")],
+    )
+    async def test_it_is_set_aside_whatever_validation_says(
         self, conn: Any, seeded: dict[str, Any], outcomes: tuple[str, ...]
     ) -> None:
+        """The product owner, 2026-11-07: CERT-In's six hours wait for no
+        validation, so nor does setting them aside. Validation and every other
+        duty stay as they were, under a yes as under a no."""
         uuid = await self._marked(conn, seeded, *outcomes)
-        with pytest.raises(Conflict) as refused:
-            await self._set_aside(conn, seeded, uuid)
-        assert refused.value.code == "cert_in_not_validated_no"
-        assert "validated as No" in refused.value.message
-        assert _duty(await service.detail(conn, uuid), "cert_in")["state"] == "outstanding"
+        before = await service.detail(conn, uuid)
+        after = await self._set_aside(conn, seeded, uuid)
+        assert _duty(after, "cert_in")["state"] == "not_applicable"
+        assert self._the_rest(after) == self._the_rest(before)
+        assert after["determinations"] == before["determinations"]
 
     async def test_there_must_be_such_a_duty(self, conn: Any, seeded: dict[str, Any]) -> None:
         uuid = str((await _breach(conn, seeded))["breach_uuid"])
-        await self._determine(conn, seeded, uuid, "no")
         with pytest.raises(Conflict) as refused:
             await self._set_aside(conn, seeded, uuid)
         assert refused.value.code == "no_such_duty"
 
     async def test_a_duty_done_stands(self, conn: Any, seeded: dict[str, Any]) -> None:
-        uuid = await self._marked(conn, seeded, "no")
+        uuid = await self._marked(conn, seeded)
         await service.complete_duty(
             conn,
             breach_uuid=uuid,
@@ -262,7 +278,7 @@ class TestACertInMarkMadeInError:
         assert refused.value.code == "duty_not_outstanding"
 
     async def test_set_aside_twice_is_refused(self, conn: Any, seeded: dict[str, Any]) -> None:
-        uuid = await self._marked(conn, seeded, "no")
+        uuid = await self._marked(conn, seeded)
         await self._set_aside(conn, seeded, uuid)
         with pytest.raises(Conflict) as refused:
             await self._set_aside(conn, seeded, uuid)
@@ -271,7 +287,7 @@ class TestACertInMarkMadeInError:
     async def test_a_report_filed_stands(self, conn: Any, seeded: dict[str, Any]) -> None:
         """Filed while the duty was aside, then marked again: the duty is out
         again, and something was still reported."""
-        uuid = await self._marked(conn, seeded, "no")
+        uuid = await self._marked(conn, seeded)
         breach = await service.require(conn, uuid)
         cur = await conn.execute(
             """INSERT INTO breach_report (breach_id, kind, version, created_by, finalised_by,
@@ -286,10 +302,15 @@ class TestACertInMarkMadeInError:
             await self._set_aside(conn, seeded, uuid)
         assert refused.value.code == "report_filed"
 
+    @pytest.mark.parametrize("outcomes", [("yes", "no"), ("yes",)])
     async def test_it_tells_nobody_and_leaves_the_board_alone(
-        self, conn: Any, seeded: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+        self,
+        conn: Any,
+        seeded: dict[str, Any],
+        monkeypatch: pytest.MonkeyPatch,
+        outcomes: tuple[str, ...],
     ) -> None:
-        uuid = await self._marked(conn, seeded, "yes", "no")
+        uuid = await self._marked(conn, seeded, *outcomes)
         board = _duty(await service.detail(conn, uuid), "org_board")
 
         def told(*_: Any, **__: Any) -> None:
@@ -300,12 +321,16 @@ class TestACertInMarkMadeInError:
         monkeypatch.setattr(dispatch, "dispatch_optional", told)
         monkeypatch.setattr(dispatch, "dispatch_required", told)
         after = await self._set_aside(conn, seeded, uuid)
+        assert _duty(after, "org_board")["state"] == board["state"]
         assert _duty(after, "org_board")["events"] == board["events"]
 
+    @pytest.mark.parametrize("outcomes", [(), ("no",)])
     async def test_marking_again_brings_the_duty_back_with_its_own_clock(
-        self, conn: Any, seeded: dict[str, Any]
+        self, conn: Any, seeded: dict[str, Any], outcomes: tuple[str, ...]
     ) -> None:
-        uuid = await self._marked(conn, seeded, "no")
+        """Before any validation there is no determination for the mark to
+        cite, and after a No it cites none either: a person brought it back."""
+        uuid = await self._marked(conn, seeded, *outcomes)
         first = _duty(await service.detail(conn, uuid), "cert_in")
         await self._set_aside(conn, seeded, uuid)
         detail = await service.mark_cert_in(conn, breach_uuid=uuid, actor_id=_dpo(seeded))
@@ -314,27 +339,42 @@ class TestACertInMarkMadeInError:
         assert duty["due_at"] == first["due_at"], "six hours from detection, as it was"
         assert duty["obligation_uuid"] == first["obligation_uuid"], "the same duty"
         assert [e["kind"] for e in duty["events"]] == ["not_applicable", "reinstated"]
+        assert [e["determination_uuid"] for e in duty["events"]] == [None, None]
         with pytest.raises(Conflict) as refused:
             await service.mark_cert_in(conn, breach_uuid=uuid, actor_id=_dpo(seeded))
         assert refused.value.code == "cert_in_marked"
 
+    @pytest.mark.parametrize("outcomes", [(), ("no",)])
     async def test_a_later_yes_does_not_bring_it_back_and_marking_does(
-        self, conn: Any, seeded: dict[str, Any]
+        self, conn: Any, seeded: dict[str, Any], outcomes: tuple[str, ...]
     ) -> None:
-        """CERT-In stands on its own test. Were a yes to bring it back, a real
-        breach that was never a cyber incident could not close, since a mark
-        can be set aside only after a No."""
-        uuid = await self._marked(conn, seeded, "no")
+        """CERT-In stands on its own test; the officer marks it again."""
+        uuid = await self._marked(conn, seeded, *outcomes)
         await self._set_aside(conn, seeded, uuid)
         await self._determine(conn, seeded, uuid, "yes")
         assert _duty(await service.detail(conn, uuid), "cert_in")["state"] == "not_applicable"
         detail = await service.mark_cert_in(conn, breach_uuid=uuid, actor_id=_dpo(seeded))
         assert _duty(detail, "cert_in")["state"] == "outstanding"
 
-    async def test_the_board_is_no_longer_told_it_is_reportable(
+    async def test_set_aside_before_validation_it_still_cannot_close(
         self, conn: Any, seeded: dict[str, Any]
     ) -> None:
-        uuid = await self._marked(conn, seeded, "no")
+        """Setting the mark aside early opens no way round validation."""
+        uuid = await self._marked(conn, seeded)
+        after = await self._set_aside(conn, seeded, uuid)
+        assert after["transitions"][0]["blockers"] == [
+            "Record whether this is a personal data breach before closing it"
+        ]
+        with pytest.raises(TransitionNotPermitted):
+            await service.transition(
+                conn, breach_uuid=uuid, to="closed", reason=None, actor_id=_dpo(seeded)
+            )
+
+    @pytest.mark.parametrize("outcomes", [("no",), ("yes",)])
+    async def test_the_board_is_no_longer_told_it_is_reportable(
+        self, conn: Any, seeded: dict[str, Any], outcomes: tuple[str, ...]
+    ) -> None:
+        uuid = await self._marked(conn, seeded, *outcomes)
         assert (await board.org_board_brief(conn, breach_uuid=uuid))["cert_in_reportable"] is True
         await self._set_aside(conn, seeded, uuid)
         assert (await board.org_board_brief(conn, breach_uuid=uuid))["cert_in_reportable"] is False
@@ -742,6 +782,57 @@ class TestTheRecordCannotBeEdited:
                 "UPDATE breach SET detected_at = now() WHERE breach_uuid = %s",
                 (str(breach["breach_uuid"]),),
             )
+
+    async def test_only_a_cert_in_event_may_cite_no_determination(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        """A person moves CERT-In, so its events may cite no determination
+        (0064); validation moves every other duty, and each such event says
+        which validation did it."""
+        breach = await _breach(conn, seeded)
+        uuid = str(breach["breach_uuid"])
+        await service.mark_cert_in(conn, breach_uuid=uuid, actor_id=_dpo(seeded))
+        await _yes(conn, seeded, breach, datetime.now(UTC) - HOUR)
+        duties = {
+            r["kind"]: r["obligation_id"]
+            for r in await fetch_all(
+                conn,
+                """SELECT o.kind, o.obligation_id FROM breach_obligation o
+                     JOIN breach b USING (breach_id) WHERE b.breach_uuid = %s""",
+                (uuid,),
+            )
+        }
+
+        async def write(duty: str, kind: str, **at: Any) -> None:
+            await conn.execute(
+                """INSERT INTO breach_obligation_event
+                     (obligation_id, kind, occurred_at, reference, due_at, anchored_at,
+                      requested_at, determination_id, recorded_by)
+                   VALUES (%(duty)s, %(kind)s, %(occurred_at)s, %(reference)s, %(due_at)s,
+                           %(anchored_at)s, %(requested_at)s, NULL, %(by)s)""",
+                {
+                    **dict.fromkeys(
+                        ("occurred_at", "reference", "due_at", "anchored_at", "requested_at")
+                    ),
+                    **at,
+                    "duty": duties[duty],
+                    "kind": kind,
+                    "by": _dpo(seeded),
+                },
+            )
+
+        now = datetime.now(UTC)
+        await write("cert_in", "not_applicable")
+        await write("cert_in", "reinstated", due_at=now + HOUR, anchored_at=now - HOUR)
+        for duty, kind, extra in (
+            ("board_report", "not_applicable", {}),
+            ("org_board", "reinstated", {"due_at": now + HOUR, "anchored_at": now}),
+        ):
+            with pytest.raises(psycopg.errors.CheckViolation, match="cites the determination"):
+                async with conn.transaction():
+                    await write(duty, kind, **extra)
+        await write("board_intimation", "completed", occurred_at=now, reference="DPB/1")
+        await write("board_report", "extended", due_at=now + 9 * HOUR, requested_at=now)
 
 
 def test_nothing_reads_encryption_to_decide_a_duty() -> None:

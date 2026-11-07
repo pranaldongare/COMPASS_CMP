@@ -175,6 +175,9 @@ class BreachDutyEventOut(Out):
     reported_to: str | None
     due_at: datetime | None
     requested_at: datetime | None
+    #: The determination that set the duty aside or brought it back. None on
+    #: completions and extensions, and on a CERT-In duty's events, which a
+    #: person moves.
     determination_uuid: UUID | None
     recorded_at: datetime
     recorded_by_name: str | None
@@ -639,7 +642,7 @@ async def mark_cert_in(breach_uuid: UUID, principal: BreachWriter) -> dict[str, 
 @router.post(
     "/{breach_uuid}/cert-in/not-applicable",
     response_model=BreachOut,
-    summary="Set aside a CERT-In mark made in error, once validated No; nobody is told",
+    summary="Set aside a CERT-In mark made in error, whatever validation says; nobody is told",
 )
 async def set_aside_cert_in(
     breach_uuid: UUID, body: CertInSetAsideIn, principal: BreachWriter
