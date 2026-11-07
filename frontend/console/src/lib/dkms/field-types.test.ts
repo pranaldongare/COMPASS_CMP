@@ -2,6 +2,7 @@
  * The fallback covers what a public report seals (0058), so a key service
  * writing another envelope still has the report's words opened in the intake.
  * `reporter_*` and `dismissal_reason` were there already; these were not.
+ * So does the name the board list joins in for its latest mandatory mark.
  */
 import { describe, expect, it } from "vitest";
 
@@ -22,5 +23,10 @@ describe("TYPE_BY_FIELD", () => {
     "third_parties",
   ])("labels a report's %s as free text", (field) => {
     expect(TYPE_BY_FIELD[field]).toBe("FREE_TEXT");
+  });
+
+  // Who last made a board address mandatory or optional (0064): a joined name.
+  it.each(["mandatory_changed_by_name"])("labels %s as a name", (field) => {
+    expect(TYPE_BY_FIELD[field]).toBe("NAME");
   });
 });

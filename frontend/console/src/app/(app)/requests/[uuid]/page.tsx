@@ -70,6 +70,7 @@ import {
   LinkedRequestCard,
 } from "@/features/rights/components/linked-request-card";
 import { Path, stepsFor } from "@/features/rights/components/path";
+import { PublicReportsCard } from "@/features/rights/components/public-reports-card";
 import { RequestDocuments } from "@/features/rights/components/request-documents";
 import { nextMove } from "@/features/rights/components/request-summary";
 import { RespondCard } from "@/features/rights/components/respond-card";
@@ -88,8 +89,8 @@ import type { RightsRequestDetail } from "@/types";
  * The request's tabs (2026-10-10). The fragment names the tab, so a tab can
  * be linked to and survives a reload. `#holders` and `#response` were cards'
  * anchors before the tabs and are tabs' names now; `#actions` - where the
- * next move points - and `#scope` open the tab that holds them. A grievance
- * has no holders, so no holders tab.
+ * next move points - `#scope` and `#public-reports` open the tab that holds
+ * them. A grievance has no holders, so no holders tab.
  */
 const TABS = ["overview", "identity", "holders", "response", "history"] as const;
 const GRIEVANCE_TABS = ["overview", "identity", "response", "history"] as const;
@@ -97,6 +98,7 @@ type RequestTab = (typeof TABS)[number];
 const SECTIONS: Record<string, RequestTab> = {
   actions: "overview",
   scope: "holders",
+  "public-reports": "holders",
 };
 
 const VERIFICATION_COPY: Record<RightsRequestDetail["verification_status"], string> = {
@@ -483,6 +485,12 @@ export default function RequestDetailPage() {
             {erasure && (
               <div id="scope" className="scroll-mt-20">
                 <ScopeCard request={r} />
+              </div>
+            )}
+            {/* Not a scope item: a dismissed report is no collected asset. */}
+            {r.public_reports && (
+              <div id="public-reports" className="scroll-mt-20">
+                <PublicReportsCard request={r} />
               </div>
             )}
           </TabPanel>

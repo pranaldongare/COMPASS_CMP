@@ -1,12 +1,15 @@
 /**
  * The reports on a breach (0059, ADR 0037): a draft from the register, finalised
- * once every required section says something and somebody is on the board's
- * list; then, for a regulator's report, recorded as sent with both proofs, on
- * whichever finalised version was the one sent. The platform sends nothing to a
- * regulator, and nothing here pretends otherwise. The board's own report is
- * done when its mail lands: the button says what the mail is doing until then.
- * Try again is offered where the server says sending again would do something,
- * and a press says what it did.
+ * once every required section says something, to whoever the sender chose from
+ * the board's list and anyone added for that report alone (0064); then, for a
+ * regulator's report, recorded as sent with both proofs, on whichever finalised
+ * version was the one sent. The platform sends nothing to a regulator, and
+ * nothing here pretends otherwise. The board's own report is done when its mail
+ * lands: the button says what the mail is doing until then. A report to
+ * CERT-In finalised before the incident is recorded is held for the first yes,
+ * and its line says so, or why it never went. Try again is offered where the
+ * server says sending again would do something, reaches only the addresses a
+ * version went to, and a press says what it did.
  */
 import { QueryClient } from "@tanstack/react-query";
 import { HttpResponse, http } from "msw";
@@ -19,6 +22,7 @@ import { act, render, screen, within } from "@/test/render";
 import { API, server } from "@/test/server";
 import type {
   Breach,
+  BreachBoardEntry,
   BreachDocument,
   BreachDocumentKindView,
   BreachDocumentMail,
@@ -40,6 +44,8 @@ vi.mock("@/providers/auth-provider", async (importOriginal) => ({
 const BREACH = "66666666-6666-4666-8666-666666666666";
 const REPORT = "77777777-7777-4777-8777-777777777777";
 const NEWER = "88888888-8888-4888-8888-888888888888";
+const CHAIR = "11111111-1111-4111-8111-111111111111";
+const DEPUTY = "22222222-2222-4222-8222-222222222222";
 
 const breach = (over: Partial<Breach> = {}) =>
   ({ breach_uuid: BREACH, status: "open", reference: "BR-2026-0007", obligations: [], ...over }) as Breach;
@@ -48,6 +54,8 @@ const mail = (over: Partial<BreachDocumentMail> = {}): BreachDocumentMail => ({
   delivered: 0,
   queued: 0,
   failed: 0,
+  unsent: 0,
+  held: 0,
   stale: 0,
   retryable: 0,
   recipients: [],
@@ -63,8 +71,21 @@ const address = (over: Partial<BreachDocumentMailRecipient> = {}): BreachDocumen
   error: null,
   recorded_at: "2026-11-06T10:01:00Z",
   removed: false,
+  mandatory: false,
+  added_for_this_send: false,
   ...over,
 });
+
+/** An entry on the board's list, as the finalise window reads it. */
+const entry = (over: Partial<BreachBoardEntry> = {}): BreachBoardEntry => ({
+  recipient_uuid: CHAIR,
+  full_name: "Asha Rao",
+  email: "chair@cmp.local",
+  mandatory: false,
+  ...over,
+});
+
+const BOARD = [entry(), entry({ recipient_uuid: DEPUTY, full_name: null, email: "deputy@cmp.local" })];
 
 const proofOf = (kind: "approval" | "sent_mail", over: Partial<BreachDocumentProof> = {}): BreachDocumentProof => ({
   attachment_uuid: crypto.randomUUID(),
@@ -84,6 +105,7 @@ const document = (over: Partial<BreachDocument> = {}): BreachDocument => ({
   title: "Initial intimation to the DPDP Board",
   version: 1,
   state: "draft",
+  superseded: false,
   sections: [
     { key: "nature_extent", label: "The nature and extent of the breach", required: true, body: "A list was exposed" },
     { key: "likely_impact", label: "Its likely impact", required: true, body: null },
@@ -120,6 +142,7 @@ const view = (over: Partial<BreachDocumentKindView> = {}): BreachDocumentKindVie
   duty_state: "outstanding",
   blocked_by: null,
   goes_to_regulator: true,
+  holds_mail: false,
   versions: [],
   ...over,
 });
@@ -145,10 +168,17 @@ const documents = (kinds: BreachDocumentKindView[], recipients = 2): BreachDocum
 
 const dutyOf = (over: Partial<BreachDuty>) => ({ duty: "org_board", state: "outstanding", ...over }) as BreachDuty;
 
-/** The reports as they stand, for the reads that follow a write. */
-function serve(initial: BreachDocuments) {
-  const world = { now: initial };
-  server.use(http.get(`${API}/breaches/${BREACH}/reports`, () => HttpResponse.json(world.now)));
+/** The reports as they stand, for the reads that follow a write, and the
+ *  board's list the finalise window reads beside them. */
+function serve(initial: BreachDocuments, board: BreachBoardEntry[] = BOARD) {
+  const world = { now: initial, board, boardReads: 0 };
+  server.use(
+    http.get(`${API}/breaches/${BREACH}/reports`, () => HttpResponse.json(world.now)),
+    http.get(`${API}/breaches/${BREACH}/reports/recipients`, () => {
+      world.boardReads += 1;
+      return HttpResponse.json({ recipients: world.board });
+    }),
+  );
   return world;
 }
 
@@ -315,13 +345,15 @@ describe("ReportsCard", () => {
     const world = serve(documents([view({ versions: [document()] })]));
     const order: string[] = [];
     let written: unknown = null;
+    let to: unknown = null;
     server.use(
       http.put(`${API}/breaches/${BREACH}/reports/${REPORT}`, async ({ request }) => {
         written = await request.json();
         order.push("saved");
         return HttpResponse.json(world.now);
       }),
-      http.post(`${API}/breaches/${BREACH}/reports/${REPORT}/finalise`, () => {
+      http.post(`${API}/breaches/${BREACH}/reports/${REPORT}/finalise`, async ({ request }) => {
+        to = await request.json();
         order.push("finalised");
         world.now = documents([view({ versions: [document(FINALISED)] })]);
         return HttpResponse.json(world.now);
@@ -343,6 +375,8 @@ describe("ReportsCard", () => {
     expect(written).toEqual({
       sections: { nature_extent: "A list was exposed", likely_impact: "Contact details of 40 people" },
     });
+    // Nobody left out and nobody added: everyone on the list.
+    expect(to).toEqual({ recipients: [CHAIR, DEPUTY], extra: [] });
     await vi.waitFor(() =>
       expect(toast.success).toHaveBeenCalledWith(
         "Finalised",
@@ -394,8 +428,12 @@ describe("ReportsCard", () => {
     await user.click(within(dialog).getByRole("button", { name: "Save draft" }));
 
     await vi.waitFor(() => expect(box).toBeDisabled());
+    // Who it goes to stands still with the words.
+    expect(within(dialog).getByRole("checkbox", { name: "deputy@cmp.local" })).toBeDisabled();
+    expect(within(dialog).getByRole("button", { name: "Add for this report" })).toBeDisabled();
     release();
     await vi.waitFor(() => expect(box).toBeEnabled());
+    expect(within(dialog).getByRole("checkbox", { name: "deputy@cmp.local" })).toBeEnabled();
   });
 
   it("keeps an open draft through a failed poll, and shows the error only when there is nothing to show", async () => {
@@ -505,19 +543,37 @@ describe("ReportsCard", () => {
     await vi.waitFor(() => expect(reads).toBe(2));
   });
 
-  it("warns when nobody is on the board's list, and will not finalise", async () => {
-    serve(documents([view({ versions: [document({ sections: FULL })] })], 0));
+  it("warns when nobody is on the board's list, and finalises only once an address is added for this report", async () => {
+    const world = serve(documents([view({ versions: [document({ sections: FULL })] })], 0), []);
+    let to: unknown = null;
+    server.use(
+      http.put(`${API}/breaches/${BREACH}/reports/${REPORT}`, () => HttpResponse.json(world.now)),
+      http.post(`${API}/breaches/${BREACH}/reports/${REPORT}/finalise`, async ({ request }) => {
+        to = await request.json();
+        return HttpResponse.json(world.now);
+      }),
+    );
     const { user } = render(<ReportsCard breach={breach()} />);
 
     await user.click(await screen.findByRole("button", { name: "Continue the draft" }));
     const dialog = await screen.findByRole("dialog");
 
-    expect(within(dialog).getByText("Nobody is on the organisation's board list")).toBeInTheDocument();
+    expect(await within(dialog).findByText("Nobody is on the organisation's board list")).toBeInTheDocument();
+    expect(within(dialog).getByText(/Add an address for this report below/)).toBeInTheDocument();
     const settings = within(dialog).getByRole("link", { name: "Breach settings" });
     expect(settings).toHaveAttribute("href", "/breach-settings");
     // In a tab of its own: following it must not drop what is typed here.
     expect(settings).toHaveAttribute("target", "_blank");
-    expect(within(dialog).getByRole("button", { name: "Finalise and tell the board" })).toBeDisabled();
+    const go = within(dialog).getByRole("button", { name: "Finalise and tell the board" });
+    expect(go).toBeDisabled();
+    expect(within(dialog).getByText("Choose at least one address.")).toBeInTheDocument();
+
+    await user.type(within(dialog).getByLabelText(/^Mail ID/), "secretary@cmp.local");
+    await user.click(within(dialog).getByRole("button", { name: "Add for this report" }));
+    expect(go).toBeEnabled();
+    await user.click(go);
+
+    await vi.waitFor(() => expect(to).toEqual({ recipients: [], extra: [{ full_name: null, email: "secretary@cmp.local" }] }));
   });
 
   it("does not ask about a draft that was saved when the window closes", async () => {
@@ -762,6 +818,81 @@ describe("ReportsCard", () => {
 
       await vi.waitFor(() => expect(filed).toBe(true));
       await vi.waitFor(() => expect(screen.queryByRole("button", { name: "Record as sent" })).not.toBeInTheDocument());
+    });
+  });
+
+  describe("Record as sent while a no has the duty aside", () => {
+    it("says a filing during a no completes the duty at the next yes", async () => {
+      const world = serve(
+        documents([view({ duty_state: "not_applicable", versions: [document({ ...FINALISED, evidence: [proofOf("approval"), proofOf("sent_mail")] })] })]),
+      );
+      server.use(http.post(`${API}/breaches/${BREACH}/reports/${REPORT}/file`, () => HttpResponse.json(world.now)));
+      const { user } = render(<ReportsCard breach={breach()} />);
+
+      await user.click(await screen.findByRole("button", { name: "Record as sent" }));
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).getByText("This duty is set aside while the No stands")).toBeInTheDocument();
+      expect(within(dialog).getByText(/completes the duty at the next Yes, dated when it was sent/)).toBeInTheDocument();
+      await user.type(within(dialog).getByLabelText(/^Sent at/), "2026-11-06T10:30");
+      await user.type(within(dialog).getByLabelText(/reference returned/i), "DPB-1234");
+      await user.click(within(dialog).getByRole("button", { name: "Record as sent" }));
+
+      await vi.waitFor(() =>
+        expect(toast.success).toHaveBeenCalledWith(
+          "Recorded as sent",
+          "It completes the duty at the next Yes, dated when it was sent.",
+        ),
+      );
+    });
+
+    it("says nothing of it while the duty stands, or on a report that completes no duty", async () => {
+      const cases = [
+        view({ versions: [document(FINALISED)] }),
+        view({
+          kind: "closure",
+          title: "Closure report",
+          duty: null,
+          duty_state: null,
+          versions: [document({ ...FINALISED, kind: "closure" })],
+        }),
+      ];
+      for (const kind of cases) {
+        serve(documents([kind]));
+        const { user, unmount } = render(<ReportsCard breach={breach()} />);
+        await user.click(await screen.findByRole("button", { name: "Record as sent" }));
+        const dialog = await screen.findByRole("dialog");
+        expect(within(dialog).queryByText("This duty is set aside while the No stands")).not.toBeInTheDocument();
+        unmount();
+      }
+    });
+
+    it("puts a refusal of the time under Sent at", async () => {
+      const sentence = "It cannot have been sent before the incident was first noticed";
+      serve(documents([view({ versions: [document({ ...FINALISED, evidence: [proofOf("approval"), proofOf("sent_mail")] })] })]));
+      server.use(
+        http.post(`${API}/breaches/${BREACH}/reports/${REPORT}/file`, () =>
+          HttpResponse.json(
+            { error: { code: "validation_failed", message: sentence, field: "filed_at", request_id: "r" } },
+            { status: 422 },
+          ),
+        ),
+      );
+      const { user } = render(<ReportsCard breach={breach()} />);
+
+      await user.click(await screen.findByRole("button", { name: "Record as sent" }));
+      const dialog = await screen.findByRole("dialog");
+      const when = within(dialog).getByLabelText(/^Sent at/);
+      await user.type(when, "2026-11-01T10:30");
+      await user.type(within(dialog).getByLabelText(/reference returned/i), "DPB-1234");
+      await user.click(within(dialog).getByRole("button", { name: "Record as sent" }));
+
+      await vi.waitFor(() => expect(when).toHaveAccessibleDescription(sentence));
+      expect(when).toHaveAttribute("aria-invalid", "true");
+      expect(toast.error).toHaveBeenCalledWith("Not recorded", sentence);
+
+      // Changed, it is no longer the time that was refused.
+      await user.type(when, "2026-11-06T10:30");
+      expect(when).not.toHaveAttribute("aria-invalid");
     });
   });
 
@@ -1035,12 +1166,13 @@ describe("ReportsCard", () => {
       expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
     });
 
-    it("offers Try again for an address added since everybody was reached, and says that is what it is", async () => {
-      serve(finalised(mail({ delivered: 2, retryable: 1 })));
+    it("does not offer to reach an address added to the list since: that takes a new version", async () => {
+      serve(finalised(mail({ delivered: 2, retryable: 0, recipients: [address(), address({ email: "chair@cmp.local" })] })), BOARD);
       render(<ReportsCard breach={breach()} />);
 
-      expect(await screen.findByRole("button", { name: "Try again" })).toBeInTheDocument();
-      expect(screen.getByText(/2 delivered, 1 added to the list since/)).toBeInTheDocument();
+      expect(await screen.findByText(/^Organisation's board: 2 delivered$/)).toBeInTheDocument();
+      expect(screen.queryByText(/added to the list since/)).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
     });
 
     it("still names the address when the only one was taken off the list", async () => {
@@ -1051,52 +1183,70 @@ describe("ReportsCard", () => {
       expect(await screen.findByText("Old Member, old@cmp.local: removed from the list")).toBeInTheDocument();
     });
 
-    describe("with nobody on the board's list", () => {
+    describe("with nobody it went to still on the list", () => {
+      const NOBODY = /Nobody this version went to is on the list any more/;
       const gone = address({ email: "old@cmp.local", status: "failed", removed: true });
-      const empty = (over: Partial<BreachDocumentKindView> = {}) =>
-        documents(
-          [boardView({ versions: [document({ ...FINALISED, kind: "org_board", mail: mail({ recipients: [gone] }) })], ...over })],
-          0,
-        );
+      const left = (listed: number, over: Partial<BreachDocumentKindView> = {}, m = mail({ recipients: [gone] })) =>
+        documents([boardView({ versions: [document({ ...FINALISED, kind: "org_board", mail: m })], ...over })], listed);
 
-      it("says there is nowhere to send it, and where to put that right", async () => {
+      it("says nobody it went to can be reached, and that a new version goes to whoever is chosen", async () => {
+        // Somebody is on the list, but not anybody this version went to.
         auth.me = makeMe({ role: "dpo", nav: ["breaches", "breach-settings"] });
-        serve(empty());
+        serve(left(2));
         render(<ReportsCard breach={breach()} />);
 
         const row = await screen.findByTestId("report-org_board");
-        expect(within(row).getByText(/nowhere to send this/)).toBeInTheDocument();
-        expect(within(row).getByRole("link", { name: "Breach settings" })).toHaveAttribute("href", "/breach-settings");
+        expect(within(row).getByText(NOBODY)).toHaveTextContent(/A new version goes to whoever you choose\.$/);
+        expect(within(row).queryByRole("link", { name: "Breach settings" })).not.toBeInTheDocument();
         expect(within(row).getByText(/^Meera Iyer, old@cmp\.local: removed from the list$/)).toBeVisible();
         expect(within(row).queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
       });
 
-      it("leaves the link out for whoever cannot reach Breach settings", async () => {
-        auth.me = makeMe({ role: "dpo", nav: ["breaches"] });
-        serve(empty());
-        render(<ReportsCard breach={breach()} />);
+      it("adds where to fill an empty list only for whoever can reach Breach settings", async () => {
+        auth.me = makeMe({ role: "dpo", nav: ["breaches", "breach-settings"] });
+        serve(left(0));
+        const { unmount } = render(<ReportsCard breach={breach()} />);
 
-        const row = await screen.findByTestId("report-org_board");
-        expect(within(row).getByText(/nowhere to send this/)).toBeInTheDocument();
+        let row = await screen.findByTestId("report-org_board");
+        expect(within(row).getByText(/The list is empty/)).toBeInTheDocument();
+        expect(within(row).getByRole("link", { name: "Breach settings" })).toHaveAttribute("href", "/breach-settings");
+        unmount();
+
+        auth.me = makeMe({ role: "dpo", nav: ["breaches"] });
+        render(<ReportsCard breach={breach()} />);
+        row = await screen.findByTestId("report-org_board");
+        expect(within(row).getByText(NOBODY)).toBeInTheDocument();
+        expect(within(row).queryByText(/The list is empty/)).not.toBeInTheDocument();
         expect(within(row).queryByRole("link", { name: "Breach settings" })).not.toBeInTheDocument();
       });
 
-      it("says nothing of it where somebody was reached, or the report may not go", async () => {
-        serve(
+      it("says nothing of it where somebody was reached, somebody still waits for it, or the report may not go", async () => {
+        const cases = [
+          left(0, { duty_state: "done" }, mail({ delivered: 1, recipients: [{ ...gone, status: "delivered" }] })),
+          left(0, { blocked_by: "CERT-In was set aside as not reportable. Mark it reportable again first" }),
           documents(
-            [boardView({ versions: [document({ ...FINALISED, kind: "org_board", mail: mail({ delivered: 1 }) })], duty_state: "done" })],
+            [
+              view({
+                kind: "cert_in",
+                versions: [
+                  document({
+                    ...FINALISED,
+                    kind: "cert_in",
+                    mail: mail({ held: 1, recipients: [address({ status: "held", attempt: 0, recorded_at: null })] }),
+                  }),
+                ],
+              }),
+            ],
             0,
           ),
-        );
-        const { unmount } = render(<ReportsCard breach={breach()} />);
-        await screen.findByTestId("report-org_board");
-        expect(screen.queryByText(/nowhere to send this/)).not.toBeInTheDocument();
-        unmount();
-
-        serve(empty({ blocked_by: "CERT-In was set aside as not reportable. Mark it reportable again first" }));
-        render(<ReportsCard breach={breach()} />);
-        await screen.findByTestId("report-org_board");
-        expect(screen.queryByText(/nowhere to send this/)).not.toBeInTheDocument();
+        ];
+        for (const now of cases) {
+          serve(now);
+          const { unmount } = render(<ReportsCard breach={breach()} />);
+          await screen.findByText(/^Organisation's board:/);
+          expect(screen.queryByText(NOBODY)).not.toBeInTheDocument();
+          unmount();
+        }
       });
     });
 
@@ -1226,6 +1376,366 @@ describe("ReportsCard", () => {
     });
   });
 
+  describe("who it goes to", () => {
+    const ready = () => documents([view({ versions: [document({ sections: FULL })] })]);
+    /** The window, open on the draft, with the list read. */
+    async function opened(user: ReturnType<typeof render>["user"]) {
+      await user.click(await screen.findByRole("button", { name: "Continue the draft" }));
+      const dialog = await screen.findByRole("dialog");
+      await within(dialog).findByRole("group", { name: "Who it goes to" });
+      return dialog;
+    }
+    /** Finalise, answering with the reports as they stand, and keep what was sent. */
+    function finalising(world: { now: BreachDocuments }, answer?: () => Response) {
+      const sent: unknown[] = [];
+      server.use(
+        http.put(`${API}/breaches/${BREACH}/reports/${REPORT}`, () => HttpResponse.json(world.now)),
+        http.post(`${API}/breaches/${BREACH}/reports/${REPORT}/finalise`, async ({ request }) => {
+          sent.push(await request.json());
+          return answer ? answer() : HttpResponse.json(world.now);
+        }),
+      );
+      return sent;
+    }
+
+    it("sends the list less those left out, with the addresses added for this report", async () => {
+      const world = serve(ready());
+      const sent = finalising(world);
+      const { user } = render(<ReportsCard breach={breach()} />);
+      const dialog = await opened(user);
+
+      await user.click(within(dialog).getByRole("checkbox", { name: "deputy@cmp.local" }));
+      await user.type(within(dialog).getByLabelText(/^Name/), "Ravi Kumar");
+      await user.type(within(dialog).getByLabelText(/^Mail ID/), "ravi@cmp.local");
+      await user.click(within(dialog).getByRole("button", { name: "Add for this report" }));
+      await user.type(within(dialog).getByLabelText(/^Mail ID/), "auditor@cmp.local");
+      await user.click(within(dialog).getByRole("button", { name: "Add for this report" }));
+      expect(within(dialog).getByText("Goes to 3 addresses.")).toBeInTheDocument();
+      await user.click(within(dialog).getByRole("button", { name: "Finalise and tell the board" }));
+
+      await vi.waitFor(() =>
+        expect(sent).toEqual([
+          {
+            recipients: [CHAIR],
+            extra: [
+              { full_name: "Ravi Kumar", email: "ravi@cmp.local" },
+              { full_name: null, email: "auditor@cmp.local" },
+            ],
+          },
+        ]),
+      );
+    });
+
+    it("keeps what was left out and added through a read of the list, and takes in an address added meanwhile", async () => {
+      const world = serve(ready());
+      const sent = finalising(world);
+      const { user, queryClient } = render(<ReportsCard breach={breach()} />);
+      const dialog = await opened(user);
+      await user.click(within(dialog).getByRole("checkbox", { name: "deputy@cmp.local" }));
+      await user.type(within(dialog).getByLabelText(/^Mail ID/), "ravi@cmp.local");
+      await user.click(within(dialog).getByRole("button", { name: "Add for this report" }));
+
+      const SECRETARY = "33333333-3333-4333-8333-333333333333";
+      world.board = [...BOARD, entry({ recipient_uuid: SECRETARY, full_name: null, email: "secretary@cmp.local" })];
+      await act(async () => {
+        await queryClient.refetchQueries({ queryKey: keys.breach.boardList(BREACH) });
+      });
+
+      expect(await within(dialog).findByRole("checkbox", { name: "secretary@cmp.local" })).toBeChecked();
+      expect(within(dialog).getByRole("checkbox", { name: "deputy@cmp.local" })).not.toBeChecked();
+      expect(within(dialog).getByText("ravi@cmp.local")).toBeInTheDocument();
+      await user.click(within(dialog).getByRole("button", { name: "Finalise and tell the board" }));
+
+      await vi.waitFor(() =>
+        expect(sent).toEqual([{ recipients: [CHAIR, SECRETARY], extra: [{ full_name: null, email: "ravi@cmp.local" }] }]),
+      );
+    });
+
+    it("keeps an address marked mandatory while the window is open, even after it was left out", async () => {
+      const world = serve(ready());
+      const sent = finalising(world);
+      const { user, queryClient } = render(<ReportsCard breach={breach()} />);
+      const dialog = await opened(user);
+      await user.click(within(dialog).getByRole("checkbox", { name: "deputy@cmp.local" }));
+
+      world.board = [BOARD[0], { ...BOARD[1], mandatory: true }];
+      await act(async () => {
+        await queryClient.refetchQueries({ queryKey: keys.breach.boardList(BREACH) });
+      });
+
+      const deputy = within(dialog).getByRole("checkbox", { name: "deputy@cmp.local" });
+      await vi.waitFor(() => expect(deputy).toBeChecked());
+      expect(deputy).toBeDisabled();
+      expect(within(dialog).getByText("Mandatory")).toBeInTheDocument();
+      await user.click(within(dialog).getByRole("button", { name: "Finalise and tell the board" }));
+
+      await vi.waitFor(() => expect(sent).toEqual([{ recipients: [CHAIR, DEPUTY], extra: [] }]));
+    });
+
+    it("shows the server's sentence when the list changed under it, keeps the window and what was chosen, and reads the list again", async () => {
+      const sentence = "Somebody chosen has been taken off the board list since. Look at the list again";
+      const world = serve(ready());
+      // Reads made once the refusal is on its way back: the save before it
+      // reads the list too, and that read may predate the change.
+      let readsAtRefusal = Infinity;
+      const sent: unknown[] = [];
+      server.use(
+        http.put(`${API}/breaches/${BREACH}/reports/${REPORT}`, () => HttpResponse.json(world.now)),
+        http.post(`${API}/breaches/${BREACH}/reports/${REPORT}/finalise`, async ({ request }) => {
+          sent.push(await request.json());
+          // Whatever the save set reading is done before the answer goes.
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          readsAtRefusal = world.boardReads;
+          return HttpResponse.json(
+            { error: { code: "recipient_not_listed", message: sentence, request_id: "r", gone: [DEPUTY] } },
+            { status: 409 },
+          );
+        }),
+      );
+      const { user } = render(<ReportsCard breach={breach()} />);
+      const dialog = await opened(user);
+      await user.click(within(dialog).getByRole("checkbox", { name: "Asha Rao, chair@cmp.local" }));
+      await user.type(within(dialog).getByLabelText(/^Mail ID/), "ravi@cmp.local");
+      await user.click(within(dialog).getByRole("button", { name: "Add for this report" }));
+
+      await user.click(within(dialog).getByRole("button", { name: "Finalise and tell the board" }));
+
+      await vi.waitFor(() => expect(toast.error).toHaveBeenCalledWith("Not done", sentence));
+      expect(sent).toHaveLength(1);
+      await vi.waitFor(() => expect(world.boardReads).toBeGreaterThan(readsAtRefusal));
+      expect(screen.getByRole("dialog")).toBe(dialog);
+      expect(within(dialog).getByRole("checkbox", { name: "Asha Rao, chair@cmp.local" })).not.toBeChecked();
+      expect(within(dialog).getByText("ravi@cmp.local")).toBeInTheDocument();
+    });
+
+    it("says when the board's list cannot be read, and will not finalise", async () => {
+      serve(ready());
+      server.use(
+        http.get(`${API}/breaches/${BREACH}/reports/recipients`, () =>
+          HttpResponse.json({ error: { code: "unavailable", message: "Down for a moment", request_id: "r" } }, { status: 409 }),
+        ),
+      );
+      const { user } = render(<ReportsCard breach={breach()} />);
+
+      await user.click(await screen.findByRole("button", { name: "Continue the draft" }));
+      const dialog = await screen.findByRole("dialog");
+
+      expect(await within(dialog).findByText("The board's list could not be read")).toBeInTheDocument();
+      expect(within(dialog).getByText("Down for a moment")).toBeInTheDocument();
+      expect(within(dialog).getByRole("button", { name: "Finalise and tell the board" })).toBeDisabled();
+    });
+
+    it("marks the added address the server refused", async () => {
+      const world = serve(ready());
+      finalising(world, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: "validation_failed",
+              message: "That is not an email address",
+              field: "extra.1.email",
+              request_id: "r",
+            },
+          },
+          { status: 422 },
+        ),
+      );
+      const { user } = render(<ReportsCard breach={breach()} />);
+      const dialog = await opened(user);
+      for (const address of ["ravi@cmp.local", "odd@cmp.local"]) {
+        await user.type(within(dialog).getByLabelText(/^Mail ID/), address);
+        await user.click(within(dialog).getByRole("button", { name: "Add for this report" }));
+      }
+
+      await user.click(within(dialog).getByRole("button", { name: "Finalise and tell the board" }));
+
+      const added = within(dialog).getByRole("list", { name: "Added for this report" });
+      const [first, second] = within(added).getAllByRole("listitem");
+      await vi.waitFor(() => expect(within(second).getByRole("alert")).toHaveTextContent("That is not an email address"));
+      expect(within(first).queryByRole("alert")).not.toBeInTheDocument();
+    });
+
+    it("asks before closing once who it goes to was changed, even after the words were saved", async () => {
+      const world = serve(ready());
+      server.use(http.put(`${API}/breaches/${BREACH}/reports/${REPORT}`, () => HttpResponse.json(world.now)));
+      const { user } = render(<ReportsCard breach={breach()} />);
+      const dialog = await opened(user);
+      await user.type(within(dialog).getByLabelText(/^Nature/), " today");
+      await user.click(within(dialog).getByRole("checkbox", { name: "deputy@cmp.local" }));
+      await user.click(within(dialog).getByRole("button", { name: "Save draft" }));
+      await vi.waitFor(() => expect(toast.success).toHaveBeenCalledWith("Draft saved"));
+
+      await user.click(within(dialog).getByRole("button", { name: "Close" }));
+
+      expect(within(dialog).getByText("You have changes that are not saved.")).toBeInTheDocument();
+      expect(screen.getByRole("dialog")).toBe(dialog);
+    });
+
+    it("names an address added for that report only, and never calls it removed from the list", async () => {
+      serve(
+        documents([
+          view({
+            versions: [
+              document({
+                ...FINALISED,
+                mail: mail({
+                  delivered: 2,
+                  recipients: [
+                    address({ full_name: null, email: "ravi@cmp.local", added_for_this_send: true }),
+                    address({ email: "chair@cmp.local", mandatory: true }),
+                  ],
+                }),
+              }),
+            ],
+          }),
+        ]),
+      );
+      render(<ReportsCard breach={breach()} />);
+
+      expect(await screen.findByText(/^ravi@cmp\.local \(this report only\): delivered /)).toBeInTheDocument();
+      expect(screen.getByText(/^Meera Iyer, chair@cmp\.local \(mandatory\): delivered /)).toBeInTheDocument();
+      expect(screen.queryByText(/removed from the list/)).not.toBeInTheDocument();
+    });
+  });
+
+  describe("a report to CERT-In before validation", () => {
+    const HELD_TOAST =
+      "The board's mail waits for validation: it goes at the first Yes, and not at all if the incident is never validated as a personal data breach. Nothing has gone to CERT-In.";
+    const waiting = (over: Partial<BreachDocumentMailRecipient> = {}) =>
+      address({ status: "held", attempt: 0, recorded_at: null, ...over });
+    const certIn = (versions: BreachDocument[], over: Partial<BreachDocumentKindView> = {}) =>
+      documents([
+        view({ kind: "cert_in", title: "Report to CERT-In", duty: "cert_in", holds_mail: true, versions, ...over }),
+      ]);
+    const finalisedCertIn = (m: BreachDocumentMail, over: Partial<BreachDocument> = {}) =>
+      document({ ...FINALISED, kind: "cert_in", title: "Report to CERT-In", mail: m, ...over });
+
+    it("says in the window that the board's mail waits, and names the button for it", async () => {
+      serve(certIn([document({ kind: "cert_in", title: "Report to CERT-In", sections: FULL })]));
+      const { user } = render(<ReportsCard breach={breach()} />);
+
+      await user.click(await screen.findByRole("button", { name: "Continue the draft" }));
+      const dialog = await screen.findByRole("dialog");
+
+      expect(await within(dialog).findByText("The board's mail waits for validation")).toBeInTheDocument();
+      expect(within(dialog).getByRole("button", { name: "Finalise and hold for validation" })).toBeEnabled();
+      expect(within(dialog).queryByRole("button", { name: "Finalise and tell the board" })).not.toBeInTheDocument();
+      expect(within(dialog).getByText(/it does not go to the regulator/i)).toBeInTheDocument();
+    });
+
+    it("says it was held, not mailed, in the toast after finalising", async () => {
+      const world = serve(certIn([document({ kind: "cert_in", title: "Report to CERT-In", sections: FULL })]));
+      server.use(
+        http.put(`${API}/breaches/${BREACH}/reports/${REPORT}`, () => HttpResponse.json(world.now)),
+        http.post(`${API}/breaches/${BREACH}/reports/${REPORT}/finalise`, () => {
+          world.now = certIn([finalisedCertIn(mail({ held: 2, recipients: [waiting(), waiting({ email: "x@cmp.local" })] }))]);
+          return HttpResponse.json(world.now);
+        }),
+      );
+      const { user } = render(<ReportsCard breach={breach()} />);
+
+      await user.click(await screen.findByRole("button", { name: "Continue the draft" }));
+      const dialog = await screen.findByRole("dialog");
+      await user.click(await within(dialog).findByRole("button", { name: "Finalise and hold for validation" }));
+
+      await vi.waitFor(() => expect(toast.success).toHaveBeenCalledWith("Finalised", HELD_TOAST));
+      expect(toast.success).not.toHaveBeenCalledWith("Finalised", expect.stringContaining("has been mailed"));
+    });
+
+    it("says the mail is waiting, to how many, and offers no Try again", async () => {
+      serve(certIn([finalisedCertIn(mail({ held: 2, recipients: [waiting(), waiting({ email: "x@cmp.local" })] }))]));
+      render(<ReportsCard breach={breach()} />);
+
+      expect(
+        await screen.findByText(
+          "Organisation's board: waiting for validation. It goes to 2 addresses at the first Yes, and not at all if the incident is never validated as a personal data breach.",
+        ),
+      ).toBeInTheDocument();
+      expect(screen.getByText(/^Meera Iyer, meera@cmp\.local: waiting for validation$/)).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Send to the board" })).not.toBeInTheDocument();
+    });
+
+    it.each([
+      [
+        "held while CERT-In is set aside",
+        { held: 1, recipients: [waiting()] },
+        {},
+        { duty_state: "not_applicable" as const, blocked_by: "CERT-In was set aside as not reportable. Mark it reportable again first" },
+        "Organisation's board: not sent while CERT-In is set aside; mark it reportable again before validation and it goes at the Yes.",
+      ],
+      [
+        "held, and replaced by a later version",
+        { held: 1, recipients: [waiting()] },
+        { superseded: true },
+        {},
+        "Organisation's board: replaced by a later version; it will not go.",
+      ],
+      [
+        "never sent, and replaced by a later version",
+        { unsent: 1, recipients: [waiting({ status: "unsent" })] },
+        { superseded: true },
+        { holds_mail: false },
+        "Organisation's board: not sent: a later version replaced it.",
+      ],
+      [
+        "withheld at the yes while CERT-In was set aside",
+        { unsent: 1, recipients: [waiting({ status: "unsent" })] },
+        {},
+        { holds_mail: false, duty_state: "not_applicable" as const, blocked_by: "CERT-In was set aside as not reportable. Mark it reportable again first" },
+        "Organisation's board: not sent: CERT-In was set aside when the incident was validated.",
+      ],
+    ])("says why the board was not sent it (%s)", async (_, m, doc, kind, line) => {
+      serve(certIn([finalisedCertIn(mail(m), doc)], kind));
+      render(<ReportsCard breach={breach()} />);
+
+      expect(await screen.findByText(line)).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Send to the board" })).not.toBeInTheDocument();
+    });
+
+    it("offers to send it to the board once CERT-In is marked again after a yes that withheld it", async () => {
+      const unsent = mail({ unsent: 1, retryable: 1, recipients: [waiting({ status: "unsent" })] });
+      const world = serve(certIn([finalisedCertIn(unsent)], { holds_mail: false }));
+      server.use(
+        http.post(`${API}/breaches/${BREACH}/reports/${REPORT}/resend`, () => {
+          world.now = certIn(
+            [finalisedCertIn(mail({ queued: 1, recipients: [address({ status: "queued" })] }))],
+            { holds_mail: false },
+          );
+          return HttpResponse.json({ ...world.now, queued: 1 });
+        }),
+      );
+      const { user } = render(<ReportsCard breach={breach()} />);
+
+      expect(await screen.findByText(/CERT-In was set aside when the incident was validated/)).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Send to the board" }));
+
+      await vi.waitFor(() => expect(toast.success).toHaveBeenCalledWith("Sending to the board", "Mailing 1 address."));
+      expect(await screen.findByText(/1 on the way/)).toBeInTheDocument();
+    });
+
+    it("looks again at its own pace while the mail waits, and every two seconds once the yes sets it going", async () => {
+      const world = serve(certIn([finalisedCertIn(mail({ held: 1, recipients: [waiting()] }))]));
+      const { queryClient } = render(<ReportsCard breach={breach()} />);
+      await screen.findByText(/waiting for validation\./);
+      const every = () => {
+        const query = queryClient.getQueryCache().find({ queryKey: keys.breach.reports(BREACH) });
+        return (query?.observers[0].options.refetchInterval as (q: unknown) => number)(query);
+      };
+      expect(every()).toBe(30_000);
+
+      world.now = certIn([finalisedCertIn(mail({ queued: 1, recipients: [address({ status: "queued" })] }))], {
+        holds_mail: false,
+      });
+      await polled(queryClient);
+
+      expect(await screen.findByText(/1 on the way/)).toBeInTheDocument();
+      expect(every()).toBe(2_000);
+    });
+  });
+
   it("says plainly what a closed breach holds up, and offers nothing to do", async () => {
     serve(
       documents([
@@ -1303,15 +1813,15 @@ describe("NotifyBoardButton", () => {
       sections: [{ key: "what_happened", label: "What happened", required: true, body: "A list was exposed" }],
     });
     const world = serve(documents([boardView()]));
-    let finalised = false;
+    let to: unknown = null;
     server.use(
       http.post(`${API}/breaches/${BREACH}/reports`, () => {
         world.now = documents([boardView({ versions: [draft] })]);
         return HttpResponse.json(world.now, { status: 201 });
       }),
       http.put(`${API}/breaches/${BREACH}/reports/${REPORT}`, () => HttpResponse.json(world.now)),
-      http.post(`${API}/breaches/${BREACH}/reports/${REPORT}/finalise`, () => {
-        finalised = true;
+      http.post(`${API}/breaches/${BREACH}/reports/${REPORT}/finalise`, async ({ request }) => {
+        to = await request.json();
         world.now = documents([boardView({ duty_state: "done", versions: [document({ ...draft, ...FINALISED })] })]);
         return HttpResponse.json(world.now);
       }),
@@ -1321,9 +1831,12 @@ describe("NotifyBoardButton", () => {
     await user.click(await screen.findByRole("button", { name: "Notify Organization Board" }));
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByLabelText(/what happened/i)).toHaveValue("A list was exposed");
+    // Everyone on the list, ticked, each named by its address.
+    expect(await within(dialog).findByRole("checkbox", { name: "Asha Rao, chair@cmp.local" })).toBeChecked();
+    expect(within(dialog).getByRole("checkbox", { name: "deputy@cmp.local" })).toBeChecked();
     await user.click(within(dialog).getByRole("button", { name: "Send to the board" }));
 
-    await vi.waitFor(() => expect(finalised).toBe(true));
+    await vi.waitFor(() => expect(to).toEqual({ recipients: [CHAIR, DEPUTY], extra: [] }));
     await vi.waitFor(() =>
       expect(toast.success).toHaveBeenCalledWith(
         "Sent to the organisation's board",
@@ -1479,22 +1992,18 @@ describe("NotifyBoardButton", () => {
       expect(screen.queryByRole("button", { name: "Notify Organization Board" })).not.toBeInTheDocument();
     });
 
-    it("says there is nowhere to send it when the only address was taken off the list", async () => {
+    it("offers a new version when nobody it went to is still on the list", async () => {
       auth.me = makeMe({ role: "dpo", nav: ["breaches", "breach-settings"] });
-      serve(sent(mail({ recipients: [address({ status: "failed", removed: true })] }), 0));
-      render(<NotifyBoardButton breach={due} />);
+      for (const listed of [0, 1]) {
+        serve(sent(mail({ recipients: [address({ status: "failed", removed: true })] }), listed));
+        const { unmount } = render(<NotifyBoardButton breach={due} />);
 
-      expect(await screen.findByText(/nowhere to send this/)).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: "Breach settings" })).toHaveAttribute("href", "/breach-settings");
-      expect(screen.queryByRole("link", { name: /Try again/ })).not.toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: "Notify Organization Board" })).not.toBeInTheDocument();
-    });
-
-    it("points to Try again once an address is back on the list", async () => {
-      serve(sent(mail({ retryable: 1, recipients: [address({ status: "failed", removed: true })] }), 1));
-      render(<NotifyBoardButton breach={due} />);
-
-      expect(await screen.findByRole("link", { name: /Not reached: Try again on the Reports tab/ })).toBeInTheDocument();
+        // Try again reaches only those it went to, so the way on is a new version.
+        expect(await screen.findByRole("button", { name: "Notify Organization Board" })).toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: /Try again/ })).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: "Breach settings" })).not.toBeInTheDocument();
+        unmount();
+      }
     });
   });
 });

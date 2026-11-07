@@ -20,6 +20,8 @@ const SCREENS: { role: string; path: string }[] = [
   { role: "dpo", path: "/messages" },
   { role: "dco", path: "/dashboard" },
   { role: "admin", path: "/users" },
+  // The board list's Mandatory boxes and the shared address form (0064).
+  { role: "admin", path: "/breach-settings" },
 ];
 
 for (const { role, path } of SCREENS) {

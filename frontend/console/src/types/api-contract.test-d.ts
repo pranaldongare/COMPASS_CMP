@@ -59,6 +59,10 @@ import type {
   BreachSummary,
   BreachTicket,
   MyBreachTicket,
+  BreachDocuments,
+  BreachSettings,
+  DismissedReport,
+  RightsPublicReports,
   CollectionListRow,
   ConsentListRow,
   ConsentRow,
@@ -193,6 +197,13 @@ export type _BreachAffected = Covers<"BreachAffected", Schemas["BreachAffectedOu
 export type _BreachNotices = Covers<"BreachNotices", Schemas["BreachNoticesOut"], BreachNotices>;
 export type _BreachTicket = Covers<"BreachTicket", Schemas["BreachTicketOut"], BreachTicket>;
 export type _MyBreachTicket = Covers<"MyBreachTicket", Schemas["MyBreachTicketOut"], MyBreachTicket>;
+// Who a report goes to and the held CERT-In mail (0064): the reports, each
+// version's addressees, and the board list as Breach settings keeps it.
+export type _BreachDocuments = Covers<"BreachDocuments", Schemas["BreachDocumentsOut"], BreachDocuments>;
+export type _BreachSettings = Covers<"BreachSettings", Schemas["BreachSettingsOut"], BreachSettings>;
+// A dismissed reporter erased under a rights request (0065).
+export type _DismissedReport = Covers<"DismissedReport", Schemas["DismissedReportOut"], DismissedReport>;
+export type _RightsPublicReports = Covers<"RightsPublicReports", Schemas["PublicReportsOut"], RightsPublicReports>;
 
 /**
  * The check itself.
@@ -228,6 +239,10 @@ const _contractHolds: {
   BreachNotices: _BreachNotices;
   BreachTicket: _BreachTicket;
   MyBreachTicket: _MyBreachTicket;
+  BreachDocuments: _BreachDocuments;
+  BreachSettings: _BreachSettings;
+  DismissedReport: _DismissedReport;
+  RightsPublicReports: _RightsPublicReports;
 } = {
   Me: true,
   MeProfile: true,
@@ -256,6 +271,10 @@ const _contractHolds: {
   BreachNotices: true,
   BreachTicket: true,
   MyBreachTicket: true,
+  BreachDocuments: true,
+  BreachSettings: true,
+  DismissedReport: true,
+  RightsPublicReports: true,
 };
 
 void _contractHolds;

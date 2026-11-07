@@ -20,6 +20,7 @@ import type {
   RightsRequest,
   RightsRequestDetail,
   RightsRequestRow,
+  RightsPublicReports,
   RightsRequestType,
   RightsScopeDecision,
   RightsScopeItem,
@@ -221,6 +222,13 @@ export const correctContact = (
 /** A holder found by mistake, before anything is sent to it. */
 export const removeHolder = (uuid: Uuid, holderUuid: Uuid) =>
   apiDelete<void>(action(uuid, `holders/${holderUuid}`));
+
+/** Blanks the requester's name and email on every report they sent through
+ *  the public link that an office dismissed. The server finds the reports
+ *  again by the requester's proved addresses, so no report is named here and
+ *  none but theirs can be reached. */
+export const erasePublicReports = (uuid: Uuid) =>
+  apiPost<RightsPublicReports>(action(uuid, "public-reports/erase"), {});
 
 export const deriveScope = (uuid: Uuid) =>
   apiPost<RightsScopeItem[]>(action(uuid, "scope/derive"), {});

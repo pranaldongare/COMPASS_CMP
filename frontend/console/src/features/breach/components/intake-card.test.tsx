@@ -509,6 +509,7 @@ describe("Dismissed reports", () => {
     dismissed_at: "2026-11-05T12:00:00Z",
     dismissed_by_name: "Priya Menon",
     dismissal_reason: "It was a drill",
+    reporter_erased_at: null,
     ...over,
   });
 
@@ -526,6 +527,28 @@ describe("Dismissed reports", () => {
     expect(await within(dialog).findByText("A test by the helpdesk")).toBeInTheDocument();
     expect(within(dialog).getByText("INC-2026-0041")).toBeInTheDocument();
     expect(within(dialog).getByText(/Asha Rao, asha@example\.org/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/^Dismissed .* by Priya Menon$/)).toBeInTheDocument();
+    expect(within(dialog).getByText("“It was a drill”")).toBeInTheDocument();
+  });
+
+  it("says the reporter's name and email were erased at their request, and keeps the number, the reason and who dismissed it", async () => {
+    server.use(
+      http.get(`${API}/breaches/intake/dismissed`, () =>
+        HttpResponse.json([
+          dismissed({ reporter_name: null, reporter_email: null, reporter_erased_at: "2026-11-07T10:00:00Z" }),
+        ]),
+      ),
+    );
+    const { user } = render(<DismissedReportsButton />);
+
+    await user.click(await screen.findByRole("button", { name: "Dismissed reports" }));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(await within(dialog).findByText(/^Reporter's name and email erased .*, at their request$/)).toBeInTheDocument();
+    expect(within(dialog).queryByText(/Reported by/)).not.toBeInTheDocument();
+    // Never the request that erased them: both offices read this list.
+    expect(within(dialog).queryByText(/RR-/)).not.toBeInTheDocument();
+    expect(within(dialog).getByText("INC-2026-0041")).toBeInTheDocument();
     expect(within(dialog).getByText(/^Dismissed .* by Priya Menon$/)).toBeInTheDocument();
     expect(within(dialog).getByText("“It was a drill”")).toBeInTheDocument();
   });

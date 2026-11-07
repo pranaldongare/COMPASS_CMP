@@ -122,8 +122,10 @@ function ExtensionDialog({ breach, onClose }: { breach: Breach; onClose: () => v
   );
 }
 
-/** A CERT-In mark that was a mistake. The server allows it once the incident is
- *  validated as No, because until then there may be something to report. */
+/** A CERT-In mark that was a mistake, set aside with a reason whatever
+ *  validation says: CERT-In stands on its own test, so validation neither
+ *  allows this nor stands in its way. The server still refuses a duty done or
+ *  a report filed. */
 function CertInSetAsideDialog({ breach, onClose }: { breach: Breach; onClose: () => void }) {
   const toast = useToast();
   const [reason, setReason] = React.useState("");
@@ -141,7 +143,7 @@ function CertInSetAsideDialog({ breach, onClose }: { breach: Breach; onClose: ()
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent
         title="Not reportable to CERT-In"
-        description="This sets the CERT-In duty aside, so it stops running and no longer holds up closing the incident. It mails nobody: neither CERT-In nor the organisation's board is told. If it turns out to be reportable, mark it again, and it comes back on the same clock."
+        description="This sets the CERT-In duty aside, whatever validation says, so it stops running and no longer holds up closing the incident. Validation and the other duties are left as they are. It mails nobody: neither CERT-In nor the organisation's board is told. A report to CERT-In still waiting for a yes to be mailed to the board is not mailed while it stays set aside. If it turns out to be reportable, mark it again, and it comes back on the same clock."
       >
         <div className="space-y-3">
           <Field label="Why it is not reportable" hint="Kept with the duty" required>
@@ -273,7 +275,7 @@ export function DutiesCard({ breach }: { breach: Breach }) {
                         Extension
                       </Button>
                     )}
-                    {open && d.state === "outstanding" && d.duty === "cert_in" && breach.determination === "no" && (
+                    {open && d.state === "outstanding" && d.duty === "cert_in" && (
                       <Button variant="ghost" size="sm" onClick={() => setSettingAside(true)}>
                         <CircleSlash className="size-4" />
                         Not reportable to CERT-In
@@ -309,6 +311,17 @@ export function DutiesCard({ breach }: { breach: Breach }) {
 
 /* ------------------------------------------------------------ determination */
 
+/** The duties a yes found already done: set aside by a no, and done now from
+ *  the work done meanwhile (the board reached by mail, a regulator's report
+ *  filed). The server does it; this only names what changed, by comparing the
+ *  breach before the yes with the breach after it. */
+function doneWhileAside(before: Breach, after: Breach): string[] {
+  const was = new Map(before.obligations.map((d) => [d.duty, d.state]));
+  return after.obligations
+    .filter((d) => d.state === "done" && was.get(d.duty) === "not_applicable")
+    .map((d) => d.label);
+}
+
 export function DeterminationCard({ breach }: { breach: Breach }) {
   const toast = useToast();
   const [outcome, setOutcome] = React.useState<BreachOutcome>("yes");
@@ -332,14 +345,17 @@ export function DeterminationCard({ breach }: { breach: Breach }) {
       });
       setReasoning("");
       setAware("");
+      const found = outcome === "yes" ? doneWhileAside(breach, fresh) : [];
+      const already =
+        found.length > 0 ? ` Done while it was set aside, so done now: ${found.join("; ")}. Nobody was mailed.` : "";
       // The first yes records the breach and issues its number; say so.
       if (!recorded && fresh.breach_reference) {
         toast.success(
           `Recorded as ${fresh.breach_reference}`,
-          "The DPDP duties have started, and the organisation's board has 30 minutes.",
+          `The DPDP duties have started, and the organisation's board has 30 minutes.${already}`,
         );
       } else {
-        toast.success("Validation recorded", OUTCOME_COPY[outcome]);
+        toast.success("Validation recorded", already ? `${OUTCOME_COPY[outcome]}.${already}` : OUTCOME_COPY[outcome]);
       }
     } catch (err) {
       toast.error("Not recorded", messageOf(err, "The server refused."));
@@ -354,7 +370,8 @@ export function DeterminationCard({ breach }: { breach: Breach }) {
           A person&apos;s judgement, recorded with its reasoning. The platform never infers it - not from encryption,
           not from anything. The first yes records the incident as a personal data breach, starts the DPDP duties and
           gives 30 minutes to tell the organisation&apos;s board; a later no sets them aside and keeps the breach
-          reference. Every validation is kept; the latest stands.
+          reference, and a yes after it brings them back, done already where the work was done meanwhile. Every
+          validation is kept; the latest stands.
         </p>
       </CardHeader>
       <CardBody className="space-y-4">

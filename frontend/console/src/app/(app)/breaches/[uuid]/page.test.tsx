@@ -119,6 +119,7 @@ const NO_REPORTS = {
       duty_state: "outstanding",
       blocked_by: null,
       goes_to_regulator: false,
+      holds_mail: false,
       versions: [],
     },
   ],
@@ -218,6 +219,9 @@ describe("the breach page", () => {
   it("says who reported it when it came through the public link", async () => {
     serve(
       breach({
+        // Done, so the row offers neither CERT-In control: set aside is
+        // offered at any stage of validation now, and its words would match.
+        obligations: [duty({ state: "done", completed_at: "2026-10-06T09:20:00Z" })],
         reported: {
           reporter_name: "Asha Rao",
           reporter_email: "asha@example.org",

@@ -5,12 +5,17 @@
  * it; and the addresses of the organisation's board, where its reports are
  * mailed. Kept by the administrator, the DPO and Legal. Nothing here says
  * anything about a breach, so the administrator sees none by it.
+ *
+ * The board's list is where every send starts (0064): whoever finalises a
+ * report may leave an address out of it, or add one for it alone. A mandatory
+ * address goes with every report, and cannot be taken off the list until it
+ * is optional again. Every change to the list is mailed to the DPO and the
+ * Legal PoC, so the server refuses one it cannot tell them of.
  */
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Trash2, UserPlus } from "lucide-react";
-import * as React from "react";
+import { Copy, Trash2 } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/app-shell";
 import {
@@ -20,8 +25,6 @@ import {
   CardBody,
   CardHeader,
   CardTitle,
-  Field,
-  Input,
   Skeleton,
   Table,
   Td,
@@ -32,9 +35,12 @@ import {
   addBoardRecipient,
   getBreachSettings,
   removeBoardRecipient,
+  setBoardRecipientMandatory,
   setIntakeRoles,
 } from "@/features/breach/api";
+import { BoardAddressForm, type BoardAddress } from "@/features/breach/components/board-picker";
 import { messageOf } from "@/features/breach/components/record-breach";
+import { isApiError } from "@/lib/errors";
 import { formatDateTime } from "@/lib/format";
 import { keys } from "@/lib/query";
 import { useToast } from "@/providers";
@@ -115,31 +121,59 @@ function WhoIsTold({ settings }: { settings: BreachSettings }) {
   );
 }
 
+/** What every change to the board's list sets going. */
+const TOLD = "The DPO and the Legal PoC are mailed about the change.";
+
+/** Why a change to the list did not happen. The officers are mailed about every
+ *  change, so one they cannot be told of is not made; the API client says only
+ *  "something went wrong" of a 503, which would leave nobody knowing to wait. */
+function refusal(err: unknown): string {
+  if (isApiError(err) && err.status === 503) {
+    return "Not changed: the officers could not be told just now. Try again in a moment.";
+  }
+  return messageOf(err, "The server refused.");
+}
+
 function BoardList({ settings }: { settings: BreachSettings }) {
   const toast = useToast();
   const qc = useQueryClient();
-  const [person, setPerson] = React.useState({ full_name: "", email: "" });
   const stored = (fresh: BreachSettings) => qc.setQueryData(keys.breach.settings(), fresh);
   const add = useMutation({
-    mutationFn: () =>
-      addBoardRecipient({ full_name: person.full_name.trim() || null, email: person.email.trim() }),
+    mutationFn: (person: BoardAddress) =>
+      addBoardRecipient({ full_name: person.full_name || null, email: person.email }),
     onSuccess: stored,
   });
   const remove = useMutation({ mutationFn: removeBoardRecipient, onSuccess: stored });
-  async function save(e: React.FormEvent) {
-    e.preventDefault();
+  const mark = useMutation({
+    mutationFn: ({ uuid, on }: { uuid: string; on: boolean }) => setBoardRecipientMandatory(uuid, on),
+    onSuccess: stored,
+  });
+  const anyMandatory = settings.board_recipients.some((r) => r.mandatory);
+
+  async function save(person: BoardAddress) {
     try {
-      await add.mutateAsync();
-      setPerson({ full_name: "", email: "" });
+      await add.mutateAsync(person);
+      toast.success("Added to the list", TOLD);
+      return true;
     } catch (err) {
-      toast.error("Not added", messageOf(err, "The server refused."));
+      toast.error("Not added", refusal(err));
+      return false;
     }
   }
   async function takeOff(uuid: string) {
     try {
       await remove.mutateAsync(uuid);
+      toast.success("Removed from the list", TOLD);
     } catch (err) {
-      toast.error("Not removed", messageOf(err, "The server refused."));
+      toast.error("Not removed", refusal(err));
+    }
+  }
+  async function toggle(uuid: string, on: boolean) {
+    try {
+      await mark.mutateAsync({ uuid, on });
+      toast.success(on ? "Marked mandatory" : "No longer mandatory", TOLD);
+    } catch (err) {
+      toast.error("Not changed", refusal(err));
     }
   }
   return (
@@ -148,13 +182,15 @@ function BoardList({ settings }: { settings: BreachSettings }) {
         <CardTitle>The organisation&apos;s board</CardTitle>
         <p className="mt-1 text-xs text-text-muted">
           Every report to the organisation&apos;s board goes to these addresses, and so does the word that a report for
-          the DPDP Board or CERT-In has been finalised.
+          the DPDP Board or CERT-In has been finalised. Whoever finalises a report may leave an address out of that one
+          report, or add another for it alone. A mandatory address goes with every report and cannot be left out or
+          removed until it is made optional. Every change to this list is mailed to the DPO and the Legal PoC.
         </p>
       </CardHeader>
       <CardBody className="space-y-4">
         {settings.board_recipients.length === 0 ? (
           <Alert tone="warning" title="Nobody is on the list">
-            No report can be finalised until somebody is.
+            No report can be sent until somebody is, unless an address is added when it is finalised.
           </Alert>
         ) : (
           <Table>
@@ -163,6 +199,7 @@ function BoardList({ settings }: { settings: BreachSettings }) {
                 <Th>Name</Th>
                 <Th>Mail ID</Th>
                 <Th>Added</Th>
+                <Th>Mandatory</Th>
                 {/* Relative, or the hidden word widens the page on a phone. */}
                 <Th className="relative">
                   <span className="sr-only">Remove</span>
@@ -178,11 +215,30 @@ function BoardList({ settings }: { settings: BreachSettings }) {
                     {formatDateTime(r.added_at)}
                     {r.added_by_name && <span className="block text-xs text-text-subtle">{r.added_by_name}</span>}
                   </Td>
+                  <Td>
+                    <input
+                      type="checkbox"
+                      className="size-4 accent-[var(--accent)]"
+                      aria-label={`Mandatory: ${r.email}`}
+                      checked={r.mandatory}
+                      // One press at a time per row: the box shows the server's answer.
+                      disabled={mark.isPending && mark.variables?.uuid === r.recipient_uuid}
+                      onChange={(e) => toggle(r.recipient_uuid, e.target.checked)}
+                    />
+                    {r.mandatory && r.mandatory_changed_at && (
+                      <span className="block text-xs text-text-subtle">
+                        {formatDateTime(r.mandatory_changed_at)}
+                        {r.mandatory_changed_by_name && <> · {r.mandatory_changed_by_name}</>}
+                      </span>
+                    )}
+                  </Td>
                   <Td className="text-right">
                     <Button
                       variant="ghost"
                       size="sm"
                       aria-label={`Remove ${r.email}`}
+                      disabled={r.mandatory}
+                      title={r.mandatory ? "Make it optional before removing it" : undefined}
                       loading={remove.isPending && remove.variables === r.recipient_uuid}
                       onClick={() => takeOff(r.recipient_uuid)}
                     >
@@ -194,31 +250,10 @@ function BoardList({ settings }: { settings: BreachSettings }) {
             </tbody>
           </Table>
         )}
-        <form method="post" className="grid items-end gap-3 sm:grid-cols-[1fr_1fr_auto]" onSubmit={save}>
-          <Field label="Name" hint="Optional">
-            {(p) => (
-              <Input
-                {...p}
-                value={person.full_name}
-                onChange={(e) => setPerson({ ...person, full_name: e.target.value })}
-              />
-            )}
-          </Field>
-          <Field label="Mail ID" required>
-            {(p) => (
-              <Input
-                {...p}
-                type="email"
-                value={person.email}
-                onChange={(e) => setPerson({ ...person, email: e.target.value })}
-              />
-            )}
-          </Field>
-          <Button type="submit" variant="secondary" disabled={!person.email.trim()} loading={add.isPending}>
-            <UserPlus className="size-4" />
-            Add
-          </Button>
-        </form>
+        {anyMandatory && (
+          <p className="text-xs text-text-subtle">A mandatory address cannot be removed. Untick Mandatory first.</p>
+        )}
+        <BoardAddressForm submitLabel="Add" pending={add.isPending} onAdd={save} />
       </CardBody>
     </Card>
   );

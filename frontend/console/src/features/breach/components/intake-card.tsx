@@ -291,9 +291,17 @@ function DismissedDialog({ onClose }: { onClose: () => void }) {
                 <p className="text-xs text-text-muted">
                   <Mono>{r.reference}</Mono> · arrived {formatDateTime(r.received_at)}
                 </p>
-                <p className="text-xs break-words text-text-muted">
-                  Reported by {r.reporter_name}, {r.reporter_email}
-                </p>
+                {/* Erased under a rights request. The request is one office's, and
+                    both offices read this list, so it is not named. */}
+                {r.reporter_erased_at ? (
+                  <p className="text-xs text-text-muted">
+                    Reporter&apos;s name and email erased {formatDateTime(r.reporter_erased_at)}, at their request
+                  </p>
+                ) : (
+                  <p className="text-xs break-words text-text-muted">
+                    Reported by {[r.reporter_name, r.reporter_email].filter(Boolean).join(", ")}
+                  </p>
+                )}
                 <p className="text-xs text-text-muted">
                   Dismissed {formatDateTime(r.dismissed_at)} by {r.dismissed_by_name ?? "unknown"}
                 </p>

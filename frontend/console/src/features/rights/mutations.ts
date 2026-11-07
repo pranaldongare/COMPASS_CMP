@@ -19,6 +19,7 @@ import type {
   LegalHold,
   MyTicket,
   RightsHolder,
+  RightsPublicReports,
   RightsRequest,
   RightsScopeItem,
   TicketDetail,
@@ -179,6 +180,21 @@ export const useCorrectContact = (uuid: Uuid) =>
   >(uuid, ({ holderUuid, ...body }) => api.correctContact(uuid, holderUuid, body));
 export const useRemoveHolder = (uuid: Uuid) =>
   useRequestAction<void, Uuid>(uuid, (holderUuid) => api.removeHolder(uuid, holderUuid));
+
+/** The requester's name and email off the reports they sent through the
+ *  public link. The Dismissed reports list on the register reads them too, so
+ *  it is read again. */
+export function useErasePublicReports(uuid: Uuid): Result<RightsPublicReports, void> {
+  const qc = useQueryClient();
+  const invalidate = useInvalidateRequest(uuid);
+  return useMutation<RightsPublicReports, ApiError, void>({
+    mutationFn: () => api.erasePublicReports(uuid),
+    onSuccess: () => {
+      invalidate();
+      void qc.invalidateQueries({ queryKey: keys.breach.intake() });
+    },
+  });
+}
 
 export const useDeriveScope = (uuid: Uuid) =>
   useRequestAction<RightsScopeItem[], void>(uuid, () => api.deriveScope(uuid));

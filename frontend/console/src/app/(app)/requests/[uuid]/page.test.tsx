@@ -5,15 +5,16 @@
  * - is the first thing the page opens on, ahead of the request, so it is not
  * a search; identity, holders and the response are tabs of their own
  * (2026-10-10), and the old card anchors open them; refusing is a button that
- * says what it does; and the documents the requester sent are listed with the
- * request, each one downloadable.
+ * says what it does; the documents the requester sent are listed with the
+ * request, each one downloadable; and the reports the requester sent through
+ * the public link that an office dismissed are on the holders tab (0065).
  */
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import RequestPage from "@/app/(app)/requests/[uuid]/page";
 import { makeMe, makeRequestDetail } from "@/test/fixtures";
-import { render, screen } from "@/test/render";
+import { render, screen, within } from "@/test/render";
 import { API, server } from "@/test/server";
 import type { RightsRequestDetail } from "@/types";
 
@@ -136,5 +137,56 @@ describe("RequestPage", () => {
     expect(
       screen.getByRole("button", { name: "Download id-proof.pdf" }),
     ).toBeInTheDocument();
+  });
+
+  it("shows the reports from the public link on the holders tab of an access or erasure request, not on a grievance", async () => {
+    const found = {
+      looked: true,
+      not_looked_because: null,
+      items: [
+        {
+          report_uuid: "cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcdcdcd",
+          reference: "INC-2026-0041",
+          reporter_name: "Meera Iyer",
+          reporter_email: "meera.iyer@example.com",
+          title: "A test by the helpdesk",
+          received_at: "2026-11-05T09:00:00Z",
+          dismissed_at: "2026-11-05T12:00:00Z",
+          reporter_erased_at: null,
+        },
+      ],
+      total: 1,
+      erased: 0,
+      may_erase: true,
+      erase_blocked_by: null,
+    };
+    for (const request_type of ["access", "erasure"] as const) {
+      window.history.replaceState(null, "", `/requests/${UUID}#public-reports`);
+      serve({ ...verified, request_type, status: "in_progress", public_reports: found });
+      const { unmount } = render(<RequestPage />);
+      expect(await screen.findByRole("tab", { name: /Holders/ })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+      const card = (
+        await screen.findByRole("heading", { name: "Reports from the public link" })
+      ).closest("#public-reports") as HTMLElement;
+      expect(within(card).getByText("INC-2026-0041")).toBeInTheDocument();
+      unmount();
+    }
+
+    for (const over of [
+      { request_type: "erasure" as const, public_reports: null },
+      { request_type: "grievance" as const, public_reports: found },
+    ]) {
+      window.history.replaceState(null, "", `/requests/${UUID}`);
+      serve({ ...verified, ...over });
+      const { unmount } = render(<RequestPage />);
+      await screen.findByRole("heading", { name: "Next step" });
+      expect(
+        screen.queryByRole("heading", { name: "Reports from the public link" }),
+      ).not.toBeInTheDocument();
+      unmount();
+    }
   });
 });

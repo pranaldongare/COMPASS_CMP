@@ -74,6 +74,9 @@ test.describe("the DPO", () => {
     await expect(certIn).toBeVisible();
     // Five hours after noticing, under an hour is left - not six.
     await expect(certIn.getByText(/^\d+ min left$/)).toBeVisible();
+    // A mark made in error may be set aside before anybody has validated it
+    // (2026-11-07). Not pressed: the journey needs the duty outstanding.
+    await expect(certIn.getByRole("button", { name: "Not reportable to CERT-In" })).toBeVisible();
 
     await openTab(page, "Validation");
     await page.getByLabel(/^Became aware at/).fill(hoursAgo(4));
@@ -91,6 +94,8 @@ test.describe("the DPO", () => {
     await expect(page.getByRole("row", { name: /Board - initial intimation/ })).toBeVisible();
     await expect(page.getByRole("row", { name: /Board - detailed report/ })).toBeVisible();
     await expect(page.getByRole("row", { name: /Principals notified/ })).toBeVisible();
+    // And after the yes: validation neither allows it nor stands in its way.
+    await expect(certIn.getByRole("button", { name: "Not reportable to CERT-In" })).toBeVisible();
 
     // The seeded principal, added by hand: one person, and nobody else from the
     // dev database, however many of them a project or a vendor would find.

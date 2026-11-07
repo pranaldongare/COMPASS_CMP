@@ -17,6 +17,8 @@ import type {
   BreachListReport,
   BreachAssessment,
   BreachAssessmentInput,
+  BreachBoardList,
+  BreachDocumentFinalise,
   BreachDocumentKind,
   BreachDocuments,
   BreachDocumentsResent,
@@ -73,7 +75,7 @@ export function markCertIn(uuid: Uuid): Promise<Breach> {
   return apiPost<Breach>(`/breaches/${uuid}/cert-in`, {});
 }
 
-/** A mark made in error, once validated No. Mails nobody. */
+/** A mark made in error, whatever validation says. Mails nobody. */
 export function setAsideCertIn(uuid: Uuid, reason: string): Promise<Breach> {
   return apiPost<Breach>(`/breaches/${uuid}/cert-in/not-applicable`, { reason });
 }
@@ -139,6 +141,12 @@ export function addBoardRecipient(body: {
 
 export function removeBoardRecipient(recipientUuid: Uuid): Promise<BreachSettings> {
   return apiDelete<BreachSettings>(`/breach-settings/board-recipients/${recipientUuid}`);
+}
+
+/** Mandatory goes with every report and cannot be taken off the list until it
+ *  is optional again. Every change is mailed to the DPO and the Legal PoC. */
+export function setBoardRecipientMandatory(recipientUuid: Uuid, mandatory: boolean): Promise<BreachSettings> {
+  return apiPut<BreachSettings>(`/breach-settings/board-recipients/${recipientUuid}/mandatory`, { mandatory });
 }
 
 /* ------------------------------------------- the people affected (S3-02) */
@@ -250,11 +258,24 @@ export function editBreachDocument(
   return apiPut<BreachDocuments>(`${reports(uuid)}/${reportUuid}`, { sections });
 }
 
-/** Freezes it and mails the organisation's board. Never a regulator. */
-export function finaliseBreachDocument(uuid: Uuid, reportUuid: Uuid): Promise<BreachDocuments> {
-  return apiPost<BreachDocuments>(`${reports(uuid)}/${reportUuid}/finalise`, {});
+/** The organisation's board list as the finalise window offers it: names and
+ *  addresses, and which are mandatory. Read only while the window is open. */
+export function getBreachBoardList(uuid: Uuid): Promise<BreachBoardList> {
+  return apiGet<BreachBoardList>(`${reports(uuid)}/recipients`);
 }
 
+/** Freezes it and mails the board to whoever is chosen; a report to CERT-In
+ *  before the first yes is held for it. Never a regulator. */
+export function finaliseBreachDocument(
+  uuid: Uuid,
+  reportUuid: Uuid,
+  body: BreachDocumentFinalise,
+): Promise<BreachDocuments> {
+  return apiPost<BreachDocuments>(`${reports(uuid)}/${reportUuid}/finalise`, body);
+}
+
+/** To those this version went to and has not reached; never anyone added to
+ *  the list since. */
 export function resendBreachDocument(uuid: Uuid, reportUuid: Uuid): Promise<BreachDocumentsResent> {
   return apiPost<BreachDocumentsResent>(`${reports(uuid)}/${reportUuid}/resend`, {});
 }

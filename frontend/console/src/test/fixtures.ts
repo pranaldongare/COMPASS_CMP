@@ -318,6 +318,7 @@ export function makeRequestDetail(overrides: Partial<RightsRequestDetail> = {}):
     transitions: [],
     complete_blocked_by: null,
     default_instruction: "Access request DSAR-2026-0001: return a summary of the personal data you hold.",
+    public_reports: null,
     linked_request: null,
     linked_from: [],
     response_files: [],

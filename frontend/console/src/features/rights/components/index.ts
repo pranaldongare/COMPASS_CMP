@@ -11,6 +11,7 @@ export * from "@/features/rights/components/log-request-form";
 export * from "@/features/rights/components/next-bar";
 export * from "@/features/rights/components/office-card";
 export * from "@/features/rights/components/path";
+export * from "@/features/rights/components/public-reports-card";
 export * from "@/features/rights/components/respond-card";
 export * from "@/features/rights/components/scope-card";
 export * from "@/features/rights/components/staff-actions";

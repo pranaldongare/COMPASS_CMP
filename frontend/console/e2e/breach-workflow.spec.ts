@@ -4,20 +4,28 @@
  * One serial journey, against the real API and worker, with the dev outbox as
  * the witness of who was mailed what:
  *
- * - the administrator keeps the board's addresses and who is told of a report;
+ * - the administrator keeps the board's addresses and who is told of a report,
+ *   and makes one mandatory; every change to the list is mailed to both
+ *   officers;
  * - a stranger's report, made on the public API with a code from the outbox,
  *   waits in the intake both offices share, with no clock running;
  * - the DPO claims it, which takes it off the Legal office's screen, and
  *   validates it: only then is the organisation's board owed, thirty minutes
  *   from that yes;
- * - Notify Organization Board mails the list, with the report as a PDF;
+ * - Notify Organization Board mails the list, less any the sender leaves out
+ *   and with any added for that report alone, with the report as a PDF;
  * - the regulators' reports are drafted, finalised (which mails the board and
  *   nobody else) and recorded as sent with both proofs: the platform sends
  *   nothing to a regulator;
  * - the people affected are found by project and by an Excel list, and one
  *   button reaches them all;
  * - a ticket goes out with a document, and both sides move its date with a
- *   reason, on the thread and on the trail.
+ *   reason, on the thread and on the trail;
+ * - a report to CERT-In before validation waits for the first yes, and is not
+ *   sent while CERT-In is set aside; a yes after a no counts what was done
+ *   while the no stood (2026-11-07);
+ * - a rights request from a dismissed report's address finds it, and erasure
+ *   blanks the reporter's name and email.
  *
  * It lists people from the dev database on purpose, so it takes the smallest
  * project and unticks all but one. What it adds to the board's list and the
@@ -31,7 +39,7 @@ import { expect, request, test, type Browser, type Page } from "@playwright/test
 import fs from "node:fs";
 import path from "node:path";
 
-import { entriesSince, freshCode, outboxMark, type OutboxEntry } from "./support/outbox";
+import { entriesSince, freshCode, latestCodeFor, outboxMark, type OutboxEntry } from "./support/outbox";
 import { statePath } from "./support/session";
 import { workbook } from "./support/workbook";
 
@@ -49,6 +57,14 @@ const stamp = Date.now();
 const world = {
   board: `board.${stamp}@example.org`,
   boardName: `Chair ${stamp}`,
+  // A deputy on the list, whom one report leaves out, and an address one
+  // report adds for itself alone.
+  board2: `board.deputy.${stamp}@example.org`,
+  board2Name: `Deputy ${stamp}`,
+  oneOff: `one-off.${stamp}@example.org`,
+  // The report dismissed as junk, whose reporter later asks to be erased.
+  junk: `junk.${stamp}@example.org`,
+  junkReference: "",
   reporter: `reporter.${stamp}@example.org`,
   title: `E2E public report ${stamp}`,
   details: `Spreadsheet left on a shared drive ${stamp}`,
@@ -185,24 +201,37 @@ async function draft(page: Page, kind: string, fill: Array<[RegExp, string]>) {
   return { row, dialog };
 }
 
-/** Finalise, which mails the board and nobody else, and prove both. */
+/** Who a report goes to when the sender changes nothing: the whole list. */
+const everyone = () => [world.board, world.board2].sort();
+
+/** Finalise with nobody left out, which mails the board's list and nobody else,
+ *  and prove both. */
 async function finalise(page: Page, kind: string, title: string): Promise<void> {
   const row = page.getByTestId(`report-${kind}`);
   const dialog = page.getByRole("dialog");
+  // Every address on the list is offered, ticked.
+  await expect(dialog.getByRole("group", { name: "Who it goes to" }).getByRole("checkbox")).toHaveCount(2);
   const mark = outboxMark();
   await dialog.getByRole("button", { name: "Finalise and tell the board" }).click();
   await expect(page.getByText("Nothing has gone to the regulator.")).toBeVisible();
   await expect(row.getByText(/^Finalised( · version \d+)?$/)).toBeVisible();
   // An earlier version keeps its own line, folded away.
-  await expect(row.getByText(/Organisation's board: 1 delivered/).filter({ visible: true })).toBeVisible({ timeout: 30_000 });
-  const mails = await arrivals(mark, (e) => about(e, `${title} finalised`).length > 0);
+  await expect(row.getByText(/Organisation's board: 2 delivered/).filter({ visible: true })).toBeVisible({ timeout: 30_000 });
+  const mails = await arrivals(mark, (e) => about(e, `${title} finalised`).length >= 2);
   const told = about(mails, `${title} finalised`);
-  expect(told.map((m) => m.to)).toEqual([world.board]);
+  expect(told.map((m) => m.to).sort()).toEqual(everyone());
   expect(told[0].attached.join()).toMatch(/\.pdf \(application\/pdf, \d+ bytes\)/);
 }
 
-/** A person sent it; keep what proves it. */
-async function recordSent(page: Page, kind: string, reference: string | null): Promise<void> {
+/** A person sent it; keep what proves it. `sentAt` is when, as the box takes
+ *  it; `aside` says a no has the duty aside, which the window and the toast
+ *  say. */
+async function recordSent(
+  page: Page,
+  kind: string,
+  reference: string | null,
+  { sentAt = minutesAgo(-1), aside = false }: { sentAt?: string; aside?: boolean } = {},
+): Promise<void> {
   await page.getByTestId(`report-${kind}`).getByRole("button", { name: "Record as sent" }).click();
   const dialog = page.getByRole("dialog");
   const save = dialog.getByRole("button", { name: "Record as sent" });
@@ -212,8 +241,9 @@ async function recordSent(page: Page, kind: string, reference: string | null): P
     mimeType: "application/pdf",
     buffer: PDF,
   });
-  // Not before it was finalised, a moment ago: the box takes whole minutes.
-  await dialog.getByLabel(/^Sent at/).fill(minutesAgo(-1));
+  if (aside) await expect(dialog.getByText("This duty is set aside while the No stands")).toBeVisible();
+  // By default a minute on: the box takes whole minutes.
+  await dialog.getByLabel(/^Sent at/).fill(sentAt);
   if (reference) {
     await dialog.getByLabel(/^Reference returned/).fill(reference);
     await expect(save, "the mail sent is still missing").toBeDisabled();
@@ -225,7 +255,36 @@ async function recordSent(page: Page, kind: string, reference: string | null): P
   });
   await save.click();
   await expect(page.getByText("Recorded as sent")).toBeVisible();
+  if (aside) await expect(page.getByText(/It completes the duty at the next Yes/)).toBeVisible();
   await expect(page.getByTestId(`report-${kind}`).getByText(/^Sent( · version \d+)?$/)).toBeVisible();
+}
+
+/** Log an incident noticed twenty minutes ago, and open it. */
+async function logged(page: Page, title: string): Promise<void> {
+  await page.goto("/breaches");
+  await page.getByRole("button", { name: "Log an incident" }).click();
+  await page.getByLabel(/^Title/).fill(title);
+  await page.getByLabel(/^First noticed/).fill(minutesAgo(20));
+  await page.getByRole("button", { name: "Log the incident" }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^INC-/);
+}
+
+/** Record a validation, and wait for it to be recorded. A yes is aware ten
+ *  minutes ago unless `aware` says otherwise. */
+async function validate(page: Page, outcome: "yes" | "no", aware = minutesAgo(10)): Promise<void> {
+  await openTab(page, "Validation");
+  const before = await page.getByRole("listitem").filter({ hasText: /Reasoned (yes|no)/ }).count();
+  await page.getByRole("combobox", { name: /^Validation/ }).selectOption(outcome);
+  if (outcome === "yes") await page.getByLabel(/^Became aware at/).fill(aware);
+  await page.getByLabel(/^Reasoning/).fill(`Reasoned ${outcome}`);
+  await page.getByRole("button", { name: "Record the validation" }).click();
+  await expect(page.getByRole("listitem").filter({ hasText: /Reasoned (yes|no)/ })).toHaveCount(before + 1);
+}
+
+/** The heading as it stands: a BR reference once recorded. */
+async function referenceOf(page: Page): Promise<string> {
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^BR-\d{4}-\d{4}$/);
+  return ((await page.getByRole("heading", { level: 1 }).textContent()) ?? "").trim();
 }
 
 /** The settings as the run found them. Addresses come back sealed, so what was
@@ -234,7 +293,7 @@ const found = { recipients: [] as string[], roles: [] as string[] };
 
 interface Settings {
   intake_roles: string[];
-  board_recipients: Array<{ recipient_uuid: string }>;
+  board_recipients: Array<{ recipient_uuid: string; mandatory: boolean }>;
 }
 
 test.beforeAll(async () => {
@@ -253,8 +312,15 @@ test.afterAll(async () => {
   const api = await apiAs("admin");
   try {
     const now = (await (await api.get("/breach-settings")).json()) as Settings;
-    for (const { recipient_uuid: uuid } of now.board_recipients) {
+    for (const { recipient_uuid: uuid, mandatory } of now.board_recipients) {
       if (!found.recipients.includes(uuid)) {
+        // A mandatory address cannot come off the list until it is optional.
+        if (mandatory) {
+          const optional = await api.put(`/breach-settings/board-recipients/${uuid}/mandatory`, {
+            data: { mandatory: false },
+          });
+          expect(optional.status()).toBe(200);
+        }
         expect((await api.delete(`/breach-settings/board-recipients/${uuid}`)).status()).toBe(200);
       }
     }
@@ -267,15 +333,30 @@ test.afterAll(async () => {
 test.describe("breach settings", () => {
   test.use({ storageState: statePath("admin") });
 
-  test("the administrator lists a board address and names one more role to be told", async ({ page }) => {
+  test("the administrator lists two board addresses, makes one mandatory, and names one more role to be told", async ({
+    page,
+  }) => {
+    const mark = outboxMark();
     await page.goto("/breach-settings");
     await expect(page.getByRole("heading", { name: "Breach settings", level: 1 })).toBeVisible();
     await expect(page.locator("code", { hasText: /\/report-incident$/ })).toBeVisible();
 
-    await page.getByLabel(/^Name/).fill(world.boardName);
-    await page.getByLabel(/^Mail ID/).fill(world.board);
-    await page.getByRole("button", { name: "Add", exact: true }).click();
-    await expect(page.getByRole("cell", { name: world.board, exact: true })).toBeVisible();
+    for (const [name, email] of [
+      [world.boardName, world.board],
+      [world.board2Name, world.board2],
+    ]) {
+      await page.getByLabel(/^Name/).fill(name);
+      await page.getByLabel(/^Mail ID/).fill(email);
+      await page.getByRole("button", { name: "Add", exact: true }).click();
+      await expect(page.getByRole("cell", { name: email, exact: true })).toBeVisible();
+    }
+
+    // The chair goes with every report, and cannot come off the list while so.
+    const mandatory = page.getByRole("checkbox", { name: `Mandatory: ${world.board}` });
+    await mandatory.click();
+    await expect(mandatory).toBeChecked();
+    await expect(page.getByRole("button", { name: `Remove ${world.board}` })).toBeDisabled();
+    await expect(page.getByRole("button", { name: `Remove ${world.board2}` })).toBeEnabled();
 
     // The two officers are always told; anybody else is the office's choice.
     await expect(page.getByRole("checkbox", { name: "Data Protection Officer" })).toBeChecked();
@@ -290,7 +371,25 @@ test.describe("breach settings", () => {
     await page.reload();
     await expect(page.getByRole("cell", { name: world.board, exact: true })).toBeVisible();
     await expect(page.getByRole("checkbox", { name: "HR PoC" })).toBeChecked();
+    await expect(page.getByRole("checkbox", { name: `Mandatory: ${world.board}` })).toBeChecked();
+    await expect(page.locator("main")).not.toContainText("SE::");
     await snap(page, "01-breach-settings");
+
+    // Both officers hear of every change, the address named and never sealed.
+    const LIST = "the organisation's board list has changed";
+    const mails = await arrivals(mark, (e) =>
+      [DPO, LEGAL].every((a) => e.filter((m) => m.to === a && m.subject.includes(LIST)).length >= 3),
+    );
+    const told = mails.filter((m) => m.subject.includes(LIST));
+    for (const officer of [DPO, LEGAL]) {
+      const theirs = told.filter((m) => m.to === officer).map((m) => m.body);
+      expect(theirs.some((b) => b.includes(world.board2) && b.includes("added this address to"))).toBe(true);
+      expect(theirs.some((b) => b.includes(world.board) && b.includes("made this address mandatory on"))).toBe(true);
+    }
+    for (const m of told) expect(`${m.subject}\n${m.body}`).not.toContain("SE::");
+    // The officers alone: not the administrator who made them, nor the board.
+    expect(new Set(told.map((m) => m.to))).not.toContain("admin@cmp.local");
+    expect(new Set(told.map((m) => m.to))).not.toContain(world.board);
   });
 
   test("the DPO and Legal may keep it too, and a collection owner may not", async ({ browser }) => {
@@ -305,6 +404,47 @@ test.describe("breach settings", () => {
       await page.goto("/breach-settings");
       await expect(page.getByText("Not part of your account")).toBeVisible();
     });
+  });
+
+  test("a mandatory address goes with every report, cannot come off, and both officers hear of the mark", async ({
+    browser,
+  }) => {
+    const mark = outboxMark();
+    await signedIn(browser, "legal", async (page) => {
+      await page.goto("/breach-settings");
+      const box = page.getByRole("checkbox", { name: `Mandatory: ${world.board2}` });
+      await box.click();
+      await expect(box).toBeChecked();
+      await expect(page.getByText("Marked mandatory")).toBeVisible();
+      await expect(page.getByRole("button", { name: `Remove ${world.board2}` })).toBeDisabled();
+      // When and by whom, opened.
+      await expect(box.locator("xpath=..")).toContainText("·");
+      await expect(page.locator("main")).not.toContainText("SE::");
+      await box.click();
+      await expect(box).not.toBeChecked();
+      await expect(page.getByRole("button", { name: `Remove ${world.board2}` })).toBeEnabled();
+    });
+
+    // Nor through the API: the chair, marked by the administrator, stays.
+    const legal = await apiAs("legal");
+    try {
+      const now = (await (await legal.get("/breach-settings")).json()) as Settings;
+      const chair = now.board_recipients.find((r) => r.mandatory && !found.recipients.includes(r.recipient_uuid));
+      expect(chair, "the chair is mandatory").toBeDefined();
+      const refused = await legal.delete(`/breach-settings/board-recipients/${chair?.recipient_uuid}`);
+      expect(refused.status()).toBe(409);
+      expect(((await refused.json()) as { error: { code: string } }).error.code).toBe("recipient_mandatory");
+    } finally {
+      await legal.dispose();
+    }
+
+    const marks = (e: OutboxEntry[], officer: string) =>
+      e.filter((m) => m.to === officer && m.body.includes(world.board2)).map((m) => m.body);
+    const mails = await arrivals(mark, (e) => [DPO, LEGAL].every((a) => marks(e, a).length >= 2));
+    for (const officer of [DPO, LEGAL]) {
+      expect(marks(mails, officer).some((b) => b.includes("made this address mandatory on"))).toBe(true);
+      expect(marks(mails, officer).some((b) => b.includes("made this address optional again on"))).toBe(true);
+    }
   });
 });
 
@@ -399,7 +539,8 @@ test.describe("the public link", () => {
 
   test("a report that is nothing is dismissed with a reason, and never reaches the register", async ({ browser }) => {
     const title = `E2E junk report ${stamp}`;
-    const reference = await report(`junk.${stamp}@example.org`, title, "Somebody sent a joke");
+    const reference = await report(world.junk, title, "Somebody sent a joke");
+    world.junkReference = reference;
     await signedIn(browser, "dpo", async (page) => {
       await page.goto("/breaches");
       const row = page.getByTestId("incident-intake").getByRole("listitem").filter({ hasText: title });
@@ -439,7 +580,7 @@ test.describe("the DPO's office", () => {
     await snap(page, "05-duties-after-yes");
   });
 
-  test("Notify Organization Board drafts a report, and sending it mails the list and does the duty", async ({
+  test("Notify Organization Board drafts a report, the sender chooses who a report goes to, and sending it does the duty", async ({
     page,
   }) => {
     await page.goto(world.url);
@@ -451,26 +592,57 @@ test.describe("the DPO's office", () => {
     await expect(what).toHaveValue(world.details);
     await dialog.getByLabel(/^What happens next/).fill(`Containment under way ${stamp}`);
     await what.fill(`${world.details}, confirmed by the office`);
+
+    // Everyone on the list, ticked; the mandatory chair locked in. The deputy
+    // is left out of this one report, and an address is added for it alone.
+    const who = dialog.getByRole("group", { name: "Who it goes to" });
+    const chair = who.getByRole("checkbox", { name: `${world.boardName}, ${world.board}` });
+    await expect(chair).toBeChecked();
+    await expect(chair).toBeDisabled();
+    const deputy = who.getByRole("checkbox", { name: `${world.board2Name}, ${world.board2}` });
+    await expect(deputy).toBeChecked();
+    await deputy.uncheck();
+    await who.getByLabel(/^Mail ID/).fill(world.oneOff);
+    await who.getByRole("button", { name: "Add for this report" }).click();
+    await expect(who.getByText(world.oneOff, { exact: true })).toBeVisible();
+    await expect(who.getByText("Goes to 2 addresses.")).toBeVisible();
+    await expect(dialog).not.toContainText("SE::");
     await snap(page, "06-notify-board-popup");
 
     const mark = outboxMark();
     await dialog.getByRole("button", { name: "Send to the board" }).click();
     await expect(page.getByText("Sent to the organisation's board")).toBeVisible();
 
-    const mails = await arrivals(mark, (e) => about(e, world.reference).some((m) => m.to === world.board));
+    const chosen = [world.board, world.oneOff].sort();
+    const mails = await arrivals(mark, (e) => {
+      const to = new Set(about(e, world.reference).map((m) => m.to));
+      return chosen.every((a) => to.has(a));
+    });
     const mail = about(mails, world.reference).find((m) => m.to === world.board);
     expect(mail?.subject).toContain("Report to the organisation's board");
     expect(mail?.body).toContain(`${world.details}, confirmed by the office`);
     expect(mail?.body).toContain(`Containment under way ${stamp}`);
     expect(mail?.attached.join()).toMatch(/\.pdf \(application\/pdf, \d+ bytes\)/);
-    expect(new Set(about(mails, world.reference).map((m) => m.to))).toEqual(new Set([world.board]));
+    expect([...new Set(about(mails, world.reference).map((m) => m.to))].sort()).toEqual(chosen);
 
     await page.reload();
     await openTab(page, "Duties");
     const orgBoard = page.getByRole("row", { name: /Organisation's board/ });
     await expect(orgBoard.getByText("Done")).toBeVisible();
-    await expect(orgBoard.getByText(new RegExp(`By email: ${world.boardName}`))).toBeVisible();
+    await expect(orgBoard.getByText(new RegExp(`By email: .*${world.boardName}`))).toBeVisible();
     await expect(page.getByRole("button", { name: "Notify Organization Board" })).toHaveCount(0);
+
+    // The version's account is who it went to: the one-off named for what it
+    // is, and the deputy, left out, nowhere in it.
+    await openTab(page, "Reports");
+    const row = page.getByTestId("report-org_board");
+    await row.getByText("Address by address (2)").click();
+    await expect(row.getByText(`${world.oneOff} (this report only): delivered`)).toBeVisible();
+    await expect(row).not.toContainText(world.board2);
+    // The list itself is as it was.
+    await page.goto("/breach-settings");
+    await expect(page.getByRole("cell", { name: world.board2, exact: true })).toBeVisible();
+    await expect(page.getByRole("cell", { name: world.oneOff, exact: true })).toHaveCount(0);
   });
 
   test("the initial intimation: finalising mails the board and nobody else, and filing does the duty", async ({
@@ -891,6 +1063,7 @@ test.describe("the trail and the close", () => {
       `${base}/board/report`,
       `${base}/org-board/brief`,
       `${base}/reports`,
+      `${base}/reports/recipients`,
       `${base}/reports/${report}/pdf`,
       `${base}/tickets`,
       `${base}/tickets/${world.ticket}`,
@@ -900,6 +1073,8 @@ test.describe("the trail and the close", () => {
     const writes: Array<[string, Record<string, unknown>]> = [
       [`${base}/determinations`, { outcome: "no", reasoning: "Not mine", became_aware_at: null }],
       [`${base}/cert-in`, {}],
+      // With no validation rule left in its way, the wall is all that stops it.
+      [`${base}/cert-in/not-applicable`, { reason: "Not mine" }],
       [`${base}/assessments`, {}],
       [`${base}/transition`, { to: "closed", reason: "Not mine" }],
       [
@@ -914,7 +1089,8 @@ test.describe("the trail and the close", () => {
       [`${base}/notices/${notices.versions[0].notice_uuid}/approve`, {}],
       [`${base}/notices/send`, {}],
       [`${base}/reports`, { kind: "closure" }],
-      [`${base}/reports/${report}/finalise`, {}],
+      // A body that would pass, so only the wall can refuse it.
+      [`${base}/reports/${report}/finalise`, { recipients: [], extra: [] }],
       [`${base}/reports/${report}/resend`, {}],
       [`${base}/reports/${report}/file`, { filed_at: new Date().toISOString(), reference: "X" }],
       [`${base}/tickets`, { instruction: "Mine now", user_uuid: uuid }],
@@ -1012,23 +1188,6 @@ test.describe("the trail and the close", () => {
 test.describe("what a validation does to the board's duty", () => {
   test.use({ storageState: statePath("dpo") });
 
-  async function logged(page: Page, title: string): Promise<void> {
-    await page.goto("/breaches");
-    await page.getByRole("button", { name: "Log an incident" }).click();
-    await page.getByLabel(/^Title/).fill(title);
-    await page.getByLabel(/^First noticed/).fill(minutesAgo(20));
-    await page.getByRole("button", { name: "Log the incident" }).click();
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^INC-/);
-  }
-
-  async function validate(page: Page, outcome: "yes" | "no"): Promise<void> {
-    await openTab(page, "Validation");
-    await page.getByRole("combobox", { name: /^Validation/ }).selectOption(outcome);
-    if (outcome === "yes") await page.getByLabel(/^Became aware at/).fill(minutesAgo(10));
-    await page.getByLabel(/^Reasoning/).fill(`Reasoned ${outcome}`);
-    await page.getByRole("button", { name: "Record the validation" }).click();
-  }
-
   test("a no on a new incident owes the board nothing, and it closes", async ({ page }) => {
     await logged(page, `E2E junk incident ${stamp}`);
     await validate(page, "no");
@@ -1058,6 +1217,168 @@ test.describe("what a validation does to the board's duty", () => {
     await expect(orgBoard.getByText("Outstanding")).toBeVisible();
     await expect(orgBoard.getByText(/^(29|30) min left$/)).toBeVisible();
     await expect(page.getByRole("button", { name: "Notify Organization Board" }).first()).toBeVisible();
+  });
+
+  test("a report that reached the board during a no completes the duty at the next yes, and nothing is sent again", async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    await logged(page, `E2E told during a no ${stamp}`);
+    await validate(page, "yes");
+    const reference = await referenceOf(page);
+    await validate(page, "no");
+
+    // The duty is aside, but the board can still be told, from the Reports tab.
+    await openTab(page, "Reports");
+    const { row, dialog } = await draft(page, "org_board", []);
+    const mark = outboxMark();
+    await dialog.getByRole("button", { name: "Send to the board" }).click();
+    await expect(page.getByText("Sent to the organisation's board")).toBeVisible();
+    const toBoard = (e: OutboxEntry[]) =>
+      about(e, reference).filter((m) => m.subject.includes("Report to the organisation's board"));
+    await arrivals(mark, (e) => toBoard(e).length >= 2);
+    await expect(row.getByText(/Organisation's board: 2 delivered/)).toBeVisible({ timeout: 30_000 });
+    await openTab(page, "Duties");
+    const orgBoard = page.getByRole("row", { name: /Organisation's board/ });
+    await expect(orgBoard.getByText("Not applicable")).toBeVisible();
+
+    const again = outboxMark();
+    await validate(page, "yes");
+    await expect(page.getByText(/Done while it was set aside, so done now: .*Nobody was mailed\./)).toBeVisible();
+    await openTab(page, "Duties");
+    await expect(orgBoard.getByText("Done")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Notify Organization Board" })).toHaveCount(0);
+    // Done from the mail that landed: no Try again was pressed, and nothing
+    // went a second time.
+    await page.waitForTimeout(3_000);
+    expect(toBoard(entriesSince(again))).toEqual([]);
+  });
+
+  test("a regulator's report filed during a no completes its duty at the next yes, dated when it was sent", async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    await logged(page, `E2E filed during a no ${stamp}`);
+    await validate(page, "yes");
+    await referenceOf(page);
+    await validate(page, "no");
+
+    await openTab(page, "Reports");
+    await draft(page, "board_intimation", [[/^Its likely impact/, "Contact details may have been read."]]);
+    await finalise(page, "board_intimation", "Initial intimation to the DPDP Board");
+    await recordSent(page, "board_intimation", `DPB-NO-${stamp}`, { sentAt: minutesAgo(5), aside: true });
+    await openTab(page, "Duties");
+    const duty = page.getByRole("row", { name: /Board - initial intimation/ });
+    await expect(duty.getByText("Not applicable")).toBeVisible();
+
+    await validate(page, "yes");
+    await expect(page.getByText(/Done while it was set aside, so done now: .*Board - initial intimation/)).toBeVisible();
+    await openTab(page, "Duties");
+    await expect(duty.getByText("Done")).toBeVisible();
+    await expect(duty.getByText(`DPB-NO-${stamp}`)).toBeVisible();
+  });
+
+  test("a report filed after a no and a yes may give a time before the new awareness", async ({ page }) => {
+    test.setTimeout(120_000);
+    await logged(page, `E2E sent before the new awareness ${stamp}`);
+    await validate(page, "yes");
+    await referenceOf(page);
+    await validate(page, "no");
+    // The later yes starts the duty's clock again a minute ago; the report
+    // went to the Board before that, and its own time stands (logic-4).
+    await validate(page, "yes", minutesAgo(1));
+
+    await openTab(page, "Reports");
+    await draft(page, "board_intimation", [[/^Its likely impact/, "Contact details may have been read."]]);
+    await finalise(page, "board_intimation", "Initial intimation to the DPDP Board");
+    await recordSent(page, "board_intimation", `DPB-L4-${stamp}`, { sentAt: minutesAgo(8) });
+
+    await openTab(page, "Duties");
+    const duty = page.getByRole("row", { name: /Board - initial intimation/ });
+    await expect(duty.getByText("Done")).toBeVisible();
+    await expect(duty.getByText(`DPB-L4-${stamp}`)).toBeVisible();
+  });
+});
+
+test.describe("a report to CERT-In before validation", () => {
+  test.use({ storageState: statePath("dpo") });
+
+  /** A new incident marked for CERT-In, its report finalised and held. */
+  async function held(page: Page, title: string) {
+    await logged(page, title);
+    await openTab(page, "Duties");
+    await page.getByRole("button", { name: "Mark reportable to CERT-In" }).click();
+    await expect(page.getByRole("row", { name: /Report to CERT-In/ })).toBeVisible();
+    await openTab(page, "Reports");
+    const { row, dialog } = await draft(page, "cert_in", [
+      [/^Systems affected/, "The shared drive"],
+      [/^Action taken so far/, "Access removed; the file taken down."],
+    ]);
+    await expect(dialog.getByText("The board's mail waits for validation")).toBeVisible();
+    await expect(dialog.getByRole("button", { name: "Finalise and tell the board" })).toHaveCount(0);
+    await snap(page, "40-held-cert-in-popup");
+    const mark = outboxMark();
+    await dialog.getByRole("button", { name: "Finalise and hold for validation" }).click();
+    await expect(page.getByText(/^The board's mail waits for validation: it goes at the first Yes/)).toBeVisible();
+    await expect(
+      row.getByText(/^Organisation's board: waiting for validation\. It goes to 2 addresses at the first Yes/),
+    ).toBeVisible();
+    return { row, mark };
+  }
+
+  const toCertIn = (e: OutboxEntry[], reference: string) =>
+    e.filter((m) => m.subject.includes(`${reference} - Report to CERT-In finalised`));
+
+  test("waits for the yes, through a no, and then goes to whoever was chosen", async ({ page }) => {
+    test.setTimeout(120_000);
+    const { row, mark } = await held(page, `E2E held for the yes ${stamp}`);
+    await snap(page, "41-held-cert-in-row");
+
+    // A no keeps it waiting: only a yes sends it, and the first yes does.
+    await validate(page, "no");
+    await openTab(page, "Reports");
+    await expect(row.getByText(/^Organisation's board: waiting for validation/)).toBeVisible();
+    await expect(row.getByRole("button", { name: /Try again|Send to the board/ })).toHaveCount(0);
+    // Nothing to the board's list since it was finalised: no reference, no mail.
+    const anyCertIn = entriesSince(mark).filter(
+      (m) => m.subject.includes("Report to CERT-In finalised") && everyone().includes(m.to),
+    );
+    expect(anyCertIn).toEqual([]);
+
+    await validate(page, "yes");
+    const reference = await referenceOf(page);
+    const mails = await arrivals(mark, (e) => toCertIn(e, reference).length >= 2);
+    expect(toCertIn(mails, reference).map((m) => m.to).sort()).toEqual(everyone());
+    await openTab(page, "Reports");
+    await expect(row.getByText(/Organisation's board: 2 delivered/)).toBeVisible({ timeout: 30_000 });
+  });
+
+  test("can be set aside before any validation, and then it is not sent at the yes", async ({ page }) => {
+    test.setTimeout(120_000);
+    const { row, mark } = await held(page, `E2E set aside before validation ${stamp}`);
+
+    await openTab(page, "Duties");
+    const certIn = page.getByRole("row", { name: /Report to CERT-In/ });
+    await certIn.getByRole("button", { name: "Not reportable to CERT-In" }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText(/is not mailed while it stays set aside/)).toBeVisible();
+    await dialog.getByLabel(/^Why it is not reportable/).fill(`A scanner's false alarm ${stamp}`);
+    await dialog.getByRole("button", { name: "Set CERT-In aside" }).click();
+    await expect(page.getByText("CERT-In set aside")).toBeVisible();
+    await expect(certIn.getByText("Not applicable")).toBeVisible();
+    await expect(certIn.getByText(`A scanner's false alarm ${stamp}`)).toBeVisible();
+
+    await openTab(page, "Reports");
+    await expect(row.getByText(/not sent while CERT-In is set aside; mark it reportable again before validation/)).toBeVisible();
+
+    await validate(page, "yes");
+    const reference = await referenceOf(page);
+    await openTab(page, "Reports");
+    await expect(row.getByText(/not sent: CERT-In was set aside when the incident was validated/)).toBeVisible();
+    await snap(page, "42-withheld-cert-in-row");
+    // A moment for anything the worker had, then nothing for this report.
+    await page.waitForTimeout(3_000);
+    expect(toCertIn(entriesSince(mark), reference)).toEqual([]);
   });
 });
 
@@ -1175,6 +1496,81 @@ test.describe("the Legal office's own breach", () => {
     await close.focus();
     await page.keyboard.press("Enter");
     await expect(page.getByText("Breach closed")).toBeVisible();
+  });
+});
+
+test.describe("a dismissed reporter's rights", () => {
+  test.use({ storageState: statePath("dpo") });
+
+  test("a rights request finds a dismissed public report by email, and erasure blanks the name and email", async ({
+    page,
+  }) => {
+    test.setTimeout(120_000);
+    expect(world.junkReference, "the junk report was dismissed earlier in the run").not.toBe("");
+
+    // The reporter asks on the public rights form, with no account, typing the
+    // address as they remember it: the code goes to the one kept with the report.
+    const open = await request.newContext({ baseURL: API });
+    let reference = "";
+    try {
+      const before = latestCodeFor(world.junk);
+      const made = await open.post("/rights/requests", {
+        data: {
+          request_type: "erasure",
+          contact: world.junk.toUpperCase(),
+          name: "A Reporter",
+          request_text: `Please take my name off what I sent ${stamp}`,
+        },
+      });
+      expect([200, 201]).toContain(made.status());
+      reference = ((await made.json()) as { reference: string }).reference;
+      const code = await freshCode(world.junk, before);
+      expect((await open.post("/rights/requests/verify", { data: { reference, code } })).status()).toBe(200);
+    } finally {
+      await open.dispose();
+    }
+
+    // The office takes it up and starts it.
+    const dpo = await apiAs("dpo");
+    let uuid = "";
+    try {
+      const listed = (await (await dpo.get(`/requests?q=${reference}`)).json()) as {
+        items: Array<{ request_uuid: string; reference: string }>;
+      };
+      uuid = listed.items.find((r) => r.reference === reference)?.request_uuid ?? "";
+      expect(uuid).not.toBe("");
+      const step = async (path: string, data: Record<string, unknown> = {}) =>
+        expect((await dpo.post(`/requests/${uuid}/${path}`, { data })).status(), path).toBeLessThan(300);
+      await step("classify", { request_type: "erasure", note: "As stated." });
+      await step("intent");
+      const shown = (await (await dpo.get(`/requests/${uuid}`)).json()) as { office: string | null };
+      if (shown.office === null) await step("claim");
+      await step("transition", { to: "in_progress" });
+    } finally {
+      await dpo.dispose();
+    }
+
+    await page.goto(`/requests/${uuid}#public-reports`);
+    const card = page.locator("#public-reports");
+    await expect(card.getByText(world.junkReference)).toBeVisible();
+    await expect(card.getByText(`From A Reporter, ${world.junk}`)).toBeVisible();
+    await expect(card).not.toContainText("SE::");
+    await snap(page, "43-public-reports-card");
+    await card.getByRole("button", { name: "Erase their name and email from 1 report" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Erase name and email" }).click();
+    await expect(page.getByText("Erased", { exact: true })).toBeVisible();
+    await expect(card.getByText(/^Name and email erased /)).toBeVisible();
+    await expect(card).not.toContainText(world.junk);
+
+    // Both offices' list keeps the number and why, and says only that they
+    // were erased: never the request, which is this office's.
+    await page.goto("/breaches");
+    await page.getByRole("button", { name: "Dismissed reports" }).click();
+    const kept = page.getByRole("dialog").getByRole("listitem").filter({ hasText: world.junkReference });
+    await expect(kept.getByText(/^Reporter's name and email erased .*, at their request$/)).toBeVisible();
+    await expect(kept.getByText("“A joke, not an incident”")).toBeVisible();
+    await expect(kept).not.toContainText(world.junk);
+    await expect(kept).not.toContainText(reference);
   });
 });
 

@@ -228,13 +228,19 @@ export interface IncidentReport extends IncidentReportRow {
 /** A report an office did not take up: kept, with who dismissed it and why. */
 export interface DismissedReport {
   reference: string;
-  reporter_name: string;
-  reporter_email: string;
+  /** Sealed; null once erased under a rights request (0065). */
+  reporter_name: string | null;
+  /** Sealed; null once erased under a rights request (0065). */
+  reporter_email: string | null;
   title: string;
   received_at: Timestamp;
   dismissed_at: Timestamp;
   dismissed_by_name: string | null;
   dismissal_reason: string;
+  /** When the reporter's name and email were erased at their request. The
+   *  request itself is one office's, so it is never named here: both offices
+   *  read this list. */
+  reporter_erased_at: Timestamp | null;
 }
 
 /** What else is known when an incident is logged (0047): every one optional
@@ -579,20 +585,33 @@ export interface BreachDocumentProof {
   added_by_name: string | null;
 }
 
-/** One address a report was mailed to, its latest state. */
+/** One address a version was addressed to when it was finalised, and its
+ *  latest state. The set is the version's own: an address added to the list
+ *  since is never in it. */
 export interface BreachDocumentMailRecipient {
+  /** The list entry's, or the row of an address added for this send alone. */
   recipient_uuid: Uuid;
-  /** Sealed; null where the list holds only an address. */
+  /** Sealed; null where only an address was given. */
   full_name: string | null;
   /** Sealed. */
   email: string;
-  status: "queued" | "delivered" | "failed";
+  /** `held`: a report to CERT-In waiting for the first yes. `unsent`: never
+   *  queued, and no longer waiting: replaced by a later version before it
+   *  went, or withheld because CERT-In was set aside at the yes. */
+  status: "queued" | "delivered" | "failed" | "held" | "unsent";
+  /** 0 when it was never queued. */
   attempt: number;
   /** Why it failed, as an error's class. */
   error: string | null;
-  recorded_at: Timestamp;
-  /** Taken off the list since: sending again leaves it as it stands. */
+  /** Null when it was never queued. */
+  recorded_at: Timestamp | null;
+  /** A list entry taken off the list since, matched by address: sending again
+   *  leaves it as it stands. Never true of an address added for this send. */
   removed: boolean;
+  /** Mandatory on the list when the version was finalised. */
+  mandatory: boolean;
+  /** Added for this send alone, on no list. */
+  added_for_this_send: boolean;
 }
 
 /** What became of the mail to the organisation's board. */
@@ -600,12 +619,17 @@ export interface BreachDocumentMail {
   delivered: number;
   queued: number;
   failed: number;
+  /** Never queued and no longer waiting (`unsent` addressees still on the list). */
+  unsent: number;
+  /** Waiting for the first yes (`held` addressees still on the list). */
+  held: number;
   /** Of the queued, to addresses still on the list: lost before the worker saw
    *  them, which sending again queues again. */
   stale: number;
-  /** How many addresses sending again would queue now. None on a draft, a
-   *  superseded version, a report that may not go, an empty list or a closed
-   *  breach. */
+  /** How many of the addresses this version went to sending again would queue
+   *  now: failed, lost or never queued, and still on the list. None on a
+   *  draft, a held or superseded version, a report that may not go, or a
+   *  closed breach. */
   retryable: number;
   recipients: BreachDocumentMailRecipient[];
 }
@@ -617,6 +641,8 @@ export interface BreachDocument {
   title: string;
   version: number;
   state: BreachDocumentState;
+  /** A later version of this kind has been finalised. */
+  superseded: boolean;
   sections: BreachDocumentSection[];
   created_at: Timestamp;
   created_by_name: string | null;
@@ -640,13 +666,24 @@ export interface BreachDocumentKindView {
   /** Why it may not be written yet, in the server's words. */
   blocked_by: string | null;
   goes_to_regulator: boolean;
+  /** Finalising this kind now would hold the board's mail until the first yes:
+   *  a report to CERT-In before the incident is recorded. */
+  holds_mail: boolean;
   versions: BreachDocument[];
 }
 
 export interface BreachDocuments {
   kinds: BreachDocumentKindView[];
+  /** How many are on the board's list now. */
   board_recipients: number;
   proofs: { kind: "approval" | "sent_mail"; label: string }[];
+}
+
+/** Who a version goes to, as the sender chose it: entries on the board's list,
+ *  every mandatory one among them, and addresses for this send alone. */
+export interface BreachDocumentFinalise {
+  recipients: Uuid[];
+  extra: { full_name: string | null; email: string }[];
 }
 
 /** What a press of Try again answers: the reports, and how many it queued. */
@@ -656,12 +693,30 @@ export interface BreachDocumentsResent extends BreachDocuments {
 
 /* ---------------------------------------------- who hears of a breach (0058) */
 
-export interface BreachBoardRecipient {
+/** One entry on the organisation's board list, as the finalise window offers
+ *  it (`GET /breaches/{uuid}/reports/recipients`). */
+export interface BreachBoardEntry {
   recipient_uuid: Uuid;
+  /** Sealed; null where only an address was given. */
   full_name: string | null;
+  /** Sealed. */
   email: string;
+  /** Goes with every report: it cannot be left out of one, or taken off the
+   *  list while marked. */
+  mandatory: boolean;
+}
+
+export interface BreachBoardList {
+  recipients: BreachBoardEntry[];
+}
+
+export interface BreachBoardRecipient extends BreachBoardEntry {
   added_at: Timestamp;
   added_by_name: string | null;
+  /** The latest mark's time and author, mandatory or optional again. */
+  mandatory_changed_at: Timestamp | null;
+  /** Sealed. */
+  mandatory_changed_by_name: string | null;
 }
 
 export interface BreachSettings {

@@ -1,14 +1,15 @@
 /**
  * The Duties card: what each duty offers, as the server's answer allows it.
  *
- * A CERT-In mark that was a mistake can be set aside once the incident is
- * validated as No, with a reason and a mail to nobody, and marked again later.
- * The board's duty row keeps an open editor through a change of duty.
+ * A CERT-In mark that was a mistake can be set aside whatever validation says,
+ * with a reason and a mail to nobody, and marked again later. The board's duty
+ * row keeps an open editor through a change of duty. A yes after a no names
+ * the duties it found already done.
  */
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { DutiesCard } from "@/features/breach/components/cards";
+import { DeterminationCard, DutiesCard } from "@/features/breach/components/cards";
 import { render, screen, within } from "@/test/render";
 import { API, server } from "@/test/server";
 import type { Breach, BreachDocuments, BreachDuty, BreachDutyEvent } from "@/types";
@@ -76,17 +77,19 @@ beforeEach(() => {
 });
 
 describe("setting CERT-In aside", () => {
-  it("is offered once the latest validation is No and the duty stands", () => {
-    render(<DutiesCard breach={breach()} />);
+  // "pending" is what the breach says before any validation, too.
+  it.each(["no", "yes", "pending"] as const)(
+    "is offered whenever the duty stands, whatever validation says (%s)",
+    (determination) => {
+      render(<DutiesCard breach={breach({ determination })} />);
 
-    const row = screen.getByRole("row", { name: /Report to CERT-In/ });
-    expect(within(row).getByRole("button", { name: ACTION })).toBeInTheDocument();
-  });
+      const row = screen.getByRole("row", { name: /Report to CERT-In/ });
+      expect(within(row).getByRole("button", { name: ACTION })).toBeInTheDocument();
+    },
+  );
 
   it("is not offered in any state the server would refuse", () => {
     const cases: Partial<Breach>[] = [
-      { determination: "pending" },
-      { determination: "yes" },
       { status: "closed" },
       { obligations: [duty({ state: "done" })] },
       { obligations: [duty({ state: "not_applicable" })] },
@@ -113,6 +116,8 @@ describe("setting CERT-In aside", () => {
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByText(/no longer holds up closing/)).toBeInTheDocument();
     expect(within(dialog).getByText(/It mails nobody/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/whatever validation says/)).toBeInTheDocument();
+    expect(within(dialog).queryByText(/validated as No/)).not.toBeInTheDocument();
 
     const go = within(dialog).getByRole("button", { name: "Set CERT-In aside" });
     expect(go).toBeDisabled();
@@ -126,11 +131,24 @@ describe("setting CERT-In aside", () => {
     expect(toast.success).toHaveBeenCalledWith("CERT-In set aside", expect.stringContaining("Nobody was mailed"));
   });
 
+  it("warns that a report to CERT-In waiting for a yes is not mailed while it stays set aside", async () => {
+    const { user } = render(<DutiesCard breach={breach({ determination: "pending" })} />);
+
+    await user.click(screen.getByRole("button", { name: ACTION }));
+    const dialog = await screen.findByRole("dialog");
+
+    expect(
+      within(dialog).getByText(
+        /A report to CERT-In still waiting for a yes to be mailed to the board is not mailed while it stays set aside\./,
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("shows the server's sentence and keeps the reason when it is refused", async () => {
-    const sentence = "CERT-In can be set aside only once the incident is validated as No";
+    const sentence = "A report to CERT-In has been filed, so it stands";
     server.use(
       http.post(`${API}/breaches/${BREACH}/cert-in/not-applicable`, () =>
-        HttpResponse.json({ error: { code: "cert_in_not_validated_no", message: sentence } }, { status: 409 }),
+        HttpResponse.json({ error: { code: "report_filed", message: sentence } }, { status: 409 }),
       ),
     );
     const { user } = render(<DutiesCard breach={breach()} />);
@@ -206,6 +224,7 @@ describe("the board's duty", () => {
         duty_state: "outstanding",
         blocked_by: null,
         goes_to_regulator: false,
+        holds_mail: false,
         versions: [
           {
             report_uuid: "99999999-9999-4999-8999-999999999999",
@@ -213,9 +232,10 @@ describe("the board's duty", () => {
             title: "Report to the organisation's board",
             version: 1,
             state: "draft",
+            superseded: false,
             sections: [SECTION],
             evidence: [],
-            mail: { delivered: 0, queued: 0, failed: 0, stale: 0, retryable: 0, recipients: [] },
+            mail: { delivered: 0, queued: 0, failed: 0, unsent: 0, held: 0, stale: 0, retryable: 0, recipients: [] },
           },
         ],
       },
@@ -231,7 +251,10 @@ describe("the board's duty", () => {
     });
 
   it("keeps an open editor through a colleague's No", async () => {
-    server.use(http.get(`${API}/breaches/${BREACH}/reports`, () => HttpResponse.json(documents)));
+    server.use(
+      http.get(`${API}/breaches/${BREACH}/reports`, () => HttpResponse.json(documents)),
+      http.get(`${API}/breaches/${BREACH}/reports/recipients`, () => HttpResponse.json({ recipients: [] })),
+    );
     const { user, rerender } = render(<DutiesCard breach={board("outstanding")} />);
 
     await user.click(await screen.findByRole("button", { name: "Notify Organization Board" }));
@@ -242,5 +265,56 @@ describe("the board's duty", () => {
 
     expect(within(screen.getByRole("dialog")).getByLabelText(/what happened/i)).toHaveValue("A list, typed");
     expect(screen.queryByRole("button", { name: "Notify Organization Board" })).not.toBeInTheDocument();
+  });
+});
+
+describe("validation", () => {
+  const recorded = (obligations: BreachDuty[]) =>
+    breach({ determination: "no", breach_reference: "BR-2026-0042", determinations: [], obligations });
+  const board = (state: BreachDuty["state"]) =>
+    duty({ duty: "org_board", label: "Report to the organisation's board", state });
+  const intimation = (state: BreachDuty["state"]) =>
+    duty({ duty: "board_intimation", label: "Board - initial intimation", state });
+
+  async function validateYes(before: Breach, after: Breach) {
+    server.use(http.post(`${API}/breaches/${BREACH}/determinations`, () => HttpResponse.json(after)));
+    const { user } = render(<DeterminationCard breach={before} />);
+    await user.type(screen.getByLabelText(/^Became aware at/), "2026-11-06T09:30");
+    await user.type(screen.getByLabelText(/^Reasoning/), "Names were exposed after all");
+    await user.click(screen.getByRole("button", { name: "Record the validation" }));
+  }
+
+  it("names the duties a later yes found already done, and says nothing was sent again", async () => {
+    await validateYes(
+      recorded([board("not_applicable"), intimation("not_applicable"), duty()]),
+      recorded([board("done"), intimation("done"), duty()]),
+    );
+
+    await vi.waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith(
+        "Validation recorded",
+        "A personal data breach. Done while it was set aside, so done now: Report to the organisation's board; Board - initial intimation. Nobody was mailed.",
+      ),
+    );
+  });
+
+  it("names only those that went from set aside to done", async () => {
+    await validateYes(
+      recorded([board("not_applicable"), intimation("not_applicable"), duty({ state: "done" })]),
+      recorded([board("outstanding"), intimation("done"), duty({ state: "done" })]),
+    );
+
+    await vi.waitFor(() =>
+      expect(toast.success).toHaveBeenCalledWith(
+        "Validation recorded",
+        "A personal data breach. Done while it was set aside, so done now: Board - initial intimation. Nobody was mailed.",
+      ),
+    );
+  });
+
+  it("says no more than the outcome when a yes found nothing done", async () => {
+    await validateYes(recorded([board("not_applicable")]), recorded([board("outstanding")]));
+
+    await vi.waitFor(() => expect(toast.success).toHaveBeenCalledWith("Validation recorded", "A personal data breach"));
   });
 });

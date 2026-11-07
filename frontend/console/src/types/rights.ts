@@ -559,6 +559,47 @@ export interface RightsRequestDetail extends RightsRequest {
   attachments: RequestAttachment[];
   /** The standard words a ticket asks; each holder's instruction starts here. */
   default_instruction: string | null;
+  /** Reports the requester sent through the public link that an office
+   *  dismissed, found by their proved email once identity is verified (0065).
+   *  Null for a role that does not read the intake: only the DPO and Legal. */
+  public_reports: RightsPublicReports | null;
+}
+
+/** One dismissed report from the public link that names the requester. Never
+ *  the office's reason, nor who dismissed it. */
+export interface RightsPublicReport {
+  report_uuid: Uuid;
+  reference: string;
+  /** Sealed; null once erased. */
+  reporter_name: string | null;
+  /** Sealed; null once erased. */
+  reporter_email: string | null;
+  /** Sealed. */
+  title: string;
+  received_at: Timestamp;
+  dismissed_at: Timestamp;
+  /** Erased under this request. */
+  reporter_erased_at: Timestamp | null;
+}
+
+/** What a request found of the reports the requester sent through the public
+ *  link, and whether they may be erased now: the server's answer, so the page
+ *  holds no copy of the rule. */
+export interface RightsPublicReports {
+  /** Whether the reports were looked for at all. */
+  looked: boolean;
+  /** Why not, in the server's words. */
+  not_looked_because: string | null;
+  /** Up to fifty still naming the requester, oldest first, then those erased
+   *  under this request. */
+  items: RightsPublicReport[];
+  /** Every report still naming the requester, not only those listed. */
+  total: number;
+  /** How many were erased under this request. */
+  erased: number;
+  may_erase: boolean;
+  /** Why they may not be erased now, in the server's words. */
+  erase_blocked_by: string | null;
 }
 
 /** Her own request. Nothing here is ours. */

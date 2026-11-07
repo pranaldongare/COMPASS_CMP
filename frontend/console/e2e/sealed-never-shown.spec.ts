@@ -40,6 +40,8 @@ const PAGES: { path: string; name: string }[] = [
   { path: "/consents", name: "the consent register" },
   { path: "/requests", name: "the rights requests" },
   { path: "/audit", name: "the audit trail" },
+  // The board's names and addresses, and who last made one mandatory (0064).
+  { path: "/breach-settings", name: "the breach settings" },
 ];
 
 for (const { path, name } of PAGES) {
@@ -65,6 +67,37 @@ for (const { path, name } of PAGES) {
     }
   });
 }
+
+test("a request's holders tab, with its reports from the public link, shows people, never ciphertext", async ({
+  page,
+}) => {
+  const watch = watchSealed(page);
+  // An erasure request if there is one: its holders tab carries the reports
+  // the requester sent through the public link (0065), names and all.
+  const listed = await page.request.get("/api/requests?type=erasure&limit=1");
+  expect(listed.status()).toBe(200);
+  const uuid = ((await listed.json()) as { items: Array<{ request_uuid: string }> })
+    .items[0]?.request_uuid;
+  if (!uuid) test.skip(true, "no erasure request to open");
+  await page.goto(`/requests/${uuid}#holders`);
+  await settle(page);
+
+  await expect(page.getByRole("tab", { name: /Holders/ })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect
+    .poll(() => page.locator("body").innerText(), {
+      message: "ciphertext rendered on the holders tab",
+    })
+    .not.toContain("SE::");
+  if (!watch.sawSealed()) {
+    test.info().annotations.push({
+      type: "note",
+      description: "no API response on the request carried a sealed value",
+    });
+  }
+});
 
 test.describe("editing an account", () => {
   // Only an administrator has the Edit control on the accounts list.
