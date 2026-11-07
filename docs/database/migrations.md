@@ -108,6 +108,8 @@ the [runbook](../operations/runbook.md).
 | `0061` | A breach ticket's date may move, with a reason: `breach_ticket_event` gains `date_before`, `date_after` and the kind `date_changed`, whose reason is required; `cmp_breach_ticket_read_only` now lets `answer_by` change, and only to what the latest `date_changed` event says. The kind moves no state. Raw SQL; the constraints go back `NOT VALID` on the way down |
 | `0062` | A reference outlives four digits: `cmp_next_number(seq, width)` pads as `lpad` did and keeps every digit, where `lpad` cut a value of 10000 or more to four and the next nine collided on the unique reference. `notice_template.template_code` defaults to it, and the `INC-` and `BR-` inserts call it. Numbers already issued stand; `RR-` numbers have six digits and are left. A function because a default may not hold a subquery. Raw SQL; the downgrade restores the `lpad` default |
 | `0063` | The breach tables held to their word: `cmp_app` loses what the triggers refuse, in the shape of 0036 (UPDATE, DELETE and TRUNCATE on `breach_report_delivery`; DELETE and TRUNCATE on `incident_report`, `breach_report`, `breach_report_section` and `breach_board_recipient`; INSERT, DELETE and TRUNCATE on `breach_settings`), skipped quietly if the role does not exist; `trg_breach_report_section_no_late_words` refuses a section for a finalised report; each `org_board` duty still outstanding on an incident whose latest determination is no is set aside by a `not_applicable` event citing that no, `recorded_by` NULL. Raw SQL; the downgrade restores the grants and drops the rule, and the events stay |
+| `0064` | Who a report goes to, and a CERT-In mark set aside at any time (2026-11-07, the product owner's answers, ADR 0037). `breach_board_recipient` gains `one_off`, an address a sender added for one report alone, never on the list (the partial unique index now leaves it out, and two CHECKs keep it unlisted, unremoved and never mandatory), and `mandatory`, which moves only with a `breach_board_recipient_event` (append-only: who and when), held by `trg_breach_board_recipient_read_only`, which also refuses a delete, a change to the address and a second removal. `breach_report_addressee` is who each finalised version went to, backfilled from every delivery's (report, address) before `breach_report_delivery_addressed`, a foreign key from each delivery to it, so nothing is mailed to anyone a version was not addressed to; an addressee for a finalised report is refused by trigger, and the rows are append-only and policed through `breach_report`. 0034's `breach_obligation_event_cites_determination` CHECK becomes `trg_breach_obligation_event_cites_determination`, BEFORE INSERT, which requires a determination on a not_applicable or reinstated event unless its duty is `cert_in`; no rows change. Grants in the shape of 0063. Raw SQL. The way down is refused once anybody has chosen anything - a one-off, a mark, or an addressed set with no delivery (a held report to CERT-In) - because the older code would read a one-off as on the list; otherwise it goes back as it was, but for the CHECK, which returns NOT VALID, so a CERT-In event written without a determination stays. Nobody should VALIDATE it |
+| `0065` | A dismissed report's reporter is found by a rights request, and erased (2026-11-07, ADR 0037). `incident_report` gains `reporter_email_hash`, the same blind index as `auth_user.email_hash`, and `reporter_erased_at`, `reporter_erased_by` and `reporter_erased_request_id`; `reporter_name` and `reporter_email` may be NULL, but only together with the index and only by an erasure, which only a dismissed report allows (three CHECKs), with a partial index on the hash over dismissed reports. **The backfill runs in Python**, as 0028's and 0030's did: each address is opened through the key service and its index written back, with `trg_incident_report_outcome_once` set aside for that transaction. A key service that cannot be reached fails the migration, since a half-filled index silently misses rows; a value in the clear is hashed as it stands. `cmp_incident_report_outcome_once` is replaced under its own name, so reseal and the catalogue test read it as before: it lets a dismissed, unerased report be blanked once and changes nothing else. No grants change. The way down is refused once anybody has been erased, since going down would need their name and address back |
 
 ## What 0004 fixed
 
@@ -190,7 +192,9 @@ Three things about it belong here rather than only in the runbook:
 - It refuses to run with `DKMS_ENABLED=false`.
 - For a table whose trigger refuses an UPDATE - the append-only evidence
   tables, `legal_hold`'s fixed reason, and the breach register and its
-  tickets, listed in `APPEND_ONLY` in `scripts/reseal.py` - it disables that
+  tickets, and since 0064 the organisation's board's list
+  (`trg_breach_board_recipient_read_only`, which refuses a change to a sealed
+  name or address), listed in `APPEND_ONLY` in `scripts/reseal.py` - it disables that
   trigger for the length of the column's transaction and re-enables it before
   the commit. That needs the table owner: the application role cannot
   `ALTER TABLE`, and 0003 revoked its `UPDATE` on the evidence tables. The
@@ -200,6 +204,11 @@ Three things about it belong here rather than only in the runbook:
   [ADR 0002](../decisions/0002-evidence-enforced-in-the-database.md).
 - It works one transaction per column, so a table being resealed is locked
   against writes until that column is done.
+- A column with a blind index beside it gets its index written in the same
+  statement, of the kind `INDEX_KIND` names. `message_copy.address` had no kind
+  there until 2026-11-07, so a plaintext copy address would have stopped the run
+  with a `KeyError`; it and 0065's `incident_report.reporter_email` are hashed as
+  an email, as the code that writes them hashes them.
 
 How to run it is in the [runbook](../operations/runbook.md).
 

@@ -24,14 +24,48 @@ as a release yet.
   a time. A breach ticket takes a document when it is raised, and its **Resolve
   by** date may be moved by its holder or the office, with a reason, on the
   trail. Migrations 0058 to 0063.
-- **A CERT-In mark made in error can be set aside** (2026-11-07, ADR 0037, for
-  the product owner to confirm). A *no* leaves CERT-In alone, and removing the
+- **Who a report goes to** (2026-11-07, the product owner's answers, ADR 0037,
+  migration 0064). The window that finalises a report, from **Notify Organization
+  Board** or any kind's **Finalise**, lists every name and address on the board's
+  list (`GET /breaches/{uuid}/reports/recipients`), all ticked: the sender may
+  untick any that is not mandatory, or add an address for that report alone, and
+  the saved list does not change. Who each version went to is frozen with it
+  (`breach_report_addressee`), and every delivery names one of them by foreign
+  key. An entry on the list may be made **Mandatory** under **Breach settings**
+  (`PUT /breach-settings/board-recipients/{uuid}/mandatory`), by the administrator,
+  the DPO or the Legal PoC: it goes with every report and cannot be taken off
+  until it is made optional again (409 `recipient_mandatory`). Every addition,
+  removal, mark and unmark mails every active DPO and Legal PoC account,
+  `breach_board_list_changed`, naming who did it and the address and no breach; a
+  change that mail cannot be queued for is refused (503).
+- **A report to CERT-In finalised before a yes is held for it** (2026-11-07, ADR
+  0037). Its addresses are recorded and nothing is queued; the first validation
+  of *yes* sends the newest version, unchanged, to them, less any taken off the
+  list since (`breach.report_released`). A *no* keeps it waiting, and an incident
+  that closes on a *no* never sends it. Set aside at that *yes*, it is withheld
+  (`breach.report_withheld`) and goes only when a person sends it once CERT-In is
+  marked again. Try again on a held version is 409 `report_held`.
+- **A dismissed reporter's rights** (2026-11-07, ADR 0037, migration 0065). An
+  access or erasure request finds the reports its subject sent through the public
+  link that an office dismissed, by the blind index of their proved email, once
+  identity is verified: the request's detail serves them as `public_reports` to the
+  DPO and the Legal PoC, and **Reports from the public link** on the Holders tab
+  lists them. Access returns the reporter's name, email and words, never the
+  office's reason or who dismissed it. On an erasure request that has started, an
+  officer erases them (`POST /requests/{uuid}/public-reports/erase`): the name, the
+  email and the index are blanked, and the number, the words, the reason and who
+  dismissed it stay; a legal hold stops it, and **Complete** waits for it. A
+  request with no account matching such a report's address is sent its code at
+  that address. Claimed reports are not reached, a documented exception.
+- **A CERT-In mark made in error can be set aside** (2026-11-07, ADR 0037,
+  confirmed by the product owner). A *no* leaves CERT-In alone, and removing the
   by-hand route took away the only way out of a false alarm, which could then
   close only by mailing the board and filing proof of a mail nobody sent. **Not
-  reportable to CERT-In** sets the duty aside with a sealed reason, once the
-  latest validation is *no* (`POST /breaches/{uuid}/cert-in/not-applicable`). It
+  reportable to CERT-In** sets the duty aside with a sealed reason, at any time,
+  whatever validation says (`POST /breaches/{uuid}/cert-in/not-applicable`). It
   tells nobody. Marking it again brings it back on the same clock; a later *yes*
-  does not.
+  does not. A CERT-In duty's events need not cite a determination any more: a
+  trigger takes 0034's CHECK's place (migration 0064).
 - **Offices as tenants** (ADR 0032): every governance record names its office
   (`rnd`, `hr`); an officer's connection is set to its office and
   PostgreSQL's row-level security refuses every other office's rows; two
@@ -997,6 +1031,28 @@ as a release yet.
 - `CONTRIBUTING.md`.
 
 ### Changed
+- **A CERT-In mark is set aside whatever validation says** (2026-11-07, the
+  product owner's answer, ADR 0037). It was first allowed only once the latest
+  validation was *no*; 409 `cert_in_not_validated_no` is gone, and a mark made
+  again cites no determination.
+- **Try again tries only a version's own addresses** (2026-11-07, ADR 0037): those
+  it has not reached, a mail lost, or one never queued. An address added to the
+  list since is reached by a new version, not by Try again, and an empty list no
+  longer refuses the press (no 409 `no_board_recipients` here).
+- **Finalising a report takes a body** (2026-11-07, ADR 0037):
+  `{recipients, extra}`, whom to send to. An empty body, or none, is 422. New
+  refusals: 409 `recipient_not_listed` and `recipient_mandatory`, 422 on
+  `recipients` and on `extra.N.email`; an empty list with an address added is
+  allowed. A client of the old call has to change.
+- **A yes finds what was done while a no had set a duty aside** (2026-11-07, ADR
+  0037, the product owner's answer). The board's own report that reached it
+  completes the board's duty at the *yes*, without Try again, from the first
+  version that reached somebody; a regulator's report filed meanwhile completes
+  its duty from the first filing recorded. Nothing is mailed.
+- **Taking an address off the board's list, and adding one, mail both officers**
+  (2026-11-07, ADR 0037), and are refused while the broker is down (503); a
+  mandatory entry cannot be taken off (409 `recipient_mandatory`), and a name
+  carrying the sealed prefix is refused (422 on `full_name`).
 - **The shared intake is read a page at a time** (2026-11-07, ADR 0037).
   `GET /breaches/intake` now answers `{items, total, limit, offset}`, the oldest
   first, each report by who sent it and its title, and
@@ -1244,6 +1300,14 @@ as a release yet.
   completes only by filing a report with both proofs.
 
 ### Fixed
+- **A report sent before a later yes's awareness can be recorded as sent with its
+  true date** (2026-11-07, logic-4). Filing was checked against the duty's clock,
+  which a *yes* after a *no* starts again at its own awareness, and refused a true
+  date on a field the form does not have. It is now refused only in the future or
+  before the incident was first noticed (422 on `filed_at`).
+- **`scripts/reseal.py` knows the blind-index kind of a copy address**
+  (`message_copy.address`, and 0065's `incident_report.reporter_email`): a
+  plaintext copy address stopped a reseal with a `KeyError`.
 - **A breach report is sent once, and what happened to it is not lost**
   (2026-11-07, ADR 0037). A task claims the report and the address in Redis before
   it sends, as a notice's does, so two tasks together send once. A mail that has

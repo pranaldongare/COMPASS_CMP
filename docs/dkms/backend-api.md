@@ -243,7 +243,9 @@ breach report's PDF.
 | `rights/service._tell_holder()`, `_tell_office()`; `opened_brief()` in `issue_tickets` and `reassign_holder` | The author's name on a ticket message; the subject's name and contacts in a brief | The prose of the mail |
 | `exchange/service` — `_project_export`, `render` | The people in the export CSV | The file is read outside the platform |
 | `api/routers/v1/audit.export_csv()` | Actor and subject names, and an entity label that names a person, in the audit CSV - one `unseal_strings` call for the file | As above: the DPO's copy of the trail is read outside the platform |
-| `rights/package.build_response()` | What is released to the data principal | As above |
+| `rights/package.build_response()` | What is released to the data principal, and since 0065 the reports they sent through the public link that an office dismissed (`public_reports.for_package()`) | As above |
+| `rights/public_reports.address_hashes()`, `reporter_address_for()` | The `submitted_contact` of a request with no account | It is hashed as an email to find the dismissed reports it sent, or the stored address a code goes to (0065); never served |
+| `rights/service.respond()` | A request with no account's reports from the public link (`public_reports.for_package()`) | Its answer goes by mail, and the digest lists each report by number, dates and title |
 | `rights/service.nomination_from_token()` → `GET /rights/nominations/{token}` | `principal_name`, `nominee_name` | **A response.** The nominee has no session, and a portal's `/dkms/decrypt` refuses a request with neither a `cmp_session` nor a `cmp_ticket` cookie. The token is single-purpose, expiring and hashed at rest; the contacts are served masked |
 | `rights/reach.masked_address()` → `GET /holder-tickets/{token}` | A holder's contact, served masked | **The other response.** The outside holder has no cookie yet when the link first opens, so the page is told where the code will go, masked |
 | `rights/reach.address()`; `reach.place()` | A holder's contact and name | The code and the ticket's mail go to that address; an internal address is matched to, or made, a console login |

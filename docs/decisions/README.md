@@ -25,14 +25,14 @@ one stays and points forward.
 | [0016](0016-personal-data-sealed-by-a-separate-key-service.md) | Personal data is sealed by a separate key service, and opened only where a person reads it | accepted; amended 2026-10-08 |
 | [0017](0017-lookup-by-keyed-hash-and-name-ngrams.md) | Sealed values are found by keyed hash, and names by hashed runs | accepted |
 | [0018](0018-pip-and-a-virtualenv-no-containers.md) | pip and a virtualenv; nothing ships as a container | accepted |
-| [0019](0019-erasure-reaches-every-store-but-the-record.md) | Erasure reaches every store that holds an item, and never the record of what happened | accepted; amended 2026-10-01, 2026-10-08 |
+| [0019](0019-erasure-reaches-every-store-but-the-record.md) | Erasure reaches every store that holds an item, and never the record of what happened | accepted; amended 2026-10-01, 2026-10-08, 2026-11-07 (a dismissed report from the public link, by ADR 0037) |
 | [0020](0020-cross-border-transfer-checked-at-export.md) | A transfer is checked at export, and an unknown place is refused | accepted |
 | [0021](0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md) | A breach is recorded and its duties tracked; the platform never submits | accepted; amended 2026-10-05, 2026-10-07, 2026-11-06 |
 | [0022](0022-an-incident-first-and-a-breach-on-a-yes.md) | An incident is logged first, and a breach is recorded on a yes; the organisation's board is told within 30 minutes | accepted; amended 2026-10-06, 2026-10-08; its board clause superseded 2026-11-06 |
 | [0023](0023-breach-tickets-and-breach-only-logins.md) | Breach tickets reach internal staff only, through breach-only temporary logins that end with the breach | accepted; amended 2026-10-06, 2026-11-06; extended 2026-10-08 |
 | [0024](0024-a-rights-tickets-holder-is-reached-three-ways.md) | A rights ticket's holder is reached three ways, and an outside holder answers by a link and a code, never an account | accepted |
 | [0025](0025-a-holders-answer-counts-once-accepted-and-the-server-owns-the-moves.md) | A holder's answer counts only once the Privacy Office accepts it, and the server owns a ticket's moves | accepted |
-| [0026](0026-a-rights-request-is-access-erasure-or-a-grievance-about-everything.md) | A rights request is access, erasure or a grievance, about everything a person has | accepted |
+| [0026](0026-a-rights-request-is-access-erasure-or-a-grievance-about-everything.md) | A rights request is access, erasure or a grievance, about everything a person has | accepted; amended 2026-11-07 (everything held includes a dismissed report from the public link, by ADR 0037) |
 | [0027](0027-a-breach-can-reach-people-with-no-account.md) | A breach can reach people with no account: contacts from a list sent to the office | accepted |
 | [0028](0028-a-notice-template-is-copied-never-served.md) | A notice template is a separate record, copied into a project's draft, never approved or served | accepted |
 | [0029](0029-copies-and-files-never-on-a-code-a-link-or-her-own-record.md) | The office copies emails and attaches files, never on a code, a link or a person's own record | accepted; extended 2026-10-08; amended 2026-11-06 |
@@ -42,7 +42,7 @@ one stays and points forward.
 | [0033](0033-hr-consent-is-governed-by-an-approved-template-version.md) | HR consent is governed by a template version Legal approves once; an activity inherits it and needs no approval of its own | proposed 2026-10-27 |
 | [0034](0034-an-employee-link-signs-in-through-the-organisations-sso.md) | An employee consent link signs in through the organisation's SSO, and the account is matched on the employee ID | proposed 2026-10-27 |
 | [0035](0035-a-public-request-reaches-the-inside-only-when-the-inside-collects-it.md) | A public request reaches the inside only when the inside collects it from a queue, sealed | proposed 2026-10-23 |
-| [0037](0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md) | A public report waits apart, the organisation's board is told on a yes by the platform's mail, and a regulator's duty completes only with proof | accepted |
+| [0037](0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md) | A public report waits apart, the organisation's board is told on a yes by the platform's mail, and a regulator's duty completes only with proof | accepted; amended 2026-11-07 (a CERT-In mark set aside, and the review), and again 2026-11-07 (the product owner's six answers: who a report goes to, CERT-In at any time, what a yes finds done, a dismissed reporter's rights, a report to CERT-In held for a yes) |
 
 ## Writing one
 

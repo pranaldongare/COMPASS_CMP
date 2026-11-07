@@ -48,9 +48,18 @@ Paths are under `backend/api/src/cmp/`.
   does not produce the numbered house style.
 - **`backend/api/README.md`** still describes `seed.py` as "a user per role";
   since 2026-09-25 it creates only the administrator.
-- **The schema reference README** quotes 93 foreign keys in one place and 102
-  in another (102 is right), and `generate-schema-docs.py` does not write
-  `schema.sql` though its docstring says it does.
+- **The personal-data inventory cannot see the rights trail.**
+  `GET /requests/{request_uuid}/trail` serves the request's trail with the sealed
+  names of who acted, and answers `list[dict]` with no response model, so
+  `docs/tools/personal-data-scan.py` finds no field to list and
+  [personal-data.md](../domain/personal-data.md#keeping-this-document-true) leaves
+  it out; so do `/requests/{request_uuid}/linked/trail` and the principal's
+  `/me/requests/{request_uuid}/trail`, which answer through the same `_trail` in
+  `api/routers/v1/rights.py`. The HTTP suite's coverage test fails when the suite
+  calls a route that answers with a sealed value the documentation does not list,
+  which is how it was found (2026-11-08);
+  `tests/http/test_19_dismissed_reporter_rights.py` does not call it for that
+  reason. A response model on the three routes closes it.
 
 When you fix one of these, fix the document in the same commit and remove the
 line here.

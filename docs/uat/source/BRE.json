@@ -150,7 +150,7 @@
       },
       {
         "action": "Change 'Submitted at' to one hour before 'First noticed' and click 'Record'.",
-        "expected": "The message 'Not recorded' with 'A submission cannot come before its clock started' appears."
+        "expected": "The message 'Not recorded' with 'It cannot have been sent before the incident was first noticed' appears."
       },
       {
         "action": "Change 'Submitted at' to today, 5 minutes before now, and click 'Record'.",

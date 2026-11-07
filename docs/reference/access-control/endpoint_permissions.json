@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 391,
-  "registered_business_and_system_operations": 394,
+  "documented_operations": 394,
+  "registered_business_and_system_operations": 397,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -6266,7 +6266,7 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "Anyone may submit without an account. Contact verification and subsequent office checks govern processing; submission is not access to another person’s records."
+        "Anyone may submit without an account. Contact verification and subsequent office checks govern processing; submission is not access to another person’s records. A contact with no account that is the address of a report an office dismissed, not yet erased, is sent a code at the address stored on the report, never the one typed; the reply is the same neutral sentence either way (0065)."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/rights.py#L212",
@@ -6302,7 +6302,7 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "The request reference/contact verification code must match; no session required."
+        "The request reference/contact verification code must match; no session required. Accepts, for a request with no account, the code sent to a dismissed reporter's stored address (0065)."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/rights.py#L235",
@@ -7417,6 +7417,7 @@
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "`public_reports`, the reports from the public link that an office dismissed and that the requester sent, found by the blind index of their proved email addresses, is served to the DPO and the Legal PoC only, once identity is verified on an access or erasure request not confined to one consent; the administrator on a request about the office is served null. (0065, ADR 0037 as amended 2026-11-07)",
         "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
@@ -8512,7 +8513,7 @@
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
-        "`complete` is refused (response_partial_required) while a holder has not returned or a correction or erasure has not been carried out with evidence; the reason is served on the request as complete_blocked_by (S2-02).",
+        "`complete` is refused (response_partial_required) while a holder has not returned or a correction or erasure has not been carried out with evidence, or while a dismissed report from the public link still carries the requester's name and email (counted, never named); the reason is served on the request as complete_blocked_by (S2-02, 0065). The package carries those reports, without the office's reason or who dismissed it, and a request with no account has them listed in the mail's digest by number, dates and title.",
         "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
@@ -8895,6 +8896,7 @@
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "For a request with no account whose contact is the address of a dismissed, unerased report from the public link, the code goes to the address stored on the report, never the one typed (0065).",
         "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
@@ -10435,7 +10437,7 @@
       },
       "conditions": [
         "The officers' alone, on their own office's request: the DPO and the Legal PoC. RightsWriter lets the administrator through on a request about the office, and the service answers 404, as the register of incident reports is hidden from them. Every other role is 403.",
-        "Names no report: the dismissed reports still naming her are found again by the blind index of her proved addresses (the account's email, its second email once proved, or a request with no account's email), so a caller cannot reach another person's. Blanks the name, the email and its index on each in one statement; the number, the words, the reason and who dismissed it stay. 409 not_erasure, request_closed, request_not_started or legal_hold; 503 when the key service cannot open a request with no account's contact. Nothing left to erase is a 200 with no trail row. (0065, ADR 0037, amended 2026-11-07)",
+        "Names no report: the dismissed reports still naming the requester are found again by the blind index of their proved addresses (the account's email, its second email once proved, or a request with no account's email), so a caller cannot reach another person's. Blanks the name, the email and its index on each in one statement; the number, the words, the reason and who dismissed it stay. 409 not_erasure, request_closed, request_not_started or legal_hold; 503 when the key service cannot open a request with no account's contact. Nothing left to erase is a 200 with no trail row. (0065, ADR 0037, amended 2026-11-07)",
         "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
@@ -10762,7 +10764,7 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Yes needs the time of awareness and creates the three DPDP duties, and the organisation's board's, due thirty minutes from the validation (ADR 0037); no sets aside those not done. Refused on a closed breach (409 `breach_closed`). (S3-01)",
+        "The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Yes needs the time of awareness and creates the three DPDP duties, and the organisation's board's, due thirty minutes from the validation (ADR 0037); no sets aside those not done. On a yes, a duty it brings back whose work was done while a no had it aside is done at once from that work, and nobody is mailed: the organisation's board's from the first of its own reports to have reached the board, the initial intimation's and the 72-hour report's from the first filing recorded. The first yes also sends a report to CERT-In whose mail to the board was held for it, unless CERT-In is set aside then. Refused on a closed breach (409 `breach_closed`). (S3-01, ADR 0037 as amended 2026-11-07)",
         "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
@@ -10888,7 +10890,7 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Once per breach (409 `cert_in_marked`); due six hours from detection. Marked again after it was set aside, the duty comes back on that same clock, citing the latest determination. (S3-01, ADR 0037)",
+        "The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Once per breach (409 `cert_in_marked`); due six hours from detection. Marked again after it was set aside, the duty comes back on that same clock; the event cites no determination, since there may be none yet (0064). (S3-01, ADR 0037)",
         "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
@@ -10902,7 +10904,7 @@
       "module": "breaches",
       "method": "POST",
       "path": "/breaches/{breach_uuid}/cert-in/not-applicable",
-      "summary": "Set aside a CERT-In mark made in error, once validated No; nobody is told",
+      "summary": "Set aside a CERT-In mark made in error, whatever validation says; nobody is told",
       "function": "set_aside_cert_in",
       "operation_id": "set_aside_cert_in_breaches__breach_uuid__cert_in_not_applicable_post",
       "in_openapi": true,
@@ -10931,7 +10933,7 @@
       },
       "conditions": [
         "The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one.",
-        "A CERT-In mark made in error, set aside with a required reason (at most 8,000 characters), sealed on the duty's event. Only once the latest determination is No, which the event cites (409 `cert_in_not_validated_no`). The duty must be outstanding (409 `duty_not_outstanding`, or `no_such_duty` if it was never marked), no report to CERT-In filed (409 `report_filed`) and the breach open (409 `breach_closed`). Nobody is told, and the organisation's board's duty is left alone. The trail records that a reason was given. A decision for the product owner to confirm. (ADR 0037)",
+        "A CERT-In mark made in error, set aside with a required reason (at most 8,000 characters), sealed on the duty's event, whatever validation says: before any validation, pending, yes or no; the event cites no determination (0064). The duty must be outstanding (409 `duty_not_outstanding`, or `no_such_duty` if it was never marked), no report to CERT-In filed (409 `report_filed`) and the breach open (409 `breach_closed`). Nobody is told, and validation, the organisation's board's duty and the DPDP duties are left alone; a report to CERT-In whose mail to the board waits for a yes is not sent at that yes while the mark is set aside. The trail records that a reason was given. (ADR 0037, confirmed and widened by the product owner 2026-11-07)",
         "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
@@ -13151,7 +13153,7 @@
       },
       "conditions": [
         "The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one.",
-        "The reports an office dismissed (0058, ADR 0037), newest first and the latest 200: who sent each, the officer who dismissed it and why. Both officers read all of them whichever office dismissed it, so a report that was the other office's can be raised. A report carries no office and no policy. The reporter's name and email, the title and the reason are sealed."
+        "The reports an office dismissed (0058, ADR 0037), newest first and the latest 200: who sent each, the officer who dismissed it and why. Both officers read all of them whichever office dismissed it, so a report that was the other office's can be raised. A report carries no office and no policy. The reporter's name and email, the title and the reason are sealed. Since 0065 a report whose reporter was erased under a rights request has no name or email (null) and carries `reporter_erased_at`, never the request, which is one office's."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
@@ -13505,7 +13507,7 @@
       "module": "breaches",
       "method": "POST",
       "path": "/breaches/{breach_uuid}/reports/{report_uuid}/finalise",
-      "summary": "Freeze a report and mail the organisation's board; never a regulator",
+      "summary": "Freeze a report and mail the addresses chosen; a CERT-In report before a yes waits for it; never a regulator",
       "function": "finalise_report",
       "operation_id": "finalise_report_breaches__breach_uuid__reports__report_uuid__finalise_post",
       "in_openapi": true,
@@ -13534,7 +13536,7 @@
       },
       "conditions": [
         "The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one.",
-        "Freezes the words and mails the organisation's board. Refused with a required section empty (422 naming each) or with nobody on the board's list (409 `no_board_recipients`). A report of kind org_board completes that duty when the mail lands, naming who was reached, and a mail that reaches nobody leaves it outstanding; every other kind goes to the board for its information, a report to CERT-In even before a yes. Nothing goes to a regulator (ADR 0021). (0059, ADR 0037)",
+        "Freezes the words and mails the addresses chosen. The body is required: `recipients`, the entries on the board's list to send to (at most 200), and `extra`, addresses for this report alone (at most 20, each an email and an optional name); an extra already on the list is that entry, and two alike are one. Who the version goes to is frozen with it. Refused, in this order: a closed breach, a finalised report or one not yet allowed (409 `breach_closed`, `report_finalised`, `breach_not_recorded`); a required section empty (422 naming each); an entry taken off the list since (409 `recipient_not_listed`, the entries in `details.gone`); an extra that is not an address, or a name carrying the sealed prefix (422 on `extra.N.email` or `extra.N.full_name`); a mandatory entry left out (409 `recipient_mandatory`, the entries in `details.missing`); an empty list and no extra (409 `no_board_recipients`); entries on the list but none chosen and no extra (422 on `recipients`). A report of kind org_board completes that duty when the mail lands, naming who was reached, and a mail that reaches nobody leaves it outstanding; every other kind goes to the board for its information. A report to CERT-In finalised before the breach is recorded is held: who it goes to is recorded, nothing is queued, and it goes at the first yes, never if none comes. Nothing goes to a regulator (ADR 0021). (0059, 0064, ADR 0037 as amended 2026-11-07)",
         "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
@@ -13548,7 +13550,7 @@
       "module": "breaches",
       "method": "POST",
       "path": "/breaches/{breach_uuid}/reports/{report_uuid}/resend",
-      "summary": "Mail the report again to every address it has not reached",
+      "summary": "Mail the report again to the addresses it was sent to that it has not reached",
       "function": "resend_report",
       "operation_id": "resend_report_breaches__breach_uuid__reports__report_uuid__resend_post",
       "in_openapi": true,
@@ -13577,7 +13579,7 @@
       },
       "conditions": [
         "The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one.",
-        "After finalising (409 `report_not_finalised`). An `org_board` report's duty is re-read first, whatever follows. Queues a new attempt for every address on the list whose last one failed or stayed queued fifteen minutes, and the first for an address added since; an address the report has reached, whichever row of the list it was mailed under, is left, and one taken off the list is never mailed. Refused with nobody on the list (409 `no_board_recipients`), on a version a later finalised one replaced (409 `report_superseded`) and on a report to CERT-In once that duty is set aside (409 `breach_not_recorded`), unless the re-read completed the duty, which answers 200. The answer adds `queued`, how many this press queued. (0059, ADR 0037)",
+        "After finalising (409 `report_not_finalised`). An `org_board` report's duty is re-read first, whatever follows. Queues a new attempt for each address this version was sent to whose last one failed or stayed queued fifteen minutes, and the first for one never queued (a report to CERT-In withheld at the first yes and marked again since); never an address added to the list since, which the version was not addressed to. An address the report has reached, whichever row of the list it was mailed under, is left, and one taken off the list is never mailed. Refused on a report to CERT-In once that duty is set aside (409 `breach_not_recorded`), on a report to CERT-In whose mail waits for a yes (409 `report_held`) and on a version a later finalised one replaced (409 `report_superseded`), unless the re-read completed the duty, which answers 200. An empty list refuses nothing. The answer adds `queued`, how many this press queued. (0059, 0064, ADR 0037 as amended 2026-11-07)",
         "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
@@ -13663,7 +13665,7 @@
       },
       "conditions": [
         "The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one.",
-        "Records that a person sent it to the regulator: when, and the reference returned, which every report that discharges a duty needs (422). Refused without both proofs (409 `report_proof_missing`), before finalising, or dated before it. The only way a regulator's duty completes: `POST /breaches/{breach_uuid}/obligations/{duty}/complete` is gone. The platform sends nothing. (0059, ADR 0037)",
+        "Records that a person sent it to the regulator: when, and the reference returned, which every report that discharges a duty needs (422). Refused without both proofs (409 `report_proof_missing`), before finalising, or with `filed_at` in the future or before the incident was first noticed (422 on `filed_at`); never against the duty's clock, which a yes after a no starts later. Filed while a no has the duty aside, it completes nothing until the yes that brings the duty back, which completes it from the first filing recorded. The only way a regulator's duty completes: `POST /breaches/{breach_uuid}/obligations/{duty}/complete` is gone. The platform sends nothing. (0059, ADR 0037 as amended 2026-11-07)",
         "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
@@ -16183,7 +16185,7 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "Resource `breach_settings`, read and write for the administrator, the DPO and the Legal PoC (0058, ADR 0037): the administrator keeps it with the officers and sees no breach by it; every other role is answered 403. Who is told of a report from the public link, the roles that may be chosen, the addresses on the organisation's board (name and email sealed) and the public link."
+        "Resource `breach_settings`, read and write for the administrator, the DPO and the Legal PoC (0058, ADR 0037): the administrator keeps it with the officers and sees no breach by it; every other role is answered 403. Who is told of a report from the public link, the roles that may be chosen, the addresses on the organisation's board (name and email sealed) and the public link. Each entry on the board's list carries `mandatory`, and when and by whom the mark last changed (the name sealed); an address added for one report alone is never listed. (0064)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breach_settings.py",
@@ -16267,7 +16269,7 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "Resource `breach_settings`, read and write for the administrator, the DPO and the Legal PoC (0058, ADR 0037): the administrator keeps it with the officers and sees no breach by it; every other role is answered 403. Not an email address is 422; an address already listed, found by its blind index, is 409 `recipient_exists`. Name and email sealed. The trail records the change, never the address. One list, of no office: an address on it is mailed every report on either office's breaches, and ADR 0037 records that as the product owner's to revisit."
+        "Resource `breach_settings`, read and write for the administrator, the DPO and the Legal PoC (0058, ADR 0037): the administrator keeps it with the officers and sees no breach by it; every other role is answered 403. Not an email address is 422, and so is a name carrying the sealed prefix (on `full_name`); an address already listed, found by its blind index, is 409 `recipient_exists`. Name and email sealed. The trail records the change, never the address. Mails every active DPO and Legal account, naming the address and no breach; a broker that cannot be reached is 503 and nothing changes. One list, of no office: an address on it is offered to every report on either office's breaches, which the product owner kept on 2026-11-07 (ADR 0037)."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breach_settings.py",
@@ -16309,7 +16311,7 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "Resource `breach_settings`, read and write for the administrator, the DPO and the Legal PoC (0058, ADR 0037): the administrator keeps it with the officers and sees no breach by it; every other role is answered 403. The row stays, with who took it off and when: reports already mailed name it. Not listed is 404. The trail records the change, never the address. Whatever was still queued to the address, on either office's reports, goes to the worker to be recorded failed (`RecipientRemoved`), and the organisation's board's duty is re-read after it; the caller is served none of that."
+        "Resource `breach_settings`, read and write for the administrator, the DPO and the Legal PoC (0058, ADR 0037): the administrator keeps it with the officers and sees no breach by it; every other role is answered 403. The row stays, with who took it off and when: reports already mailed name it. Not listed, or an address added for one report alone, is 404; a mandatory entry is 409 `recipient_mandatory` until it is made optional. The trail records the change, never the address. Mails every active DPO and Legal account, naming the address and no breach; a broker that cannot be reached is 503 and nothing changes (0064). Whatever was still queued to the address, on either office's reports, goes to the worker to be recorded failed (`RecipientRemoved`), and the organisation's board's duty is re-read after it; the caller is served none of that."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breach_settings.py",
@@ -16579,6 +16581,11 @@
       "on": "2026-11-07",
       "commit": "Breach workflow (ADR 0037), uncommitted",
       "note": "Two operations added: POST /breaches/{breach_uuid}/cert-in/not-applicable and GET /breaches/intake/{report_uuid}. GET /breaches/intake is now a page. Rules changed on the CERT-In mark, a report's resend and taking an address off the board's list. GET /notifications gives the Legal PoC her office's breach ticket events; its row had the Legal PoC and the HR PoC as NO, which CurrentUser never said, and now reads COND for both. Evidence links point at HEAD."
+    },
+    {
+      "on": "2026-11-07",
+      "commit": "The product owner's six answers (ADR 0037 as amended), 8c770c1..bfbee4b",
+      "note": "Three operations added: GET /breaches/{breach_uuid}/reports/recipients, PUT /breach-settings/board-recipients/{recipient_uuid}/mandatory and POST /requests/{request_uuid}/public-reports/erase (the first two by 8c770c1, the third by 79120ab; bfbee4b made its summary name the requester). Rules changed: finalise takes a required body of whom to send to and holds a report to CERT-In for the first yes; resend tries only a version's own addresses and refuses a held one (409 report_held); the CERT-In set-aside runs whatever validation says (409 cert_in_not_validated_no is gone) and a re-mark cites no determination; a yes completes what was done while a no stood; filing is bounded by first noticed; the board list's add and remove mail both officers and refuse a mandatory removal; a rights request finds a dismissed report and its code may go to that report's address. Summaries of finalise, resend and the set-aside follow the code. Evidence links point at HEAD."
     }
   ]
 }

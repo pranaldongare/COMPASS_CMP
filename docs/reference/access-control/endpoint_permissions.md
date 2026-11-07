@@ -52,6 +52,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | PUT | `/breach-settings/intake-roles` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/breach-settings/board-recipients` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
 | DELETE | `/breach-settings/board-recipients/{recipient_uuid}` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
+| PUT | `/breach-settings/board-recipients/{recipient_uuid}/mandatory` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
 
 ## Breach tickets
 
@@ -117,6 +118,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | POST | `/breaches/intake/{report_uuid}/dismiss` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 | GET | `/breaches/{breach_uuid}/affected/options` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 | GET | `/breaches/{breach_uuid}/reports` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+| GET | `/breaches/{breach_uuid}/reports/recipients` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/breaches/{breach_uuid}/reports` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 | PUT | `/breaches/{breach_uuid}/reports/{report_uuid}` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/breaches/{breach_uuid}/reports/{report_uuid}/finalise` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
@@ -515,6 +517,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | POST | `/requests/{request_uuid}/verification/manual` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/requests/{request_uuid}/withdrawal` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/requests/{request_uuid}/scope/{item_uuid}/execute` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
+| POST | `/requests/{request_uuid}/public-reports/erase` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 | GET | `/requests/{request_uuid}/attachments/{attachment_uuid}` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/accept` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/reopen` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |

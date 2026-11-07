@@ -8,9 +8,9 @@ Each cell is **GET / non-GET endpoint counts** for which that role is eligible. 
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | [Audit](modules/audit.md) | 7 | 7 / 0 | 7 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 7 / 0 | 0 / 0 |
 | [Auth](modules/auth.md) | 15 | 3 / 12 | 3 / 12 | 3 / 12 | 3 / 12 | 3 / 12 | 3 / 12 | 3 / 12 | 3 / 12 | 0 / 0 | 0 / 0 |
-| [Breach settings](modules/breach_settings.md) | 4 | 1 / 3 | 1 / 3 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 1 / 3 | 0 / 0 |
+| [Breach settings](modules/breach_settings.md) | 5 | 1 / 4 | 1 / 4 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 1 / 4 | 0 / 0 |
 | [Breach tickets](modules/breach_tickets.md) | 7 | 3 / 4 | 3 / 4 | 3 / 4 | 3 / 4 | 3 / 4 | 3 / 4 | 0 / 0 | 3 / 4 | 3 / 4 | 3 / 4 |
-| [Breaches](modules/breaches.md) | 52 | 21 / 31 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 21 / 31 | 0 / 0 |
+| [Breaches](modules/breaches.md) | 53 | 22 / 31 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 22 / 31 | 0 / 0 |
 | [Consent](modules/consent.md) | 15 | 12 / 3 | 0 / 0 | 12 / 3 | 12 / 3 | 12 / 3 | 6 / 0 | 0 / 0 | 0 / 0 | 12 / 3 | 12 / 3 |
 | [Cross-border transfers](modules/cross_border_transfers.md) | 3 | 1 / 2 | 1 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
 | [Dashboard](modules/dashboard.md) | 3 | 2 / 1 | 2 / 0 | 2 / 1 | 2 / 0 | 2 / 0 | 2 / 0 | 2 / 0 | 2 / 0 | 1 / 0 | 1 / 0 |
@@ -27,7 +27,7 @@ Each cell is **GET / non-GET endpoint counts** for which that role is eligible. 
 | [Public Consent](modules/public_consent.md) | 9 | 3 / 5 | 3 / 5 | 3 / 5 | 3 / 5 | 3 / 5 | 3 / 5 | 3 / 6 | 3 / 5 | 0 / 0 | 0 / 0 |
 | [Public Information](modules/public_information.md) | 18 | 6 / 12 | 6 / 12 | 6 / 12 | 6 / 12 | 6 / 12 | 6 / 12 | 6 / 12 | 6 / 12 | 0 / 0 | 0 / 0 |
 | [Registry](modules/registry.md) | 29 | 10 / 13 | 12 / 13 | 8 / 4 | 8 / 4 | 8 / 4 | 8 / 0 | 1 / 0 | 0 / 0 | 3 / 4 | 0 / 0 |
-| [Rights](modules/rights.md) | 52 | 13 / 38 | 13 / 39 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 13 / 38 | 0 / 0 |
+| [Rights](modules/rights.md) | 53 | 13 / 39 | 13 / 39 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 13 / 39 | 0 / 0 |
 | [System](modules/system.md) | 8 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 0 / 0 | 0 / 0 |
 | [Tickets](modules/tickets.md) | 5 | 3 / 2 | 3 / 2 | 3 / 2 | 3 / 2 | 3 / 2 | 3 / 2 | 0 / 0 | 3 / 2 | 0 / 0 | 0 / 0 |
 | [Users](modules/users.md) | 17 | 6 / 0 | 7 / 10 | 2 / 0 | 2 / 0 | 2 / 0 | 2 / 0 | 0 / 0 | 0 / 0 | 5 / 0 | 1 / 0 |

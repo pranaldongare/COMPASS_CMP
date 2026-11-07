@@ -56,6 +56,7 @@ else was told.
 | A project's collector | The project's Data Collection Owner, as its site and source make it |
 | A rights ticket's holder | The responder named on the ticket: a staff account's email, a temporary login's, or - outside the organisation - the address on the ticket, sent the link only |
 | A breach's people | Each person listed: an account's email, or a contact from an uploaded list |
+| The organisation's board | The addresses chosen for that report when it was finalised: the board's list, less any the sender left out, with any added for that report alone (0064) |
 
 Addresses are sealed at rest and stay sealed in the task queue; only
 `deliver()` opens them, at the moment of sending.
@@ -87,6 +88,7 @@ set:
 |---|---|
 | An email carrying a **code or a link** - sign-in, sign-up, password reset, invitation, nomination, temporary access, an outside holder's ticket link or its code | A copy would hand somebody else the key to the account, or to the ticket |
 | An email to a **person about her own data** - a consent receipt, a withdrawal, a rights response, a breach notice | A copy would disclose her data to somebody she did not choose |
+| A report to the organisation's board, and the officers' mail when its list changes | A report goes to the addresses chosen for it and may name a person; the list-changed mail names an address on the list and is the officers' check on it (0064) |
 
 Copy addresses are sealed (`message_copy`, migration 0046), listed once per
 email, and every change is on the audit trail with the count - never an
@@ -109,8 +111,8 @@ something its recipient owns or that was written for it:
 |---|---|
 | Consent receipt | Her own consent record, `consent-record.txt`: what she agreed to and refused, when, how, against which notice version and language, and the fingerprint of the exact text she was shown |
 | Ticket message (to a rights ticket's holder) | The file the Privacy Office put on that message, for that holder |
-| A report to the organisation's board | The report as a PDF, to every address on the board's list |
-| A report for the regulator is ready | The report as a PDF, to every address on the board's list, for its information |
+| A report to the organisation's board | The report as a PDF, to the addresses chosen for it when it was finalised |
+| A report for the regulator is ready | The report as a PDF, to the addresses chosen for it, for its information; a report to CERT-In finalised before a *yes* waits for the first *yes* |
 
 Those two reports are the one place somebody else's personal data travels as an
 attachment. A report finalised for a regulator goes to the board with its
@@ -159,7 +161,7 @@ is recorded, because the principals' duty counts them.
 | [Projects](projects.md) | 5 | Every DPO (submitted), the owner (approved, sent back, closed), the collector (assigned) |
 | [Consent](consent.md) | 4 | The data principal; an HR activity's participants and respondents |
 | [Rights requests](rights.md) | 17 | The requester, the nominee, the holder's responder (inside the organisation in full; outside, the link and the code), every DPO, every administrator |
-| [Breaches](breach.md) | 12 | The people affected, the ticket holder, the breach office's officers, the organisation's board, and the reporter |
+| [Breaches](breach.md) | 13 | The people affected, the ticket holder, the breach office's officers, the officers of both offices when the board's list changes, the organisation's board, and the reporter |
 
 ## Adding an email
 

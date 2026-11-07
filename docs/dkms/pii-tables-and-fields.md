@@ -5,7 +5,7 @@ it, and what has to happen before it can be read. Written by hand from the
 field map the code itself uses
 ([`cmp/infrastructure/dkms/fields.py`](../../backend/api/src/cmp/infrastructure/dkms/fields.py)),
 which is the authority - where this page and that file disagree, the file is
-right - and checked against it on 2026-11-06, at migration 0063. The
+right - and checked against it on 2026-11-08, at migration 0065. The
 narrative version, every store and not only the database, is
 [personal-data.md](../domain/personal-data.md); the endpoints are in
 [the backend document](backend-api.md). Adding a column is
@@ -136,13 +136,13 @@ somebody - whose laptop, which account, who caused it.
 | `breach_contact` | `email` | EMAIL | Their email; blind index `email_hash` |
 | `breach_contact` | `mobile` | MOBILE | Their mobile; blind index `mobile_hash` |
 | `breach_upload` | `file_name` | FILE_NAME | The name an uploaded list came with |
-| `incident_report` | `reporter_name` | NAME | Who reported an incident through the public link (0058) |
-| `incident_report` | `reporter_email` | EMAIL | The address they proved by a code |
+| `incident_report` | `reporter_name` | NAME | Who reported an incident through the public link (0058); NULL once a dismissed report's reporter is erased under a rights request (0065) |
+| `incident_report` | `reporter_email` | EMAIL | The address they proved by a code; blind index `reporter_email_hash` (0065), by which a rights request finds a dismissed report; NULL, with the index, once erased |
 | `incident_report` | `title` | FREE_TEXT | What happened, in a line |
 | `incident_report` | `origin`, `discovery`, `affected_systems`, `incident_details`, `impact_scale`, `countries_involved`, `data_nature`, `subject_types`, `entities_involved`, `third_parties` | FREE_TEXT | What they said, on the same terms as the same words on `breach` |
 | `incident_report` | `dismissal_reason` | FREE_TEXT | Why it was not taken up |
 | `breach_report_section` | `body` | FREE_TEXT | A report's words, a section at a time (0059): the office's, and may name anybody |
-| `breach_board_recipient` | `full_name` | NAME | Somebody on the organisation's board's list (0058) |
+| `breach_board_recipient` | `full_name` | NAME | Somebody on the organisation's board's list (0058), or an address a sender added for one report alone (`one_off`, 0064), sealed alike |
 | `breach_board_recipient` | `email` | EMAIL | Where its reports are mailed; blind index `email_hash` |
 | `message_copy` | `address` | EMAIL | Who the office copies an email to - a mailbox, possibly a person's; blind index `address_hash` (2026-10-08) |
 | `breach_affected_revision` | `note` | FREE_TEXT | What a revision of the people affected is based on (S3-02) |
@@ -154,13 +154,14 @@ somebody - whose laptop, which account, who caused it.
 
 ---
 
-## 2. The twelve lookup columns and their hash columns
+## 2. The thirteen lookup columns and their hash columns
 
 Randomised ciphertext cannot be searched, and the platform has to find rows
 by these: sign-in, "is this address taken", a code to a mobile, a nomination
 found by the nominee's contact, a public request verified by the contact it
 gave, a person on a breach's uploaded list or an office copy address or an
-address on the organisation's board's list that must not be added twice. Each carries a **keyed hash** beside it, named `*_hash` —
+address on the organisation's board's list that must not be added twice, or the
+reports a rights request's subject sent through the public link. Each carries a **keyed hash** beside it, named `*_hash` —
 `HMAC-SHA256(normalised value, BLIND_INDEX_KEY)`, deterministic so it can be
 unique-indexed and looked up, opaque without the key. Every lookup goes
 through the index; the value beside it is ciphertext and is opened only to
@@ -180,6 +181,7 @@ send something to it.
 | `breach_contact` | `mobile` | `mobile_hash` | E.164 |
 | `message_copy` | `address` | `address_hash` | lowercased |
 | `breach_board_recipient` | `email` | `email_hash` | lowercased |
+| `incident_report` | `reporter_email` | `reporter_email_hash` | lowercased; backfilled by 0065 through the key service |
 
 **What this costs.** A contact is matched *whole*: a complete address, a
 complete number, a complete username or employee number. Half an address
@@ -239,14 +241,14 @@ sealed column after everything it writes.
 | | |
 |---|---|
 | Tables holding personal data | 42 |
-| Personal columns | 127 |
+| Personal columns | 128 |
 | **Sealed columns** | **97** in 33 tables |
-| With a `*_hash` lookup column | 12 |
+| With a `*_hash` lookup column | 13 |
 | With a `*_ngrams` search column | 3 |
-| Plaintext by nature (ids, flags, hashes, tokens, storage paths, jsonb) | 30 - the other 127 − 97 |
-| Plaintext by decision | 1 (`minor_until`, derived from `dob` and not counted in the 127) |
-| API endpoints carrying any of it | 277, of 389 |
+| Plaintext by nature (ids, flags, hashes, tokens, storage paths, jsonb) | 31 - the other 128 − 97 |
+| Plaintext by decision | 1 (`minor_until`, derived from `dob` and not counted in the 128) |
+| API endpoints carrying any of it | 282, of 394 |
 
-The full 127-column listing with the endpoints that carry each is in
+The full 128-column listing with the endpoints that carry each is in
 [pii-fields-and-endpoints.md](../domain/pii-fields-and-endpoints.md),
 regenerated by `docs/tools/pii-fields-and-endpoints.py`.

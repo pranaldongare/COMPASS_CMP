@@ -8,13 +8,16 @@ eight `*_hash` columns or `minor_until`. A reference that has to be rebuilt by
 hand is a reference that goes stale, and one that quietly disagrees with the
 database is worse than none.
 
-So this reads the catalogue and writes all of it: the inventory JSON, the
-schema SQL, the column reference, the enum reference and the Graphviz sources
-for every diagram. Run it against a scratch database built from the migration
-chain - never a database with data in it, though it only ever reads:
+So this reads the catalogue and writes the rest of it: the inventory JSON, the
+column reference, the enum reference and the Graphviz sources for every
+diagram. `schema.sql` is not written here: it is PostgreSQL's own dump of the
+same database, taken beside this. Run it against a scratch database built from
+the migration chain - never a database with data in it, though it only ever
+reads:
 
     createdb cmp_ref && POSTGRES_DB=cmp_ref alembic upgrade head
     python3 docs/tools/generate-schema-docs.py --database cmp_ref
+    pg_dump --schema-only --no-owner --no-privileges cmp_ref > docs/reference/database/schema.sql
 
 Then render the SVGs (`--render` does this when a renderer is available):
 
@@ -119,6 +122,10 @@ MODULES: dict[str, list[str]] = {
         "breach_report",
         "breach_report_section",
         "breach_report_delivery",
+        # Who each version went to, and the mark that makes a list entry
+        # mandatory (0064, ADR 0037 as amended on 2026-11-07).
+        "breach_report_addressee",
+        "breach_board_recipient_event",
     ],
     "platform": ["audit_log", "message_template", "message_copy", "restricted_country", "office"],
 }

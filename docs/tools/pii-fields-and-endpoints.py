@@ -62,8 +62,10 @@ COLUMNS: list[tuple[str, list[str]]] = [
     ("breach_attachment", ["file_name", "note", "storage_ref"]),
     ("breach_contact", ["full_name", "email", "mobile", "email_hash", "mobile_hash"]),
     ("breach_upload", ["file_name"]),
-    # An incident reported through the public link (0058): who, and what they said.
-    ("incident_report", ["reporter_name", "reporter_email", "title", "origin", "discovery",
+    # An incident reported through the public link (0058): who, and what they said,
+    # and since 0065 the index a rights request finds a dismissed one by.
+    ("incident_report", ["reporter_name", "reporter_email", "reporter_email_hash", "title",
+                         "origin", "discovery",
                          "affected_systems", "incident_details", "impact_scale",
                          "countries_involved", "data_nature", "subject_types",
                          "entities_involved", "third_parties", "dismissal_reason"]),
@@ -144,10 +146,11 @@ def main() -> None:
                "the incident's *what is known* answers, and the office's copy addresses; since\n"
                "0058-0059 also what an incident report says and who sent it, a report's sections,\n"
                "and the organisation's board's names and addresses) — 97 columns in 33 tables.\n"
-               "The twelve the platform looks rows up by whole (`email`,\n"
+               "The thirteen the platform looks rows up by whole (`email`,\n"
                "`secondary_email`, `mobile`, `username`, `organization_id`, `nominee_email`,\n"
                "`nominee_mobile`, `submitted_contact`, a breach contact's `email` and `mobile`,\n"
-               "a copy's `address`, and a board recipient's `email`) carry\n"
+               "a copy's `address`, a board recipient's `email`, and since 0065 a reporter's\n"
+               "`reporter_email`, until a rights request erases it) carry\n"
                "a keyed hash beside them - `*_hash`, an HMAC of the normalised value - and three\n"
                "names (`auth_user.full_name`, `rights_request.submitted_name`,\n"
                "`nomination.nominee_name`) carry `*_ngrams`, the hashed three-character runs a\n"

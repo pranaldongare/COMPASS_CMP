@@ -1,6 +1,6 @@
 # API documentation
 
-Reference for **391 operations over 342 paths**, grouped by OpenAPI module/tag.
+Reference for **394 operations over 345 paths**, grouped by OpenAPI module/tag.
 
 ## How to read an endpoint
 
@@ -19,9 +19,9 @@ Generated values are structural examples, not production credentials or semantic
 |---|---:|---|
 | Audit | 7 | [`modules/audit/api.md`](modules/audit/api.md) |
 | Auth | 15 | [`modules/auth/api.md`](modules/auth/api.md) |
-| Breach Settings | 4 | [`modules/breach_settings/api.md`](modules/breach_settings/api.md) |
+| Breach Settings | 5 | [`modules/breach_settings/api.md`](modules/breach_settings/api.md) |
 | Breach Tickets | 7 | [`modules/breach_tickets/api.md`](modules/breach_tickets/api.md) |
-| Breaches | 52 | [`modules/breaches/api.md`](modules/breaches/api.md) |
+| Breaches | 53 | [`modules/breaches/api.md`](modules/breaches/api.md) |
 | Consent | 15 | [`modules/consent/api.md`](modules/consent/api.md) |
 | Cross-Border Transfers | 3 | [`modules/cross_border_transfers/api.md`](modules/cross_border_transfers/api.md) |
 | Dashboard | 3 | [`modules/dashboard/api.md`](modules/dashboard/api.md) |
@@ -40,7 +40,7 @@ Generated values are structural examples, not production credentials or semantic
 | Public Consent | 9 | [`modules/public_consent/api.md`](modules/public_consent/api.md) |
 | Public Information | 10 | [`modules/public_information/api.md`](modules/public_information/api.md) |
 | Registry | 29 | [`modules/registry/api.md`](modules/registry/api.md) |
-| Rights | 52 | [`modules/rights/api.md`](modules/rights/api.md) |
+| Rights | 53 | [`modules/rights/api.md`](modules/rights/api.md) |
 | System | 5 | [`modules/system/api.md`](modules/system/api.md) |
 | Tickets | 5 | [`modules/tickets/api.md`](modules/tickets/api.md) |
 | Users | 16 | [`modules/users/api.md`](modules/users/api.md) |

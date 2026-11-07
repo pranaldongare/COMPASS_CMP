@@ -3,6 +3,11 @@
 **Status:** accepted · 2026-09-24. Migration 0031, backlog item S2-03. Amended 2026-10-01: a return carries an outcome (below). Amended 2026-10-08:
 an answer counts only once the office accepts it - see the end and
 [ADR 0025](0025-a-holders-answer-counts-once-accepted-and-the-server-owns-the-moves.md).
+Amended 2026-11-07: a report from the public link that an office dismissed is
+something an erasure reaches. An officer blanks the reporter's name and email on
+an erasure request, keeping the report's number, its words, the reason and who
+dismissed it, and **Complete** waits until it is done; a claimed report is not
+reached. See [ADR 0037](0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md#a-dismissed-report-and-the-rights-of-the-person-who-sent-it).
 
 ## Context
 

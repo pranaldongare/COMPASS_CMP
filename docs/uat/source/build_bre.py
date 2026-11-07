@@ -122,7 +122,7 @@ case(
         {"action": "Type CERTIN-UAT-01 in 'Reference returned', change 'Submitted at' to tomorrow and click 'Record'.",
          "expected": "The message 'Not recorded' with 'This time is in the future' appears. The duty is still 'Outstanding'."},
         {"action": "Change 'Submitted at' to one hour before 'First noticed' and click 'Record'.",
-         "expected": "The message 'Not recorded' with 'A submission cannot come before its clock started' appears."},
+         "expected": "The message 'Not recorded' with 'It cannot have been sent before the incident was first noticed' appears."},
         {"action": "Change 'Submitted at' to today, 5 minutes before now, and click 'Record'.",
          "expected": "A message ending ': recorded' appears with 'The submission and its reference are on the record.' The row shows the badge 'Done' with the time and CERTIN-UAT-01; its clock and button are gone."},
         {"action": "Read the 'Close' card.",

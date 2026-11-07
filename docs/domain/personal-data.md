@@ -5,7 +5,7 @@ that accepts or returns it. Written for the questions that have to be answered
 quickly and exactly: what do we hold, where does it go, who can see it, and
 which call would expose it.
 
-The counts here are measured, not remembered. **279 of the API's 391
+The counts here are measured, not remembered. **282 of the API's 394
 operations** carry personal data; **34 of those need no session**. They come
 from joining three artefacts the repository already keeps current, and the
 last section says how to redo the join after a change.
@@ -253,7 +253,7 @@ register is the officers' alone, hidden from every other role (404).
 
 **`breach_contact`** (0045) — `full_name`, `email`, `mobile` (sealed), `email_hash`, `mobile_hash` (blind indexes): somebody affected who has no account, named in a list sent to the Privacy Office, and told by email and SMS. **`breach_upload`** — the list's `file_name` (sealed) and hash; the file itself is not kept (2026-10-07).
 
-**`incident_report`** (0058) — `reporter_name`, `reporter_email` (sealed): whoever reported an incident through the public link, with the address they proved by a code; `title`, the ten answers of *what is known*, `dismissal_reason` (sealed); `claimed_by`, `dismissed_by`. Somebody who is not on the platform at all may be named here, and may name anybody. **`breach_board_recipient`** (0058) — `full_name`, `email` (sealed), `email_hash` (blind index), `added_by`, `removed_by`: who is on the organisation's board's list. **`breach_report_section`** (0059) — `body` (sealed): a report's words, which are the office's and may name anybody. **`breach_report`** — `created_by`, `finalised_by`, `filed_by`. **`breach_report_delivery`** — `recipient_id`; `detail` holds an error's class, never the address.
+**`incident_report`** (0058) — `reporter_name`, `reporter_email` (sealed): whoever reported an incident through the public link, with the address they proved by a code; `reporter_email_hash` (blind index, `index_of('email')`, the same as `auth_user.email_hash`, 0065), by which a rights request finds it; `title`, the ten answers of *what is known*, `dismissal_reason` (sealed); `claimed_by`, `dismissed_by`; and, once a dismissed report's reporter is erased under a rights request, `reporter_erased_at`, `reporter_erased_by` and `reporter_erased_request_id`, with the name, the email and the index then NULL (0065). Somebody who is not on the platform at all may be named here, and may name anybody. **`breach_board_recipient`** (0058) — `full_name`, `email` (sealed), `email_hash` (blind index), `added_by`, `removed_by`: who is on the organisation's board's list; since 0064 also an address a sender added for one report alone (`one_off`), sealed in the same columns and never on the list, and `mandatory`, which is about the entry, not the person. **`breach_board_recipient_event`** (0064) — `recorded_by`: who made an entry mandatory or optional again. **`breach_report_section`** (0059) — `body` (sealed): a report's words, which are the office's and may name anybody. **`breach_report`** — `created_by`, `finalised_by`, `filed_by`. **`breach_report_addressee`** (0064) — `recipient_id`: who a finalised version was sent to. **`breach_report_delivery`** — `recipient_id`; `detail` holds an error's class, never the address.
 
 **`message_copy`** (0046) — `address` (sealed), `address_hash`: a mailbox the office copies an email to. Usually a team's; sealed because it may be a person's.
 **`breach_temporary_access`** — `user_id`, `granted_by`, `ended_by`: whose temporary login, for a breach ticket or, since 0049, a rights ticket (`holder_id`), and who gave and ended it, with the role the account held before (S3-09). No name and no address: a person without an account is made one in `auth_user`, sealed like every other.
@@ -287,19 +287,35 @@ All of it is append-only but for `breach.status`, so an erasure request cannot
 reach it - and should not need to: the rows name staff by id and hold the
 office's account of an incident, which is the accountability record. That a
 breach affected her (`breach_affected`) is the record of a duty owed to her,
-and stays for the same reason the consent she gave does. A report from the
-public link and a reporter's name and address stay with the incident for the same
-reason, and reach nothing an erasure request finds through her account.
+and stays for the same reason the consent she gave does. **A report from the
+public link that was claimed** keeps its reporter's name and address with the
+incident for the same reason: it is the incident's record of what the office was
+told. Neither an access nor an erasure request reaches it, a documented exception
+(2026-11-07, open for Legal and the product owner in
+[breaches.md](breaches.md#open-questions)): it may sit in the other office's
+register, and surfacing it on a request would cross the wall between them.
 
-**An open point: a dismissed report has no incident behind it.** A report an
-officer dismissed (`breach_id` NULL) keeps its reporter's name and email, sealed,
-and that reason does not cover it: no duty or accountability record stands on it.
-Today a rights request can neither find it nor erase it. `incident_report` has no
-hash of the address to look it up by, nothing under the rights code or the
-retention task reads the table, and `cmp_incident_report_outcome_once` refuses
-every update and delete once a report has its outcome. Finding those rows for
-access and erasure, or recording an exception and its legal basis, is undecided
-and not built.
+**A report an officer dismissed has no incident behind it** (`breach_id` NULL), so
+no duty or accountability record stands on it, and the product owner's answer of
+2026-11-07 is that the person who sent it may reach it (0065,
+[ADR 0037](../decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md#a-dismissed-report-and-the-rights-of-the-person-who-sent-it)):
+
+- **Found by the blind index of the address**, once identity is verified, on an
+  access or erasure request that is not confined to one consent: the account's
+  primary email, its second email once proved, or for a request with no account the
+  email it gave. Only the two officers are shown what was found, on the request's
+  **Holders** tab; the administrator on a request about the office is shown nothing.
+- **Access** returns the reporter's own name, email and words, when the report was
+  received and dismissed, and that it was not taken up. Not the office's reason or
+  who dismissed it, as the office's other notes on a request are not shown.
+- **Erasure** is an officer's act on an erasure request that has started
+  (`POST /requests/{uuid}/public-reports/erase`). It blanks the name, the email and
+  the index, and keeps the `INC-` number, the words, the reason and who dismissed
+  it; the response says what is kept. A legal hold on the person stops it, and
+  **Complete** waits for it. The trigger that writes a report's outcome once allows
+  this one change, once, and CHECKs tie a blank name to an erasure.
+- **No retention period is set**: a dismissed report is kept until a rights request
+  erases its reporter. Setting one is Legal's.
 
 The trail
 records that a breach was recorded, determined, assessed, and each duty's
@@ -369,7 +385,10 @@ opened in a spreadsheet cannot execute what a name field contained.
 Every email and SMS the platform sends carries personal data out of it by
 design: a name, a reference, a link, a one-time code. The catalogue of what is
 sent, to whom, and on what event is
-[domain/messages.md](messages.md).
+[domain/messages.md](messages.md). One message to staff carries a third party's
+address by design: when the organisation's board list changes,
+`breach_board_list_changed` tells both officers the name and address concerned,
+because that mail is the check on who the board's reports go to (0064).
 
 ### The browsers
 
@@ -379,7 +398,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-279 of 391 operations accept or return personal data. Each table gives the
+282 of 394 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 
@@ -480,13 +499,13 @@ selected.
 
 ### Rights requests, the office's side — `/requests/*`
 
-42 operations carry personal data.
+43 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
 | GET | `/requests` | DPO every row, Admin rows in scope, Legal PoC every row | — | `consent_project`, `consent_uuid`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name` |
 | POST | `/requests` | DPO yes, Admin yes, Legal PoC yes | `contact`, `request_text`, `subject_uuid` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
-| GET | `/requests/{request_uuid}` | DPO every row, Admin rows in scope, Legal PoC every row | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `contact_log`, `content_type`, `decided_by_name`, `disposition`, `download_expires_at`, `evidence`, `file_name`, `file_uuid`, `instruction`, `nominee_contact`, `nominee_name`, `other_subjects`, `refusal_reason`, `remedy_text`, `request_text`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `response_file_hash`, `response_files`, `response_text`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `reviewer_name`, `reviewer_uuid`, `seen_at`, `sent_back_reason`, `size_bytes`, `subject_email`, `subject_mobile`, `subject_name`, `subject_role`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+| GET | `/requests/{request_uuid}` | DPO every row, Admin rows in scope, Legal PoC every row | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `contact_log`, `content_type`, `decided_by_name`, `disposition`, `download_expires_at`, `evidence`, `file_name`, `file_uuid`, `instruction`, `nominee_contact`, `nominee_name`, `other_subjects`, `refusal_reason`, `remedy_text`, `reporter_email`, `reporter_erased_at`, `reporter_name`, `request_text`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `response_file_hash`, `response_files`, `response_text`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `reviewer_name`, `reviewer_uuid`, `seen_at`, `sent_back_reason`, `size_bytes`, `subject_email`, `subject_mobile`, `subject_name`, `subject_role`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/acknowledge` | DPO every row, Admin rows in scope, Legal PoC every row | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/claim` | DPO every row, Admin rows in scope, Legal PoC every row | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/classify` | DPO every row, Admin rows in scope, Legal PoC every row | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
@@ -511,6 +530,7 @@ selected.
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/thread` | DPO every row, Admin rows in scope, Legal PoC every row | `body`, `evidence` | `accepted_by_name`, `author_name`, `body`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `evidence_hash`, `evidence_name`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/withdraw` | DPO every row, Admin rows in scope, Legal PoC every row | `reason` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/intent` | DPO every row, Admin rows in scope, Legal PoC every row | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+| POST | `/requests/{request_uuid}/public-reports/erase` | DPO every row, Legal PoC every row | — | `reporter_email`, `reporter_erased_at`, `reporter_name` |
 | POST | `/requests/{request_uuid}/refuse` | DPO every row, Admin rows in scope, Legal PoC every row | `reason` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/respond` | DPO every row, Admin rows in scope, Legal PoC every row | `files`, `response_text` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/reviewer` | Admin rows in scope | `reviewer_uuid` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
@@ -539,14 +559,14 @@ selected.
 
 ### Personal data breaches — `/breaches/*`
 
-44 operations carry personal data.
+45 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
 | GET | `/breaches` | DPO every row, Legal PoC every row | — | `recorded_by_name`, `reported_to` |
 | POST | `/breaches` | DPO every row, Legal PoC every row | `affected_systems`, `countries_involved`, `data_nature`, `discovery`, `entities_involved`, `impact_scale`, `incident_details`, `location_detail`, `origin`, `subject_types`, `third_parties` | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `reporter_email`, `reporter_name`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
 | GET | `/breaches/intake` | DPO every row, Legal PoC every row | — | `reporter_email`, `reporter_name` |
-| GET | `/breaches/intake/dismissed` | DPO every row, Legal PoC every row | — | `dismissal_reason`, `dismissed_by_name`, `reporter_email`, `reporter_name` |
+| GET | `/breaches/intake/dismissed` | DPO every row, Legal PoC every row | — | `dismissal_reason`, `dismissed_by_name`, `reporter_email`, `reporter_erased_at`, `reporter_name` |
 | GET | `/breaches/intake/{report_uuid}` | DPO every row, Legal PoC every row | — | `affected_systems`, `countries_involved`, `data_nature`, `discovery`, `entities_involved`, `impact_scale`, `incident_details`, `origin`, `reporter_email`, `reporter_name`, `subject_types`, `third_parties` |
 | POST | `/breaches/intake/{report_uuid}/claim` | DPO every row, Legal PoC every row | — | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `reporter_email`, `reporter_name`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
 | POST | `/breaches/intake/{report_uuid}/dismiss` | DPO every row, Legal PoC every row | `reason` | — |
@@ -572,10 +592,11 @@ selected.
 | GET | `/breaches/{breach_uuid}/org-board/brief` | DPO every row, Legal PoC every row | — | `document` |
 | GET | `/breaches/{breach_uuid}/reports` | DPO every row, Legal PoC every row | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
 | POST | `/breaches/{breach_uuid}/reports` | DPO every row, Legal PoC every row | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
+| GET | `/breaches/{breach_uuid}/reports/recipients` | DPO every row, Legal PoC every row | — | `email`, `full_name` |
 | PUT | `/breaches/{breach_uuid}/reports/{report_uuid}` | DPO every row, Legal PoC every row | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
 | POST | `/breaches/{breach_uuid}/reports/{report_uuid}/evidence` | DPO every row, Legal PoC every row | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
 | POST | `/breaches/{breach_uuid}/reports/{report_uuid}/file` | DPO every row, Legal PoC every row | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
-| POST | `/breaches/{breach_uuid}/reports/{report_uuid}/finalise` | DPO every row, Legal PoC every row | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
+| POST | `/breaches/{breach_uuid}/reports/{report_uuid}/finalise` | DPO every row, Legal PoC every row | `email`, `full_name` | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
 | POST | `/breaches/{breach_uuid}/reports/{report_uuid}/resend` | DPO every row, Legal PoC every row | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
 | GET | `/breaches/{breach_uuid}/tickets` | DPO every row, Legal PoC every row | — | `actor_name`, `added_by_name`, `assigned_by_name`, `holder_name`, `reason` |
 | POST | `/breaches/{breach_uuid}/tickets` | DPO every row, Legal PoC every row | `email`, `full_name`, `instruction`, `mobile`, `user_uuid` | `actor_name`, `added_by_name`, `assigned_by_name`, `author_name`, `body`, `evidence_hash`, `evidence_name`, `holder_name`, `instruction`, `reason` |
@@ -602,14 +623,15 @@ selected.
 
 ### How the office hears of a breach — `/breach-settings/*`
 
-4 operations carry personal data.
+5 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
-| GET | `/breach-settings` | DPO every row, Admin every row, Legal PoC every row | — | `added_by_name`, `email`, `full_name`, `role` |
-| POST | `/breach-settings/board-recipients` | DPO every row, Admin every row, Legal PoC every row | `email`, `full_name` | `added_by_name`, `email`, `full_name`, `role` |
-| DELETE | `/breach-settings/board-recipients/{recipient_uuid}` | DPO every row, Admin every row, Legal PoC every row | — | `added_by_name`, `email`, `full_name`, `role` |
-| PUT | `/breach-settings/intake-roles` | DPO every row, Admin every row, Legal PoC every row | — | `added_by_name`, `email`, `full_name`, `role` |
+| GET | `/breach-settings` | DPO every row, Admin every row, Legal PoC every row | — | `added_by_name`, `email`, `full_name`, `mandatory_changed_by_name`, `role` |
+| POST | `/breach-settings/board-recipients` | DPO every row, Admin every row, Legal PoC every row | `email`, `full_name` | `added_by_name`, `email`, `full_name`, `mandatory_changed_by_name`, `role` |
+| DELETE | `/breach-settings/board-recipients/{recipient_uuid}` | DPO every row, Admin every row, Legal PoC every row | — | `added_by_name`, `email`, `full_name`, `mandatory_changed_by_name`, `role` |
+| PUT | `/breach-settings/board-recipients/{recipient_uuid}/mandatory` | DPO every row, Admin every row, Legal PoC every row | — | `added_by_name`, `email`, `full_name`, `mandatory_changed_by_name`, `role` |
+| PUT | `/breach-settings/intake-roles` | DPO every row, Admin every row, Legal PoC every row | — | `added_by_name`, `email`, `full_name`, `mandatory_changed_by_name`, `role` |
 
 ### Reporting an incident with no account — `/incident-reports/*`
 
@@ -850,7 +872,7 @@ selected.
 | GET | `/holder-tickets/{token}/ticket` | **public** — the request carries its own credential (password, link token, one-time code) | `token` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | POST | `/holder-tickets/{token}/verify` | **public** — the request carries its own credential (password, link token, one-time code) | `code`, `token` | — |
 
-<!-- 279 of 391 operations carry personal data; 34 of them need no session. -->
+<!-- 282 of 394 operations carry personal data; 34 of them need no session. -->
 
 ## The public surface
 
@@ -968,12 +990,12 @@ Which endpoint satisfies which section, when she asks.
 
 | She asks | The platform answers with |
 |---|---|
-| What do you hold about me? | `GET /me`, `GET /me/consents`, `GET /me/disclosures`, `GET /me/requests` |
+| What do you hold about me? | `GET /me`, `GET /me/consents`, `GET /me/disclosures`, `GET /me/requests`; and, through an access request, the reports they sent through the public link that an office dismissed (0065) |
 | Who did you share it with? | `GET /me/disclosures` — built from `export_line`, which is written in the same transaction as the export |
 | Show me what I agreed to | `GET /me/consents/{uuid}/notice` — the frozen text, by content hash, not today's wording |
 | I withdraw | `POST /me/consents/{uuid}/withdraw` |
 | Correct this | `PATCH /me` - her name and her contacts from her profile. Since 2026-10-07 a correction is not a rights request, and correcting anything else the office holds is not built yet (S3-05) |
-| Erase it | `POST /me/requests` with `request_type=erasure`; the scope is derived into `rights_request_item`, one row per appearance |
+| Erase it | `POST /me/requests` with `request_type=erasure`; the scope is derived into `rights_request_item`, one row per appearance. A dismissed report from the public link is not an item: an officer erases its reporter's name and email on the request (`POST /requests/{uuid}/public-reports/erase`) |
 | Act on my behalf | `POST /me/nominations`, then the nominee's own token flow |
 | I am not satisfied | `POST /me/requests/{uuid}/dispute`, which raises a grievance; one about the DPO is escalated to an administrator |
 
@@ -994,3 +1016,15 @@ above and flags any field name it has not been taught to classify. A new field
 that looks personal and is not in its lists is the one thing this document
 cannot catch on its own, so the script fails loudly rather than quietly
 omitting it.
+
+**What the join cannot see: a route with no response model.** The classifier
+reads field names from the OpenAPI schemas, so an answer typed only as a list of
+objects carries no field it can name. `GET /requests/{request_uuid}/trail` is
+one: it serves the request's trail with the sealed names of who acted, and is in
+none of the tables above. So are the other two routes that answer through the same
+`_trail` in `api/routers/v1/rights.py`, `GET /requests/{request_uuid}/linked/trail`
+and the principal's `GET /me/requests/{request_uuid}/trail`. Found on 2026-11-08,
+when the HTTP suite's coverage test failed on a call to the first, which answered
+with sealed names no table lists; it predates that day's work, and is listed in
+[known gaps](../backend/06-known-gaps.md#documents-that-disagree-with-the-code)
+until the routes declare what they answer.

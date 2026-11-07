@@ -139,7 +139,7 @@ Make a request without an account.
 
 - **Who:** public.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** Anyone may submit without an account. Contact verification and subsequent office checks govern processing; submission is not access to another person’s records.
+- **Rules:** Anyone may submit without an account. Contact verification and subsequent office checks govern processing; submission is not access to another person’s records. A contact with no account that is the address of a report an office dismissed, not yet erased, is sent a code at the address stored on the report, never the one typed; the reply is the same neutral sentence either way (0065).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/rights.py#L212), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/service.py#L1).
 
 ## POST /rights/requests/verify
@@ -152,7 +152,7 @@ Confirm the code.
 
 - **Who:** public.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** The request reference/contact verification code must match; no session required.
+- **Rules:** The request reference/contact verification code must match; no session required. Accepts, for a request with no account, the code sent to a dismissed reporter's stored address (0065).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/rights.py#L235), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/service.py#L1).
 
 ## GET /holder-tickets/{token}

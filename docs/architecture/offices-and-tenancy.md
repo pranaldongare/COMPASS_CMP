@@ -39,7 +39,9 @@ through `notice_template`; `project_site`, `project_processor`, `project_approva
 `rights_response_file`, `rights_request_attachment` through
 `rights_request`; every `breach_*` table through `breach`, but for those
 named below (0059 adds `breach_report` through `breach`, and
-`breach_report_section` and `breach_report_delivery` through `breach_report`);
+`breach_report_section` and `breach_report_delivery` through `breach_report`;
+0064 adds `breach_report_addressee`, who each version went to, through
+`breach_report`);
 `template_version_language`, `template_version_purpose` through
 `template_version`; `category_processor`, `hr_poc_category` through
 `hr_category`.
@@ -49,8 +51,13 @@ tracks), `audit_log` (one chain; the read is filtered), `processor`,
 `processor_respondent`, `data_source`, `collection_owner_processor`,
 `delegation`, `nomination`, `legal_hold`, `message_template`,
 `message_copy`, `restricted_country`, `breach_temporary_access`,
-`incident_report`, `breach_settings`, `breach_board_recipient`. These
-hold no office-specific consent evidence or are deliberately shared.
+`incident_report`, `breach_settings`, `breach_board_recipient`,
+`breach_board_recipient_event`. These hold no office-specific consent evidence
+or are deliberately shared. `breach_board_recipient_event`, who made an entry on
+the board's list mandatory or optional again (0064), hangs from the list, which
+is one organisation's, and is unpoliced with it; so is an address a sender added
+for one report alone, a row of the list marked `one_off`. Who a version went to
+is the report's, so it is read through the report and policed through it.
 
 `incident_report` is unpoliced on purpose (0058, [ADR 0037](../decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md)):
 a report from the public link belongs to no office until one claims it, so both
@@ -63,6 +70,15 @@ any other; the report keeps only the link to it. Only the two officers reach the
 intake, through the matrix (`breach`, hidden), and only the administrator and the
 two officers reach `breach_settings` and `breach_board_recipient`, which say
 nothing of any breach and are one organisation's, not an office's.
+
+Since 0065 a dismissed report may name a rights request,
+`reporter_erased_request_id`, the one its reporter was erased under. The
+foreign key to the policed `rights_request` is checked by referential integrity,
+which RLS does not bind, and leaves the report no office's. The shared list of
+dismissed reports shows only that and when the reporter was erased, never the
+request: in production RLS would blank the other office's reference, and both
+offices see that list. The request and who erased it are on the request's own
+trail, in its office.
 
 `legal_hold` carries no office scope in its queries yet (`list_holds()`
 returns every hold); only the matrix, which gives it to the DPO alone,

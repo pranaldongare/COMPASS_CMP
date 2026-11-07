@@ -1,6 +1,6 @@
 # Rights API
 
-Generated from `backend/api/openapi.json`. **52 operations.**
+Generated from `backend/api/openapi.json`. **53 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -53,11 +53,12 @@ For each operation the information is deliberately ordered as **API → Validati
 45. [`PUT /requests/{request_uuid}/scope/{item_uuid}`](#45_put_requests_request_uuid_scope_item_uuid)
 46. [`POST /requests/{request_uuid}/scope/{item_uuid}/apply`](#46_post_requests_request_uuid_scope_item_uuid_apply)
 47. [`POST /requests/{request_uuid}/scope/{item_uuid}/execute`](#47_post_requests_request_uuid_scope_item_uuid_execute)
-48. [`POST /requests/{request_uuid}/respond`](#48_post_requests_request_uuid_respond)
-49. [`GET /requests/{request_uuid}/files/{file_uuid}`](#49_get_requests_request_uuid_files_file_uuid)
-50. [`GET /requests/{request_uuid}/attachments/{attachment_uuid}`](#50_get_requests_request_uuid_attachments_attachment_uuid)
-51. [`POST /requests/{request_uuid}/decide`](#51_post_requests_request_uuid_decide)
-52. [`GET /requests/{request_uuid}/download`](#52_get_requests_request_uuid_download)
+48. [`POST /requests/{request_uuid}/public-reports/erase`](#48_post_requests_request_uuid_public_reports_erase)
+49. [`POST /requests/{request_uuid}/respond`](#49_post_requests_request_uuid_respond)
+50. [`GET /requests/{request_uuid}/files/{file_uuid}`](#50_get_requests_request_uuid_files_file_uuid)
+51. [`GET /requests/{request_uuid}/attachments/{attachment_uuid}`](#51_get_requests_request_uuid_attachments_attachment_uuid)
+52. [`POST /requests/{request_uuid}/decide`](#52_post_requests_request_uuid_decide)
+53. [`GET /requests/{request_uuid}/download`](#53_get_requests_request_uuid_download)
 
 <a id="1_get_requests_attention"></a>
 ## 1. `GET /requests/attention` — What the office has not read
@@ -599,7 +600,18 @@ No request body.
       "added_at": "2026-09-17T12:00:00Z"
     }
   ],
-  "default_instruction": "string"
+  "default_instruction": "string",
+  "public_reports": {
+    "looked": true,
+    "not_looked_because": "…",
+    "items": [
+      "…"
+    ],
+    "total": 1,
+    "erased": 1,
+    "may_erase": true,
+    "erase_blocked_by": "…"
+  }
 }
 ```
 
@@ -5221,8 +5233,81 @@ No request body.
 }
 ```
 
-<a id="48_post_requests_request_uuid_respond"></a>
-## 48. `POST /requests/{request_uuid}/respond` — Release and close
+<a id="48_post_requests_request_uuid_public_reports_erase"></a>
+## 48. `POST /requests/{request_uuid}/public-reports/erase` — Erase the requester's name and email from the reports they sent through the public link that an office dismissed
+
+### API
+
+- **Operation ID:** `erase_public_reports_requests__request_uuid__public_reports_erase_post`
+- **Access:** Role-controlled `rights` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+No report is named: they are found again by her proved addresses, so
+nothing a caller sends can reach another person's. The officers' alone;
+the administrator, who may hold a request about the office, is answered
+404, as the register is hidden from them.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `request_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`PublicReportsOut`](#schema-publicreportsout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "looked": true,
+  "not_looked_because": "string",
+  "items": [
+    {
+      "report_uuid": "00000000-0000-4000-8000-000000000000",
+      "reference": "string",
+      "reporter_name": "…",
+      "reporter_email": "…",
+      "title": "string",
+      "received_at": "2026-09-17T12:00:00Z",
+      "dismissed_at": "2026-09-17T12:00:00Z",
+      "reporter_erased_at": "…"
+    }
+  ],
+  "total": 1,
+  "erased": 1,
+  "may_erase": true,
+  "erase_blocked_by": "string"
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="49_post_requests_request_uuid_respond"></a>
+## 49. `POST /requests/{request_uuid}/respond` — Release and close
 
 ### API
 
@@ -5367,8 +5452,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="49_get_requests_request_uuid_files_file_uuid"></a>
-## 49. `GET /requests/{request_uuid}/files/{file_uuid}` — A file released with the response
+<a id="50_get_requests_request_uuid_files_file_uuid"></a>
+## 50. `GET /requests/{request_uuid}/files/{file_uuid}` — A file released with the response
 
 ### API
 
@@ -5417,8 +5502,8 @@ No request body.
 }
 ```
 
-<a id="50_get_requests_request_uuid_attachments_attachment_uuid"></a>
-## 50. `GET /requests/{request_uuid}/attachments/{attachment_uuid}` — A document the requester sent; every download is audited
+<a id="51_get_requests_request_uuid_attachments_attachment_uuid"></a>
+## 51. `GET /requests/{request_uuid}/attachments/{attachment_uuid}` — A document the requester sent; every download is audited
 
 ### API
 
@@ -5467,8 +5552,8 @@ No request body.
 }
 ```
 
-<a id="51_post_requests_request_uuid_decide"></a>
-## 51. `POST /requests/{request_uuid}/decide` — Decide a grievance
+<a id="52_post_requests_request_uuid_decide"></a>
+## 52. `POST /requests/{request_uuid}/decide` — Decide a grievance
 
 ### API
 
@@ -5528,8 +5613,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="52_get_requests_request_uuid_download"></a>
-## 52. `GET /requests/{request_uuid}/download` — The released response file
+<a id="53_get_requests_request_uuid_download"></a>
+## 53. `GET /requests/{request_uuid}/download` — The released response file
 
 ### API
 
@@ -5838,6 +5923,24 @@ record as the others, in the logging officer's office.
 | `next_cursor` | `string` or `null` | No | — | Opaque. Pass back as ?cursor= for the next page. |
 | `total` | `integer` or `null` | No | — | Total matching rows where it is cheap to know. Null means not counted. |
 
+<a id="schema-publicreportsout"></a>
+#### `PublicReportsOut`
+
+What an access or erasure request finds of the reports she sent through
+the public link, by her proved addresses' blind indexes, once identity is
+verified. The server's answer to whether they may be erased now, so the
+console holds no copy of the rule.
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `looked` | `boolean` | Yes | — | — |
+| `not_looked_because` | `string` or `null` | Yes | — | — |
+| `items` | array of [`PublicReportOut`](#schema-publicreportout) | Yes | — | — |
+| `total` | `integer` | Yes | — | — |
+| `erased` | `integer` | Yes | — | — |
+| `may_erase` | `boolean` | Yes | — | — |
+| `erase_blocked_by` | `string` or `null` | Yes | — | — |
+
 <a id="schema-reassignin"></a>
 #### `ReassignIn`
 
@@ -5944,6 +6047,7 @@ record as the others, in the logging officer's office.
 | `response_files` | array of [`ResponseFileOut`](#schema-responsefileout) | No | — | — |
 | `attachments` | array of [`AttachmentOut`](#schema-attachmentout) | No | — | — |
 | `default_instruction` | `string` or `null` | No | — | — |
+| `public_reports` | [`PublicReportsOut`](#schema-publicreportsout) or `null` | No | — | — |
 
 <a id="schema-requestout"></a>
 #### `RequestOut`
@@ -6132,6 +6236,23 @@ What the sender may still see of a request it moved: no more.
 | `tickets_outstanding` | `integer` | Yes | — | — |
 | `closed_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `clock` | [`ClockOut`](#schema-clockout) | Yes | — | — |
+
+<a id="schema-publicreportout"></a>
+#### `PublicReportOut`
+
+A report she sent through the public link that an office dismissed
+(0065). Never the office's reason or who dismissed it.
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `report_uuid` | `string` | Yes | format: `uuid` | — |
+| `reference` | `string` | Yes | — | — |
+| `reporter_name` | `string` or `null` | Yes | — | — |
+| `reporter_email` | `string` or `null` | Yes | — | — |
+| `title` | `string` | Yes | — | — |
+| `received_at` | `string` | Yes | format: `date-time` | — |
+| `dismissed_at` | `string` | Yes | format: `date-time` | — |
+| `reporter_erased_at` | `string` or `null` | Yes | format: `date-time` | — |
 
 <a id="schema-clockout"></a>
 #### `ClockOut`

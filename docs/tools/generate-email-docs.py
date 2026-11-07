@@ -237,6 +237,12 @@ def _cc(j: Junction) -> str:
             "Never - a report on a breach goes to the addresses on the organisation's board's "
             "list and nobody else, and it may name a person; a copy would take it off that list."
         )
+    if j.key == Message.BREACH_BOARD_LIST_CHANGED:
+        return (
+            "Never - it is the officers' check on who the board's reports go to, and it names "
+            "an address on that list; a copy would hand the address to somebody who keeps "
+            "neither the list nor a breach."
+        )
     return "Never - it is written to one person about her own data; a copy would disclose it."
 
 

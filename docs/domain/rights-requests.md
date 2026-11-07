@@ -34,12 +34,16 @@ which is what she quotes on the phone, in the public form, and in a grievance.
 | Channel | Who | How identity is established |
 |---|---|---|
 | `portal` | a signed-in data principal | her session |
-| `public_form` | anyone, from the rights page | a code sent to a contact on file, or the DPO's manual verification |
+| `public_form` | anyone, from the rights page | a code sent to a contact on file - an account's, or since 0065 the address a dismissed report from the public link came from - or the DPO's manual verification |
 | `nominee` | a nominee whose nomination is in effect | the nominee's own sign-in, plus the event evidenced |
 | `staff_logged` | the DPO, from an email or a letter | the DPO's verification note |
 
 The public form is deliberately neutral: it issues a reference whether or not
-the contact is known, and the code goes only to a contact on file. An
+the contact is known, and the code goes only to a contact on file. A contact
+with no account that is the address of a report an office dismissed, not yet
+erased, is one: the code goes to the address stored on the report, never to the
+one typed, so the neutral reply stays true for a reporter with no account, and a
+code the office sends (`POST /requests/{uuid}/verification/code`) goes there too. An
 unverified request is closed by the nightly sweep after seven days, and a
 stranger who asks after it is told only that it is closed.
 
@@ -319,6 +323,41 @@ placed; releasing the hold lets the executor carry on at once, and closes each
 `held` row as done with the hold it waited for, so the item can complete. A
 hold is placed once and released once - nothing else about it can change.
 
+### Reports from the public link
+
+A report somebody sent through the public link that an office dismissed has no
+incident behind it, and the product owner decided on 2026-11-07 that its
+reporter's rights reach it (0065,
+[ADR 0037](../decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md#a-dismissed-report-and-the-rights-of-the-person-who-sent-it)).
+
+- **Found by the address**, by its blind index, once identity is verified, on an
+  access or erasure request not confined to one consent: the subject account's
+  email, and its second email once proved; for a request with no account, the email
+  it gave. A report that was claimed, or is still waiting in the intake, is not
+  reached. The request detail serves what was found as `public_reports` - up to 50
+  unerased reports, oldest first, with the total, then those erased under this
+  request - to the DPO and the Legal PoC only, and **Reports from the public link**
+  on the **Holders** tab shows it. The administrator, on a request about the office,
+  is served nothing (`public_reports` null). If the key service cannot open a request
+  with no account's contact, the card says nothing could be looked for and
+  **Complete** is held.
+- **Not items.** An item is a person's appearance in an asset; a report is not one,
+  so it is not in the scope above.
+- **Erasure is an officer's act** (`POST /requests/{uuid}/public-reports/erase`, no
+  body). It finds the reports again by the index, so no report id is ever taken and
+  no caller can reach another person's, and blanks the name, the email and the index
+  on each in one statement, keeping the `INC-` number, the words, the reason and who
+  dismissed it. It needs an erasure request (409 `not_erasure`, which also refuses
+  an erasure confined to one consent) that is open (409 `request_closed`) and started
+  (409 `request_not_started`), and no legal hold on the person (409 `legal_hold`). A
+  second press finds nothing and writes nothing. Each report erased is
+  `incident_report.reporter_erased` on the trail, with the request's reference and
+  the INC, and the person sees it on their own trail.
+- **Complete waits for it.** While a report found still carries the name and email,
+  `complete` is refused (422 `response_partial_required`) and `complete_blocked_by`
+  says how many, never which: erase them, or answer partial. A request whose only act
+  was erasing such reports may close complete.
+
 **Backups are not covered yet.** There are no database backups today (parked,
 P-03), and whether a backup holding an erased item is scrubbed or left to
 expire is a decision for Legal. Until it is made, an erasure says nothing about
@@ -336,11 +375,21 @@ with no item in scope and no holder's return is one nobody carried out, and
 closes `partial`, and the record she receives says, item by item, what happened
 to each appearance of her - "quarantined: kept out of any use or release, not
 erased", "decided for erasure, not yet carried out" - and lists what is not yet
-done, in the file and in the mail. Nothing in it says "erased" for what was
+done, in the file and in the mail. A dismissed report from the public link is
+listed the same way, with what is kept of it (its reference, what was written, why
+it was not taken up and who decided). Nothing in it says "erased" for what was
 not. The rule is `cmp.domain.rights.execution`; the request detail serves its
 answer as `complete_blocked_by`, which is how the console knows to hold
 Complete back and say why. Access and grievance are untouched: they ask for a
 copy and a decision, not a change.
+
+**The package** (`reports_from_the_public_link`, since 0065) carries, for an
+access or erasure request that looked, each dismissed report the person sent: their
+own name and email, their words, when it arrived and was dismissed, and that it was
+not taken up. Never the office's reason or who dismissed it, which are the office's
+notes, as a verification note is. A report erased under this request is named by its
+number and dates alone. A request with no account has no portal page to read the
+file from, so its mail's digest lists each report by number, dates and title.
 
 The response is sent to her by email and appears on her portal page, together with
 any **response files** the office released, each downloadable for a bounded
@@ -422,6 +471,7 @@ In the console today a request is found by name through the audit trail's
 | A ticket is answered by the respondent it names | scope on `ticket` is `OWN` for every staff role and the temporary ticket holder; an outside holder only through its link (`holder_link.py`) |
 | A response file is hashed and time-boxed | `rights_response_file` |
 | Every action audited | the audit chain, same transaction |
+| A dismissed report from the public link is found and erased by its reporter's address, by the officers alone | `domain/rights/public_reports.py`; `incident_report.reporter_email_hash`; `cmp_incident_report_outcome_once` allows the one erasure, and CHECKs tie a blank name to it (0065) |
 
 Open decisions taken as defaults, and how to change them, are listed at the
 end of [rights.md](../architecture/rights-module.md) and in

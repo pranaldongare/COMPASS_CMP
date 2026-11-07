@@ -209,7 +209,26 @@ most ten per request, and only while it is open; that rule is the service's.
 **A report from the public link has one outcome, since 0058.** `incident_report`
 is written once; `cmp_incident_report_outcome_once` lets only its outcome change,
 once, and refuses a delete, and `incident_report_one_outcome` refuses both a claim
-and a dismissal. It carries no office and no policy (ADR 0037).
+and a dismissal. It carries no office and no policy (ADR 0037). **Since 0065 the
+rule has one exception**: a dismissed report's reporter may be erased once, under
+a rights request. The same function lets a dismissed, unerased row have its
+`reporter_name`, `reporter_email` and `reporter_email_hash` blanked and the three
+erasure columns written, and nothing else about it change.
+`incident_report_reporter_until_erased` ties a NULL name, address and index to an
+erasure, `incident_report_erasure_whole` writes when, by whom and under which
+request together, and `incident_report_erased_once_dismissed` allows an erasure
+only on a dismissed report.
+
+**Who a report went to is frozen with it, since 0064.** `breach_report_addressee`
+is the set a sender chose for a version, written before it is finalised:
+`cmp_breach_report_addressee_no_late_names` refuses one for a finalised report,
+and the rows are append-only. Every `breach_report_delivery` names one of its
+report's addressees, by the composite foreign key `breach_report_delivery_addressed`.
+The board's list, `breach_board_recipient`, changes only by a removal, once, and by
+its `mandatory` mark, which must agree with the latest
+`breach_board_recipient_event` (`cmp_breach_board_recipient_read_only`); an
+address added for one report alone (`one_off`) is never listed, never mandatory
+and never removed, by CHECK, and is outside `uq_breach_board_recipient_active`.
 
 **A report on a breach is frozen when it is finalised, since 0059.**
 `cmp_breach_report_frozen` and `cmp_breach_report_section_frozen` keep a finalised

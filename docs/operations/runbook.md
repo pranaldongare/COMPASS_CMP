@@ -301,7 +301,10 @@ only the platform's part. Only the two officers can see or use the register.
 
 Anybody may report through the public link; before the first breach, fill in
 **Breach settings**, so that the right people hear of a report and the
-organisation's board has addresses to be mailed at.
+organisation's board has addresses to be mailed at. Tick **Mandatory** on any
+address every report must reach: the sender cannot leave it out. Every change to
+that list is mailed to the DPO and the Legal PoC; one neither of you made is the
+alarm.
 
 1. **Log it at once** - **Breaches → Log an incident** - with the time it was
    *first noticed*, not the time you are typing. It gets an `INC-` reference. A
@@ -317,19 +320,24 @@ organisation's board has addresses to be mailed at.
    now on - and creates the Board, principals and organisation's board duties
    with their clocks. *No* marks them not applicable and keeps the reasoning,
    and the incident can close. Revise it as a new validation if it changes;
-   nothing is edited, and a breach reference once issued stays. **CERT-In does
-   not go with a *no*.** If the mark was a mistake, press **Not reportable to
-   CERT-In** on its row after the *no* and say why: the duty is set aside and
-   nobody is mailed. It is refused until the latest validation is *no*, and once
-   a report has been filed. **Mark reportable to CERT-In** brings it back on the
-   same clock; a later *yes* does not.
+   nothing is edited, and a breach reference once issued stays. A *yes* after a
+   *no* completes on its own any duty whose work was done meanwhile - the board's
+   report that reached it, a report filed with the Board - and mails nobody.
+   **CERT-In does not go with a *no*.** If the mark was a mistake, press **Not
+   reportable to CERT-In** on its row, at any point, before validation or after,
+   and say why: the duty is set aside and nobody is mailed. It is refused once the
+   duty is done or a report has been filed. **Mark reportable to CERT-In** brings
+   it back on the same clock; a later *yes* does not.
 3. **Notify the organisation's board** - within thirty minutes of that *yes*, by
    internal policy. **Notify Organization Board** at the top of the page drafts
-   the report; read it, change what needs changing and submit it. The addresses
-   under **Breach settings** are mailed, and the duty completes when the mail
-   lands, naming who was reached. If it reached nobody the duty stays outstanding.
-   An address it did not reach shows on **Reports**, with **Try again**, which
-   also reaches an address added to the list since
+   the report; read it and change what needs changing. **Who it goes to** shows
+   every name and address under **Breach settings**, all ticked: untick any this
+   report should not go to, or add an address for this report alone. A mandatory
+   one cannot be left out. **Send to the board**: the addresses chosen are mailed,
+   and the duty completes when the mail lands, naming who was reached. If it
+   reached nobody the duty stays outstanding. An address it did not reach shows on
+   **Reports**, with **Try again**, which tries only the addresses that version
+   went to; an address added to the list since is reached by a new version
    ([below](#a-report-did-not-reach-the-organisations-board)).
 4. **Keep the assessment current** - each revision is a new row - with the
    categories exposed and, per category, whether it was sealed and whether its
@@ -339,7 +347,10 @@ organisation's board has addresses to be mailed at.
 5. **Write the reports** on the **Reports** tab: the initial intimation and the
    72-hour report for the Board, the report to CERT-In if it is reportable, and
    a closure report if one is wanted. **Finalising** one freezes it and mails the
-   organisation's board for its information; it does not reach the regulator.
+   addresses chosen from the organisation's board's list for its information; it
+   does not reach the regulator. A report to CERT-In finalised before the *yes* is
+   held, and goes to the board at the first *yes*
+   ([below](#a-report-to-cert-in-is-held-for-the-validation)).
    **Send it through the regulator's own channel yourself**, then **record it as
    sent** with the proof of internal approval, the mail you sent, when you sent
    it and the reference returned. That is what completes the duty: the platform
@@ -468,16 +479,47 @@ shows has the report, so pressing it twice sends nothing twice.
   or the transport was away for longer than the worker's retries (about two and a
   half minutes). Bring it back and press **Try again**.
 - **Failed - `EmailRejected`, anything else.** No retry will mend it: the address
-  is wrong or refused. Take it off the list under **Breach settings**, add the right
-  one and press **Try again**, which mails only the new address.
+  is wrong or refused. Take it off the list under **Breach settings** (make it
+  optional first if it is mandatory), add the right one, and send a new version to
+  it: **Try again** tries only the addresses this version went to, never one added
+  since. Or, for this report alone, add the right address in the new version's
+  window.
 - **Delivered: finish on the Reports tab**, with the duty outstanding. The mail
   landed, and re-reading the duty failed. Press **Try again**: it re-reads the duty,
   which completes, and mails nobody.
-- **Nobody is on the organisation's board list.** Add the addresses under **Breach
-  settings**, then **Try again**.
+- **Nobody it went to can be reached any more**: every address it was sent to has
+  been taken off the list since. **Try again** has nobody to try. Write a new
+  version, which offers the list as it now stands.
+- **Nobody is on the organisation's board list** when finalising. Add the addresses
+  under **Breach settings**, or add an address for this report alone in the window.
+- **Not changed: the officers could not be told** under **Breach settings** (503).
+  Every change to the board's list mails both officers, and the broker could not
+  take the mail, so nothing was changed. Bring back Redis or the worker's broker and
+  try again; see "The worker is running but nothing happens".
 
 The duty's time is when the first address was reached, so a late last address does
 not make it late. The worker log carries the delivery, never the address.
+
+## A report to CERT-In is held for the validation
+
+A report to CERT-In finalised before the incident is validated *yes* reads **held**
+on **Reports**, line by line: nothing has gone to the board yet, and that is meant.
+The platform never sends to CERT-In; a person does, whatever the board's mail does.
+
+- **It goes at the first *yes***, to the addresses chosen when it was finalised,
+  less any taken off the list since, and the lines move to on the way. A *no* does
+  not drop it: it waits for the first *yes*, and if the incident closes on a *no*
+  the board never gets it. **Try again** is not offered while it is held (409
+  `report_held`).
+- **The *yes* came and it reads not sent**, with *Report held for the board not
+  sent: CERT-In set aside* on the trail. CERT-In was set aside at that moment.
+  Nothing sends it by itself later. If it is reportable after all, **Mark
+  reportable to CERT-In**, then press **Send to the board** on that version, or
+  write a new version.
+- **An older version reads not sent: a later version replaced it.** Only the newest
+  finalised version goes at the *yes*. Nothing to do.
+- **Recorded as sent while held.** The CERT-In duty is done; the board's mail still
+  waits for the *yes*.
 
 ## Somebody asks what happened to a record
 

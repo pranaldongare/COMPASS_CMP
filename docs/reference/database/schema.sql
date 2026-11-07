@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 8MebnnpLIB5RNuBB8tmmznligTdh9RXcJAa1fbwzG0cT5NXfooydJvem0WHnnPH
+\restrict Sh94pKUq6058YGSUDirYcgDIS6U5VkeT6rHZGvpqfs3hkEreF9ef0bFcqyhPNyZ
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -692,6 +692,46 @@ $$;
 
 
 --
+-- Name: cmp_breach_board_recipient_read_only(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cmp_breach_board_recipient_read_only() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    RAISE EXCEPTION 'an entry on the board list is never deleted'
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  IF NEW.recipient_id IS DISTINCT FROM OLD.recipient_id
+     OR NEW.recipient_uuid IS DISTINCT FROM OLD.recipient_uuid
+     OR NEW.full_name IS DISTINCT FROM OLD.full_name
+     OR NEW.email IS DISTINCT FROM OLD.email
+     OR NEW.email_hash IS DISTINCT FROM OLD.email_hash
+     OR NEW.added_by IS DISTINCT FROM OLD.added_by
+     OR NEW.added_at IS DISTINCT FROM OLD.added_at
+     OR NEW.one_off IS DISTINCT FROM OLD.one_off THEN
+    RAISE EXCEPTION 'only the removal and the mark of a board list entry may change'
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  IF OLD.removed_at IS NOT NULL AND (NEW.removed_at IS DISTINCT FROM OLD.removed_at
+                                     OR NEW.removed_by IS DISTINCT FROM OLD.removed_by) THEN
+    RAISE EXCEPTION 'an entry taken off the board list stays off'
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  IF NEW.mandatory IS DISTINCT FROM OLD.mandatory AND NEW.mandatory IS DISTINCT FROM (
+       SELECT e.kind = 'mandatory' FROM breach_board_recipient_event e
+        WHERE e.recipient_id = NEW.recipient_id
+        ORDER BY e.event_id DESC LIMIT 1) THEN
+    RAISE EXCEPTION 'a board list entry''s mark changes only with the event that records it'
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+--
 -- Name: cmp_breach_notice_frozen(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -721,6 +761,25 @@ $$;
 
 
 --
+-- Name: cmp_breach_obligation_event_cites_determination(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cmp_breach_obligation_event_cites_determination() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF NEW.kind IN ('not_applicable', 'reinstated') AND NEW.determination_id IS NULL
+     AND NOT EXISTS (SELECT 1 FROM breach_obligation
+                      WHERE obligation_id = NEW.obligation_id AND kind = 'cert_in') THEN
+    RAISE EXCEPTION 'a duty validation sets aside or brings back cites the determination that did it'
+      USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+--
 -- Name: cmp_breach_org_board_reported_to(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -733,6 +792,24 @@ BEGIN
         WHERE obligation_id = NEW.obligation_id AND kind = 'org_board') THEN
     RAISE EXCEPTION 'a report to the organisation''s board records whom it was made to'
       USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+--
+-- Name: cmp_breach_report_addressee_no_late_names(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cmp_breach_report_addressee_no_late_names() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM breach_report r
+              WHERE r.report_id = NEW.report_id AND r.finalised_at IS NOT NULL) THEN
+    RAISE EXCEPTION 'a finalised report goes to whom it went; write a new version'
+      USING ERRCODE = 'restrict_violation';
   END IF;
   RETURN NEW;
 END;
@@ -1051,9 +1128,23 @@ CREATE FUNCTION public.cmp_incident_report_outcome_once() RETURNS trigger
 DECLARE
   outcome text[] := ARRAY['breach_id', 'claimed_by', 'claimed_at',
                           'dismissed_by', 'dismissed_at', 'dismissal_reason'];
+  erasure text[] := ARRAY['reporter_name', 'reporter_email', 'reporter_email_hash',
+                          'reporter_erased_at', 'reporter_erased_by', 'reporter_erased_request_id'];
 BEGIN
   IF TG_OP = 'DELETE' THEN
     RAISE EXCEPTION 'incident reports are never deleted' USING ERRCODE = 'restrict_violation';
+  END IF;
+  -- A dismissed report's reporter is erased once, under a rights request: the
+  -- name, the address and its index go, and nothing else moves.
+  IF OLD.dismissed_at IS NOT NULL AND OLD.reporter_erased_at IS NULL
+     AND NEW.reporter_erased_at IS NOT NULL THEN
+    IF NEW.reporter_name IS NOT NULL OR NEW.reporter_email IS NOT NULL
+       OR NEW.reporter_email_hash IS NOT NULL
+       OR (to_jsonb(NEW) - erasure) IS DISTINCT FROM (to_jsonb(OLD) - erasure) THEN
+      RAISE EXCEPTION 'erasing a reporter blanks their name and address and changes nothing else'
+        USING ERRCODE = 'restrict_violation';
+    END IF;
+    RETURN NEW;
   END IF;
   IF OLD.claimed_at IS NOT NULL OR OLD.dismissed_at IS NOT NULL THEN
     RAISE EXCEPTION 'an incident report has its outcome' USING ERRCODE = 'restrict_violation';
@@ -1899,10 +1990,10 @@ CREATE TABLE public.breach (
     cyber_attack character varying(8),
     office_id integer NOT NULL,
     CONSTRAINT breach_began_before_detected CHECK (((began_at IS NULL) OR (began_at <= detected_at))),
-    CONSTRAINT breach_cyber_attack CHECK (((cyber_attack)::text = ANY (ARRAY[('yes'::character varying)::text, ('no'::character varying)::text, ('unknown'::character varying)::text]))),
-    CONSTRAINT breach_location_kind CHECK (((location_kind)::text = ANY (ARRAY[('platform'::character varying)::text, ('processor'::character varying)::text, ('data_source'::character varying)::text, ('other'::character varying)::text]))),
+    CONSTRAINT breach_cyber_attack CHECK (((cyber_attack)::text = ANY ((ARRAY['yes'::character varying, 'no'::character varying, 'unknown'::character varying])::text[]))),
+    CONSTRAINT breach_location_kind CHECK (((location_kind)::text = ANY ((ARRAY['platform'::character varying, 'processor'::character varying, 'data_source'::character varying, 'other'::character varying])::text[]))),
     CONSTRAINT breach_location_named CHECK (((((location_kind)::text = 'processor'::text) = (location_processor_id IS NOT NULL)) AND (((location_kind)::text = 'data_source'::text) = (location_source_id IS NOT NULL)))),
-    CONSTRAINT breach_status CHECK (((status)::text = ANY (ARRAY[('open'::character varying)::text, ('closed'::character varying)::text])))
+    CONSTRAINT breach_status CHECK (((status)::text = ANY ((ARRAY['open'::character varying, 'closed'::character varying])::text[])))
 );
 
 ALTER TABLE ONLY public.breach FORCE ROW LEVEL SECURITY;
@@ -2238,6 +2329,10 @@ CREATE TABLE public.breach_board_recipient (
     added_at timestamp with time zone DEFAULT now() NOT NULL,
     removed_by integer,
     removed_at timestamp with time zone,
+    one_off boolean DEFAULT false NOT NULL,
+    mandatory boolean DEFAULT false NOT NULL,
+    CONSTRAINT breach_board_recipient_mandatory_is_listed CHECK (((NOT mandatory) OR (removed_at IS NULL))),
+    CONSTRAINT breach_board_recipient_one_off_stays CHECK (((NOT one_off) OR ((removed_at IS NULL) AND (NOT mandatory)))),
     CONSTRAINT breach_board_recipient_removal_whole CHECK (((removed_by IS NULL) = (removed_at IS NULL)))
 );
 
@@ -2261,6 +2356,61 @@ COMMENT ON COLUMN public.breach_board_recipient.full_name IS 'Optional. Sealed (
 --
 
 COMMENT ON COLUMN public.breach_board_recipient.email IS 'Sealed (EMAIL); email_hash is its blind index';
+
+
+--
+-- Name: COLUMN breach_board_recipient.one_off; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_board_recipient.one_off IS 'Added by the sender for one report alone. Never on the list: the list, its uniqueness and Breach settings read only rows where this is false';
+
+
+--
+-- Name: COLUMN breach_board_recipient.mandatory; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_board_recipient.mandatory IS 'Goes with every report finalised while set; cannot be taken off the list while set; changes only with a breach_board_recipient_event';
+
+
+--
+-- Name: breach_board_recipient_event; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breach_board_recipient_event (
+    event_id integer NOT NULL,
+    recipient_id integer NOT NULL,
+    kind character varying(10) NOT NULL,
+    recorded_by integer NOT NULL,
+    recorded_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT breach_board_recipient_event_kind CHECK (((kind)::text = ANY ((ARRAY['mandatory'::character varying, 'optional'::character varying])::text[])))
+);
+
+
+--
+-- Name: TABLE breach_board_recipient_event; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.breach_board_recipient_event IS 'Each time an entry on the organisation''s board list was made mandatory, or optional again: who and when. Append-only';
+
+
+--
+-- Name: breach_board_recipient_event_event_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_board_recipient_event_event_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_board_recipient_event_event_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.breach_board_recipient_event_event_id_seq OWNED BY public.breach_board_recipient_event.event_id;
 
 
 --
@@ -2386,7 +2536,7 @@ CREATE TABLE public.breach_determination (
     determined_by integer NOT NULL,
     determined_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT breach_determination_aware_when_yes CHECK ((((outcome)::text = 'yes'::text) = (became_aware_at IS NOT NULL))),
-    CONSTRAINT breach_determination_outcome CHECK (((outcome)::text = ANY (ARRAY[('pending'::character varying)::text, ('yes'::character varying)::text, ('no'::character varying)::text])))
+    CONSTRAINT breach_determination_outcome CHECK (((outcome)::text = ANY ((ARRAY['pending'::character varying, 'yes'::character varying, 'no'::character varying])::text[])))
 );
 
 ALTER TABLE ONLY public.breach_determination FORCE ROW LEVEL SECURITY;
@@ -2473,11 +2623,11 @@ CREATE TABLE public.breach_notice_delivery (
     recorded_at timestamp with time zone DEFAULT now() NOT NULL,
     contact_id integer,
     CONSTRAINT breach_notice_delivery_attempt CHECK ((attempt >= 1)),
-    CONSTRAINT breach_notice_delivery_channel CHECK (((channel)::text = ANY (ARRAY[('portal'::character varying)::text, ('email'::character varying)::text, ('sms'::character varying)::text]))),
+    CONSTRAINT breach_notice_delivery_channel CHECK (((channel)::text = ANY ((ARRAY['portal'::character varying, 'email'::character varying, 'sms'::character varying])::text[]))),
     CONSTRAINT breach_notice_delivery_one_recipient CHECK ((num_nonnulls(auth_user_id, contact_id) = 1)),
     CONSTRAINT breach_notice_delivery_portal_at_once CHECK ((((channel)::text <> 'portal'::text) OR ((status)::text = 'delivered'::text))),
     CONSTRAINT breach_notice_delivery_portal_is_an_account CHECK ((((channel)::text <> 'portal'::text) OR (auth_user_id IS NOT NULL))),
-    CONSTRAINT breach_notice_delivery_status CHECK (((status)::text = ANY (ARRAY[('queued'::character varying)::text, ('delivered'::character varying)::text, ('failed'::character varying)::text])))
+    CONSTRAINT breach_notice_delivery_status CHECK (((status)::text = ANY ((ARRAY['queued'::character varying, 'delivered'::character varying, 'failed'::character varying])::text[])))
 );
 
 ALTER TABLE ONLY public.breach_notice_delivery FORCE ROW LEVEL SECURITY;
@@ -2544,7 +2694,7 @@ CREATE TABLE public.breach_obligation (
     determination_id integer,
     created_by integer NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT breach_obligation_kind CHECK (((kind)::text = ANY (ARRAY[('cert_in'::character varying)::text, ('board_intimation'::character varying)::text, ('board_report'::character varying)::text, ('principals'::character varying)::text, ('org_board'::character varying)::text])))
+    CONSTRAINT breach_obligation_kind CHECK (((kind)::text = ANY ((ARRAY['cert_in'::character varying, 'board_intimation'::character varying, 'board_report'::character varying, 'principals'::character varying, 'org_board'::character varying])::text[])))
 );
 
 ALTER TABLE ONLY public.breach_obligation FORCE ROW LEVEL SECURITY;
@@ -2569,13 +2719,19 @@ CREATE TABLE public.breach_obligation_event (
     recorded_by integer,
     recorded_at timestamp with time zone DEFAULT now() NOT NULL,
     reported_to text,
-    CONSTRAINT breach_obligation_event_cites_determination CHECK ((((kind)::text <> ALL (ARRAY[('not_applicable'::character varying)::text, ('reinstated'::character varying)::text])) OR (determination_id IS NOT NULL))),
     CONSTRAINT breach_obligation_event_completed_when CHECK ((((kind)::text <> 'completed'::text) OR (occurred_at IS NOT NULL))),
     CONSTRAINT breach_obligation_event_extension CHECK ((((kind)::text <> 'extended'::text) OR ((due_at IS NOT NULL) AND (requested_at IS NOT NULL)))),
-    CONSTRAINT breach_obligation_event_kind CHECK (((kind)::text = ANY (ARRAY[('completed'::character varying)::text, ('not_applicable'::character varying)::text, ('reinstated'::character varying)::text, ('extended'::character varying)::text, ('reopened'::character varying)::text])))
+    CONSTRAINT breach_obligation_event_kind CHECK (((kind)::text = ANY ((ARRAY['completed'::character varying, 'not_applicable'::character varying, 'reinstated'::character varying, 'extended'::character varying, 'reopened'::character varying])::text[])))
 );
 
 ALTER TABLE ONLY public.breach_obligation_event FORCE ROW LEVEL SECURITY;
+
+
+--
+-- Name: COLUMN breach_obligation_event.determination_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_obligation_event.determination_id IS 'The determination that set the duty aside or brought it back. Required on not_applicable and reinstated events by trg_breach_obligation_event_cites_determination, except on a cert_in duty, which validation never moves';
 
 
 --
@@ -2757,6 +2913,54 @@ COMMENT ON COLUMN public.breach_report.filed_at IS 'When a person sent it to the
 --
 
 COMMENT ON COLUMN public.breach_report.filed_reference IS 'What the regulator returned';
+
+
+--
+-- Name: breach_report_addressee; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breach_report_addressee (
+    addressee_id integer NOT NULL,
+    report_id integer NOT NULL,
+    recipient_id integer NOT NULL,
+    mandatory boolean DEFAULT false NOT NULL
+);
+
+ALTER TABLE ONLY public.breach_report_addressee FORCE ROW LEVEL SECURITY;
+
+
+--
+-- Name: TABLE breach_report_addressee; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.breach_report_addressee IS 'Who one version of a report is addressed to, as the sender chose them when finalising: entries on the list and one-off addresses. Written before the version is frozen, never after';
+
+
+--
+-- Name: COLUMN breach_report_addressee.mandatory; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_report_addressee.mandatory IS 'Whether the entry was mandatory when the version was finalised';
+
+
+--
+-- Name: breach_report_addressee_addressee_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_report_addressee_addressee_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_report_addressee_addressee_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.breach_report_addressee_addressee_id_seq OWNED BY public.breach_report_addressee.addressee_id;
 
 
 --
@@ -2957,7 +3161,7 @@ CREATE TABLE public.breach_temporary_access (
     ended_by integer,
     end_cause character varying(24),
     holder_id integer,
-    CONSTRAINT breach_temporary_access_cause CHECK (((end_cause IS NULL) OR ((end_cause)::text = ANY (ARRAY[('breach_closed'::character varying)::text, ('ticket_withdrawn'::character varying)::text, ('account_deactivated'::character varying)::text, ('request_closed'::character varying)::text, ('reassigned'::character varying)::text])))),
+    CONSTRAINT breach_temporary_access_cause CHECK (((end_cause IS NULL) OR ((end_cause)::text = ANY ((ARRAY['breach_closed'::character varying, 'ticket_withdrawn'::character varying, 'account_deactivated'::character varying, 'request_closed'::character varying, 'reassigned'::character varying])::text[])))),
     CONSTRAINT breach_temporary_access_ended CHECK (((ended_at IS NULL) = (end_cause IS NULL))),
     CONSTRAINT temporary_access_for_one_ticket CHECK ((((breach_id IS NOT NULL) AND (ticket_id IS NOT NULL) AND (holder_id IS NULL)) OR ((breach_id IS NULL) AND (ticket_id IS NULL) AND (holder_id IS NOT NULL))))
 );
@@ -3064,7 +3268,7 @@ CREATE TABLE public.breach_ticket_event (
     date_after date,
     CONSTRAINT breach_ticket_event_date CHECK ((((kind)::text = 'date_changed'::text) = (date_after IS NOT NULL))),
     CONSTRAINT breach_ticket_event_kind CHECK (((kind)::text = ANY ((ARRAY['returned'::character varying, 'sent_back'::character varying, 'closed'::character varying, 'withdrawn'::character varying, 'reopened'::character varying, 'date_changed'::character varying])::text[]))),
-    CONSTRAINT breach_ticket_event_outcome CHECK (((((kind)::text = 'returned'::text) = (outcome IS NOT NULL)) AND ((outcome IS NULL) OR ((outcome)::text = ANY (ARRAY[('done'::character varying)::text, ('partial'::character varying)::text, ('failed'::character varying)::text]))))),
+    CONSTRAINT breach_ticket_event_outcome CHECK (((((kind)::text = 'returned'::text) = (outcome IS NOT NULL)) AND ((outcome IS NULL) OR ((outcome)::text = ANY ((ARRAY['done'::character varying, 'partial'::character varying, 'failed'::character varying])::text[]))))),
     CONSTRAINT breach_ticket_event_reason CHECK ((((kind)::text <> ALL ((ARRAY['sent_back'::character varying, 'withdrawn'::character varying, 'reopened'::character varying, 'date_changed'::character varying])::text[])) OR (reason IS NOT NULL))),
     CONSTRAINT breach_ticket_event_summary CHECK ((((kind)::text <> 'returned'::text) OR (summary IS NOT NULL)))
 );
@@ -3143,8 +3347,8 @@ CREATE TABLE public.breach_ticket_message (
     evidence_hash text,
     evidence_name text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT breach_ticket_message_kind CHECK (((kind)::text = ANY (ARRAY[('instruction'::character varying)::text, ('message'::character varying)::text, ('return'::character varying)::text, ('status'::character varying)::text]))),
-    CONSTRAINT breach_ticket_message_side CHECK (((author_side)::text = ANY (ARRAY[('office'::character varying)::text, ('holder'::character varying)::text, ('system'::character varying)::text])))
+    CONSTRAINT breach_ticket_message_kind CHECK (((kind)::text = ANY ((ARRAY['instruction'::character varying, 'message'::character varying, 'return'::character varying, 'status'::character varying])::text[]))),
+    CONSTRAINT breach_ticket_message_side CHECK (((author_side)::text = ANY ((ARRAY['office'::character varying, 'holder'::character varying, 'system'::character varying])::text[])))
 );
 
 ALTER TABLE ONLY public.breach_ticket_message FORCE ROW LEVEL SECURITY;
@@ -3217,7 +3421,7 @@ CREATE TABLE public.breach_upload (
     added_by integer NOT NULL,
     added_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT breach_upload_counts CHECK (((rows_read >= 0) AND (matched_people >= 0) AND (new_contacts >= 0) AND (already_listed >= 0) AND (unreadable >= 0) AND (untraceable >= 0))),
-    CONSTRAINT breach_upload_kind CHECK (((kind)::text = ANY (ARRAY[('contacts'::character varying)::text, ('assets'::character varying)::text])))
+    CONSTRAINT breach_upload_kind CHECK (((kind)::text = ANY ((ARRAY['contacts'::character varying, 'assets'::character varying])::text[])))
 );
 
 ALTER TABLE ONLY public.breach_upload FORCE ROW LEVEL SECURITY;
@@ -3273,7 +3477,7 @@ CREATE TABLE public.category_processor (
     removed_at timestamp with time zone,
     removed_by integer,
     CONSTRAINT category_processor_removed CHECK (((removed_at IS NULL) = (removed_by IS NULL))),
-    CONSTRAINT category_processor_role CHECK (((processor_role)::text = ANY (ARRAY[('hrms'::character varying)::text, ('database'::character varying)::text, ('vendor'::character varying)::text])))
+    CONSTRAINT category_processor_role CHECK (((processor_role)::text = ANY ((ARRAY['hrms'::character varying, 'database'::character varying, 'vendor'::character varying])::text[])))
 );
 
 ALTER TABLE ONLY public.category_processor FORCE ROW LEVEL SECURITY;
@@ -3453,7 +3657,7 @@ CREATE TABLE public.consent_link (
     token_sealed bytea,
     office_id integer NOT NULL,
     audience_mode character varying(4) DEFAULT 'otp'::character varying NOT NULL,
-    CONSTRAINT consent_link_audience_mode CHECK (((audience_mode)::text = ANY (ARRAY[('sso'::character varying)::text, ('otp'::character varying)::text])))
+    CONSTRAINT consent_link_audience_mode CHECK (((audience_mode)::text = ANY ((ARRAY['sso'::character varying, 'otp'::character varying])::text[])))
 );
 
 ALTER TABLE ONLY public.consent_link FORCE ROW LEVEL SECURITY;
@@ -3788,7 +3992,7 @@ CREATE TABLE public.hr_category (
     default_person_type public.person_type,
     CONSTRAINT hr_category_code_shape CHECK (((category_code)::text ~ '^[A-Z][A-Z0-9_]{1,23}$'::text)),
     CONSTRAINT hr_category_retired_at CHECK ((((status)::text = 'retired'::text) = (retired_at IS NOT NULL))),
-    CONSTRAINT hr_category_status CHECK (((status)::text = ANY (ARRAY[('active'::character varying)::text, ('retired'::character varying)::text])))
+    CONSTRAINT hr_category_status CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'retired'::character varying])::text[])))
 );
 
 ALTER TABLE ONLY public.hr_category FORCE ROW LEVEL SECURITY;
@@ -3928,8 +4132,8 @@ CREATE TABLE public.incident_report (
     report_id integer NOT NULL,
     report_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
     reference character varying(24) NOT NULL,
-    reporter_name text NOT NULL,
-    reporter_email text NOT NULL,
+    reporter_name text,
+    reporter_email text,
     title text NOT NULL,
     noticed_at timestamp with time zone,
     origin text,
@@ -3950,10 +4154,17 @@ CREATE TABLE public.incident_report (
     dismissed_by integer,
     dismissed_at timestamp with time zone,
     dismissal_reason text,
+    reporter_email_hash text,
+    reporter_erased_at timestamp with time zone,
+    reporter_erased_by integer,
+    reporter_erased_request_id integer,
     CONSTRAINT incident_report_claim_whole CHECK ((((breach_id IS NULL) = (claimed_by IS NULL)) AND ((claimed_by IS NULL) = (claimed_at IS NULL)))),
     CONSTRAINT incident_report_cyber_attack CHECK (((cyber_attack)::text = ANY ((ARRAY['yes'::character varying, 'no'::character varying, 'unknown'::character varying])::text[]))),
     CONSTRAINT incident_report_dismissal_whole CHECK ((((dismissed_by IS NULL) = (dismissed_at IS NULL)) AND ((dismissed_at IS NULL) = (dismissal_reason IS NULL)))),
-    CONSTRAINT incident_report_one_outcome CHECK (((claimed_at IS NULL) OR (dismissed_at IS NULL)))
+    CONSTRAINT incident_report_erased_once_dismissed CHECK (((reporter_erased_at IS NULL) OR (dismissed_at IS NOT NULL))),
+    CONSTRAINT incident_report_erasure_whole CHECK ((((reporter_erased_at IS NULL) = (reporter_erased_by IS NULL)) AND ((reporter_erased_at IS NULL) = (reporter_erased_request_id IS NULL)))),
+    CONSTRAINT incident_report_one_outcome CHECK (((claimed_at IS NULL) OR (dismissed_at IS NULL))),
+    CONSTRAINT incident_report_reporter_until_erased CHECK ((((reporter_erased_at IS NULL) = (reporter_name IS NOT NULL)) AND ((reporter_erased_at IS NULL) = (reporter_email IS NOT NULL)) AND ((reporter_erased_at IS NULL) = (reporter_email_hash IS NOT NULL))))
 );
 
 
@@ -3975,14 +4186,14 @@ COMMENT ON COLUMN public.incident_report.reference IS 'INC-YYYY-NNNN, from breac
 -- Name: COLUMN incident_report.reporter_name; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON COLUMN public.incident_report.reporter_name IS 'Sealed (NAME)';
+COMMENT ON COLUMN public.incident_report.reporter_name IS 'Sealed (NAME). NULL once erased under a rights request, which only a dismissed report allows';
 
 
 --
 -- Name: COLUMN incident_report.reporter_email; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON COLUMN public.incident_report.reporter_email IS 'Proved by a code before the report was taken. Sealed (EMAIL)';
+COMMENT ON COLUMN public.incident_report.reporter_email IS 'Proved by a code before the report was taken. Sealed (EMAIL); reporter_email_hash is its blind index. NULL once erased';
 
 
 --
@@ -3997,6 +4208,20 @@ COMMENT ON COLUMN public.incident_report.title IS 'Sealed (FREE_TEXT)';
 --
 
 COMMENT ON COLUMN public.incident_report.dismissal_reason IS 'Why it was not taken up. Sealed (FREE_TEXT)';
+
+
+--
+-- Name: COLUMN incident_report.reporter_email_hash; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.incident_report.reporter_email_hash IS 'index_of(''email'', address), the same index as auth_user.email_hash: how a rights request finds a dismissed report. NULL once erased';
+
+
+--
+-- Name: COLUMN incident_report.reporter_erased_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.incident_report.reporter_erased_at IS 'When the reporter''s name and email were erased, under reporter_erased_request_id, by reporter_erased_by. The number, the words, the reason and who dismissed it stay';
 
 
 --
@@ -4136,7 +4361,7 @@ CREATE TABLE public.message_template (
     updated_by integer,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT message_template_body_present CHECK ((length(btrim(body)) > 0)),
-    CONSTRAINT message_template_channel CHECK (((channel)::text = ANY (ARRAY[('email'::character varying)::text, ('sms'::character varying)::text])))
+    CONSTRAINT message_template_channel CHECK (((channel)::text = ANY ((ARRAY['email'::character varying, 'sms'::character varying])::text[])))
 );
 
 
@@ -4420,7 +4645,7 @@ CREATE TABLE public.notice_template (
     office_id integer NOT NULL,
     category_id integer,
     CONSTRAINT notice_template_retired_at CHECK ((((status)::text = 'retired'::text) = (retired_at IS NOT NULL))),
-    CONSTRAINT notice_template_status CHECK (((status)::text = ANY (ARRAY[('active'::character varying)::text, ('retired'::character varying)::text])))
+    CONSTRAINT notice_template_status CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'retired'::character varying])::text[])))
 );
 
 ALTER TABLE ONLY public.notice_template FORCE ROW LEVEL SECURITY;
@@ -5109,8 +5334,8 @@ CREATE TABLE public.rights_item_execution (
     detail jsonb DEFAULT '{}'::jsonb NOT NULL,
     attempted_by integer,
     attempted_at timestamp with time zone DEFAULT now() NOT NULL,
-    CONSTRAINT item_execution_status CHECK (((status)::text = ANY (ARRAY[('done'::character varying)::text, ('waiting'::character varying)::text, ('failed'::character varying)::text, ('held'::character varying)::text]))),
-    CONSTRAINT item_execution_store CHECK (((store)::text = ANY (ARRAY[('holder_copy'::character varying)::text, ('platform_pointer'::character varying)::text, ('legal_hold'::character varying)::text])))
+    CONSTRAINT item_execution_status CHECK (((status)::text = ANY ((ARRAY['done'::character varying, 'waiting'::character varying, 'failed'::character varying, 'held'::character varying])::text[]))),
+    CONSTRAINT item_execution_store CHECK (((store)::text = ANY ((ARRAY['holder_copy'::character varying, 'platform_pointer'::character varying, 'legal_hold'::character varying])::text[])))
 );
 
 ALTER TABLE ONLY public.rights_item_execution FORCE ROW LEVEL SECURITY;
@@ -5352,11 +5577,11 @@ CREATE TABLE public.rights_request_holder (
     link_token_sealed bytea,
     link_issued_at timestamp with time zone,
     CONSTRAINT holder_accepted_is_returned CHECK (((accepted_at IS NULL) OR (ticket_status = 'returned'::public.rights_ticket_status))),
-    CONSTRAINT holder_channel CHECK (((channel)::text = ANY (ARRAY[('portal'::character varying)::text, ('email'::character varying)::text]))),
+    CONSTRAINT holder_channel CHECK (((channel)::text = ANY ((ARRAY['portal'::character varying, 'email'::character varying])::text[]))),
     CONSTRAINT holder_issued_has_date CHECK (((ticket_status = 'pending'::public.rights_ticket_status) OR (issued_at IS NOT NULL))),
     CONSTRAINT holder_link_whole CHECK ((((link_token IS NULL) = (link_token_sealed IS NULL)) AND ((link_token IS NULL) = (link_issued_at IS NULL)))),
     CONSTRAINT holder_portal_has_account CHECK ((((channel)::text <> 'portal'::text) OR (responder_user_id IS NOT NULL))),
-    CONSTRAINT holder_return_outcome CHECK (((return_outcome IS NULL) OR ((return_outcome)::text = ANY (ARRAY[('done'::character varying)::text, ('partial'::character varying)::text, ('failed'::character varying)::text])))),
+    CONSTRAINT holder_return_outcome CHECK (((return_outcome IS NULL) OR ((return_outcome)::text = ANY ((ARRAY['done'::character varying, 'partial'::character varying, 'failed'::character varying])::text[])))),
     CONSTRAINT holder_returned_has_date CHECK (((ticket_status <> 'returned'::public.rights_ticket_status) OR (returned_at IS NOT NULL)))
 );
 
@@ -5562,8 +5787,8 @@ CREATE TABLE public.rights_ticket_message (
     evidence_hash text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     evidence_name text,
-    CONSTRAINT ticket_message_kind CHECK (((kind)::text = ANY (ARRAY[('brief'::character varying)::text, ('instruction'::character varying)::text, ('message'::character varying)::text, ('return'::character varying)::text, ('escalation'::character varying)::text, ('status'::character varying)::text]))),
-    CONSTRAINT ticket_message_side CHECK (((author_side)::text = ANY (ARRAY[('office'::character varying)::text, ('holder'::character varying)::text, ('system'::character varying)::text])))
+    CONSTRAINT ticket_message_kind CHECK (((kind)::text = ANY ((ARRAY['brief'::character varying, 'instruction'::character varying, 'message'::character varying, 'return'::character varying, 'escalation'::character varying, 'status'::character varying])::text[]))),
+    CONSTRAINT ticket_message_side CHECK (((author_side)::text = ANY ((ARRAY['office'::character varying, 'holder'::character varying, 'system'::character varying])::text[])))
 );
 
 ALTER TABLE ONLY public.rights_ticket_message FORCE ROW LEVEL SECURITY;
@@ -5621,7 +5846,7 @@ CREATE TABLE public.template_version (
     CONSTRAINT template_version_retired CHECK ((((status)::text = 'retired'::text) = (retired_at IS NOT NULL))),
     CONSTRAINT template_version_retirer CHECK (((retired_at IS NULL) = (retired_by IS NULL))),
     CONSTRAINT template_version_slot CHECK (((slot_max_length >= 100) AND (slot_max_length <= 4000))),
-    CONSTRAINT template_version_status CHECK (((status)::text = ANY (ARRAY[('draft'::character varying)::text, ('approved'::character varying)::text, ('retired'::character varying)::text])))
+    CONSTRAINT template_version_status CHECK (((status)::text = ANY ((ARRAY['draft'::character varying, 'approved'::character varying, 'retired'::character varying])::text[])))
 );
 
 ALTER TABLE ONLY public.template_version FORCE ROW LEVEL SECURITY;
@@ -5836,6 +6061,13 @@ ALTER TABLE ONLY public.breach_board_recipient ALTER COLUMN recipient_id SET DEF
 
 
 --
+-- Name: breach_board_recipient_event event_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_board_recipient_event ALTER COLUMN event_id SET DEFAULT nextval('public.breach_board_recipient_event_event_id_seq'::regclass);
+
+
+--
 -- Name: breach_contact contact_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -5889,6 +6121,13 @@ ALTER TABLE ONLY public.breach_recording ALTER COLUMN recording_id SET DEFAULT n
 --
 
 ALTER TABLE ONLY public.breach_report ALTER COLUMN report_id SET DEFAULT nextval('public.breach_report_report_id_seq'::regclass);
+
+
+--
+-- Name: breach_report_addressee addressee_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_report_addressee ALTER COLUMN addressee_id SET DEFAULT nextval('public.breach_report_addressee_addressee_id_seq'::regclass);
 
 
 --
@@ -6406,6 +6645,14 @@ ALTER TABLE ONLY public.breach_attachment
 
 
 --
+-- Name: breach_board_recipient_event breach_board_recipient_event_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_board_recipient_event
+    ADD CONSTRAINT breach_board_recipient_event_pkey PRIMARY KEY (event_id);
+
+
+--
 -- Name: breach_board_recipient breach_board_recipient_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -6611,6 +6858,22 @@ ALTER TABLE ONLY public.breach_recording
 
 ALTER TABLE ONLY public.breach
     ADD CONSTRAINT breach_reference_key UNIQUE (reference);
+
+
+--
+-- Name: breach_report_addressee breach_report_addressee_once; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_report_addressee
+    ADD CONSTRAINT breach_report_addressee_once UNIQUE (report_id, recipient_id);
+
+
+--
+-- Name: breach_report_addressee breach_report_addressee_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_report_addressee
+    ADD CONSTRAINT breach_report_addressee_pkey PRIMARY KEY (addressee_id);
 
 
 --
@@ -7812,6 +8075,13 @@ CREATE INDEX idx_breach_attachment_report ON public.breach_attachment USING btre
 
 
 --
+-- Name: idx_breach_board_recipient_event; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_breach_board_recipient_event ON public.breach_board_recipient_event USING btree (recipient_id, event_id);
+
+
+--
 -- Name: idx_breach_contact; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -8012,6 +8282,13 @@ CREATE INDEX idx_hr_category_office ON public.hr_category USING btree (office_id
 --
 
 CREATE INDEX idx_hr_poc_category_category ON public.hr_poc_category USING btree (category_id);
+
+
+--
+-- Name: idx_incident_report_reporter_email_hash; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_incident_report_reporter_email_hash ON public.incident_report USING btree (reporter_email_hash) WHERE (dismissed_at IS NOT NULL);
 
 
 --
@@ -8424,7 +8701,7 @@ CREATE UNIQUE INDEX uq_artefact_supersedes_once ON public.consent_artefact USING
 -- Name: uq_breach_board_recipient_active; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX uq_breach_board_recipient_active ON public.breach_board_recipient USING btree (email_hash) WHERE (removed_at IS NULL);
+CREATE UNIQUE INDEX uq_breach_board_recipient_active ON public.breach_board_recipient USING btree (email_hash) WHERE ((removed_at IS NULL) AND (NOT one_off));
 
 
 --
@@ -8554,6 +8831,20 @@ CREATE TRIGGER trg_breach_attachment_append_only BEFORE DELETE OR UPDATE ON publ
 
 
 --
+-- Name: breach_board_recipient_event trg_breach_board_recipient_event_append_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_board_recipient_event_append_only BEFORE DELETE OR UPDATE ON public.breach_board_recipient_event FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
+-- Name: breach_board_recipient trg_breach_board_recipient_read_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_board_recipient_read_only BEFORE DELETE OR UPDATE ON public.breach_board_recipient FOR EACH ROW EXECUTE FUNCTION public.cmp_breach_board_recipient_read_only();
+
+
+--
 -- Name: breach_contact trg_breach_contact_append_only; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -8596,6 +8887,13 @@ CREATE TRIGGER trg_breach_obligation_event_append_only BEFORE DELETE OR UPDATE O
 
 
 --
+-- Name: breach_obligation_event trg_breach_obligation_event_cites_determination; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_obligation_event_cites_determination BEFORE INSERT ON public.breach_obligation_event FOR EACH ROW EXECUTE FUNCTION public.cmp_breach_obligation_event_cites_determination();
+
+
+--
 -- Name: breach trg_breach_office_fixed; Type: TRIGGER; Schema: public; Owner: -
 --
 
@@ -8614,6 +8912,20 @@ CREATE TRIGGER trg_breach_org_board_reported_to BEFORE INSERT ON public.breach_o
 --
 
 CREATE TRIGGER trg_breach_recording_append_only BEFORE DELETE OR UPDATE ON public.breach_recording FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
+-- Name: breach_report_addressee trg_breach_report_addressee_append_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_report_addressee_append_only BEFORE DELETE OR UPDATE ON public.breach_report_addressee FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
+-- Name: breach_report_addressee trg_breach_report_addressee_no_late_names; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_breach_report_addressee_no_late_names BEFORE INSERT ON public.breach_report_addressee FOR EACH ROW EXECUTE FUNCTION public.cmp_breach_report_addressee_no_late_names();
 
 
 --
@@ -9158,6 +9470,22 @@ ALTER TABLE ONLY public.breach_board_recipient
 
 
 --
+-- Name: breach_board_recipient_event breach_board_recipient_event_recipient_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_board_recipient_event
+    ADD CONSTRAINT breach_board_recipient_event_recipient_id_fkey FOREIGN KEY (recipient_id) REFERENCES public.breach_board_recipient(recipient_id);
+
+
+--
+-- Name: breach_board_recipient_event breach_board_recipient_event_recorded_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_board_recipient_event
+    ADD CONSTRAINT breach_board_recipient_event_recorded_by_fkey FOREIGN KEY (recorded_by) REFERENCES public.auth_user(id);
+
+
+--
 -- Name: breach_board_recipient breach_board_recipient_removed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9350,6 +9678,22 @@ ALTER TABLE ONLY public.breach_recording
 
 
 --
+-- Name: breach_report_addressee breach_report_addressee_recipient_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_report_addressee
+    ADD CONSTRAINT breach_report_addressee_recipient_id_fkey FOREIGN KEY (recipient_id) REFERENCES public.breach_board_recipient(recipient_id);
+
+
+--
+-- Name: breach_report_addressee breach_report_addressee_report_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_report_addressee
+    ADD CONSTRAINT breach_report_addressee_report_id_fkey FOREIGN KEY (report_id) REFERENCES public.breach_report(report_id);
+
+
+--
 -- Name: breach_report breach_report_breach_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9363,6 +9707,14 @@ ALTER TABLE ONLY public.breach_report
 
 ALTER TABLE ONLY public.breach_report
     ADD CONSTRAINT breach_report_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_report_delivery breach_report_delivery_addressed; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_report_delivery
+    ADD CONSTRAINT breach_report_delivery_addressed FOREIGN KEY (report_id, recipient_id) REFERENCES public.breach_report_addressee(report_id, recipient_id);
 
 
 --
@@ -9987,6 +10339,22 @@ ALTER TABLE ONLY public.incident_report
 
 ALTER TABLE ONLY public.incident_report
     ADD CONSTRAINT incident_report_dismissed_by_fkey FOREIGN KEY (dismissed_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: incident_report incident_report_reporter_erased_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.incident_report
+    ADD CONSTRAINT incident_report_reporter_erased_by_fkey FOREIGN KEY (reporter_erased_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: incident_report incident_report_reporter_erased_request_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.incident_report
+    ADD CONSTRAINT incident_report_reporter_erased_request_id_fkey FOREIGN KEY (reporter_erased_request_id) REFERENCES public.rights_request(request_id);
 
 
 --
@@ -10818,6 +11186,12 @@ ALTER TABLE public.breach_recording ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.breach_report ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: breach_report_addressee; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.breach_report_addressee ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: breach_report_delivery; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -11119,6 +11493,17 @@ CREATE POLICY office_isolation ON public.breach_report USING (((current_setting(
   WHERE (p.breach_id = breach_report.breach_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
    FROM public.breach p
   WHERE (p.breach_id = breach_report.breach_id)))));
+
+
+--
+-- Name: breach_report_addressee office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.breach_report_addressee USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach_report p
+  WHERE (p.report_id = breach_report_addressee.report_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.breach_report p
+  WHERE (p.report_id = breach_report_addressee.report_id)))));
 
 
 --
@@ -11676,5 +12061,5 @@ ALTER TABLE public.template_version_purpose ENABLE ROW LEVEL SECURITY;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 8MebnnpLIB5RNuBB8tmmznligTdh9RXcJAa1fbwzG0cT5NXfooydJvem0WHnnPH
+\unrestrict Sh94pKUq6058YGSUDirYcgDIS6U5VkeT6rHZGvpqfs3hkEreF9ef0bFcqyhPNyZ
 

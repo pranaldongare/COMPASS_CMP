@@ -26,9 +26,9 @@ that sends it and the code that queues it are listed per module in
 | Consent | `consent_receipt` | email, SMS | consent is recorded through a link |
 | Consent | `withdrawal_confirmation` | email, SMS | some or all purposes are withdrawn |
 | Rights | `rights_acknowledgement` | email, SMS | a rights request is received |
-| Rights | `rights_verification_code` | email, SMS | a public-form request needs its contact confirmed |
+| Rights | `rights_verification_code` | email, SMS | a public-form request needs its contact confirmed; to the contact on file, an account's or, since 0065, the address a dismissed report from the public link came from - never one typed into the form |
 | Rights | `rights_response_ready` | email, SMS | a response can be read from her account |
-| Rights | `rights_response` | email, SMS | the response itself is sent |
+| Rights | `rights_response` | email, SMS | the response itself is sent; its digest lists the reports the requester sent through the public link that were not taken up, and for a request with no account those reports alone, by number, dates and title (0065) |
 | Rights | `rights_closed` | email, SMS | a request is refused, reclassified, unverified, or a grievance decided |
 | Rights | `nomination_code` | email, SMS | a nominee proves a recorded contact before accepting or declining |
 | Rights | `nomination_invitation` | email, SMS | somebody is nominated |
@@ -54,8 +54,9 @@ that sends it and the code that queues it are listed per module in
 | Breach | `breach_duty_due` | email | a breach duty with a deadline - the organisation's board, CERT-In, the Board's report - is about to fall due, and again if overdue; to every active DPO, once per stage per duty |
 | Breach | `breach_ticket_returned` | email | the holder of a breach ticket returns it with their answer; to the officers of the breach's office |
 | Breach | `breach_ticket_date_changed` | email | the holder of a breach ticket or the Privacy Office changes the date it is to be resolved by (0061): to whoever did not, the holder or every active officer of the breach's office. It names no breach and no date; both, and the reason, are on the ticket |
-| Breach | `breach_board_report` | email, with the report as a PDF | the Privacy Office notifies the organisation's board of a personal data breach (0059): the report it drafted, to every address on the board's list under Breach settings |
-| Breach | `breach_report_finalised` | email, with the report as a PDF | the Privacy Office finalises a report for the DPDP Board or CERT-In, or a closure report (0059): to the organisation's board, for its information. It says the report has not been sent to the regulator, and does not go to one |
+| Breach | `breach_board_report` | email, with the report as a PDF | the Privacy Office notifies the organisation's board of a personal data breach (0059): the report it drafted, to the addresses chosen when it was finalised - the board's list under Breach settings, less any the sender left out (never a mandatory one), with any added for that report alone (0064) |
+| Breach | `breach_report_finalised` | email, with the report as a PDF | the Privacy Office finalises a report for the DPDP Board or CERT-In, or a closure report (0059): to the addresses chosen when it was finalised, as above, for the organisation's board's information. It says the report has not been sent to the regulator, and does not go to one. A report to CERT-In finalised before the incident is validated as a personal data breach is held and sent at the first *yes*, and never if none comes (0064) |
+| Breach | `breach_board_list_changed` | email | an address is added to the organisation's board's list, taken off it, made mandatory or made optional again (0064): to every active Data Protection Officer and Legal PoC, the one who made the change included. Who made it, what, the name and the address, and no breach. Never copied |
 | Breach | `incident_report_code` | email | somebody reporting an incident through the public link asks for a code (0058), to prove the address they gave. Sent to the address typed |
 | Breach | `incident_report_received` | email | a report arrives through the public link (0058): to the reporter, with the reference it was given |
 | Breach | `incident_reported` | email | a report arrives through the public link (0058): to every active account in the roles named under Breach settings, by default the Data Protection Officer and the Legal PoC. Its number and when it arrived, and nothing of what it says |

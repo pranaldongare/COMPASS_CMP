@@ -11,7 +11,7 @@ A rights request from the requester's side - acknowledged, verified, answered, c
 | # | Email | When | To | CC | Attachment |
 |---|---|---|---|---|---|
 | 1 | [Rights request acknowledged](#rights-acknowledgement) | Sent on receipt of a rights request: the reference, the date she will hear by, and what to expect. | The requester, at the contact on file (a nominee's request: the nominee). | Never | None |
-| 2 | [Rights request verification code](#rights-verification-code) | Confirms that a request made through the public form came from the person on file. | The requester, at the contact already on file - never one typed into the form. | Never | None |
+| 2 | [Rights request verification code](#rights-verification-code) | Confirms that a request made through the public form came from the person on file. | The requester, at the contact already on file: an account's, or the address a dismissed report from the public link came from. Never one typed into the form. | Never | None |
 | 3 | [Response ready](#rights-response-ready) | Tells her the Privacy Office's response can be read from her account. | The requester, at the contact on file. | Never | None |
 | 4 | [Response](#rights-response) | The response itself: the decision, the Privacy Office's words, and her record. | The requester, at the contact on file. | Never | None |
 | 5 | [Request closed](#rights-closed) | A refusal, a reclassification, an unverified request or a grievance decision, with the reason. | The requester, at the contact on file. | Never | None |
@@ -71,11 +71,11 @@ Key `rights_verification_code` · channels: email, sms
 | | |
 |---|---|
 | When | Confirms that a request made through the public form came from the person on file. |
-| To | The requester, at the contact already on file - never one typed into the form. |
+| To | The requester, at the contact already on file: an account's, or the address a dismissed report from the public link came from. Never one typed into the form. |
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_rights_verification_code` (`backend/api/src/cmp/tasks/notifications/rights.py:90`) |
-| Queued from | `backend/api/src/cmp/domain/rights/service.py:3822`, `backend/api/src/cmp/domain/rights/service.py:480` |
+| Queued from | `backend/api/src/cmp/domain/rights/service.py:3856`, `backend/api/src/cmp/domain/rights/service.py:487` |
 | Variables | `code` (The six-digit one-time code.), `minutes` (How many minutes the code is valid for.), `reference` (The rights request reference.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{code} confirms request {reference} is yours`
@@ -148,8 +148,8 @@ Key `rights_response` · channels: email, sms
 | CC | Never - it is written to one person about her own data; a copy would disclose it. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_rights_response` (`backend/api/src/cmp/tasks/notifications/rights.py:139`) |
-| Queued from | `backend/api/src/cmp/domain/rights/service.py:3202` |
-| Variables | `reference` (The rights request reference.), `headline` (The outcome, as a sentence.), `response_text` (What the Privacy Office wrote.), `digest` (Her record as held by the platform: consents, disclosures, returns.), `availability` (Where and until when the full file can be downloaded, as a sentence.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
+| Queued from | `backend/api/src/cmp/domain/rights/service.py:3236` |
+| Variables | `reference` (The rights request reference.), `headline` (The outcome, as a sentence.), `response_text` (What the Privacy Office wrote.), `digest` (Her record as held by the platform: consents, disclosures, returns, and the reports she sent through the public link that were not taken up. With no account, those reports alone, by number, dates and title.), `availability` (Where and until when the full file can be downloaded, as a sentence.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Our response to your request {reference}`
 
@@ -188,7 +188,7 @@ Key `rights_closed` · channels: email, sms
 | CC | Never - it is written to one person about her own data; a copy would disclose it. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_rights_closed` (`backend/api/src/cmp/tasks/notifications/rights.py:154`) |
-| Queued from | `backend/api/src/cmp/domain/rights/service.py:3302`, `backend/api/src/cmp/domain/rights/service.py:601`, `backend/api/src/cmp/domain/rights/service.py:680`, `backend/api/src/cmp/domain/rights/service.py:725` |
+| Queued from | `backend/api/src/cmp/domain/rights/service.py:3336`, `backend/api/src/cmp/domain/rights/service.py:622`, `backend/api/src/cmp/domain/rights/service.py:701`, `backend/api/src/cmp/domain/rights/service.py:746` |
 | Variables | `reference` (The rights request reference.), `headline` (What happened, as a clause.), `explanation` (The reason, in the Privacy Office's words.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `About your request {reference}`
@@ -223,7 +223,7 @@ Key `nomination_code` · channels: email, sms
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_nomination_code` (`backend/api/src/cmp/tasks/notifications/rights.py:101`) |
-| Queued from | `backend/api/src/cmp/domain/rights/service.py:3606` |
+| Queued from | `backend/api/src/cmp/domain/rights/service.py:3640` |
 | Variables | `code` (The six-digit one-time code.), `minutes` (How many minutes the code is valid for.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{code} is your nomination code`
@@ -258,7 +258,7 @@ Key `nomination_invitation` · channels: email, sms
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_nomination_invitation` (`backend/api/src/cmp/tasks/notifications/rights.py:167`) |
-| Queued from | `backend/api/src/cmp/domain/rights/service.py:3544` |
+| Queued from | `backend/api/src/cmp/domain/rights/service.py:3578` |
 | Variables | `principal_name` (Who made the nomination.), `accept_url` (The single-use link to accept or decline.), `expires_on` (When the link lapses.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{principal_name} has nominated you`
@@ -296,7 +296,7 @@ Key `nomination_accepted` · channels: email, sms
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_nomination_accepted` (`backend/api/src/cmp/tasks/notifications/rights.py:184`) |
-| Queued from | `backend/api/src/cmp/domain/rights/service.py:3679` |
+| Queued from | `backend/api/src/cmp/domain/rights/service.py:3713` |
 | Variables | `principal_name` (Who made the nomination.), `reference` (The nomination reference.), `nominee_url` (The page to act from without signing in.), `sign_in_url` (The portal's sign-in page.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `You are {principal_name}'s nominee - keep this message`
@@ -336,7 +336,7 @@ Key `holder_instruction` · channels: email, sms
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_holder_instruction` (`backend/api/src/cmp/tasks/notifications/rights.py:266`) |
-| Queued from | `backend/api/src/cmp/domain/rights/service.py:1817`, `backend/api/src/cmp/domain/rights/service.py:1885` |
+| Queued from | `backend/api/src/cmp/domain/rights/service.py:1838`, `backend/api/src/cmp/domain/rights/service.py:1906` |
 | Variables | `reference` (The rights request reference.), `holder_label` (The holder the ticket is addressed to.), `instruction` (What the holder is asked to do.), `due_on` (The date the return is due by.), `brief` (What the platform already holds from this holder, or empty.), `return_route` (How to answer, as a sentence.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Action required by {due_on}: rights request {reference}`
@@ -375,7 +375,7 @@ Key `ticket_reminder` · channels: email, sms
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_ticket_reminder` (`backend/api/src/cmp/tasks/notifications/rights.py:216`) |
-| Queued from | `backend/api/src/cmp/domain/rights/service.py:1631`, `backend/api/src/cmp/domain/rights/service.py:2641` |
+| Queued from | `backend/api/src/cmp/domain/rights/service.py:1652`, `backend/api/src/cmp/domain/rights/service.py:2662` |
 | Variables | `reference` (The rights request reference.), `holder_label` (The holder the ticket is addressed to.), `timing` (How near the date is, for the subject.), `when` (The date, as a clause.), `return_route` (How to return it, as a sentence.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{timing}: rights request {reference}`
@@ -408,7 +408,7 @@ Key `ticket_message` · channels: email, sms
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | The file the Privacy Office put on the message, to the ticket's holder only. |
 | Sent by | `cmp.notifications.send_ticket_message` (`backend/api/src/cmp/tasks/notifications/rights.py:244`) |
-| Queued from | `backend/api/src/cmp/domain/rights/service.py:2046`, `backend/api/src/cmp/domain/rights/service.py:2083` |
+| Queued from | `backend/api/src/cmp/domain/rights/service.py:2067`, `backend/api/src/cmp/domain/rights/service.py:2104` |
 | Variables | `reference` (The rights request reference.), `holder_label` (The holder the ticket is addressed to.), `author` (Who wrote the message.), `message` (The message itself.), `return_route` (How to reply, as a sentence.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Rights request {reference}, {holder_label}: message from {author}`
@@ -441,7 +441,7 @@ Key `holder_ticket_link` · channels: email
 | CC | Never - it is written to one person about her own data; a copy would disclose it. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_holder_link` (`backend/api/src/cmp/tasks/notifications/rights.py:287`) |
-| Queued from | `backend/api/src/cmp/domain/rights/service.py:1807`, `backend/api/src/cmp/domain/rights/service.py:2014` |
+| Queued from | `backend/api/src/cmp/domain/rights/service.py:1828`, `backend/api/src/cmp/domain/rights/service.py:2035` |
 | Variables | `reference` (The rights request reference.), `holder_label` (The holder the ticket is addressed to.), `event` (What happened, as a sentence.), `due_on` (The date to answer by.), `link` (The ticket on the portal (PUBLIC_BASE_URL/ticket/...).), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Rights request {reference}: a ticket for {holder_label}`
@@ -504,7 +504,7 @@ Key `rights_request_received` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_rights_request_received` (`backend/api/src/cmp/tasks/notifications/alerts.py:103`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:151` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:158` |
 | Variables | `reference` (The rights request reference.), `request_type` (Access, erasure or a grievance.), `channel` (Where it came from.), `due_date` (When the response is due.), `request_url` (The request in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `New rights request {reference}: {request_type}`
@@ -529,7 +529,7 @@ Key `rights_due_digest` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_rights_due_digest` (`backend/api/src/cmp/tasks/notifications/alerts.py:141`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:225` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:232` |
 | Variables | `count` (How many requests are on the list.), `items` (One line per request: reference, kind, due date and state.), `requests_url` (Rights requests in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{count} rights requests need attention`
@@ -554,7 +554,7 @@ Key `rights_transfer_received` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_rights_transfer_received` (`backend/api/src/cmp/tasks/notifications/alerts.py:126`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:169` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:176` |
 | Variables | `reference` (The rights request reference.), `request_type` (Access, erasure or a grievance.), `received_at` (When it arrived: the clock still runs from here.), `due_date` (When the response is due.), `from_office` (The office that transferred it.), `reason` (Why, in the transferring officer's words.), `request_url` (The request in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Rights request {reference} transferred to your office`
@@ -585,7 +585,7 @@ Key `rights_grievance_about_dpo` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_rights_grievance_about_dpo` (`backend/api/src/cmp/tasks/notifications/alerts.py:152`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:187` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:194` |
 | Variables | `reference` (The rights request reference.), `request_url` (The request in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Grievance {reference} is about the DPO and needs a reviewer`

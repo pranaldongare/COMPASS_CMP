@@ -1,6 +1,6 @@
 {
-  "commit": "dea756e9d241600a3fcd50f65b8fa33f5e6de427",
-  "migration_head": "0063",
+  "commit": "bfbee4bc113d13094d91bcf4ec9b2ed2ced4ea44",
+  "migration_head": "0065",
   "migrations": [
     {
       "revision": "0001",
@@ -249,6 +249,14 @@
     {
       "revision": "0063",
       "source": "backend/api/migrations/versions/0063_breach_tables_hold_to_their_word.py"
+    },
+    {
+      "revision": "0064",
+      "source": "backend/api/migrations/versions/0064_who_a_report_goes_to.py"
+    },
+    {
+      "revision": "0065",
+      "source": "backend/api/migrations/versions/0065_a_dismissed_reporter_is_found_and_erased.py"
     }
   ],
   "postgres_version": "16.15",
@@ -309,6 +317,11 @@
       "comment": "The organisation's board: where its reports are mailed. Taken off, never deleted"
     },
     {
+      "name": "breach_board_recipient_event",
+      "kind": "r",
+      "comment": "Each time an entry on the organisation's board list was made mandatory, or optional again: who and when. Append-only"
+    },
+    {
       "name": "breach_contact",
       "kind": "r",
       "comment": "Somebody a breach touched who has no account, from an uploaded list. Only ever added to"
@@ -347,6 +360,11 @@
       "name": "breach_report",
       "kind": "r",
       "comment": "A version of a report on a breach. Frozen once finalised, which mails the organisation's board"
+    },
+    {
+      "name": "breach_report_addressee",
+      "kind": "r",
+      "comment": "Who one version of a report is addressed to, as the sender chose them when finalising: entries on the list and one-off addresses. Written before the version is frozen, never after"
     },
     {
       "name": "breach_report_delivery",
@@ -1769,6 +1787,69 @@
       "comment": null
     },
     {
+      "table_name": "breach_board_recipient",
+      "name": "one_off",
+      "position": 10,
+      "type": "boolean",
+      "not_null": true,
+      "default_value": "false",
+      "comment": "Added by the sender for one report alone. Never on the list: the list, its uniqueness and Breach settings read only rows where this is false"
+    },
+    {
+      "table_name": "breach_board_recipient",
+      "name": "mandatory",
+      "position": 11,
+      "type": "boolean",
+      "not_null": true,
+      "default_value": "false",
+      "comment": "Goes with every report finalised while set; cannot be taken off the list while set; changes only with a breach_board_recipient_event"
+    },
+    {
+      "table_name": "breach_board_recipient_event",
+      "name": "event_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('breach_board_recipient_event_event_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "breach_board_recipient_event",
+      "name": "recipient_id",
+      "position": 2,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_board_recipient_event",
+      "name": "kind",
+      "position": 3,
+      "type": "character varying(10)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_board_recipient_event",
+      "name": "recorded_by",
+      "position": 4,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_board_recipient_event",
+      "name": "recorded_at",
+      "position": 5,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
       "table_name": "breach_contact",
       "name": "contact_id",
       "position": 1,
@@ -2324,7 +2405,7 @@
       "type": "integer",
       "not_null": false,
       "default_value": null,
-      "comment": null
+      "comment": "The determination that set the duty aside or brought it back. Required on not_applicable and reinstated events by trg_breach_obligation_event_cites_determination, except on a cert_in duty, which validation never moves"
     },
     {
       "table_name": "breach_obligation_event",
@@ -2541,6 +2622,42 @@
       "not_null": false,
       "default_value": null,
       "comment": null
+    },
+    {
+      "table_name": "breach_report_addressee",
+      "name": "addressee_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('breach_report_addressee_addressee_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "breach_report_addressee",
+      "name": "report_id",
+      "position": 2,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_report_addressee",
+      "name": "recipient_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_report_addressee",
+      "name": "mandatory",
+      "position": 4,
+      "type": "boolean",
+      "not_null": true,
+      "default_value": "false",
+      "comment": "Whether the entry was mandatory when the version was finalised"
     },
     {
       "table_name": "breach_report_delivery",
@@ -4590,18 +4707,18 @@
       "name": "reporter_name",
       "position": 4,
       "type": "text",
-      "not_null": true,
+      "not_null": false,
       "default_value": null,
-      "comment": "Sealed (NAME)"
+      "comment": "Sealed (NAME). NULL once erased under a rights request, which only a dismissed report allows"
     },
     {
       "table_name": "incident_report",
       "name": "reporter_email",
       "position": 5,
       "type": "text",
-      "not_null": true,
+      "not_null": false,
       "default_value": null,
-      "comment": "Proved by a code before the report was taken. Sealed (EMAIL)"
+      "comment": "Proved by a code before the report was taken. Sealed (EMAIL); reporter_email_hash is its blind index. NULL once erased"
     },
     {
       "table_name": "incident_report",
@@ -4782,6 +4899,42 @@
       "not_null": false,
       "default_value": null,
       "comment": "Why it was not taken up. Sealed (FREE_TEXT)"
+    },
+    {
+      "table_name": "incident_report",
+      "name": "reporter_email_hash",
+      "position": 26,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "index_of('email', address), the same index as auth_user.email_hash: how a rights request finds a dismissed report. NULL once erased"
+    },
+    {
+      "table_name": "incident_report",
+      "name": "reporter_erased_at",
+      "position": 27,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": "When the reporter's name and email were erased, under reporter_erased_request_id, by reporter_erased_by. The number, the words, the reason and who dismissed it stay"
+    },
+    {
+      "table_name": "incident_report",
+      "name": "reporter_erased_by",
+      "position": 28,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "incident_report",
+      "name": "reporter_erased_request_id",
+      "position": 29,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
     },
     {
       "table_name": "legal_hold",
@@ -5029,7 +5182,7 @@
     {
       "table_name": "nomination",
       "name": "rights",
-      "position": 5,
+      "position": 6,
       "type": "rights_request_type[]",
       "not_null": true,
       "default_value": null,
@@ -5038,7 +5191,7 @@
     {
       "table_name": "nomination",
       "name": "status",
-      "position": 6,
+      "position": 7,
       "type": "nomination_status",
       "not_null": true,
       "default_value": "'pending'::nomination_status",
@@ -5047,7 +5200,7 @@
     {
       "table_name": "nomination",
       "name": "accept_token_hash",
-      "position": 7,
+      "position": 8,
       "type": "text",
       "not_null": false,
       "default_value": null,
@@ -5056,15 +5209,6 @@
     {
       "table_name": "nomination",
       "name": "accept_expires_at",
-      "position": 8,
-      "type": "timestamp with time zone",
-      "not_null": false,
-      "default_value": null,
-      "comment": null
-    },
-    {
-      "table_name": "nomination",
-      "name": "accepted_at",
       "position": 9,
       "type": "timestamp with time zone",
       "not_null": false,
@@ -5073,7 +5217,7 @@
     },
     {
       "table_name": "nomination",
-      "name": "declined_at",
+      "name": "accepted_at",
       "position": 10,
       "type": "timestamp with time zone",
       "not_null": false,
@@ -5082,7 +5226,7 @@
     },
     {
       "table_name": "nomination",
-      "name": "revoked_at",
+      "name": "declined_at",
       "position": 11,
       "type": "timestamp with time zone",
       "not_null": false,
@@ -5091,8 +5235,17 @@
     },
     {
       "table_name": "nomination",
-      "name": "created_at",
+      "name": "revoked_at",
       "position": 12,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "nomination",
+      "name": "created_at",
+      "position": 13,
       "type": "timestamp with time zone",
       "not_null": true,
       "default_value": "now()",
@@ -5101,15 +5254,6 @@
     {
       "table_name": "nomination",
       "name": "nominee_mobile",
-      "position": 13,
-      "type": "text",
-      "not_null": false,
-      "default_value": null,
-      "comment": null
-    },
-    {
-      "table_name": "nomination",
-      "name": "nominee_email",
       "position": 14,
       "type": "text",
       "not_null": false,
@@ -5118,8 +5262,17 @@
     },
     {
       "table_name": "nomination",
-      "name": "invoked_at",
+      "name": "nominee_email",
       "position": 15,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "nomination",
+      "name": "invoked_at",
+      "position": 16,
       "type": "timestamp with time zone",
       "not_null": false,
       "default_value": null,
@@ -5128,7 +5281,7 @@
     {
       "table_name": "nomination",
       "name": "invoked_event",
-      "position": 16,
+      "position": 17,
       "type": "rights_trigger_event",
       "not_null": false,
       "default_value": null,
@@ -5137,7 +5290,7 @@
     {
       "table_name": "nomination",
       "name": "invoked_request_id",
-      "position": 17,
+      "position": 18,
       "type": "integer",
       "not_null": false,
       "default_value": null,
@@ -5146,7 +5299,7 @@
     {
       "table_name": "nomination",
       "name": "nominee_user_id",
-      "position": 18,
+      "position": 19,
       "type": "integer",
       "not_null": false,
       "default_value": null,
@@ -5155,15 +5308,6 @@
     {
       "table_name": "nomination",
       "name": "nominee_email_hash",
-      "position": 19,
-      "type": "text",
-      "not_null": false,
-      "default_value": null,
-      "comment": null
-    },
-    {
-      "table_name": "nomination",
-      "name": "nominee_mobile_hash",
       "position": 20,
       "type": "text",
       "not_null": false,
@@ -5172,8 +5316,17 @@
     },
     {
       "table_name": "nomination",
-      "name": "nominee_name_ngrams",
+      "name": "nominee_mobile_hash",
       "position": 21,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "nomination",
+      "name": "nominee_name_ngrams",
+      "position": 22,
       "type": "text[]",
       "not_null": false,
       "default_value": null,
@@ -6487,7 +6640,7 @@
     {
       "table_name": "project_site",
       "name": "source_id",
-      "position": 9,
+      "position": 10,
       "type": "integer",
       "not_null": false,
       "default_value": null,
@@ -6496,7 +6649,7 @@
     {
       "table_name": "project_site",
       "name": "dco_override_user_id",
-      "position": 10,
+      "position": 11,
       "type": "integer",
       "not_null": false,
       "default_value": null,
@@ -6505,7 +6658,7 @@
     {
       "table_name": "project_site",
       "name": "dco_override_by",
-      "position": 11,
+      "position": 12,
       "type": "integer",
       "not_null": false,
       "default_value": null,
@@ -6514,7 +6667,7 @@
     {
       "table_name": "project_site",
       "name": "dco_override_at",
-      "position": 12,
+      "position": 13,
       "type": "timestamp with time zone",
       "not_null": false,
       "default_value": null,
@@ -8999,7 +9152,7 @@
       "table_name": "breach",
       "name": "breach_cyber_attack",
       "kind": "c",
-      "definition": "CHECK (((cyber_attack)::text = ANY (ARRAY[('yes'::character varying)::text, ('no'::character varying)::text, ('unknown'::character varying)::text])))",
+      "definition": "CHECK (((cyber_attack)::text = ANY ((ARRAY['yes'::character varying, 'no'::character varying, 'unknown'::character varying])::text[])))",
       "columns": [
         "cyber_attack"
       ],
@@ -9014,7 +9167,7 @@
       "table_name": "breach",
       "name": "breach_location_kind",
       "kind": "c",
-      "definition": "CHECK (((location_kind)::text = ANY (ARRAY[('platform'::character varying)::text, ('processor'::character varying)::text, ('data_source'::character varying)::text, ('other'::character varying)::text])))",
+      "definition": "CHECK (((location_kind)::text = ANY ((ARRAY['platform'::character varying, 'processor'::character varying, 'data_source'::character varying, 'other'::character varying])::text[])))",
       "columns": [
         "location_kind"
       ],
@@ -9144,7 +9297,7 @@
       "table_name": "breach",
       "name": "breach_status",
       "kind": "c",
-      "definition": "CHECK (((status)::text = ANY (ARRAY[('open'::character varying)::text, ('closed'::character varying)::text])))",
+      "definition": "CHECK (((status)::text = ANY ((ARRAY['open'::character varying, 'closed'::character varying])::text[])))",
       "columns": [
         "status"
       ],
@@ -9621,6 +9774,39 @@
     },
     {
       "table_name": "breach_board_recipient",
+      "name": "breach_board_recipient_mandatory_is_listed",
+      "kind": "c",
+      "definition": "CHECK (((NOT mandatory) OR (removed_at IS NULL)))",
+      "columns": [
+        "mandatory",
+        "removed_at"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_board_recipient",
+      "name": "breach_board_recipient_one_off_stays",
+      "kind": "c",
+      "definition": "CHECK (((NOT one_off) OR ((removed_at IS NULL) AND (NOT mandatory))))",
+      "columns": [
+        "one_off",
+        "removed_at",
+        "mandatory"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_board_recipient",
       "name": "breach_board_recipient_pkey",
       "kind": "p",
       "definition": "PRIMARY KEY (recipient_id)",
@@ -9672,6 +9858,70 @@
       "definition": "FOREIGN KEY (removed_by) REFERENCES auth_user(id)",
       "columns": [
         "removed_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_board_recipient_event",
+      "name": "breach_board_recipient_event_kind",
+      "kind": "c",
+      "definition": "CHECK (((kind)::text = ANY ((ARRAY['mandatory'::character varying, 'optional'::character varying])::text[])))",
+      "columns": [
+        "kind"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_board_recipient_event",
+      "name": "breach_board_recipient_event_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (event_id)",
+      "columns": [
+        "event_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_board_recipient_event",
+      "name": "breach_board_recipient_event_recipient_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (recipient_id) REFERENCES breach_board_recipient(recipient_id)",
+      "columns": [
+        "recipient_id"
+      ],
+      "referenced_table": "breach_board_recipient",
+      "referenced_columns": [
+        "recipient_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_board_recipient_event",
+      "name": "breach_board_recipient_event_recorded_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (recorded_by) REFERENCES auth_user(id)",
+      "columns": [
+        "recorded_by"
       ],
       "referenced_table": "auth_user",
       "referenced_columns": [
@@ -9863,7 +10113,7 @@
       "table_name": "breach_determination",
       "name": "breach_determination_outcome",
       "kind": "c",
-      "definition": "CHECK (((outcome)::text = ANY (ARRAY[('pending'::character varying)::text, ('yes'::character varying)::text, ('no'::character varying)::text])))",
+      "definition": "CHECK (((outcome)::text = ANY ((ARRAY['pending'::character varying, 'yes'::character varying, 'no'::character varying])::text[])))",
       "columns": [
         "outcome"
       ],
@@ -10058,7 +10308,7 @@
       "table_name": "breach_notice_delivery",
       "name": "breach_notice_delivery_channel",
       "kind": "c",
-      "definition": "CHECK (((channel)::text = ANY (ARRAY[('portal'::character varying)::text, ('email'::character varying)::text, ('sms'::character varying)::text])))",
+      "definition": "CHECK (((channel)::text = ANY ((ARRAY['portal'::character varying, 'email'::character varying, 'sms'::character varying])::text[])))",
       "columns": [
         "channel"
       ],
@@ -10205,7 +10455,7 @@
       "table_name": "breach_notice_delivery",
       "name": "breach_notice_delivery_status",
       "kind": "c",
-      "definition": "CHECK (((status)::text = ANY (ARRAY[('queued'::character varying)::text, ('delivered'::character varying)::text, ('failed'::character varying)::text])))",
+      "definition": "CHECK (((status)::text = ANY ((ARRAY['queued'::character varying, 'delivered'::character varying, 'failed'::character varying])::text[])))",
       "columns": [
         "status"
       ],
@@ -10271,7 +10521,7 @@
       "table_name": "breach_obligation",
       "name": "breach_obligation_kind",
       "kind": "c",
-      "definition": "CHECK (((kind)::text = ANY (ARRAY[('cert_in'::character varying)::text, ('board_intimation'::character varying)::text, ('board_report'::character varying)::text, ('principals'::character varying)::text, ('org_board'::character varying)::text])))",
+      "definition": "CHECK (((kind)::text = ANY ((ARRAY['cert_in'::character varying, 'board_intimation'::character varying, 'board_report'::character varying, 'principals'::character varying, 'org_board'::character varying])::text[])))",
       "columns": [
         "kind"
       ],
@@ -10320,22 +10570,6 @@
       "definition": "PRIMARY KEY (obligation_id)",
       "columns": [
         "obligation_id"
-      ],
-      "referenced_table": null,
-      "referenced_columns": [],
-      "delete_action": " ",
-      "update_action": " ",
-      "deferrable": false,
-      "initially_deferred": false
-    },
-    {
-      "table_name": "breach_obligation_event",
-      "name": "breach_obligation_event_cites_determination",
-      "kind": "c",
-      "definition": "CHECK ((((kind)::text <> ALL (ARRAY[('not_applicable'::character varying)::text, ('reinstated'::character varying)::text])) OR (determination_id IS NOT NULL)))",
-      "columns": [
-        "kind",
-        "determination_id"
       ],
       "referenced_table": null,
       "referenced_columns": [],
@@ -10413,7 +10647,7 @@
       "table_name": "breach_obligation_event",
       "name": "breach_obligation_event_kind",
       "kind": "c",
-      "definition": "CHECK (((kind)::text = ANY (ARRAY[('completed'::character varying)::text, ('not_applicable'::character varying)::text, ('reinstated'::character varying)::text, ('extended'::character varying)::text, ('reopened'::character varying)::text])))",
+      "definition": "CHECK (((kind)::text = ANY ((ARRAY['completed'::character varying, 'not_applicable'::character varying, 'reinstated'::character varying, 'extended'::character varying, 'reopened'::character varying])::text[])))",
       "columns": [
         "kind"
       ],
@@ -10780,6 +11014,90 @@
       "initially_deferred": false
     },
     {
+      "table_name": "breach_report_addressee",
+      "name": "breach_report_addressee_once",
+      "kind": "u",
+      "definition": "UNIQUE (report_id, recipient_id)",
+      "columns": [
+        "report_id",
+        "recipient_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_report_addressee",
+      "name": "breach_report_addressee_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (addressee_id)",
+      "columns": [
+        "addressee_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_report_addressee",
+      "name": "breach_report_addressee_recipient_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (recipient_id) REFERENCES breach_board_recipient(recipient_id)",
+      "columns": [
+        "recipient_id"
+      ],
+      "referenced_table": "breach_board_recipient",
+      "referenced_columns": [
+        "recipient_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_report_addressee",
+      "name": "breach_report_addressee_report_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (report_id) REFERENCES breach_report(report_id)",
+      "columns": [
+        "report_id"
+      ],
+      "referenced_table": "breach_report",
+      "referenced_columns": [
+        "report_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_report_delivery",
+      "name": "breach_report_delivery_addressed",
+      "kind": "f",
+      "definition": "FOREIGN KEY (report_id, recipient_id) REFERENCES breach_report_addressee(report_id, recipient_id)",
+      "columns": [
+        "report_id",
+        "recipient_id"
+      ],
+      "referenced_table": "breach_report_addressee",
+      "referenced_columns": [
+        "report_id",
+        "recipient_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "breach_report_delivery",
       "name": "breach_report_delivery_attempt",
       "kind": "c",
@@ -11071,7 +11389,7 @@
       "table_name": "breach_temporary_access",
       "name": "breach_temporary_access_cause",
       "kind": "c",
-      "definition": "CHECK (((end_cause IS NULL) OR ((end_cause)::text = ANY (ARRAY[('breach_closed'::character varying)::text, ('ticket_withdrawn'::character varying)::text, ('account_deactivated'::character varying)::text, ('request_closed'::character varying)::text, ('reassigned'::character varying)::text]))))",
+      "definition": "CHECK (((end_cause IS NULL) OR ((end_cause)::text = ANY ((ARRAY['breach_closed'::character varying, 'ticket_withdrawn'::character varying, 'account_deactivated'::character varying, 'request_closed'::character varying, 'reassigned'::character varying])::text[]))))",
       "columns": [
         "end_cause"
       ],
@@ -11396,7 +11714,7 @@
       "table_name": "breach_ticket_event",
       "name": "breach_ticket_event_outcome",
       "kind": "c",
-      "definition": "CHECK (((((kind)::text = 'returned'::text) = (outcome IS NOT NULL)) AND ((outcome IS NULL) OR ((outcome)::text = ANY (ARRAY[('done'::character varying)::text, ('partial'::character varying)::text, ('failed'::character varying)::text])))))",
+      "definition": "CHECK (((((kind)::text = 'returned'::text) = (outcome IS NOT NULL)) AND ((outcome IS NULL) OR ((outcome)::text = ANY ((ARRAY['done'::character varying, 'partial'::character varying, 'failed'::character varying])::text[])))))",
       "columns": [
         "kind",
         "outcome"
@@ -11493,7 +11811,7 @@
       "table_name": "breach_ticket_message",
       "name": "breach_ticket_message_kind",
       "kind": "c",
-      "definition": "CHECK (((kind)::text = ANY (ARRAY[('instruction'::character varying)::text, ('message'::character varying)::text, ('return'::character varying)::text, ('status'::character varying)::text])))",
+      "definition": "CHECK (((kind)::text = ANY ((ARRAY['instruction'::character varying, 'message'::character varying, 'return'::character varying, 'status'::character varying])::text[])))",
       "columns": [
         "kind"
       ],
@@ -11538,7 +11856,7 @@
       "table_name": "breach_ticket_message",
       "name": "breach_ticket_message_side",
       "kind": "c",
-      "definition": "CHECK (((author_side)::text = ANY (ARRAY[('office'::character varying)::text, ('holder'::character varying)::text, ('system'::character varying)::text])))",
+      "definition": "CHECK (((author_side)::text = ANY ((ARRAY['office'::character varying, 'holder'::character varying, 'system'::character varying])::text[])))",
       "columns": [
         "author_side"
       ],
@@ -11624,7 +11942,7 @@
       "table_name": "breach_upload",
       "name": "breach_upload_kind",
       "kind": "c",
-      "definition": "CHECK (((kind)::text = ANY (ARRAY[('contacts'::character varying)::text, ('assets'::character varying)::text])))",
+      "definition": "CHECK (((kind)::text = ANY ((ARRAY['contacts'::character varying, 'assets'::character varying])::text[])))",
       "columns": [
         "kind"
       ],
@@ -11800,7 +12118,7 @@
       "table_name": "category_processor",
       "name": "category_processor_role",
       "kind": "c",
-      "definition": "CHECK (((processor_role)::text = ANY (ARRAY[('hrms'::character varying)::text, ('database'::character varying)::text, ('vendor'::character varying)::text])))",
+      "definition": "CHECK (((processor_role)::text = ANY ((ARRAY['hrms'::character varying, 'database'::character varying, 'vendor'::character varying])::text[])))",
       "columns": [
         "processor_role"
       ],
@@ -12127,7 +12445,7 @@
       "table_name": "consent_link",
       "name": "consent_link_audience_mode",
       "kind": "c",
-      "definition": "CHECK (((audience_mode)::text = ANY (ARRAY[('sso'::character varying)::text, ('otp'::character varying)::text])))",
+      "definition": "CHECK (((audience_mode)::text = ANY ((ARRAY['sso'::character varying, 'otp'::character varying])::text[])))",
       "columns": [
         "audience_mode"
       ],
@@ -12950,7 +13268,7 @@
       "table_name": "hr_category",
       "name": "hr_category_status",
       "kind": "c",
-      "definition": "CHECK (((status)::text = ANY (ARRAY[('active'::character varying)::text, ('retired'::character varying)::text])))",
+      "definition": "CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'retired'::character varying])::text[])))",
       "columns": [
         "status"
       ],
@@ -13241,6 +13559,39 @@
     },
     {
       "table_name": "incident_report",
+      "name": "incident_report_erased_once_dismissed",
+      "kind": "c",
+      "definition": "CHECK (((reporter_erased_at IS NULL) OR (dismissed_at IS NOT NULL)))",
+      "columns": [
+        "reporter_erased_at",
+        "dismissed_at"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "incident_report",
+      "name": "incident_report_erasure_whole",
+      "kind": "c",
+      "definition": "CHECK ((((reporter_erased_at IS NULL) = (reporter_erased_by IS NULL)) AND ((reporter_erased_at IS NULL) = (reporter_erased_request_id IS NULL))))",
+      "columns": [
+        "reporter_erased_at",
+        "reporter_erased_by",
+        "reporter_erased_request_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "incident_report",
       "name": "incident_report_one_outcome",
       "kind": "c",
       "definition": "CHECK (((claimed_at IS NULL) OR (dismissed_at IS NULL)))",
@@ -13292,6 +13643,58 @@
       "definition": "UNIQUE (report_uuid)",
       "columns": [
         "report_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "incident_report",
+      "name": "incident_report_reporter_erased_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (reporter_erased_by) REFERENCES auth_user(id)",
+      "columns": [
+        "reporter_erased_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "incident_report",
+      "name": "incident_report_reporter_erased_request_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (reporter_erased_request_id) REFERENCES rights_request(request_id)",
+      "columns": [
+        "reporter_erased_request_id"
+      ],
+      "referenced_table": "rights_request",
+      "referenced_columns": [
+        "request_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "incident_report",
+      "name": "incident_report_reporter_until_erased",
+      "kind": "c",
+      "definition": "CHECK ((((reporter_erased_at IS NULL) = (reporter_name IS NOT NULL)) AND ((reporter_erased_at IS NULL) = (reporter_email IS NOT NULL)) AND ((reporter_erased_at IS NULL) = (reporter_email_hash IS NOT NULL))))",
+      "columns": [
+        "reporter_erased_at",
+        "reporter_name",
+        "reporter_email",
+        "reporter_email_hash"
       ],
       "referenced_table": null,
       "referenced_columns": [],
@@ -13514,7 +13917,7 @@
       "table_name": "message_template",
       "name": "message_template_channel",
       "kind": "c",
-      "definition": "CHECK (((channel)::text = ANY (ARRAY[('email'::character varying)::text, ('sms'::character varying)::text])))",
+      "definition": "CHECK (((channel)::text = ANY ((ARRAY['email'::character varying, 'sms'::character varying])::text[])))",
       "columns": [
         "channel"
       ],
@@ -14181,7 +14584,7 @@
       "table_name": "notice_template",
       "name": "notice_template_status",
       "kind": "c",
-      "definition": "CHECK (((status)::text = ANY (ARRAY[('active'::character varying)::text, ('retired'::character varying)::text])))",
+      "definition": "CHECK (((status)::text = ANY ((ARRAY['active'::character varying, 'retired'::character varying])::text[])))",
       "columns": [
         "status"
       ],
@@ -15335,7 +15738,7 @@
       "table_name": "rights_item_execution",
       "name": "item_execution_status",
       "kind": "c",
-      "definition": "CHECK (((status)::text = ANY (ARRAY[('done'::character varying)::text, ('waiting'::character varying)::text, ('failed'::character varying)::text, ('held'::character varying)::text])))",
+      "definition": "CHECK (((status)::text = ANY ((ARRAY['done'::character varying, 'waiting'::character varying, 'failed'::character varying, 'held'::character varying])::text[])))",
       "columns": [
         "status"
       ],
@@ -15350,7 +15753,7 @@
       "table_name": "rights_item_execution",
       "name": "item_execution_store",
       "kind": "c",
-      "definition": "CHECK (((store)::text = ANY (ARRAY[('holder_copy'::character varying)::text, ('platform_pointer'::character varying)::text, ('legal_hold'::character varying)::text])))",
+      "definition": "CHECK (((store)::text = ANY ((ARRAY['holder_copy'::character varying, 'platform_pointer'::character varying, 'legal_hold'::character varying])::text[])))",
       "columns": [
         "store"
       ],
@@ -15921,7 +16324,7 @@
       "table_name": "rights_request_holder",
       "name": "holder_channel",
       "kind": "c",
-      "definition": "CHECK (((channel)::text = ANY (ARRAY[('portal'::character varying)::text, ('email'::character varying)::text])))",
+      "definition": "CHECK (((channel)::text = ANY ((ARRAY['portal'::character varying, 'email'::character varying])::text[])))",
       "columns": [
         "channel"
       ],
@@ -15985,7 +16388,7 @@
       "table_name": "rights_request_holder",
       "name": "holder_return_outcome",
       "kind": "c",
-      "definition": "CHECK (((return_outcome IS NULL) OR ((return_outcome)::text = ANY (ARRAY[('done'::character varying)::text, ('partial'::character varying)::text, ('failed'::character varying)::text]))))",
+      "definition": "CHECK (((return_outcome IS NULL) OR ((return_outcome)::text = ANY ((ARRAY['done'::character varying, 'partial'::character varying, 'failed'::character varying])::text[]))))",
       "columns": [
         "return_outcome"
       ],
@@ -16453,7 +16856,7 @@
       "table_name": "rights_ticket_message",
       "name": "ticket_message_kind",
       "kind": "c",
-      "definition": "CHECK (((kind)::text = ANY (ARRAY[('brief'::character varying)::text, ('instruction'::character varying)::text, ('message'::character varying)::text, ('return'::character varying)::text, ('escalation'::character varying)::text, ('status'::character varying)::text])))",
+      "definition": "CHECK (((kind)::text = ANY ((ARRAY['brief'::character varying, 'instruction'::character varying, 'message'::character varying, 'return'::character varying, 'escalation'::character varying, 'status'::character varying])::text[])))",
       "columns": [
         "kind"
       ],
@@ -16468,7 +16871,7 @@
       "table_name": "rights_ticket_message",
       "name": "ticket_message_side",
       "kind": "c",
-      "definition": "CHECK (((author_side)::text = ANY (ARRAY[('office'::character varying)::text, ('holder'::character varying)::text, ('system'::character varying)::text])))",
+      "definition": "CHECK (((author_side)::text = ANY ((ARRAY['office'::character varying, 'holder'::character varying, 'system'::character varying])::text[])))",
       "columns": [
         "author_side"
       ],
@@ -16675,7 +17078,7 @@
       "table_name": "template_version",
       "name": "template_version_status",
       "kind": "c",
-      "definition": "CHECK (((status)::text = ANY (ARRAY[('draft'::character varying)::text, ('approved'::character varying)::text, ('retired'::character varying)::text])))",
+      "definition": "CHECK (((status)::text = ANY ((ARRAY['draft'::character varying, 'approved'::character varying, 'retired'::character varying])::text[])))",
       "columns": [
         "status"
       ],
@@ -17063,7 +17466,17 @@
     {
       "table_name": "breach_board_recipient",
       "name": "uq_breach_board_recipient_active",
-      "definition": "CREATE UNIQUE INDEX uq_breach_board_recipient_active ON public.breach_board_recipient USING btree (email_hash) WHERE (removed_at IS NULL)"
+      "definition": "CREATE UNIQUE INDEX uq_breach_board_recipient_active ON public.breach_board_recipient USING btree (email_hash) WHERE ((removed_at IS NULL) AND (NOT one_off))"
+    },
+    {
+      "table_name": "breach_board_recipient_event",
+      "name": "breach_board_recipient_event_pkey",
+      "definition": "CREATE UNIQUE INDEX breach_board_recipient_event_pkey ON public.breach_board_recipient_event USING btree (event_id)"
+    },
+    {
+      "table_name": "breach_board_recipient_event",
+      "name": "idx_breach_board_recipient_event",
+      "definition": "CREATE INDEX idx_breach_board_recipient_event ON public.breach_board_recipient_event USING btree (recipient_id, event_id)"
     },
     {
       "table_name": "breach_contact",
@@ -17219,6 +17632,16 @@
       "table_name": "breach_report",
       "name": "uq_breach_report_one_draft",
       "definition": "CREATE UNIQUE INDEX uq_breach_report_one_draft ON public.breach_report USING btree (breach_id, kind) WHERE (finalised_at IS NULL)"
+    },
+    {
+      "table_name": "breach_report_addressee",
+      "name": "breach_report_addressee_once",
+      "definition": "CREATE UNIQUE INDEX breach_report_addressee_once ON public.breach_report_addressee USING btree (report_id, recipient_id)"
+    },
+    {
+      "table_name": "breach_report_addressee",
+      "name": "breach_report_addressee_pkey",
+      "definition": "CREATE UNIQUE INDEX breach_report_addressee_pkey ON public.breach_report_addressee USING btree (addressee_id)"
     },
     {
       "table_name": "breach_report_delivery",
@@ -17654,6 +18077,11 @@
       "table_name": "import_batch",
       "name": "import_batch_pkey",
       "definition": "CREATE UNIQUE INDEX import_batch_pkey ON public.import_batch USING btree (batch_id)"
+    },
+    {
+      "table_name": "incident_report",
+      "name": "idx_incident_report_reporter_email_hash",
+      "definition": "CREATE INDEX idx_incident_report_reporter_email_hash ON public.incident_report USING btree (reporter_email_hash) WHERE (dismissed_at IS NOT NULL)"
     },
     {
       "table_name": "incident_report",
@@ -18724,6 +19152,16 @@
       "definition": "CREATE TRIGGER trg_breach_attachment_append_only BEFORE DELETE OR UPDATE ON public.breach_attachment FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
     },
     {
+      "table_name": "breach_board_recipient",
+      "name": "trg_breach_board_recipient_read_only",
+      "definition": "CREATE TRIGGER trg_breach_board_recipient_read_only BEFORE DELETE OR UPDATE ON public.breach_board_recipient FOR EACH ROW EXECUTE FUNCTION cmp_breach_board_recipient_read_only()"
+    },
+    {
+      "table_name": "breach_board_recipient_event",
+      "name": "trg_breach_board_recipient_event_append_only",
+      "definition": "CREATE TRIGGER trg_breach_board_recipient_event_append_only BEFORE DELETE OR UPDATE ON public.breach_board_recipient_event FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
       "table_name": "breach_contact",
       "name": "trg_breach_contact_append_only",
       "definition": "CREATE TRIGGER trg_breach_contact_append_only BEFORE DELETE OR UPDATE ON public.breach_contact FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
@@ -18755,6 +19193,11 @@
     },
     {
       "table_name": "breach_obligation_event",
+      "name": "trg_breach_obligation_event_cites_determination",
+      "definition": "CREATE TRIGGER trg_breach_obligation_event_cites_determination BEFORE INSERT ON public.breach_obligation_event FOR EACH ROW EXECUTE FUNCTION cmp_breach_obligation_event_cites_determination()"
+    },
+    {
+      "table_name": "breach_obligation_event",
       "name": "trg_breach_org_board_reported_to",
       "definition": "CREATE TRIGGER trg_breach_org_board_reported_to BEFORE INSERT ON public.breach_obligation_event FOR EACH ROW EXECUTE FUNCTION cmp_breach_org_board_reported_to()"
     },
@@ -18767,6 +19210,16 @@
       "table_name": "breach_report",
       "name": "trg_breach_report_frozen",
       "definition": "CREATE TRIGGER trg_breach_report_frozen BEFORE DELETE OR UPDATE ON public.breach_report FOR EACH ROW EXECUTE FUNCTION cmp_breach_report_frozen()"
+    },
+    {
+      "table_name": "breach_report_addressee",
+      "name": "trg_breach_report_addressee_append_only",
+      "definition": "CREATE TRIGGER trg_breach_report_addressee_append_only BEFORE DELETE OR UPDATE ON public.breach_report_addressee FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
+      "table_name": "breach_report_addressee",
+      "name": "trg_breach_report_addressee_no_late_names",
+      "definition": "CREATE TRIGGER trg_breach_report_addressee_no_late_names BEFORE INSERT ON public.breach_report_addressee FOR EACH ROW EXECUTE FUNCTION cmp_breach_report_addressee_no_late_names()"
     },
     {
       "table_name": "breach_report_delivery",
@@ -19094,6 +19547,9 @@
       "name": "breach_attachment_attachment_id_seq"
     },
     {
+      "name": "breach_board_recipient_event_event_id_seq"
+    },
+    {
       "name": "breach_board_recipient_recipient_id_seq"
     },
     {
@@ -19125,6 +19581,9 @@
     },
     {
       "name": "breach_ref_seq"
+    },
+    {
+      "name": "breach_report_addressee_addressee_id_seq"
     },
     {
       "name": "breach_report_delivery_delivery_id_seq"
@@ -19309,10 +19768,19 @@
       "name": "cmp_audit_verify"
     },
     {
+      "name": "cmp_breach_board_recipient_read_only"
+    },
+    {
       "name": "cmp_breach_notice_frozen"
     },
     {
+      "name": "cmp_breach_obligation_event_cites_determination"
+    },
+    {
       "name": "cmp_breach_org_board_reported_to"
+    },
+    {
+      "name": "cmp_breach_report_addressee_no_late_names"
     },
     {
       "name": "cmp_breach_report_frozen"
@@ -19424,13 +19892,13 @@
     }
   ],
   "counts": {
-    "application_tables": 72,
+    "application_tables": 74,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 874,
-    "foreign_keys": 213,
+    "table_columns": 889,
+    "foreign_keys": 220,
     "enums": 39,
-    "triggers": 77,
-    "checks": 127
+    "triggers": 82,
+    "checks": 132
   }
 }

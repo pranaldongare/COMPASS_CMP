@@ -2,7 +2,11 @@
 
 **Status:** accepted · 2026-10-07. Migration 0043, commit 4e0e52e. Amends
 [ADR 0010](0010-rights-clock-and-defaults.md) (three kinds, not four, and no
-consent-scoped requests).
+consent-scoped requests). Amended 2026-11-07: everything held includes the
+reports a person sent through the public link that an office dismissed, found by
+their email once identity is verified, on an access or erasure request; a request
+still confined to one consent does not look
+([ADR 0037](0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md#a-dismissed-report-and-the-rights-of-the-person-who-sent-it)).
 
 ## Context
 

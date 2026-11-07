@@ -2,7 +2,7 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-52 operations; 52 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
+53 operations; 53 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
@@ -41,6 +41,7 @@
 | PUT | `/requests/{request_uuid}/scope/{item_uuid}` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
 | POST | `/requests/{request_uuid}/scope/{item_uuid}/apply` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
 | POST | `/requests/{request_uuid}/scope/{item_uuid}/execute` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/public-reports/erase` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
 | POST | `/requests/{request_uuid}/tickets` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
 | GET | `/requests/{request_uuid}/trail` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
 | POST | `/requests/{request_uuid}/transition` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
@@ -113,7 +114,7 @@ Get Request.
 - **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsReader`.
 - **Resolved gate:** `RequireResource(rights_request, write=False)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. `public_reports`, the reports from the public link that an office dismissed and that the requester sent, found by the blind index of their proved email addresses, is served to the DPO and the Legal PoC only, once identity is verified on an access or erasure request not confined to one consent; the administrator on a request about the office is served null. (0065, ADR 0037 as amended 2026-11-07) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L683), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/acknowledge
@@ -478,7 +479,7 @@ Release and close.
 - **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. `complete` is refused (response_partial_required) while a holder has not returned or a correction or erasure has not been carried out with evidence; the reason is served on the request as complete_blocked_by (S2-02). Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. `complete` is refused (response_partial_required) while a holder has not returned or a correction or erasure has not been carried out with evidence, or while a dismissed report from the public link still carries the requester's name and email (counted, never named); the reason is served on the request as complete_blocked_by (S2-02, 0065). The package carries those reports, without the office's reason or who dismissed it, and a request with no account has them listed in the mail's digest by number, dates and title. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1370), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/reviewer
@@ -552,6 +553,20 @@ Try an applied item's stores again now.
 - **Rules:** As for the rest of the request: DPO all, Admin where about_dpo. Retries an applied erasure or redaction's stores now (S2-03); anything else is 409 `item_not_executable`. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/erasure.py).
 
+## POST /requests/{request_uuid}/public-reports/erase
+
+Erase the requester's name and email from the reports they sent through the public link that an office dismissed.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `admin`, `dpo`, `legal`.
+- **Route guard:** `RightsWriter`.
+- **Resolved gate:** `RequireResource(rights_request, write=True)`.
+- **Rules:** The officers' alone, on their own office's request: the DPO and the Legal PoC. RightsWriter lets the administrator through on a request about the office, and the service answers 404, as the register of incident reports is hidden from them. Every other role is 403. Names no report: the dismissed reports still naming the requester are found again by the blind index of their proved addresses (the account's email, its second email once proved, or a request with no account's email), so a caller cannot reach another person's. Blanks the name, the email and its index on each in one statement; the number, the words, the reason and who dismissed it stay. 409 not_erasure, request_closed, request_not_started or legal_hold; 503 when the key service cannot open a request with no account's contact. Nothing left to erase is a 200 with no trail row. (0065, ADR 0037, amended 2026-11-07) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/public_reports.py).
+
 ## POST /requests/{request_uuid}/tickets
 
 Issue a ticket to every confirmed holder.
@@ -621,7 +636,7 @@ Send a code to the stored channel.
 - **Who:** `admin`, `dpo`, `legal`.
 - **Route guard:** `RightsWriter`.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
-- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. For a request with no account whose contact is the address of a dismissed, unerased report from the public link, the code goes to the address stored on the report, never the one typed (0065). Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L754), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
 
 ## POST /requests/{request_uuid}/verification/confirm

@@ -208,6 +208,9 @@ NOT_PERSONAL = {
     "not_looked_because": "why a request did not look, in the office's words",
     "may_erase": "whether an erasure may run now",
     "erase_blocked_by": "why an erasure may not run now, in the office's words",
+    # Who each finalised version went to (0064): the row's own key. The person
+    # is the list entry it points at, already listed under its own columns.
+    "addressee_id": "the key of one row of who a report version went to, never an address",
 }
 
 #: Shapes that suggest a person. Anything matching and unclassified is reported.

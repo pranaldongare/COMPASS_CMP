@@ -1,8 +1,15 @@
 # 0037. A public report waits apart, the organisation's board is told on a yes by the platform's mail, and a regulator's duty completes only with proof
 
 **Status:** accepted · 2026-11-06; amended 2026-11-07 (a CERT-In mark set aside,
-for the product owner to confirm, and what the review of the work changed, at the
-end). Migrations 0058 to 0063, the product owner's nine items of that date. Amends
+and what the review of the work changed, at the end); amended again 2026-11-07
+(the product owner's six answers of that day, which confirmed and widened the
+set-aside, [at the end](#amended-2026-11-07-the-product-owners-answers)).
+Migrations 0058 to 0065: 0058 to 0063 for the product owner's nine items of
+2026-11-06, 0064 and 0065 for the answers. The answers also reach
+[ADR 0019](0019-erasure-reaches-every-store-but-the-record.md), whose erasure now
+reaches a dismissed report from the public link, and
+[ADR 0026](0026-a-rights-request-is-access-erasure-or-a-grievance-about-everything.md),
+whose "everything held" includes it. Amends
 [ADR 0021](0021-a-breach-is-recorded-and-its-duties-tracked-never-submitted.md)
 and [ADR 0022](0022-an-incident-first-and-a-breach-on-a-yes.md): the clause that
 the platform never reports to the organisation's board, which ADR 0022 added to
@@ -70,9 +77,11 @@ at assignment, could only be missed.
   it. Apart, junk never reaches the register at all. An officer **claims** it,
   which logs an ordinary incident in that officer's office under the same
   number, first noticed being when the report arrived; or **dismisses** it,
-  with a reason, and the report stays. Both officers can read what was
-  dismissed, with who did it and why, whichever office it was, so a report that
-  was the other office's can still be raised. The outcome is written once, by
+  with a reason, and the report stays: a rights request from the reporter finds
+  it, and an erasure request blanks their name and email
+  ([amended](#a-dismissed-report-and-the-rights-of-the-person-who-sent-it)).
+  Both officers can read what was dismissed, with who did it and why, whichever
+  office it was, so a report that was the other office's can still be raised. The outcome is written once, by
   trigger.
   Whatever the reporter said about a cyber attack or when they noticed it is
   kept beside the incident and starts nothing: a stranger's word creates no
@@ -82,21 +91,27 @@ at assignment, could only be missed.
   the moment there is something to tell it. Not first noticed, and not the
   awareness time, which is entered and may be hours earlier. No duty exists on
   logging. A later *no* sets it aside with the three DPDP duties, and a later
-  *yes* reinstates it with a new thirty minutes. The reason is the one above:
+  *yes* reinstates it with a new thirty minutes, and if its own report reached
+  the board while it was aside, that *yes* completes it from that mail
+  ([amended](#what-a-yes-finds-already-done)). The reason is the one above:
   an incident that is junk or validated *no* must be able to close without
   telling the board anything.
 - **The platform mails the organisation's board.** This reverses the clause
   that it never does. **Notify Organization Board** opens a
   report drafted from the register; submitting it finalises it and queues a mail
-  to every address on the board's list, kept under Breach settings by the
-  administrator, the DPO and the Legal PoC. **The duty is done when the mail
+  to the board's list, kept under Breach settings by the administrator, the DPO
+  and the Legal PoC: since the owner's answers, to the addresses the sender
+  chose from it in the window, with any added for that report alone
+  ([amended](#who-a-report-goes-to)). **The duty is done when the mail
   lands, not when it is queued**: once every address has its outcome and somebody
   was reached, it completes, naming those reached and nobody else. A mail that
   reaches nobody leaves it outstanding, and its overdue alert fires. Each address
-  has a delivery account like a notice's. Sending again tries those not reached
-  and any address added to the list since, and never one taken off it, whatever
-  was waiting for it. The report's words are quoted in the mail: they are
-  somebody's words, so a link or a code in them stays text and becomes no button.
+  has a delivery account like a notice's. Sending again tries the addresses the
+  version went to that it has not reached, and never one taken off the list,
+  whatever was waiting for it. As first built it also tried any address added to
+  the list since; the answers took that out. The report's words are quoted in the
+  mail: they are somebody's words, so a link or a code in them stays text and
+  becomes no button.
 - **The platform still never sends to a regulator.** ADR 0021 stands. A person
   sends to the DPDP Board and to CERT-In through those bodies' own channels, and
   the platform keeps the proof and the reference. A source test holds that
@@ -117,7 +132,9 @@ at assignment, could only be missed.
 - **The by-hand route is gone.** `POST /breaches/{uuid}/obligations/{duty}/complete`
   is removed, so that no regulator's duty can complete without its proof. The
   organisation's board's duty completes by its report's mail, the principals'
-  by delivery, and the regulators' by filing; nothing else writes a completion.
+  by delivery, and the regulators' by filing: at the time, or, for a duty a *no*
+  had set aside meanwhile, at the *yes* that brings it back
+  ([amended](#what-a-yes-finds-already-done)). Nothing else writes a completion.
   Taking the route away also took the only way out of a CERT-In mark made in
   error, which the amendment at the end puts back.
 - **Tables are removed from finding people.** The office finds the people
@@ -146,35 +163,40 @@ at assignment, could only be missed.
 - Until a report is claimed both offices can read it, so a matter that turns out
   to be the Legal office's has been seen by the DPO office, and the other way
   round. That is the price of nobody having to route it first.
-- The board hears nothing of an incident until a *yes*, with one exception: a
-  report to CERT-In. It may be written and finalised on the mark alone, whatever
-  validation says, because its six hours wait for neither, and finalising any
-  report mails the board (item 3 of the product owner's nine). So the board may
-  read a whole report, under an `INC-` number, on an incident later validated
-  *no*: the telling of suspicions that moved its duty, in this one case. Short of
-  that, a long validation is a long silence towards the board, while CERT-In's
-  six hours from first noticed run regardless. The policy's owner has chosen that.
+- The board hears nothing of an incident until a *yes*. A report to CERT-In may
+  be written and finalised on the mark alone, whatever validation says, because
+  its six hours wait for neither, and finalising any report mails the board
+  (item 3 of the product owner's nine). As first built, that let the board read a
+  whole report, under an `INC-` number, on an incident later validated *no*; since
+  the owner's answers its mail is held for the first *yes*, and never sent if none
+  comes ([amended](#a-report-to-cert-in-before-a-yes)). So a long validation is a
+  long silence towards the board, while CERT-In's six hours from first noticed run
+  regardless. The policy's owner has chosen that.
 - A report finalised for a regulator goes to the board in full, in the mail and
   as a PDF, outside the sealed register. The 72-hour report's section on the
   person who caused the breach is drafted from the assessment's findings and may
-  name an employee, and every address on the list reads it. Only the board's own
+  name an employee, and every address it is sent to reads it. Only the board's own
   report starts out naming nobody. That is what telling the board of every report
   costs, and why neither mail may be copied.
 - The board's list is one list, which both offices and the administrator keep. A
-  report on either office's breach reaches every address on it, so an address one
-  office added reads the other office's reports, across the wall between them.
-  Anyone who keeps the list could add an address, their own included, and the
-  administrator, who sees no breach, would then be mailed the reports. An entry is
-  checked only as an address, the trail records a change and never which address,
-  and nobody else is told. The list was asked for as one list; this cost is the
-  product owner's decision to revisit.
+  report on either office's breach is offered to every address on it, so an
+  address one office added reads the other office's reports, across the wall
+  between them. Anyone who keeps the list could add an address, their own
+  included, and the administrator, who sees no breach, would then be mailed the
+  reports. An entry is checked only as an address, and the trail records a change
+  and never which address. The product owner kept the one list on 2026-11-07, and
+  answered the rest: the sender sees every name and address before a report goes,
+  and both officers are mailed every change to the list, by name and address
+  ([amended](#who-a-report-goes-to)).
 - Incidents logged before this keep their duty and its stored due time, because
   a due time is never recomputed. Theirs is set aside by a *no*, or is done like
   any other; one already validated *no* and still outstanding was set aside by
   0063, since nothing short of a *yes* could complete it. Completions already
   recorded stand.
-- Finalising needs somebody on the board's list. An empty list refuses it, so
-  the list has to be filled before the first breach, not during it.
+- Finalising needs an address to send to. As first built that meant somebody on
+  the board's list; since the answers an address for that report alone will do,
+  so an empty list no longer holds up the board's thirty minutes, and the list
+  should still be filled before the first breach, not during it.
 - A filed duty needs two files in hand. A regulator's duty that was met on time
   shows outstanding, then overdue, until somebody files it. `filed_at` is the
   time entered and may be earlier than the filing, as a submission's was, and
@@ -183,7 +205,8 @@ at assignment, could only be missed.
   each version mails the board again.
 - The platform now holds the board's names and addresses. They are sealed, with
   a blind index so an address is listed once, and one taken off the list stays,
-  because reports already mailed name it.
+  because reports already mailed name it. An address added for one report alone
+  is kept the same way, and never listed.
 - `GET /breaches/{uuid}/board/intimation`, `/board/report` and
   `/org-board/brief` remain as the register's own views. They are not what is
   mailed or filed.
@@ -197,20 +220,21 @@ The DPDP Board or CERT-In offers an interface that could be filed through, which
 ADR 0021's *Revisit when* already weighs; the board's policy changes its time or
 its anchor; the intake fills with reports nobody can act on, when a harder gate
 than a proved email is worth its cost; the product owner takes up the one board
-list, above: a list per office, a limit on who may be added, or the addresses
-shown to the officer before submitting; or the Rules prescribe a form for the
-reports that the sections here do not follow.
+list again, above: a list per office, or a limit on who may be added (the
+addresses are shown to the officer before submitting since 2026-11-07); or the
+Rules prescribe a form for the reports that the sections here do not follow.
 
 ## Amended 2026-11-07: a CERT-In mark set aside, and what the review changed
 
 A review of the work above found one decision that had cost more than was seen,
 and places where the mail and the intake did not do what this record says. None
-of it needed a migration.
+of it needed a migration at first. Only the CERT-In rule, as the owner then
+widened it, needed one (0064).
 
 ### A CERT-In mark made in error
 
-**This is a decision made for the product owner to confirm.** The rule below is
-what the platform does until they answer.
+**The product owner confirmed this on 2026-11-07, and widened it: a mark may be
+set aside at any time** ([the answers](#a-cert-in-mark-set-aside-at-any-time)).
 
 The removal of the by-hand route is why it was needed. A *no* leaves CERT-In alone
 because it stands on its own test, and that route was the only way to end a duty
@@ -225,24 +249,24 @@ anything, did not hold.
 So **Not reportable to CERT-In** sets the duty aside
 (`POST /breaches/{uuid}/cert-in/not-applicable`), with a reason.
 
-- **Only once the latest validation is *no*,** and the event cites that *no*. Until
-  then there may be something to report (409 `cert_in_not_validated_no`). A mark
-  cannot be withdrawn on an incident still being validated.
+- **At any time, whatever validation says**: before any validation, while it is
+  pending, after a *yes* or after a *no*. As first built it waited for the latest
+  validation to be *no*, and cited it; the owner's answer took that rule out
+  ([below](#a-cert-in-mark-set-aside-at-any-time)).
+- **With a reason, and nothing else.** The reason is the ground, sealed on the
+  duty's event and shown on its row; the trail says only that one was given.
 - **A duty done or a report filed stands** (409 `duty_not_outstanding`,
   `report_filed`). Something was reported.
-- **It tells nobody.** It mails nobody and leaves the organisation's board's duty
-  alone. The reason is sealed on the duty's event, and the trail says only that
-  one was given.
+- **It tells nobody.** It mails nobody and leaves validation, the organisation's
+  board's duty and every DPDP duty alone.
 - **Set aside, there is no report to CERT-In.** It cannot be drafted, finalised or
-  sent again (409 `breach_not_recorded`), and a draft left open stays a draft.
-- **Marking it again brings it back** on the same six hours from first noticed,
-  citing the latest validation.
-- **A later *yes* does not bring it back.** CERT-In stands on its own test, and if
-  a *yes* did, a real breach that was never a cyber incident could not close,
-  because setting it aside needs a *no*. The officer marks it again.
-
-Two questions stay the owner's: whether a mark may be withdrawn without a *no*, and
-whether a *yes* should bring it back.
+  sent again (409 `breach_not_recorded`), and a draft left open stays a draft. A
+  report to CERT-In finalised before a *yes*, whose mail to the board waits for
+  it, is not sent at that *yes* while the mark is set aside
+  ([below](#a-report-to-cert-in-before-a-yes)).
+- **Marking it again brings it back** on the same six hours from first noticed.
+- **A later *yes* does not bring it back.** CERT-In stands on its own test; the
+  officer marks it again.
 
 ### The mail to the board
 
@@ -275,9 +299,13 @@ whether a *yes* should bring it back.
 - **Try again says what it would do.** The server serves how many addresses it would
   queue, `mail.retryable`, and the same check refuses the press, so the figure and
   the button cannot disagree. It is none on a superseded version, on a report to
-  CERT-In set aside, on an empty list and on a closed breach, and the press says how
-  many it queued. It also re-reads the board's duty first, whatever follows: that is
-  the way on when the re-read itself failed.
+  CERT-In set aside, on a report to CERT-In whose mail waits for a *yes* (409
+  `report_held`, since the answers) and on a closed breach, and the press says how
+  many it queued. It was also refused on an empty list (409 `no_board_recipients`)
+  until the answers; that refusal is gone, since it tries only the version's own
+  addresses and one added for that report alone is never off the list. It also
+  re-reads the board's duty first, whatever follows: that is the way on when the
+  re-read itself failed.
 
 ### The intake
 
@@ -290,24 +318,27 @@ ones with them, then showed sealed in both offices.
 
 ### What this costs
 
-- A report to CERT-In finalised before the mark was set aside has been mailed to
-  the board, and that stands. It takes no proof and is not recorded as filed until
-  the mark is made again, when the same report completes the duty.
+- A report to CERT-In finalised after a *yes* and before the mark was set aside has
+  been mailed to the board, and that stands. One finalised before a *yes* is held,
+  and is not sent at the *yes* while the mark is set aside. Either takes no proof and is not
+  recorded as filed until the mark is made again, when the same report completes
+  the duty.
+- A mark can now be set aside on an incident nobody has validated, or on a
+  confirmed breach, to quiet a clock running late. The reason, the person and the
+  moment are on the duty's event and the trail, and that is the only check on it,
+  as it is on a ticket's date.
 - A worker killed after a mail went and before it was recorded mails that address
   again when its message comes back, and so does a broker connection lost in the
   middle of a send, when the message comes back while the first run is still going.
   A task that stood down instead would lose every mail killed before it went, and
   the board's clock is thirty minutes.
 - A regulator's report filed while a *no* has set its duty aside is a true record
-  and is not refused, but it completes nothing, and a later *yes* brings back a duty
-  that report can no longer complete. The way on is a new version, which mails the
-  board again. Whether the *yes* should complete the duty from the report already
-  filed is the owner's to say.
-- A duty done stays done, but one a *no* set aside while its report's mail was on
-  its way comes back on a *yes* with that mail already landed. It reads the same as
-  a settling that failed, so **Try again** completes it from the earlier mail, dated
-  before the duty came back, and mails nobody. A new version is still on the
-  **Reports** tab. Whether the earlier mail should count is the owner's to say.
+  and is not refused, and it completes nothing then. The *yes* that brings the duty
+  back completes it from that filing, by the owner's answer
+  ([below](#what-a-yes-finds-already-done)).
+- A duty a *no* set aside while its report's mail was on its way comes back on a
+  *yes* with that mail already landed. The *yes* completes it from that mail, by the
+  owner's answer, and mails nobody ([below](#what-a-yes-finds-already-done)).
 - A delivery's time is when it was recorded, so a recording that had to be retried
   can make the duty's time a little later than the mail was.
 - If the database and the broker fail together just after a send, the outcome is
@@ -315,3 +346,210 @@ ones with them, then showed sealed in both offices.
 - A notice to a person affected has the claim and nothing else here. A recording
   that fails after a notice is sent still escapes the task, and a lost notice is
   still queued again as the same delivery.
+
+## Amended 2026-11-07: the product owner's answers
+
+The six questions this record and its review had left open were answered by the
+product owner the same day. Two migrations carry them: **0064** (who a report goes
+to, mandatory addresses, and the CERT-In rule) and **0065** (a dismissed reporter
+found and erased). Where the text above says otherwise, this section stands, and
+the lines it changes point here.
+
+### Who a report goes to
+
+The answer to the one list (wall-1, security-2): it stays one shared list, and the
+sender sees who is on it.
+
+- **The window shows every name and address.** Finalising a report, from **Notify
+  Organization Board** or any kind's **Finalise**, offers the whole list, every
+  entry ticked (`GET /breaches/{uuid}/reports/recipients`). The sender may untick an
+  entry for this send, or add an address for this report alone; the saved list does
+  not change. What is sent is the list less what was unticked, plus those addresses
+  (`{recipients, extra}`).
+- **Who a version went to is frozen with it.** `breach_report_addressee` holds the
+  set chosen, written before the version is frozen and refused after, by trigger.
+  Every delivery names an addressee of its report by foreign key, so nothing is
+  mailed to anyone a report was not addressed to. Reports finalised before this went
+  to whoever their deliveries name, and that is what 0064 recorded for them.
+- **An address for one report alone** is a row of the list's table marked
+  `one_off`, sealed alike. It is never on the list, never mandatory and never taken
+  off, so its mail always runs its course. An address typed that is already on the
+  list is that entry, and two typed alike are one.
+- **Mandatory entries.** The administrator, the DPO and the Legal PoC may mark an
+  entry mandatory (`PUT /breach-settings/board-recipients/{uuid}/mandatory`). It
+  then goes with every report finalised while it is set: leaving it out is refused
+  (409 `recipient_mandatory`), and so is taking it off the list until it is made
+  optional again. The mark moves only with a `breach_board_recipient_event` saying
+  who moved it and when, by trigger, in 0061's idiom for a ticket's date.
+- **Both officers hear of every change.** Adding an address, taking one off, and
+  marking or unmarking one mail every active DPO and Legal PoC account,
+  `breach_board_list_changed`, the one who made it included: who did what, the name
+  and the address, and no breach, so it may cross the wall between the offices. An
+  administrator who makes a change is not mailed, being no officer. The mail is the
+  check the owner asked for, so a change it could not be queued for is refused (503),
+  before anything is written. An unchanged mark records nothing and mails nobody.
+- **Finalising needs an address, not a list.** An empty list with an address for
+  this report is allowed; an empty list and none is 409 `no_board_recipients`; a
+  list with nothing chosen is 422 on `recipients`. An entry taken off since the
+  window read it is 409 `recipient_not_listed`, and the console reads the list again.
+- **Try again tries the version's own addresses**: those it has not reached, a mail
+  lost, or one never queued. An address added to the list since was never chosen for
+  that version and is not mailed it; a new version reaches the list as it then
+  stands. An address taken off the list is still not mailed, matched by blind index.
+
+What it costs:
+
+- A wrong or missing address is put right by a new version, which mails the board
+  again, and not by Try again.
+- An address chosen for one report is told to nobody else. Telling the other office
+  would reveal that a breach exists. A sender who unticks every board member and
+  sends only to an outsider meets the board's duty that way: a mandatory entry is the
+  office's guard against it.
+- Anyone who keeps the list can still add an address, their own included. What has
+  changed is that both officers are told at once, by name and address.
+- Nothing refuses a regulator's own mailbox, on the list or for one report, although
+  a report mailed there would be a submission ADR 0021 says the platform never makes.
+  Which domains to refuse is open ([breaches.md](../domain/breaches.md#open-questions)).
+
+### A CERT-In mark set aside at any time
+
+The owner confirmed **Not reportable to CERT-In**
+([above](#a-cert-in-mark-made-in-error)) and widened it.
+
+- **At any time, whatever validation says**: before any validation, while it is
+  pending, after a *yes* or after a *no*. CERT-In stands on its own test and its six
+  hours wait for no validation, so neither does knowing they were never owed. The
+  first rule, only after a *no*, kept a mark standing on an incident still being
+  validated, and on a real breach that was never a cyber incident it could not be set
+  aside without a *no* the office did not mean. 409 `cert_in_not_validated_no` is
+  gone.
+- **With a reason, and nothing else.** The reason is the ground, sealed on the duty's
+  event and shown on its row; the trail says only that one was given. The event cites
+  no determination, since no validation set it aside, and a mark made again cites
+  none either: there may be none yet. Migration 0064 lets a CERT-In duty's events
+  stand without one, by trigger in place of 0034's CHECK, and keeps the rule for
+  every duty validation moves.
+- **A duty done or a report filed stands** (409 `duty_not_outstanding`,
+  `report_filed`).
+- **It tells nobody.** It mails nobody and leaves validation, the organisation's
+  board's duty and every DPDP duty alone. An incident set aside before any
+  validation still cannot close until it is validated.
+- **Set aside, there is no report to CERT-In**, and a report to CERT-In whose mail
+  waits for a *yes* does not go at that *yes* while the mark is set aside
+  ([below](#a-report-to-cert-in-before-a-yes)).
+- **Marking it again brings it back** on the same six hours from first noticed.
+- **A later *yes* does not bring it back.** CERT-In stands on its own test; the
+  officer marks it again.
+
+What it costs: a mark can be set aside on an incident nobody has validated, or on a
+confirmed breach, to quiet a clock running late. The reason, the person and the
+moment are on the duty's event and the trail, and that is the only check on it, as
+it is on a ticket's date.
+
+### What a yes finds already done
+
+A *no* sets aside what is not yet done, and a later *yes* brings it back on new
+clocks. The work for it may have been done meanwhile, and the product owner's answer
+(decisions 3 and 4) is that it counts. The *yes* does it at once, under the breach's
+row, and mails nobody.
+
+- **The board's own report that reached it** completes the board's duty at the
+  *yes*, with no Try again. It is dated when that report first reached the board,
+  names whom it reached, is recorded as the system's (`recorded_by` empty, the
+  validator as the trail's actor, `by: earlier_mail`) and mails nobody. If several
+  versions did, the first is recorded, as it would have been with no *no*: the
+  oldest finalised version of the board's report that has run its course and
+  reached somebody. A mail still on its way completes the duty when it lands. One
+  that reached nobody leaves it outstanding on its fresh thirty minutes. A key
+  service that cannot open a name for the duty leaves the *yes* standing and the
+  duty outstanding, with `breach.board_duty_unsettled` in the log, and Try again
+  reads it again.
+- **A regulator's report filed while aside** completes the initial intimation or the
+  72-hour report at the *yes*, from when it was sent and the reference that came
+  back, recorded as the filer's (`by: filed_report`). If several were filed, the
+  first filing recorded is the one, by when it was recorded and then by version.
+- **A filing is no longer checked against the duty's clock (logic-4).** A *yes*
+  after a *no* starts it again at its own awareness, and the check refused a true
+  date, on a field the form does not have. Filing is refused only in the future or
+  before the incident was first noticed (422 on `filed_at`, "It cannot have been sent
+  before the incident was first noticed").
+- **CERT-In is out of reach**: a *yes* does not bring it back, and it can be neither
+  filed while set aside nor set aside once filed.
+
+What it costs: such a duty reads done, and on time, at a time before its own clock
+started, and its earlier lapse is on the trail. A filing between first noticed and
+awareness is now taken. Duties a *yes* brought back before this change are not
+swept: the board's completes from Try again, and the next *yes* reads any duty again.
+
+### A dismissed report and the rights of the person who sent it
+
+The review of 2026-11-07 found (data-7) that a report from the public link an office
+dismissed kept its reporter's name and email, sealed, with no way for that person to
+ask what was held or to have it erased: no rights request looked there. The product
+owner's answer (decision 5): a rights request finds it by the reporter's email, and
+an erasure blanks the name and email, keeping the `INC-` number, the reason and who
+dismissed it.
+
+- **Found by the address's blind index.** 0065 gives `incident_report` the same
+  index as `auth_user.email_hash`, written with the report and backfilled through the
+  key service. Once identity is verified, an access or erasure request about
+  everything held looks: by the account's email, and its second email once proved,
+  or for a request with no account by the email it gave. Only the two officers are
+  shown what it finds, on the request's **Holders** tab.
+- **Access** sends the reporter their own name, email and words, when the report was
+  received and dismissed, and that it was not taken up. Not the office's reason, and
+  not who dismissed it, as the office's other notes on a request are not shown.
+- **Erasure is an officer's act on the request**
+  (`POST /requests/{uuid}/public-reports/erase`), not an item: an item is a person's
+  appearance in an asset, and a report is not one. It names no report; it finds them
+  again by the index, so nothing a caller sends can reach another person's, and
+  blanks the name, the email and the index in one statement. It needs an erasure
+  request that has started, not confined to one consent, with no legal hold on the
+  person. **Complete** waits until it is done, or the answer is partial. The trigger
+  that writes a report's outcome once allows this one change, once.
+- **A code to that address.** A request with no account matching a dismissed report's
+  address is sent a code to the address the report came from, so the public form's
+  neutral reply stays true for these reporters and the office need not verify them
+  by hand.
+
+What it costs: the words stay, may name the reporter, and once the index is gone a
+later request cannot reach them; the reason stays and may name them too. A report
+that was claimed is not reached at all: it is the incident's record of what the
+office was told, and it may sit in the other office's register, so neither request
+surfaces it. Nothing expires a dismissed report: it is kept until a rights request
+erases its reporter. Each of these is for Legal or the owner to revisit
+([breaches.md](../domain/breaches.md#open-questions)). ADR 0019's "every store" and
+ADR 0026's "everything held" now include these reports.
+
+### A report to CERT-In before a yes
+
+The answer to logic-6 and mail-11 (decision 6): the board's mail is held, and goes
+unchanged at the first *yes*.
+
+- **Finalising a report to CERT-In before the incident is recorded** records who it
+  goes to and queues nothing. The version reads as held, and the button says so:
+  **Finalise and hold for validation**. Try again is refused while it is held (409
+  `report_held`).
+- **The first *yes* sends it**: the newest finalised version, its words and PDF as
+  frozen, to the addresses chosen when it was finalised, less any taken off the list
+  since; nobody added or marked mandatory after it. The subject and the PDF carry the
+  breach reference the *yes* issued. `breach.report_released` is on the trail.
+- **A *no* keeps it held.** A mail is held exactly while the incident has no breach
+  reference, and a *no* issues none, so it waits for the first *yes*, even after a
+  *no*, and an incident that closes on a *no* never sends it. That is how "never if
+  validation says *no*" was read: never while it stays *no*.
+- **Set aside at the first *yes*, it is withheld**, with `breach.report_withheld` on
+  the trail, and nothing sends it later by itself. Marked again, a person sends it
+  with **Send to the board** (Try again) or writes a new version: an automatic send
+  could mail the board a stale version beside the new one the office is likely to
+  write. Set aside and marked again before the *yes*, it goes at the *yes* as though
+  never set aside.
+- **Only the newest goes.** An earlier version finalised before the *yes* was replaced
+  before it went, and stays unsent.
+- **After the first *yes*** the board has the breach and its own report, so a report
+  to CERT-In finalised then, even during a later *no*, is mailed at once, as before.
+- **Filing a held version** completes its duty; its mail still waits for the *yes*.
+
+What it costs: through a long validation the board does not hear that a report to
+CERT-In was written, while CERT-In's six hours run regardless; if no *yes* comes, it
+never does.

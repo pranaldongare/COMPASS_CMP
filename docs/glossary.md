@@ -303,15 +303,19 @@ target (`BREACH_WITHOUT_DELAY_TARGET_HOURS`) once Legal sets one.
 **Organisation's board.** The organisation's own board, which internal policy
 says hears of a personal data breach within 30 minutes of a validation of *yes*
 (`BREACH_ORG_BOARD_MINUTES`). The platform mails it the report the office wrote
-to the addresses kept under Breach settings, and the duty is done when that
-mail lands. Not a regulator, and not a DPDP duty, though a *no* sets it aside
+to the addresses the sender chose from the list kept under Breach settings -
+every **mandatory** one among them - and any added for that report alone, and
+the duty is done when that mail lands. Not a regulator, and not a DPDP duty,
+though a *no* sets it aside
 ([ADR 0037](decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md)).
 
 **Incident report.** What somebody says through the public link, with no
 account, once they have proved their email by a code. It carries its `INC-`
 number and waits in the **shared intake**, in no office and on no clock, until an
 officer claims it, which logs an incident, or dismisses it with a reason
-(`incident_report`, 0058).
+(`incident_report`, 0058). A dismissed one is found by a rights request from the
+person who sent it, by their email, and an erasure request blanks their name and
+email on it (0065).
 
 **Filing.** Recording that a person sent a finalised report to a regulator: when,
 the reference returned, and both proofs, of internal approval and of the mail

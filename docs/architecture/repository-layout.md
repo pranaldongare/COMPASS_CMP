@@ -82,8 +82,8 @@ backend/api/
     core/                 config, enums, permissions, security, errors, pagination,
                           logging - imports nothing local
     tasks/                Celery: authentication, notifications, maintenance, exchange
-  migrations/versions/    0001 to 0063, raw SQL in both directions; 0028 also
-                          computes keyed hashes in Python, and says why
+  migrations/versions/    0001 to 0065, raw SQL in both directions; 0028 and
+                          0065 also compute keyed hashes in Python, and say why
   tests/
     unit/                 pure functions; no I/O
     integration/          a real PostgreSQL and Redis; each test rolls back
