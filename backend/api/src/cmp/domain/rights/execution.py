@@ -222,15 +222,15 @@ def why_not_complete(
     # Only an erasure reaches a report from the public link.
     if kind == Kind.ERASURE and reports is None:
         return (
-            "Whether she sent a report through the public link could not be checked just "
-            "now. Reload before answering complete."
+            "Whether the requester sent a report through the public link could not be "
+            "checked just now. Reload before answering complete."
         )
     reached = list(reports or ()) if kind == Kind.ERASURE else []
     naming = [r for r in reached if not erased(r)]
     if naming:
         return (
-            f"Her name and email are still on {len(naming)} report(s) she sent through the "
-            "public link. Erase them from the Holders tab, or answer partial."
+            f"The requester's name and email are still on {len(naming)} report(s) they sent "
+            "through the public link. Erase them from the Holders tab, or answer partial."
         )
     if not items and not returned and not any(erased(r) for r in reached):
         what = "corrected" if kind == Kind.CORRECTION else "erased"

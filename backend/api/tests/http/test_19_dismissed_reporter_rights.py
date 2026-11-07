@@ -150,7 +150,7 @@ class TestAReporterWithAnAccount:
         assert str(listed[mine]["reporter_email"]).startswith("SE::")
         assert plain(listed[mine]["reporter_email"]) == world.principal_email
         assert plain(listed[mine]["title"]) == "A laptop left on a train"
-        assert "report(s) she sent through the public link" in one.json()["complete_blocked_by"]
+        assert "report(s) they sent through the public link" in one.json()["complete_blocked_by"]
 
         erased = await call(
             http,

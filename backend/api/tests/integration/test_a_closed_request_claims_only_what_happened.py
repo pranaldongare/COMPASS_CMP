@@ -265,7 +265,7 @@ async def test_a_report_still_naming_her_closes_partial_and_is_named_as_not_done
     with pytest.raises(ValidationFailed) as refused:
         await _respond(conn, seeded, row, "complete")
     assert refused.value.code == "response_partial_required"
-    assert "report(s) she sent through the public link" in refused.value.message
+    assert "report(s) they sent through the public link" in refused.value.message
 
     row = await _respond(conn, seeded, row, "partial")
     record = await _record(conn, seeded, row)

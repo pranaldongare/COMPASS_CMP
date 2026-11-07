@@ -1773,8 +1773,8 @@ async def execute_item(
     "/{request_uuid}/public-reports/erase",
     response_model=PublicReportsOut,
     summary=(
-        "Erase her name and email from the reports she sent through the public link "
-        "that an office dismissed"
+        "Erase the requester's name and email from the reports they sent through the "
+        "public link that an office dismissed"
     ),
 )
 async def erase_public_reports(request_uuid: UUID, principal: RightsWriter) -> dict[str, Any]:

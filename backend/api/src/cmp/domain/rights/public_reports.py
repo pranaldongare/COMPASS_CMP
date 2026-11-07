@@ -68,15 +68,15 @@ UNAVAILABLE: Final = (
     "looked for. Reload to try again."
 )
 NOT_ERASURE: Final = (
-    "Only an erasure request takes her name and email off a report; an access request "
-    "sends them to her with the response."
+    "Only an erasure request takes the requester's name and email off a report; an access "
+    "request sends them to the requester with the response."
 )
 NOT_STARTED: Final = (
     "Start the request first: identity verified, classified, erasure meant, and in your "
     "office's queue."
 )
-HELD: Final = "A legal hold on her stops this until it is released."
-NOTHING_LEFT: Final = "No report from the public link still carries her name and email."
+HELD: Final = "A legal hold on the requester stops this until it is released."
+NOTHING_LEFT: Final = "No report from the public link still carries the requester's name and email."
 
 #: What the response says became of each report.
 NOT_TAKEN_UP: Final = "Not taken up as an incident."

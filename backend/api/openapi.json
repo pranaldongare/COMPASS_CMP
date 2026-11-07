@@ -15478,7 +15478,7 @@
         "tags": [
           "rights"
         ],
-        "summary": "Erase her name and email from the reports she sent through the public link that an office dismissed",
+        "summary": "Erase the requester's name and email from the reports they sent through the public link that an office dismissed",
         "description": "No report is named: they are found again by her proved addresses, so\nnothing a caller sends can reach another person's. The officers' alone;\nthe administrator, who may hold a request about the office, is answered\n404, as the register is hidden from them.",
         "operationId": "erase_public_reports_requests__request_uuid__public_reports_erase_post",
         "parameters": [

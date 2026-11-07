@@ -10403,7 +10403,7 @@
       "module": "rights",
       "method": "POST",
       "path": "/requests/{request_uuid}/public-reports/erase",
-      "summary": "Erase her name and email from the reports she sent through the public link that an office dismissed",
+      "summary": "Erase the requester's name and email from the reports they sent through the public link that an office dismissed",
       "function": "erase_public_reports",
       "operation_id": "erase_public_reports_requests__request_uuid__public_reports_erase_post",
       "in_openapi": true,
