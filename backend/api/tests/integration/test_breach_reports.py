@@ -372,6 +372,19 @@ async def _set_aside_cert_in(conn: Any, seeded: dict[str, Any], uuid: str) -> No
     )
 
 
+async def _yes_aware_now(conn: Any, seeded: dict[str, Any], uuid: str) -> dict[str, Any]:
+    """A yes that enters awareness as now: a duty it brings back starts its
+    clock later than anything done before it."""
+    return await service.determine(
+        conn,
+        breach_uuid=uuid,
+        outcome="yes",
+        reasoning="Read again and decided",
+        became_aware_at=datetime.now(UTC),
+        actor_id=_dpo(seeded),
+    )
+
+
 class TestADraft:
     async def test_it_starts_from_what_the_register_holds(
         self, conn: Any, seeded: dict[str, Any], mailed: list[str]
@@ -1576,9 +1589,12 @@ class TestFiling:
         assert _duty(await service.detail(conn, uuid), "board_intimation")["completed_at"] == sent
 
     @pytest.mark.parametrize(
-        ("when", "field"),
-        [(HOUR, "filed_at"), (-2 * HOUR, "occurred_at")],
-        ids=["in the future", "before its clock started"],
+        ("when", "said"),
+        [
+            (HOUR, "This time is in the future"),
+            (-3 * HOUR, "It cannot have been sent before the incident was first noticed"),
+        ],
+        ids=["in the future", "before it was first noticed"],
     )
     async def test_the_time_may_not_be_impossible(
         self,
@@ -1586,8 +1602,11 @@ class TestFiling:
         seeded: dict[str, Any],
         mailed: list[str],
         when: timedelta,
-        field: str,
+        said: str,
     ) -> None:
+        """First noticed two hours ago, aware one hour ago: only a time no
+        mail could have been sent at is refused, and on the field the form
+        has."""
         await _board(conn, seeded)
         uuid = await _breach(conn, seeded)
         doc = await _finalise(conn, seeded, uuid, "board_intimation")
@@ -1602,7 +1621,67 @@ class TestFiling:
                 reference="DPB/1",
                 actor_id=_dpo(seeded),
             )
-        assert refused.value.field == field
+        assert (refused.value.field, refused.value.message) == ("filed_at", said)
+        assert (
+            _latest(await reports.overview(conn, breach_uuid=uuid), "board_intimation")["filed_at"]
+            is None
+        )
+
+    async def test_a_true_date_from_before_a_later_yes_is_taken(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        """A yes after a no starts the duty's clock again at the awareness it
+        enters, later than the report may have gone. The report's own date
+        stands, and it completes the duty (logic-4)."""
+        await _board(conn, seeded)
+        uuid = await _breach(conn, seeded)
+        doc = await _finalise(conn, seeded, uuid, "board_intimation")
+        for proof in ("approval", "sent_mail"):
+            await _proof(conn, seeded, uuid, doc, proof)
+        await _determine(conn, seeded, uuid, "no")
+        await _yes_aware_now(conn, seeded, uuid)
+        anchored = _duty(await service.detail(conn, uuid), "board_intimation")["anchored_at"]
+        sent = datetime.now(UTC) - timedelta(minutes=30)
+        await reports.file_report(
+            conn,
+            breach_uuid=uuid,
+            report_uuid=str(doc["report_uuid"]),
+            filed_at=sent,
+            reference="DPB/1",
+            actor_id=_dpo(seeded),
+        )
+        duty = _duty(await service.detail(conn, uuid), "board_intimation")
+        assert duty["state"] == "done" and duty["completed_at"] == sent < anchored
+        [trail] = await _trail(conn, uuid, "breach.obligation_completed")
+        detail = trail["detail_json"]
+        assert {k: detail[k] for k in ("duty", "late", "by", "version")} == {
+            "duty": "board_intimation",
+            "late": False,
+            "by": "filing",
+            "version": 1,
+        }
+
+    async def test_it_may_have_been_sent_before_awareness_was_entered(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        """Between first noticed and awareness: a person may have told the Board
+        before the officer entered when the organisation knew."""
+        await _board(conn, seeded)
+        uuid = await _breach(conn, seeded)
+        doc = await _finalise(conn, seeded, uuid, "board_intimation")
+        for proof in ("approval", "sent_mail"):
+            await _proof(conn, seeded, uuid, doc, proof)
+        sent = datetime.now(UTC) - timedelta(minutes=90)
+        await reports.file_report(
+            conn,
+            breach_uuid=uuid,
+            report_uuid=str(doc["report_uuid"]),
+            filed_at=sent,
+            reference="DPB/1",
+            actor_id=_dpo(seeded),
+        )
+        duty = _duty(await service.detail(conn, uuid), "board_intimation")
+        assert duty["state"] == "done" and duty["completed_at"] == sent < duty["anchored_at"]
 
     async def test_it_is_filed_once(
         self, conn: Any, seeded: dict[str, Any], mailed: list[str]
@@ -2731,6 +2810,336 @@ class TestACertInReportBeforeAYes:
         assert waited and len(mailed) == 2
         assert sent["mail"]["queued"] == 2
         assert await _trail(conn, uuid, "breach.report_released") == [], "nothing was held"
+
+
+class TestWhatAYesFindsDone:
+    """Decisions 3 and 4 of 2026-11-07: a duty a no set aside comes back on a
+    yes with a new clock, and work done for it meanwhile counts. The yes does
+    the duty from that work, as it would have been done had the no never set
+    it aside, and mails nobody."""
+
+    @staticmethod
+    async def _completed_by(conn: Any, uuid: str, duty: str) -> list[int | None]:
+        """Who each completion of the duty is recorded as, oldest first."""
+        rows = await fetch_all(
+            conn,
+            """SELECT e.recorded_by FROM breach_obligation_event e
+                 JOIN breach_obligation o ON o.obligation_id = e.obligation_id
+                 JOIN breach b ON b.breach_id = o.breach_id
+                WHERE b.breach_uuid = %s AND o.kind = %s AND e.kind = 'completed'
+                ORDER BY e.event_id""",
+            (uuid, duty),
+        )
+        return [r["recorded_by"] for r in rows]
+
+    @staticmethod
+    async def _completions(conn: Any, uuid: str, duty: str) -> list[dict[str, Any]]:
+        return [
+            t
+            for t in await _trail(conn, uuid, "breach.obligation_completed")
+            if t["detail_json"]["duty"] == duty
+        ]
+
+    @staticmethod
+    def _said(trail: dict[str, Any], *keys: str) -> dict[str, Any]:
+        return {k: trail["detail_json"].get(k) for k in keys}
+
+    async def test_the_boards_own_report_that_reached_it_while_aside_does_the_duty(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        await _finalise(conn, seeded, uuid, "org_board")
+        await _determine(conn, seeded, uuid, "no")
+        await _reached(conn, *mailed)
+        assert _duty(await service.detail(conn, uuid), "org_board")["state"] == "not_applicable"
+        [delivered] = await _delivery_rows(conn, uuid, "delivered")
+        duty = _duty(await _yes_aware_now(conn, seeded, uuid), "org_board")
+        assert duty["state"] == "done"
+        assert plain(duty["reported_to"]) == "By email: chair@example.org"
+        assert duty["completed_at"] == delivered["recorded_at"] < duty["anchored_at"]
+        assert [e["kind"] for e in duty["events"]] == ["not_applicable", "reinstated", "completed"]
+        assert await self._completed_by(conn, uuid, "org_board") == [None], "the mail's account"
+        [trail] = await self._completions(conn, uuid, "org_board")
+        assert trail["actor_user_id"] == _dpo(seeded)
+        assert self._said(trail, "by", "late", "reached", "version") == {
+            "by": "earlier_mail",
+            "late": False,
+            "reached": 1,
+            "version": 1,
+        }
+        assert len(mailed) == 1, "nobody is mailed again"
+        assert await _trail(conn, uuid, "breach.report_resent") == []
+
+    async def test_a_mail_the_no_overtook_counts_too(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        """Delivered, and the no came before the worker read the duty again."""
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        await _finalise(conn, seeded, uuid, "org_board")
+        await reports.record_result(conn, delivery_uuid=mailed[0], status="delivered", detail={})
+        await _determine(conn, seeded, uuid, "no")
+        assert _duty(await service.detail(conn, uuid), "org_board")["state"] == "not_applicable"
+        duty = _duty(await _yes_aware_now(conn, seeded, uuid), "org_board")
+        assert duty["state"] == "done"
+        [trail] = await self._completions(conn, uuid, "org_board")
+        assert self._said(trail, "by") == {"by": "earlier_mail"}
+        assert len(mailed) == 1
+
+    async def test_a_mail_still_on_its_way_is_left_to_the_worker(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        await _finalise(conn, seeded, uuid, "org_board")
+        await _determine(conn, seeded, uuid, "no")
+        duty = _duty(await _yes_aware_now(conn, seeded, uuid), "org_board")
+        assert duty["state"] == "outstanding", "queued is not told"
+        assert await self._completions(conn, uuid, "org_board") == []
+        await _reached(conn, *mailed)
+        assert _duty(await service.detail(conn, uuid), "org_board")["state"] == "done"
+        [trail] = await self._completions(conn, uuid, "org_board")
+        assert trail["actor_user_id"] is None
+        assert self._said(trail, "by", "version") == {"by": "delivery", "version": 1}
+
+    async def test_a_mail_that_reached_nobody_leaves_it_outstanding(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        doc = await _finalise(conn, seeded, uuid, "org_board")
+        await _determine(conn, seeded, uuid, "no")
+        await _not_reached(conn, *mailed)
+        duty = _duty(await _yes_aware_now(conn, seeded, uuid), "org_board")
+        assert duty["state"] == "outstanding"
+        read = _latest(await reports.overview(conn, breach_uuid=uuid), "org_board")
+        assert read["mail"]["retryable"] == 1, "Try again is the way on"
+        await _resend(conn, seeded, uuid, doc)
+        await _reached(conn, mailed[-1])
+        assert _duty(await service.detail(conn, uuid), "org_board")["state"] == "done"
+
+    async def test_the_first_version_to_reach_the_board_is_the_one_recorded(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        """What would have completed the duty had nothing set it aside."""
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        await _finalise(conn, seeded, uuid, "org_board")
+        await _determine(conn, seeded, uuid, "no")
+        await _reached(conn, *mailed)
+        await _board(conn, seeded, "member@example.org")
+        await _finalise(conn, seeded, uuid, "org_board")
+        await _reached(conn, *mailed[1:])
+        [first, *_] = await _delivery_rows(conn, uuid, "delivered")
+        duty = _duty(await _yes_aware_now(conn, seeded, uuid), "org_board")
+        assert duty["state"] == "done"
+        assert plain(duty["reported_to"]) == "By email: chair@example.org"
+        assert duty["completed_at"] == first["recorded_at"]
+        [trail] = await self._completions(conn, uuid, "org_board")
+        assert self._said(trail, "version", "reached") == {"version": 1, "reached": 1}
+
+    async def test_another_kinds_mail_still_tells_it_nothing(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        await _determine(conn, seeded, uuid, "no")
+        doc = await _finalise(conn, seeded, uuid, "board_intimation")
+        await _reached(conn, *mailed)
+        duty = _duty(await _yes_aware_now(conn, seeded, uuid), "org_board")
+        assert duty["state"] == "outstanding"
+        breach = await service.require(conn, uuid)
+        breach_id = int(breach["breach_id"])
+        report = await repo.by_uuid(conn, breach_id, str(doc["report_uuid"]))
+        assert report is not None
+        settled = await reports._settle(
+            conn, int(report["report_id"]), breach_id, by="earlier_mail", actor_id=_dpo(seeded)
+        )
+        assert settled is False, "read directly, it is still not the board's own report"
+        assert _duty(await service.detail(conn, uuid), "org_board")["state"] == "outstanding"
+        assert await self._completions(conn, uuid, "org_board") == []
+
+    async def test_the_worker_coming_after_adds_nothing(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        await _finalise(conn, seeded, uuid, "org_board")
+        await reports.record_result(conn, delivery_uuid=mailed[0], status="delivered", detail={})
+        await _determine(conn, seeded, uuid, "no")
+        await _yes_aware_now(conn, seeded, uuid)
+        await reports.settle(conn, delivery_uuid=mailed[0])
+        assert len(await self._completions(conn, uuid, "org_board")) == 1
+        assert await self._completed_by(conn, uuid, "org_board") == [None]
+
+    async def test_a_second_yes_adds_nothing(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        await _finalise(conn, seeded, uuid, "org_board")
+        await _determine(conn, seeded, uuid, "no")
+        await _reached(conn, *mailed)
+        doc = await _finalise(conn, seeded, uuid, "board_intimation")
+        for proof in ("approval", "sent_mail"):
+            await _proof(conn, seeded, uuid, doc, proof)
+        await _file(conn, seeded, uuid, doc)
+        await _yes_aware_now(conn, seeded, uuid)
+        done = {
+            duty: await self._completed_by(conn, uuid, duty)
+            for duty in ("org_board", "board_intimation")
+        }
+        assert done == {"org_board": [None], "board_intimation": [_dpo(seeded)]}
+        await _yes_aware_now(conn, seeded, uuid)
+        for duty in done:
+            assert await self._completed_by(conn, uuid, duty) == done[duty]
+            assert len(await self._completions(conn, uuid, duty)) == 1
+
+    async def test_a_key_service_down_leaves_the_yes_standing(
+        self,
+        conn: Any,
+        seeded: dict[str, Any],
+        mailed: list[str],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """The board's duty names whom it reached, which takes the key service.
+        A validation does not wait on it: the duty stays outstanding, and Try
+        again reads it once the service is back."""
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        doc = await _finalise(conn, seeded, uuid, "org_board")
+        await _determine(conn, seeded, uuid, "no")
+        await _reached(conn, *mailed)
+        logged: list[tuple[str, dict[str, Any]]] = []
+
+        class Log:
+            def warning(self, event: str, **fields: Any) -> None:
+                logged.append((event, fields))
+
+        with monkeypatch.context() as down:
+            TestTheAccountOfTheMailComesFirst._key_service_down(down)
+            down.setattr(reports, "log", Log())
+            read = await _yes_aware_now(conn, seeded, uuid)
+        assert [d["outcome"] for d in read["determinations"]] == ["yes", "no", "yes"]
+        assert _duty(read, "org_board")["state"] == "outstanding"
+        assert logged == [("breach.board_duty_unsettled", {"reference": read["reference"]})]
+        assert str(read["reference"]).startswith("BR-"), "the reference only, nobody's name"
+        await _resend(conn, seeded, uuid, doc)
+        duty = _duty(await service.detail(conn, uuid), "org_board")
+        assert duty["state"] == "done"
+        assert plain(duty["reported_to"]) == "By email: chair@example.org"
+        assert len(mailed) == 1
+
+    async def test_a_try_that_fails_part_way_is_undone_whole(
+        self,
+        conn: Any,
+        seeded: dict[str, Any],
+        mailed: list[str],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Failing once the duty's event is written and before its line on the
+        trail, the try leaves nothing: a duty read as done with nothing on the
+        trail to say so would be worse than one left for Try again."""
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        await _finalise(conn, seeded, uuid, "org_board")
+        await _determine(conn, seeded, uuid, "no")
+        await _reached(conn, *mailed)
+        write = breach_repo.add_obligation_event
+
+        async def then_down(c: Any, obligation_id: int, **given: Any) -> Any:
+            row = await write(c, obligation_id, **given)
+            if given["kind"] == EventKind.COMPLETED:
+                raise DkmsUnavailable("key service down")
+            return row
+
+        monkeypatch.setattr(breach_repo, "add_obligation_event", then_down)
+        read = await _yes_aware_now(conn, seeded, uuid)
+        assert _duty(read, "org_board")["state"] == "outstanding"
+        assert await self._completed_by(conn, uuid, "org_board") == []
+        assert await self._completions(conn, uuid, "org_board") == []
+
+    @pytest.mark.parametrize("kind", ["board_intimation", "board_report"])
+    async def test_a_report_filed_while_aside_does_the_duty_at_the_yes(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str], kind: str
+    ) -> None:
+        """Filed by one person while a no stood, and validated by another: the
+        facts are the filer's, and the trail says whose yes recorded them."""
+        dco = int(seeded["users"]["dco"]["id"])
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        await _determine(conn, seeded, uuid, "no")
+        doc = await _finalise(conn, seeded, uuid, kind)
+        for proof in ("approval", "sent_mail"):
+            await _proof(conn, seeded, uuid, doc, proof)
+        sent = datetime.now(UTC) - timedelta(minutes=10)
+        filed = await reports.file_report(
+            conn,
+            breach_uuid=uuid,
+            report_uuid=str(doc["report_uuid"]),
+            filed_at=sent,
+            reference="DPB/1",
+            actor_id=dco,
+        )
+        assert _kind(filed, kind)["duty_state"] == "not_applicable", "nothing completes yet"
+        before = len(mailed)
+        duty = _duty(await _yes_aware_now(conn, seeded, uuid), kind)
+        assert duty["state"] == "done" and duty["reference"] == "DPB/1"
+        assert duty["completed_at"] == sent < duty["anchored_at"]
+        assert [e["kind"] for e in duty["events"]][-3:] == [
+            "not_applicable",
+            "reinstated",
+            "completed",
+        ]
+        assert await self._completed_by(conn, uuid, kind) == [dco]
+        [trail] = await self._completions(conn, uuid, kind)
+        assert trail["actor_user_id"] == _dpo(seeded)
+        assert self._said(trail, "by", "version", "late") == {
+            "by": "filed_report",
+            "version": 1,
+            "late": False,
+        }
+        assert len(mailed) == before, "nobody is mailed"
+
+    async def test_the_first_filing_recorded_is_the_one_that_counts(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        dco = int(seeded["users"]["dco"]["id"])
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        await _determine(conn, seeded, uuid, "no")
+        for reference, filer in (("DPB/1", dco), ("DPB/2", _dpo(seeded))):
+            doc = await _finalise(conn, seeded, uuid, "board_intimation")
+            for proof in ("approval", "sent_mail"):
+                await _proof(conn, seeded, uuid, doc, proof)
+            await reports.file_report(
+                conn,
+                breach_uuid=uuid,
+                report_uuid=str(doc["report_uuid"]),
+                filed_at=datetime.now(UTC),
+                reference=reference,
+                actor_id=filer,
+            )
+        duty = _duty(await _yes_aware_now(conn, seeded, uuid), "board_intimation")
+        assert duty["reference"] == "DPB/1"
+        assert await self._completed_by(conn, uuid, "board_intimation") == [dco]
+        [trail] = await self._completions(conn, uuid, "board_intimation")
+        assert self._said(trail, "version") == {"version": 1}
+
+    @pytest.mark.parametrize("kind", ["board_intimation", "board_report"])
+    async def test_a_report_only_finalised_completes_nothing(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str], kind: str
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        await _determine(conn, seeded, uuid, "no")
+        doc = await _finalise(conn, seeded, uuid, kind)
+        for proof in ("approval", "sent_mail"):
+            await _proof(conn, seeded, uuid, doc, proof)
+        duty = _duty(await _yes_aware_now(conn, seeded, uuid), kind)
+        assert duty["state"] == "outstanding", "the proof is not the filing"
+        assert await self._completions(conn, uuid, kind) == []
 
 
 class TestTheDatabaseHoldsTheRule:

@@ -254,8 +254,10 @@ async def determine(
     `became_aware_at`, and the organisation's board with thirty minutes from
     now (ADR 0037). *No* sets aside those not yet done, citing this
     determination. *Pending* changes no duty. CERT-In stands on its own test
-    and is untouched by all three. The first *yes* sends a report to CERT-In
-    that was held for it, to the organisation's board (ADR 0037).
+    and is untouched by all three. A duty a *yes* brings back whose work was
+    done while it was aside is done at once, from that work, and nobody is told
+    (`reports.after_yes`). The first *yes* sends a report to CERT-In that was
+    held for it, to the organisation's board (ADR 0037).
     """
     breach = await locked_open(conn, breach_uuid)
     decided = choice(Outcome, outcome, field="outcome")
@@ -685,6 +687,52 @@ async def set_aside_cert_in(conn: Conn, *, breach_uuid: str, reason: str, actor_
     return await detail(conn, breach_uuid)
 
 
+async def record_completion(
+    conn: Conn,
+    breach: Row,
+    duty: Duty,
+    found: tuple[Row, dict[str, Any]],
+    *,
+    occurred_at: datetime,
+    reference: str | None,
+    recorded_by: int | None,
+    actor_id: int | None,
+    note: str | None = None,
+    reported_to: str | None = None,
+    detail: dict[str, Any] | None = None,
+) -> None:
+    """That a duty was done: its event and its line on the trail. Nothing here
+    checks the time; each caller checks what it was given. The caller holds the
+    breach row and has found the duty outstanding (`found`, as `duties_of`
+    gives it).
+
+    `recorded_by` is whose entry the facts are, and `actor_id` whose request
+    wrote them: a filing found by a later *yes* is the filer's, written at the
+    validator's request. `detail` adds to the trail what did it."""
+    row, state = found
+    await repo.add_obligation_event(
+        conn,
+        int(row["obligation_id"]),
+        kind=EventKind.COMPLETED,
+        occurred_at=occurred_at,
+        reference=reference,
+        note=note,
+        reported_to=reported_to,
+        recorded_by=recorded_by,
+    )
+    await record_event(
+        conn,
+        breach,
+        Event.BREACH_OBLIGATION_COMPLETED,
+        actor_id=actor_id,
+        detail={
+            "duty": duty.value,
+            "late": bool(state["due_at"] and occurred_at > state["due_at"]),
+            **(detail or {}),
+        },
+    )
+
+
 async def complete_duty(
     conn: Conn,
     *,
@@ -700,6 +748,10 @@ async def complete_duty(
 
     The organisation's board is not a regulator: what is recorded is when a
     person reported to it and to whom, and a reference only if there is one.
+
+    Checked against the duty's clock, because a time typed here is typed
+    against a running duty. A filing is not: `reports.file_report` records it
+    through `record_completion`.
     """
     kind = choice(Duty, duty, field="duty")
     breach = await locked_open(conn, breach_uuid)
@@ -730,25 +782,17 @@ async def complete_duty(
         raise ValidationFailed(
             "A submission cannot come before its clock started", field="occurred_at"
         )
-    await repo.add_obligation_event(
+    await record_completion(
         conn,
-        int(row["obligation_id"]),
-        kind=EventKind.COMPLETED,
+        breach,
+        kind,
+        (row, state),
         occurred_at=occurred_at,
         reference=reference,
         note=_text(note),
         reported_to=reported_to,
         recorded_by=actor_id,
-    )
-    await record_event(
-        conn,
-        breach,
-        Event.BREACH_OBLIGATION_COMPLETED,
         actor_id=actor_id,
-        detail={
-            "duty": kind.value,
-            "late": bool(state["due_at"] and occurred_at > state["due_at"]),
-        },
     )
     return await detail(conn, breach_uuid)
 

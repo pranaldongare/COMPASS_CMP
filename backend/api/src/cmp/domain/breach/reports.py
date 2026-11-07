@@ -19,16 +19,18 @@ Five kinds, one path:
   to is frozen with it. For `org_board` that is the whole of it. Its duty
   completes when the mail has run its course and reached somebody, naming only
   those it reached: queued is not told, and if every address fails the duty
-  stays outstanding and its overdue alert fires. Every other kind is told to
-  the board for its information and goes no further here.
+  stays outstanding and its overdue alert fires. A duty a *no* had set aside
+  meanwhile is done from that mail at the *yes* that brings it back. Every
+  other kind is told to the board for its information and goes no further here.
 * **A report to CERT-In finalised before the incident is recorded is held**,
   and goes at the first *yes*, to the addresses chosen for it, less any taken
   off the list since. Validated *no* and never *yes*, it is never sent; set
   aside at that *yes*, it is not sent either, and the trail says so.
 * **The platform never sends to a regulator** (ADR 0021). A person does, and
   files here: the proof of internal approval, the mail they sent, when, and the
-  reference that came back. Only then is the regulator's duty done, so no duty
-  completes without its proof.
+  reference that came back. Only then is the regulator's duty done, at the
+  filing or, if a *no* had set it aside, at the *yes* that brings it back, so
+  no duty completes without its proof.
 * **A failed mail is on the record**, like a notice's: an address the report
   did not reach says so, and sending again tries only the version's own
   addresses that it did not reach. An address added to the list since was
@@ -56,6 +58,7 @@ from pydantic import TypeAdapter, ValidationError
 
 from cmp.core.config import settings
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
+from cmp.core.logging import get_logger
 from cmp.db.pool import across_offices
 from cmp.db.redis import K_LOCK
 from cmp.db.redis import key as rkey
@@ -67,7 +70,7 @@ from cmp.domain.audit.service import Event
 from cmp.domain.breach import notices, service
 from cmp.domain.breach.clock import Duty, EventKind, State
 from cmp.domain.breach.state_machine import Status
-from cmp.infrastructure.dkms import unseal_strings
+from cmp.infrastructure.dkms import DkmsUnavailable, unseal_strings
 from cmp.infrastructure.dkms.blind import index_of
 from cmp.infrastructure.dkms.fields import PREFIX as SEALED_PREFIX
 from cmp.infrastructure.pdf import Document, Fields, Heading, Paragraph, render
@@ -75,6 +78,8 @@ from cmp.validation.choices import choice
 from cmp.validation.contacts import Email
 
 Row = dict[str, Any]
+
+log = get_logger("cmp.breach.reports")
 
 #: Mailed for a report and still queued after this was lost before the worker
 #: saw it, as a notice's is (`cmp.domain.breach.notices.STALE_AFTER`).
@@ -685,7 +690,11 @@ def _takes_proof(report: Row) -> None:
 async def _may_file(conn: Conn, breach: Row, report: Row) -> None:
     """A report is filed on the same terms it is written. Filed with the CERT-In
     mark set aside it would complete nothing, and marking it again would then
-    leave the duty with no report to complete it. So: mark it, then file it."""
+    leave the duty with no report to complete it. So: mark it, then file it.
+
+    A DPDP duty a *no* set aside is another matter: the report is filed, and
+    the *yes* that brings the duty back completes it from that filing
+    (`after_yes`)."""
     duties = await service.duties_of(conn, int(breach["breach_id"]))
     blocked = _may_write(Kind(report["kind"]), breach, duties)
     if blocked:
@@ -761,7 +770,9 @@ async def file_report(
     actor_id: int,
 ) -> Row:
     """Record that a person sent it. Refused without both proofs, and the duty
-    completes with it: there is no other way to complete a regulator's duty."""
+    completes with it: there is no other way to complete a regulator's duty.
+    One a *no* has set aside completes at the *yes* that brings it back
+    (`after_yes`)."""
     breach = await service.locked_open(conn, breach_uuid)
     report = await _report(conn, breach, report_uuid)
     kind = Kind(report["kind"])
@@ -777,31 +788,41 @@ async def file_report(
     lacking = [label for key, label in PROOFS.items() if key not in held]
     if lacking:
         raise Conflict("Attach the proof first: " + "; ".join(lacking), code="report_proof_missing")
-    # It may be earlier than finalising here: a person may have sent it first.
+    # It may be earlier than finalising here, since a person may have sent it
+    # first, and earlier than a later yes's awareness, which starts the duty's
+    # clock again after a no. Nothing about the incident was sent before it was
+    # noticed.
     if filed_at > datetime.now(UTC) + _SKEW:
         raise ValidationFailed("This time is in the future", field="filed_at")
+    if filed_at < breach["detected_at"]:
+        raise ValidationFailed(
+            "It cannot have been sent before the incident was first noticed", field="filed_at"
+        )
     reference = (reference or "").strip() or None
     duty = DUTIES.get(kind)
     if duty and not reference:
         raise ValidationFailed("Enter the reference the regulator returned", field="reference")
+    version = int(report["version"])
     await repo.file(conn, report_id, filed_at=filed_at, reference=reference, filed_by=actor_id)
     await service.record_event(
         conn,
         breach,
         Event.BREACH_REPORT_FILED,
         actor_id=actor_id,
-        detail={"kind": kind.value, "version": int(report["version"])},
+        detail={"kind": kind.value, "version": version},
     )
     found = (await service.duties_of(conn, int(breach["breach_id"]))).get(duty) if duty else None
     if duty and found and found[1]["state"] == State.OUTSTANDING:
-        await service.complete_duty(
+        await service.record_completion(
             conn,
-            breach_uuid=breach_uuid,
-            duty=duty.value,
+            breach,
+            duty,
+            found,
             occurred_at=filed_at,
             reference=reference,
-            note=None,
+            recorded_by=actor_id,
             actor_id=actor_id,
+            detail={"by": "filing", "version": version},
         )
     return await overview(conn, breach_uuid=breach_uuid)
 
@@ -1117,14 +1138,27 @@ async def job(conn: Conn, delivery_uuid: str) -> Row | None:
     }
 
 
-async def _settle(conn: Conn, report_id: int, breach_id: int) -> bool:
-    """Complete the organisation's board duty if this report has run its course
-    and reached somebody. An address taken off the list is waited for no longer.
-    The caller holds the breach row, so of two re-reads the second finds it
-    done. Returns whether it completed now.
+async def _settle(
+    conn: Conn,
+    report_id: int,
+    breach_id: int,
+    *,
+    by: str = "delivery",
+    actor_id: int | None = None,
+) -> bool:
+    """Complete the organisation's board duty if this report, the board's own,
+    has run its course and reached somebody. An address taken off the list is
+    waited for no longer. The caller holds the breach row, so of two re-reads
+    the second finds it done. Returns whether it completed now.
 
-    Past `service.complete_duty`, as `notices.settle` is: this is the worker,
-    with no office and no person, recording what happened."""
+    Past `service.complete_duty`, as `notices.settle` is: what is recorded is
+    what the mail did, and it is nobody's entry. `by` is what read it - the
+    worker after an outcome, or a yes that found it done while a no had the
+    duty aside (`after_yes`) - and `actor_id` whose request that was, None for
+    the worker."""
+    report = await repo.by_id(conn, report_id)
+    if report is None or report["kind"] != Kind.ORG_BOARD:
+        return False  # another kind's mail tells this duty nothing
     found = (await service.duties_of(conn, breach_id)).get(Duty.ORG_BOARD)
     if not found or found[1]["state"] != State.OUTSTANDING:
         return False
@@ -1154,15 +1188,51 @@ async def _settle(conn: Conn, report_id: int, breach_id: int) -> bool:
         conn,
         breach,
         Event.BREACH_OBLIGATION_COMPLETED,
-        actor_id=None,
+        actor_id=actor_id,
         detail={
             "duty": Duty.ORG_BOARD.value,
             "late": bool(due and occurred_at > due),
             "reached": len(reached),
-            "by": "delivery",
+            "by": by,
+            "version": int(report["version"]),
         },
     )
     return True
+
+
+def _first_filing(written: list[Row], kind: Kind) -> Row | None:
+    """The filing that would have completed the duty had nothing set it aside:
+    the first recorded. One without the regulator's reference completes
+    nothing, as `file_report` would not have taken it."""
+    filed = [
+        r
+        for r in written
+        if r["kind"] == kind and r["filed_at"] is not None and r["filed_reference"]
+    ]
+    return min(filed, key=lambda r: (r["filed_recorded_at"], r["version"]), default=None)
+
+
+async def _told_already(conn: Conn, breach: Row, written: list[Row], *, actor_id: int) -> None:
+    """The board's duty, from the first of its own reports to have run its
+    course and reached somebody, oldest first, as it would have been recorded
+    had nothing set it aside. Each try is a savepoint: a key service that cannot
+    open a name for the duty must not undo a validation, and Try again reads
+    the duty again after."""
+    breach_id = int(breach["breach_id"])
+    own = sorted(
+        (r for r in written if r["kind"] == Kind.ORG_BOARD and r["finalised_at"] is not None),
+        key=lambda r: int(r["version"]),
+    )
+    for report in own:
+        try:
+            async with conn.transaction():
+                if await _settle(
+                    conn, int(report["report_id"]), breach_id, by="earlier_mail", actor_id=actor_id
+                ):
+                    return
+        except DkmsUnavailable:
+            log.warning("breach.board_duty_unsettled", reference=str(breach["reference"]))
+            return
 
 
 async def after_yes(conn: Conn, breach: Row, *, first: bool, actor_id: int) -> None:
@@ -1170,7 +1240,41 @@ async def after_yes(conn: Conn, breach: Row, *, first: bool, actor_id: int) -> N
     Called by `service.determine` after `_apply_yes`, under the breach's row and
     in its transaction, on every yes. `breach` is the row as recorded. `first`
     is whether this yes issued the breach reference: the held mail is the first
-    yes's alone."""
+    yes's alone.
+
+    A duty a no set aside comes back on a yes with a new clock, and its work
+    may have been done meanwhile: the board's own report reached it, or a
+    person filed a regulator's report here. That counts (the product owner,
+    2026-11-07). The duty is done now, from that work, as it would have been
+    had the no never set it aside, and nobody is mailed. This reads everything
+    again, so a duty already done is left alone and a second yes adds nothing.
+    It comes before the held mail, which must not be refused for anything the
+    yes did not cause."""
+    breach_id = int(breach["breach_id"])
+    duties = await service.duties_of(conn, breach_id)
+    written = await repo.on_breach(conn, breach_id)
+
+    def outstanding(duty: Duty) -> tuple[Row, dict[str, Any]] | None:
+        found = duties.get(duty)
+        return found if found and found[1]["state"] == State.OUTSTANDING else None
+
+    if outstanding(Duty.ORG_BOARD):
+        await _told_already(conn, breach, written, actor_id=actor_id)
+    for kind in (Kind.BOARD_INTIMATION, Kind.BOARD_REPORT):
+        duty = DUTIES[kind]
+        found, filing = outstanding(duty), _first_filing(written, kind)
+        if found and filing:
+            await service.record_completion(
+                conn,
+                breach,
+                duty,
+                found,
+                occurred_at=filing["filed_at"],
+                reference=filing["filed_reference"],
+                recorded_by=int(filing["filed_by"]),
+                actor_id=actor_id,
+                detail={"by": "filed_report", "version": int(filing["version"])},
+            )
     if first:
         await _release_held(conn, breach, actor_id=actor_id)
 

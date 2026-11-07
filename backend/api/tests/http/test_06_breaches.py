@@ -66,6 +66,22 @@ async def file_report(
 ) -> dict[str, Any]:
     """Draft, finalise, both proofs, filed: the only way a regulator's duty
     completes. Returns the report as it ends."""
+    report = await ready_to_file(http, world, path, kind)
+    filed = await call(
+        http,
+        "POST",
+        f"{report}/file",
+        template=f"{B}/reports/{{report_uuid}}/file",
+        session=world.dpo,
+        json={"filed_at": datetime.now(UTC).isoformat(), "reference": reference},
+    )
+    [view] = [k for k in filed.json()["kinds"] if k["kind"] == kind]
+    return view["versions"][0]
+
+
+async def ready_to_file(http: httpx.AsyncClient, world: World, path: str, kind: str) -> str:
+    """Draft, finalise and both proofs: all a filing waits for. Returns the
+    report's path."""
     await on_the_board(http, world)
     drafted = await call(
         http,
@@ -106,16 +122,7 @@ async def file_report(
             files={"file": (f"{proof}.pdf", b"%PDF-1.7 proof", "application/pdf")},
             expect=201,
         )
-    filed = await call(
-        http,
-        "POST",
-        f"{report}/file",
-        template=f"{B}/reports/{{report_uuid}}/file",
-        session=world.dpo,
-        json={"filed_at": datetime.now(UTC).isoformat(), "reference": reference},
-    )
-    [view] = [k for k in filed.json()["kinds"] if k["kind"] == kind]
-    return view["versions"][0]
+    return report
 
 
 async def on_the_board(http: httpx.AsyncClient, world: World) -> None:
@@ -294,6 +301,71 @@ class TestTheRegister:
         )
         assert closed.json()["status"] == "closed"
         assert closed.json()["status_history"][-1]["changed_by_name"].startswith("SE::")
+
+    async def test_a_yes_after_a_no_finds_the_filing(
+        self, http: httpx.AsyncClient, world: World
+    ) -> None:
+        """Filed while a no had the duty aside, it completes nothing then. The
+        yes that brings the duty back completes it from that filing, though its
+        awareness starts the clock after the report went."""
+        breach = await _record(http, world, location_kind="platform", processor_uuid=None)
+        path = f"/breaches/{breach['breach_uuid']}"
+
+        async def validate(**body: Any) -> dict[str, Any]:
+            done = await call(
+                http,
+                "POST",
+                f"{path}/determinations",
+                template=f"{B}/determinations",
+                session=world.dpo,
+                json={"reasoning": "Read and decided", **body},
+            )
+            [duty] = [d for d in done.json()["obligations"] if d["duty"] == "board_intimation"]
+            return duty
+
+        await validate(outcome="yes", became_aware_at=_at(4))
+        assert (await validate(outcome="no"))["state"] == "not_applicable"
+        filed = await file_report(http, world, path, "board_intimation", "DPB/HTTP/1")
+        assert filed["state"] == "filed"
+        one = await call(http, "GET", path, template=B, session=world.dpo)
+        [aside] = [d for d in one.json()["obligations"] if d["duty"] == "board_intimation"]
+        assert aside["state"] == "not_applicable", "nothing completes while the no stands"
+
+        duty = await validate(outcome="yes", became_aware_at=_at(0))
+        assert duty["state"] == "done" and duty["reference"] == "DPB/HTTP/1"
+        completed = datetime.fromisoformat(duty["completed_at"])
+        assert completed == datetime.fromisoformat(filed["filed_at"])
+        assert completed < datetime.fromisoformat(duty["anchored_at"])
+        assert [e["kind"] for e in duty["events"]] == ["not_applicable", "reinstated", "completed"]
+
+    async def test_a_filing_before_first_noticed_is_refused_on_filed_at(
+        self, http: httpx.AsyncClient, world: World
+    ) -> None:
+        breach = await _record(http, world, location_kind="platform", processor_uuid=None)
+        path = f"/breaches/{breach['breach_uuid']}"
+        await call(
+            http,
+            "POST",
+            f"{path}/determinations",
+            template=f"{B}/determinations",
+            session=world.dpo,
+            json={"outcome": "yes", "reasoning": "Names and mobiles", "became_aware_at": _at(4)},
+        )
+        report = await ready_to_file(http, world, path, "board_intimation")
+        refused = await call(
+            http,
+            "POST",
+            f"{report}/file",
+            template=f"{B}/reports/{{report_uuid}}/file",
+            session=world.dpo,
+            json={"filed_at": _at(6), "reference": "DPB/HTTP/2"},
+            expect=422,
+        )
+        error = refused.json()["error"]
+        assert (error["field"], error["message"]) == (
+            "filed_at",
+            "It cannot have been sent before the incident was first noticed",
+        )
 
 
 class TestTheOrganisationsBoard:
