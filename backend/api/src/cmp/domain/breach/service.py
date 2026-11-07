@@ -97,11 +97,16 @@ async def require_open(conn: Conn, breach_uuid: str) -> Row:
 
 
 async def locked_open(conn: Conn, breach_uuid: str) -> Row:
+    """The breach, held for the rest of the transaction, as it is once held.
+    Read again after the lock: a write that waited behind another sees what
+    that one did, and a report to CERT-In finalised behind a first yes finds
+    the breach recorded and mails at once, rather than holding a mail for a
+    yes that has already come."""
     row = await require(conn, breach_uuid)
     locked = await repo.lock(conn, int(row["breach_id"]))
     if locked["status"] != Status.OPEN:
         raise Conflict("This breach is closed; reopen it to record more", code="breach_closed")
-    return row
+    return await require(conn, breach_uuid)
 
 
 async def record_event(
@@ -249,7 +254,8 @@ async def determine(
     `became_aware_at`, and the organisation's board with thirty minutes from
     now (ADR 0037). *No* sets aside those not yet done, citing this
     determination. *Pending* changes no duty. CERT-In stands on its own test
-    and is untouched by all three.
+    and is untouched by all three. The first *yes* sends a report to CERT-In
+    that was held for it, to the organisation's board (ADR 0037).
     """
     breach = await locked_open(conn, breach_uuid)
     decided = choice(Outcome, outcome, field="outcome")
@@ -292,9 +298,13 @@ async def determine(
     determination_id = int(made["determination_id"])
     if decided == Outcome.YES:
         assert became_aware_at is not None
-        if breach["breach_reference"] is None:
+        first = breach["breach_reference"] is None
+        if first:
             breach = await _record_as_breach(conn, breach, determination_id, actor_id=actor_id)
         await _apply_yes(conn, breach, determination_id, became_aware_at, actor_id=actor_id)
+        from cmp.domain.breach import reports  # it imports this module
+
+        await reports.after_yes(conn, breach, first=first, actor_id=actor_id)
     elif decided == Outcome.NO:
         await _apply_no(conn, breach, determination_id, actor_id=actor_id)
     return await detail(conn, breach_uuid)

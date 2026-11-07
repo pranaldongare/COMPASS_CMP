@@ -93,6 +93,7 @@ async def file_report(
         f"{report}/finalise",
         template=f"{B}/reports/{{report_uuid}}/finalise",
         session=world.dpo,
+        json=await everyone(http, world, path),
     )
     for proof in ("approval", "sent_mail"):
         await call(
@@ -127,6 +128,19 @@ async def on_the_board(http: httpx.AsyncClient, world: World) -> None:
         json={"email": "board.chair@http-suite.test"},
         expect=(200, 409),
     )
+
+
+async def everyone(http: httpx.AsyncClient, world: World, path: str) -> dict[str, Any]:
+    """What the finalise window sends by default: every entry on the list, as
+    the window reads it, which takes in every mandatory one."""
+    listed = await call(
+        http,
+        "GET",
+        f"{path}/reports/recipients",
+        template=f"{B}/reports/recipients",
+        session=world.dpo,
+    )
+    return {"recipients": [r["recipient_uuid"] for r in listed.json()["recipients"]], "extra": []}
 
 
 async def _record(http: httpx.AsyncClient, world: World, **extra: Any) -> dict[str, Any]:
@@ -359,6 +373,7 @@ class TestTheOrganisationsBoard:
             f"{report}/finalise",
             template=f"{B}/reports/{{report_uuid}}/finalise",
             session=world.dpo,
+            json=await everyone(http, world, path),
         )
         deliveries = [q[1][0] for q in queued if q[0].endswith("send_breach_report")]
         assert deliveries
@@ -397,7 +412,11 @@ class TestTheOrganisationsBoard:
             http, "GET", f"{path}/reports", template=f"{B}/reports", session=world.dpo
         )
         [view] = [k for k in read.json()["kinds"] if k["kind"] == "org_board"]
-        [address] = view["versions"][0]["mail"]["recipients"]
+        [address] = [
+            r
+            for r in view["versions"][0]["mail"]["recipients"]
+            if plain(r["email"]) == "board.chair@http-suite.test"
+        ]
         assert address["status"] == "delivered" and address["removed"] is False
         assert str(address["email"]).startswith("SE::"), "sealed; the console opens it"
         one = await call(http, "GET", path, template=B, session=world.dpo)

@@ -188,39 +188,99 @@ async def active_emails(conn: Conn, roles: list[str]) -> list[str]:
 
 _RECIPIENT = """
   x.recipient_id, x.recipient_uuid, x.full_name, x.email, x.email_hash, x.added_at,
-  u.full_name AS added_by_name
+  x.mandatory, x.one_off, u.full_name AS added_by_name,
+  m.recorded_at AS mandatory_changed_at, mu.full_name AS mandatory_changed_by_name
   FROM breach_board_recipient x JOIN auth_user u ON u.id = x.added_by
+  LEFT JOIN LATERAL (
+         SELECT e.recorded_at, e.recorded_by FROM breach_board_recipient_event e
+          WHERE e.recipient_id = x.recipient_id
+          ORDER BY e.event_id DESC LIMIT 1
+       ) m ON true
+  LEFT JOIN auth_user mu ON mu.id = m.recorded_by
 """
 
+#: On the list: not taken off, and not an address added for one report alone.
+_LISTED = "x.removed_at IS NULL AND NOT x.one_off"
 
-async def board_recipients(conn: Conn) -> list[Row]:
-    """The organisation's board as it stands, in the order they were added."""
+
+async def board_recipients(conn: Conn, *, lock: bool = False) -> list[Row]:
+    """The organisation's board as it stands, in the order they were added, and
+    who last marked each mandatory or optional, and when. `lock` holds the rows
+    for a finalise: a mark or a removal waits for it, so a report is judged
+    against the list it read. The lock is on the list's rows, never on the
+    side of a join that may be empty."""
     return await fetch_all(
         conn,
-        f"SELECT {_RECIPIENT} WHERE x.removed_at IS NULL ORDER BY x.recipient_id",
+        f"SELECT {_RECIPIENT} WHERE {_LISTED} ORDER BY x.recipient_id"
+        + (" FOR SHARE OF x" if lock else ""),
+    )
+
+
+async def board_recipient(conn: Conn, recipient_uuid: str, *, lock: bool) -> Row | None:
+    """One entry on the list, or None: one taken off, or one added for one
+    report alone, is not on it. Held for the change the caller makes."""
+    return await fetch_one(
+        conn,
+        f"SELECT {_RECIPIENT} WHERE x.recipient_uuid = %s AND {_LISTED}"
+        + (" FOR UPDATE OF x" if lock else ""),
+        (recipient_uuid,),
     )
 
 
 async def add_board_recipient(
     conn: Conn, *, full_name: str | None, email: str, added_by: int
 ) -> Row | None:
-    """The new entry, or None if the address is on the list already."""
+    """The new entry, or None if the address is on the list already. The
+    conflict's predicate is the index's, or the insert raises instead."""
     sealed = await seal("breach_board_recipient", {"full_name": full_name, "email": email})
     return await fetch_one(
         conn,
         """INSERT INTO breach_board_recipient (full_name, email, email_hash, added_by)
            VALUES (%s, %s, %s, %s)
-           ON CONFLICT (email_hash) WHERE removed_at IS NULL DO NOTHING
-           RETURNING recipient_uuid""",
+           ON CONFLICT (email_hash) WHERE removed_at IS NULL AND NOT one_off DO NOTHING
+           RETURNING recipient_id, recipient_uuid, full_name, email""",
         (sealed["full_name"], sealed["email"], index_of("email", email), added_by),
     )
+
+
+async def add_one_off_recipient(
+    conn: Conn, *, full_name: str | None, email: str, added_by: int
+) -> Row:
+    """An address added by the sender for one report alone: sealed as an entry
+    on the list is, and never on it."""
+    sealed = await seal("breach_board_recipient", {"full_name": full_name, "email": email})
+    row = await fetch_one(
+        conn,
+        """INSERT INTO breach_board_recipient (full_name, email, email_hash, added_by, one_off)
+           VALUES (%s, %s, %s, %s, true)
+           RETURNING recipient_id, recipient_uuid, full_name, email, email_hash, mandatory,
+                     one_off""",
+        (sealed["full_name"], sealed["email"], index_of("email", email), added_by),
+    )
+    assert row is not None
+    return row
 
 
 async def remove_board_recipient(conn: Conn, recipient_uuid: str, *, removed_by: int) -> Row | None:
     return await fetch_one(
         conn,
         """UPDATE breach_board_recipient SET removed_by = %s, removed_at = now()
-            WHERE recipient_uuid = %s AND removed_at IS NULL
+            WHERE recipient_uuid = %s AND removed_at IS NULL AND NOT one_off AND NOT mandatory
             RETURNING recipient_uuid""",
         (removed_by, recipient_uuid),
+    )
+
+
+async def mark_board_recipient(
+    conn: Conn, recipient_id: int, *, mandatory: bool, recorded_by: int
+) -> None:
+    """The event first, then the mark: the row refuses a mark no event records."""
+    await conn.execute(
+        """INSERT INTO breach_board_recipient_event (recipient_id, kind, recorded_by)
+           VALUES (%s, %s, %s)""",
+        (recipient_id, "mandatory" if mandatory else "optional", recorded_by),
+    )
+    await conn.execute(
+        "UPDATE breach_board_recipient SET mandatory = %s WHERE recipient_id = %s",
+        (mandatory, recipient_id),
     )

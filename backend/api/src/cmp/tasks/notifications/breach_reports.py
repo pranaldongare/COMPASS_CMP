@@ -6,8 +6,9 @@ principal does (`breach.py`), so the office can see who has not been reached.
 The report is read from its row when the task runs and travels in no message
 to the broker: its words and its PDF are made here, so opening them is retried
 like the sending. An address taken off the list by then is recorded failed and
-not mailed. The words are quoted in the mail: what the office wrote, and a
-stranger before it, becomes no button or link. Nothing here goes to a regulator.
+not mailed; one added for that report alone is never taken off. The words are
+quoted in the mail: what the office wrote, and a stranger before it, becomes no
+button or link. Nothing here goes to a regulator.
 
 Each task claims the report and the address before it sends, as a notice's does
 (`breach.py`). The claim is on the address and not the delivery, because a lost

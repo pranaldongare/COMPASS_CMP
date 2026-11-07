@@ -13,19 +13,26 @@ Five kinds, one path:
 * **A draft starts from the register**, section by section, and is the office's
   to rewrite: what is drafted is what a person read and meant. It is never
   regenerated underneath them. A new version starts from the last one's words.
-* **Finalising freezes it and mails the organisation's board.** For `org_board`
-  that is the whole of it. Its duty completes when the mail has run its course
-  and reached somebody, naming only those it reached: queued is not told, and
-  if every address fails the duty stays outstanding and its overdue alert
-  fires. Every other kind is told to the board for its information and goes no
-  further here.
+* **Finalising freezes it and mails the addresses the sender chose**: the
+  organisation's board list, less any the sender left out (never a mandatory
+  one), and any added for that report alone (2026-11-07). Who a version went
+  to is frozen with it. For `org_board` that is the whole of it. Its duty
+  completes when the mail has run its course and reached somebody, naming only
+  those it reached: queued is not told, and if every address fails the duty
+  stays outstanding and its overdue alert fires. Every other kind is told to
+  the board for its information and goes no further here.
+* **A report to CERT-In finalised before the incident is recorded is held**,
+  and goes at the first *yes*, to the addresses chosen for it, less any taken
+  off the list since. Validated *no* and never *yes*, it is never sent; set
+  aside at that *yes*, it is not sent either, and the trail says so.
 * **The platform never sends to a regulator** (ADR 0021). A person does, and
   files here: the proof of internal approval, the mail they sent, when, and the
   reference that came back. Only then is the regulator's duty done, so no duty
   completes without its proof.
 * **A failed mail is on the record**, like a notice's: an address the report
-  did not reach says so, and sending again tries only those, and any address
-  added to the list since. One still queued long after the worker would have
+  did not reach says so, and sending again tries only the version's own
+  addresses that it did not reach. An address added to the list since was
+  never chosen for it. One still queued long after the worker would have
   finished with it is queued again, as a new attempt: the account is only added
   to, and that row is what makes it read as moving. An address taken off the
   list is never mailed, whatever was waiting for it. One taken off and put back
@@ -39,11 +46,13 @@ from __future__ import annotations
 
 import asyncio
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from typing import Any, Final
+
+from pydantic import TypeAdapter, ValidationError
 
 from cmp.core.config import settings
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
@@ -59,8 +68,11 @@ from cmp.domain.breach import notices, service
 from cmp.domain.breach.clock import Duty, EventKind, State
 from cmp.domain.breach.state_machine import Status
 from cmp.infrastructure.dkms import unseal_strings
+from cmp.infrastructure.dkms.blind import index_of
+from cmp.infrastructure.dkms.fields import PREFIX as SEALED_PREFIX
 from cmp.infrastructure.pdf import Document, Fields, Heading, Paragraph, render
 from cmp.validation.choices import choice
+from cmp.validation.contacts import Email
 
 Row = dict[str, Any]
 
@@ -74,8 +86,34 @@ _SKEW: Final = timedelta(minutes=5)
 #: What a report says when there is nowhere to mail it.
 _NOBODY: Final = (
     "Nobody is on the organisation's board list yet. Add their addresses under "
-    "Breach settings first"
+    "Breach settings first, or an address for this report alone"
 )
+
+#: How a line never queued ranks against one that was.
+_NEVER: Final = datetime.min.replace(tzinfo=UTC)
+
+_EMAIL: Final = TypeAdapter(Email)
+
+
+def board_address(email: str | None, *, field: str) -> str:
+    """An address for the organisation's board as it is kept: lower case, so
+    its blind index finds it however it was typed."""
+    try:
+        return str(_EMAIL.validate_python((email or "").strip())).lower()
+    except ValidationError:
+        raise ValidationFailed("That is not an email address", field=field) from None
+
+
+def board_name(name: str | None, *, field: str) -> str | None:
+    """The name given with an address, or None. A sealed value in it is
+    refused: `seal()` passes one through as it is, the officers' mail opens
+    every sealed variable it carries and the board's duty names whom it
+    reached, so a name that was somebody else's ciphertext would be read
+    opened."""
+    name = (name or "").strip() or None
+    if name and SEALED_PREFIX in name:
+        raise ValidationFailed(f"Take {SEALED_PREFIX} out of this and send it again", field=field)
+    return name
 
 
 class Kind(StrEnum):
@@ -295,7 +333,9 @@ def _may_write(kind: Kind, breach: Row, duties: dict[str, Any]) -> str | None:
     """Why this report must wait, or None. Drafting a CERT-In report waits for
     the mark, not for validation: its clock does not wait for either. Once the
     mark is set aside there is no such report: a draft left open stays a draft,
-    and nothing about it reaches the board unless it is marked again."""
+    and nothing about it reaches the board unless it is marked again. A
+    finalised one whose mail waits for a yes does not go while it stays set
+    aside (`_release_held`)."""
     if kind == Kind.CERT_IN:
         found = duties.get(Duty.CERT_IN)
         if found is None:
@@ -381,11 +421,81 @@ async def edit(
 # ------------------------------------------------------------------ finalising
 
 
-async def _board_list(conn: Conn) -> list[Row]:
-    board = await recipients_repo.board_recipients(conn)
-    if not board:
-        raise Conflict(_NOBODY, code="no_board_recipients")
-    return board
+def _held(kind: Kind, breach: Row) -> bool:
+    """Whether the board's mail of this kind waits: a report to CERT-In before
+    the incident is recorded goes at the first yes, and not before."""
+    return kind == Kind.CERT_IN and breach["breach_reference"] is None
+
+
+def _superseded(report: Row, mine: list[Row]) -> bool:
+    """Whether a later version of its kind has been finalised. `mine` is every
+    version of the kind."""
+    return any(r["finalised_at"] is not None and r["version"] > report["version"] for r in mine)
+
+
+async def _listed(conn: Conn) -> set[str]:
+    """The addresses on the list now, by blind index: what an addressee is
+    matched against to say whether it has been taken off since."""
+    return {str(r["email_hash"]) for r in await recipients_repo.board_recipients(conn)}
+
+
+async def _addressed(
+    conn: Conn, *, recipients: list[str] | None, extra: Sequence[Row], actor_id: int
+) -> tuple[list[Row], int]:
+    """Who a version goes to, as the sender chose, and how many entries on the
+    list they left out. `recipients` are entries on the list, None for all of
+    them; `extra` are addresses for this report alone. An extra already on the
+    list is that entry, and two extras alike are one, so each address is
+    chosen once. The list is held until the commit: a mark or a removal waits,
+    so this is judged against the list it read.
+
+    Everything is checked before anything is written: an address for one report
+    is made only for a send that will happen."""
+    board = await recipients_repo.board_recipients(conn, lock=True)
+    by_uuid = {str(r["recipient_uuid"]): r for r in board}
+    by_hash = {str(r["email_hash"]): r for r in board}
+    picked = list(by_uuid) if recipients is None else list(dict.fromkeys(recipients))
+    gone = [u for u in picked if u not in by_uuid]
+    if gone:
+        raise Conflict(
+            "Somebody chosen has been taken off the board list since. Look at the list again",
+            code="recipient_not_listed",
+            details={"gone": gone},
+        )
+    chosen = {str(by_uuid[u]["email_hash"]) for u in picked}
+    new: list[tuple[str | None, str]] = []
+    for i, given in enumerate(extra):
+        address = board_address(given.get("email"), field=f"extra.{i}.email")
+        name = board_name(given.get("full_name"), field=f"extra.{i}.full_name")
+        hashed = str(index_of("email", address))
+        if hashed in chosen:
+            continue
+        chosen.add(hashed)
+        if hashed not in by_hash:
+            new.append((name, address))
+    missing = [
+        str(r["recipient_uuid"]) for r in board if r["mandatory"] and r["email_hash"] not in chosen
+    ]
+    if missing:
+        raise Conflict(
+            "A mandatory address goes with every report and cannot be left out"
+            if len(missing) == 1
+            else f"{len(missing)} mandatory addresses go with every report and cannot be left out",
+            code="recipient_mandatory",
+            details={"missing": missing},
+        )
+    if not chosen:
+        if not board:
+            raise Conflict(_NOBODY, code="no_board_recipients")
+        raise ValidationFailed("Choose at least one address to send this to", field="recipients")
+    listed = [r for r in board if r["email_hash"] in chosen]
+    made = [
+        await recipients_repo.add_one_off_recipient(
+            conn, full_name=name, email=address, added_by=actor_id
+        )
+        for name, address in new
+    ]
+    return [*listed, *made], len(board) - len(listed)
 
 
 async def _whom(reached: list[Row]) -> str:
@@ -395,9 +505,24 @@ async def _whom(reached: list[Row]) -> str:
     return "By email: " + ", ".join(names)
 
 
-async def finalise(conn: Conn, *, breach_uuid: str, report_uuid: str, actor_id: int) -> Row:
-    """Freeze the words and mail the organisation's board. Nothing here goes
-    to a regulator."""
+async def finalise(
+    conn: Conn,
+    *,
+    breach_uuid: str,
+    report_uuid: str,
+    recipients: list[str] | None,
+    extra: Sequence[Row] = (),
+    actor_id: int,
+) -> Row:
+    """Freeze the words and mail the addresses chosen. A report to CERT-In
+    before the incident is recorded waits for the first yes. Nothing here goes
+    to a regulator.
+
+    `recipients` are the entries on the board's list to send to, every
+    mandatory one among them, and `extra` the addresses for this report alone
+    (`_addressed`). None is the list as it stands, for a caller with nobody to
+    ask. Who it goes to is written before it is frozen, which refuses any
+    after."""
     from cmp.tasks.dispatch import dispatch_optional
     from cmp.tasks.notifications.breach_reports import send_breach_report
 
@@ -419,26 +544,40 @@ async def finalise(conn: Conn, *, breach_uuid: str, report_uuid: str, actor_id: 
             field=missing[0].key,
             details={"missing": [s.key for s in missing]},
         )
-    board = await _board_list(conn)
+    chosen, left_out = await _addressed(conn, recipients=recipients, extra=extra, actor_id=actor_id)
+    # The breach as it is now: `locked_open` read it after the lock, so a yes
+    # this waited behind has issued its reference, and this mails at once.
+    held = _held(kind, breach)
+    await repo.address(
+        conn, report_id, [(int(c["recipient_id"]), bool(c["mandatory"])) for c in chosen]
+    )
     await repo.finalise(conn, report_id, finalised_by=actor_id)
-    for person in board:
-        row = await repo.add_delivery(
-            conn, report_id, int(person["recipient_id"]), attempt=1, status="queued"
-        )
-        if row:
-            dispatch_optional(send_breach_report, str(row["delivery_uuid"]))
+    if not held:
+        for person in chosen:
+            row = await repo.add_delivery(
+                conn, report_id, int(person["recipient_id"]), attempt=1, status="queued"
+            )
+            if row:
+                dispatch_optional(send_breach_report, str(row["delivery_uuid"]))
     await service.record_event(
         conn,
         breach,
         Event.BREACH_REPORT_FINALISED,
         actor_id=actor_id,
-        detail={"kind": kind.value, "version": int(report["version"]), "mailed": len(board)},
+        detail={
+            "kind": kind.value,
+            "version": int(report["version"]),
+            "mailed": 0 if held else len(chosen),
+            "held": held,
+            "added": sum(bool(c["one_off"]) for c in chosen),
+            "left_out": left_out,
+        },
     )
     return await overview(conn, breach_uuid=breach_uuid)
 
 
 def _resend_refused(
-    kind: Kind, report: Row, mine: list[Row], breach: Row, duties: dict[str, Any], board: list[Row]
+    kind: Kind, report: Row, mine: list[Row], breach: Row, duties: dict[str, Any]
 ) -> Conflict | None:
     """Why this report may not be sent again now, or None. `mine` is every
     version of its kind. What refuses the press also sets `mail.retryable`, so
@@ -446,21 +585,26 @@ def _resend_refused(
     blocked = _may_write(kind, breach, duties)
     if blocked:
         return Conflict(blocked, code="breach_not_recorded")
-    if any(r["finalised_at"] is not None and r["version"] > report["version"] for r in mine):
+    if _held(kind, breach):
+        return Conflict(
+            "This goes to the organisation's board when the incident is validated as a "
+            "personal data breach",
+            code="report_held",
+        )
+    if _superseded(report, mine):
         return Conflict(
             "A later version of this report has been finalised, so this one is not sent again",
             code="report_superseded",
         )
-    if not board:
-        return Conflict(_NOBODY, code="no_board_recipients")
     return None
 
 
 async def resend(conn: Conn, *, breach_uuid: str, report_uuid: str, actor_id: int) -> Row:
-    """Try again for every address on the list the report has not reached: a
-    new attempt after a failure, the first for an address added since, and
-    another where one was lost. On the trail only if it queued anything. The
-    answer says how many it queued.
+    """Try again for each address this version was sent to that it has not
+    reached: a failure, a mail lost, or one never queued (a report to CERT-In
+    withheld at the first yes). An address added to the list since was never
+    this version's, and one taken off is not tried. On the trail only if it
+    queued anything. The answer says how many it queued.
 
     The board's duty is re-read first, whatever follows: a settling that failed
     after the mail was recorded is waiting on nobody but this."""
@@ -475,40 +619,34 @@ async def resend(conn: Conn, *, breach_uuid: str, report_uuid: str, actor_id: in
     breach_id = int(breach["breach_id"])
     report_id = int(report["report_id"])
     completed = kind == Kind.ORG_BOARD and await _settle(conn, report_id, breach_id)
-    board = await recipients_repo.board_recipients(conn)
     mine = [r for r in await repo.on_breach(conn, breach_id) if r["kind"] == kind]
-    refused = _resend_refused(
-        kind, report, mine, breach, await service.duties_of(conn, breach_id), board
-    )
+    refused = _resend_refused(kind, report, mine, breach, await service.duties_of(conn, breach_id))
     if refused:
         if completed:
             return {**await overview(conn, breach_uuid=breach_uuid), "queued": 0}
         raise refused
     states = await repo.latest_states(conn, [report_id])
-    lines = {s["email_hash"]: s for s in _by_address(states, board)}
-    rows = {int(s["recipient_id"]): s for s in states}
-    added = retried = requeued = 0
+    first = retried = requeued = 0
     stale_before = datetime.now(UTC) - STALE_AFTER
-    # The list as it stands: an address taken off it is not tried again.
-    for person in board:
-        line = lines.get(person["email_hash"])
+    for line in _by_address(states, await _listed(conn), held=False):
         if not _owed(line, stale_before):
             continue  # queued recently, or it has the report: nothing to add
-        recipient_id = int(person["recipient_id"])
-        own = rows.get(recipient_id)
         # A lost delivery takes a new attempt too. The account is only added to,
         # so this row is the one thing that can say it is moving again; the old
         # task, if it ever runs, finds the later attempt and stands down.
-        attempt = int(own["last_attempt"]) + 1 if own else 1
         row = await repo.add_delivery(
-            conn, report_id, recipient_id, attempt=attempt, status="queued"
+            conn,
+            report_id,
+            int(line["recipient_id"]),
+            attempt=int(line["last_attempt"]) + 1,
+            status="queued",
         )
         if row:
-            added += line is None
-            retried += line is not None and line["status"] == "failed"
-            requeued += line is not None and line["status"] == "queued"
+            first += line["status"] == "unsent"
+            retried += line["status"] == "failed"
+            requeued += line["status"] == "queued"
             dispatch_optional(send_breach_report, str(row["delivery_uuid"]))
-    queued = added + retried + requeued
+    queued = first + retried + requeued
     if queued:
         await service.record_event(
             conn,
@@ -519,7 +657,7 @@ async def resend(conn: Conn, *, breach_uuid: str, report_uuid: str, actor_id: in
                 "kind": report["kind"],
                 "version": int(report["version"]),
                 "queued": queued,
-                "added": added,
+                "first": first,
                 "retried": retried,
                 "requeued": requeued,
             },
@@ -677,33 +815,47 @@ def _state(report: Row) -> str:
     return "finalised" if report["finalised_at"] is not None else "draft"
 
 
-def _by_address(states: list[Row], board: list[Row]) -> list[Row]:
-    """Where each address stands on a report, one line each. Taking an address
-    off the list and putting it back makes a second row of the list, not a
-    second person: delivered under either is delivered, and otherwise the row
-    on the list now speaks for it. `removed` is whether it is off the list now,
-    which the row it was mailed under cannot say."""
+def _by_address(states: list[Row], listed: set[str], *, held: bool) -> list[Row]:
+    """Where each address a report was sent to stands, one line each. Taking an
+    address off the list and putting it back makes a second row of the list,
+    not a second person: delivered under either is delivered, and otherwise the
+    latest speaks for it. `removed` is whether the address is off the list now,
+    by its blind index, which the row it was chosen under cannot say; an address
+    added for this report alone is never removed. A line never queued reads
+    `held` while its report waits for a yes, and `unsent` otherwise."""
+
+    def removed(state: Row) -> bool:
+        return not state["one_off"] and state["email_hash"] not in listed
 
     def rank(state: Row) -> tuple[bool, bool, datetime]:
         return (
             state["status"] == "delivered",
-            state["removed_at"] is None,
-            state["recorded_at"],
+            not removed(state),
+            state["recorded_at"] or _NEVER,
         )
 
-    listed = {r["email_hash"] for r in board}
     lines: dict[str, Row] = {}
     for s in states:
-        held = lines.get(s["email_hash"])
-        if held is None or rank(s) > rank(held):
+        kept = lines.get(s["email_hash"])
+        if kept is None or rank(s) > rank(kept):
             lines[s["email_hash"]] = s
-    return [{**s, "removed": s["email_hash"] not in listed} for s in lines.values()]
+    return [
+        {
+            **s,
+            "status": s["status"] or ("held" if held else "unsent"),
+            "attempt": s["attempt"] or 0,
+            "last_attempt": s["last_attempt"] or 0,
+            "detail": s["detail"] or {},
+            "removed": removed(s),
+        }
+        for s in lines.values()
+    ]
 
 
 def _counts(lines: Iterable[Row]) -> Row:
     """An address off the list is nobody's to act on, so it reads as neither on
-    its way nor failed. It stays in the list of addresses, marked."""
-    out = {"delivered": 0, "queued": 0, "failed": 0}
+    its way nor failed, nor waiting. It stays in the list of addresses, marked."""
+    out = {"delivered": 0, "queued": 0, "failed": 0, "unsent": 0, "held": 0}
     for s in lines:
         if s["status"] == "delivered" or not s["removed"]:
             out[str(s["status"])] += 1
@@ -718,27 +870,24 @@ def _lost(line: Row, stale_before: datetime) -> bool:
     )
 
 
-def _owed(line: Row | None, stale_before: datetime) -> bool:
-    """Whether sending again would queue an address on the list: it was never
-    mailed this report, or it failed, or it was lost."""
-    return line is None or line["status"] == "failed" or _lost(line, stale_before)
+def _owed(line: Row, stale_before: datetime) -> bool:
+    """Whether sending again would queue this address: it is not off the list,
+    and it failed, or it was never queued, or it was lost."""
+    return not line["removed"] and (
+        line["status"] in ("failed", "unsent") or _lost(line, stale_before)
+    )
 
 
-def _mail(states: list[Row], board: list[Row], *, sendable: bool) -> Row:
+def _mail(states: list[Row], listed: set[str], *, sendable: bool, held: bool) -> Row:
     """What became of the mail, in all and address by address. The name and the
     address are served sealed. `retryable` is what sending again would queue
     now; none of this is what the board's duty reads (`_settle`)."""
     stale_before = datetime.now(UTC) - STALE_AFTER
-    lines = _by_address(states, board)
-    standing = {s["email_hash"]: s for s in lines}
+    lines = _by_address(states, listed, held=held)
     return {
         **_counts(lines),
         "stale": sum(_lost(s, stale_before) for s in lines),
-        "retryable": (
-            sum(_owed(standing.get(p["email_hash"]), stale_before) for p in board)
-            if sendable
-            else 0
-        ),
+        "retryable": sum(_owed(s, stale_before) for s in lines) if sendable else 0,
         "recipients": [
             {
                 "recipient_uuid": s["recipient_uuid"],
@@ -749,6 +898,8 @@ def _mail(states: list[Row], board: list[Row], *, sendable: bool) -> Row:
                 "error": s["detail"].get("error"),
                 "recorded_at": s["recorded_at"],
                 "removed": s["removed"],
+                "mandatory": s["mandatory"],
+                "added_for_this_send": s["one_off"],
             }
             for s in lines
         ],
@@ -760,9 +911,11 @@ def _view(
     sections: list[Row],
     evidence: list[Row],
     states: list[Row],
-    board: list[Row],
+    listed: set[str],
     *,
     sendable: bool,
+    held: bool,
+    superseded: bool,
 ) -> Row:
     kind = Kind(report["kind"])
     bodies = {str(s["section_key"]): s["body"] for s in sections}
@@ -772,6 +925,7 @@ def _view(
         "title": TITLES[kind],
         "version": report["version"],
         "state": _state(report),
+        "superseded": superseded,
         "sections": [
             {"key": s.key, "label": s.label, "required": s.required, "body": bodies.get(s.key)}
             for s in SECTIONS[kind]
@@ -785,7 +939,7 @@ def _view(
         "filed_reference": report["filed_reference"],
         "filed_by_name": report["filed_by_name"],
         "evidence": evidence,
-        "mail": _mail(states, board, sendable=sendable),
+        "mail": _mail(states, listed, sendable=sendable, held=held),
     }
 
 
@@ -807,6 +961,7 @@ async def overview(conn: Conn, *, breach_uuid: str) -> Row:
             states[int(d["report_id"])].append(d)
     duties = await service.duties_of(conn, breach_id)
     board = await recipients_repo.board_recipients(conn)
+    listed = {str(r["email_hash"]) for r in board}
     kinds = []
     for kind in Kind:
         mine = [r for r in reports if r["kind"] == kind]
@@ -821,18 +976,21 @@ async def overview(conn: Conn, *, breach_uuid: str) -> Row:
                 "duty_state": found[1]["state"] if found else None,
                 "blocked_by": _may_write(kind, breach, duties),
                 "goes_to_regulator": kind != Kind.ORG_BOARD,
+                "holds_mail": _held(kind, breach),
                 "versions": [
                     _view(
                         r,
                         sections[int(r["report_id"])],
                         evidence[int(r["report_id"])],
                         states[int(r["report_id"])],
-                        board,
+                        listed,
                         sendable=(
                             r["finalised_at"] is not None
                             and breach["status"] == Status.OPEN
-                            and _resend_refused(kind, r, mine, breach, duties, board) is None
+                            and _resend_refused(kind, r, mine, breach, duties) is None
                         ),
+                        held=_held(kind, breach) and r["finalised_at"] is not None,
+                        superseded=_superseded(r, mine),
                     )
                     for r in mine
                 ],
@@ -843,6 +1001,15 @@ async def overview(conn: Conn, *, breach_uuid: str) -> Row:
         "board_recipients": len(board),
         "proofs": [{"kind": k, "label": v} for k, v in PROOFS.items()],
     }
+
+
+async def board_list(conn: Conn, *, breach_uuid: str) -> Row:
+    """The organisation's board list as the finalise window offers it: each
+    entry, sealed, and whether it is mandatory. The list is no office's, but it
+    is read through the breach, so the other office's breach answers 404 here
+    as it does everywhere else."""
+    await service.require(conn, breach_uuid)
+    return {"recipients": await recipients_repo.board_recipients(conn)}
 
 
 # --------------------------------------------------------------- the document
@@ -932,7 +1099,7 @@ async def job(conn: Conn, delivery_uuid: str) -> Row | None:
     row = await repo.job(conn, delivery_uuid)
     if not row or row["status"] != "queued" or row["settled"] or row["reached"]:
         return None
-    if row["removed_at"] is not None:
+    if row["removed"]:
         return {"removed": True}
     report = await repo.by_id(conn, int(row["report_id"]))
     breach = await breach_repo.by_breach_id(conn, int(row["breach_id"]))
@@ -962,7 +1129,7 @@ async def _settle(conn: Conn, report_id: int, breach_id: int) -> bool:
     if not found or found[1]["state"] != State.OUTSTANDING:
         return False
     states = await repo.latest_states(conn, [report_id])
-    lines = _by_address(states, await recipients_repo.board_recipients(conn))
+    lines = _by_address(states, await _listed(conn), held=False)
     if any(s["status"] == "queued" and not s["removed"] for s in lines):
         return False
     reached = [s for s in lines if s["status"] == "delivered"]
@@ -996,6 +1163,78 @@ async def _settle(conn: Conn, report_id: int, breach_id: int) -> bool:
         },
     )
     return True
+
+
+async def after_yes(conn: Conn, breach: Row, *, first: bool, actor_id: int) -> None:
+    """What a validation of yes does to the reports once its duties stand.
+    Called by `service.determine` after `_apply_yes`, under the breach's row and
+    in its transaction, on every yes. `breach` is the row as recorded. `first`
+    is whether this yes issued the breach reference: the held mail is the first
+    yes's alone."""
+    if first:
+        await _release_held(conn, breach, actor_id=actor_id)
+
+
+async def _release_held(conn: Conn, breach: Row, *, actor_id: int) -> None:
+    """The report to CERT-In that waited for this yes goes now, to the addresses
+    chosen when it was finalised, less any taken off the list since: nobody
+    added or marked mandatory after it was frozen. Only the newest version
+    goes; an older one was replaced before it went, and stays unsent.
+
+    If the mark is set aside at this moment it does not go, and the trail says
+    so. Nothing sends it later by itself: marked again, a person sends it with
+    Try again, or writes a new version. Once only, and idempotent under the
+    lock: a version with any delivery was never held."""
+    from cmp.tasks.dispatch import dispatch_optional
+    from cmp.tasks.notifications.breach_reports import send_breach_report
+
+    breach_id = int(breach["breach_id"])
+    finalised = [
+        r
+        for r in await repo.on_breach(conn, breach_id)
+        if r["kind"] == Kind.CERT_IN and r["finalised_at"] is not None
+    ]
+    if not finalised:
+        return
+    newest = finalised[0]  # each kind's newest first
+    report_id = int(newest["report_id"])
+    version = int(newest["version"])
+    states = await repo.latest_states(conn, [report_id])
+    if not states or any(s["status"] is not None for s in states):
+        return
+    found = (await service.duties_of(conn, breach_id)).get(Duty.CERT_IN)
+    if found is None or found[1]["state"] == State.NOT_APPLICABLE:
+        await service.record_event(
+            conn,
+            breach,
+            Event.BREACH_REPORT_WITHHELD,
+            actor_id=actor_id,
+            detail={"kind": Kind.CERT_IN.value, "version": version, "why": "cert_in_set_aside"},
+        )
+        return
+    lines = _by_address(states, await _listed(conn), held=False)
+    queued = 0
+    for line in lines:
+        if line["removed"]:
+            continue
+        row = await repo.add_delivery(
+            conn, report_id, int(line["recipient_id"]), attempt=1, status="queued"
+        )
+        if row:
+            queued += 1
+            dispatch_optional(send_breach_report, str(row["delivery_uuid"]))
+    await service.record_event(
+        conn,
+        breach,
+        Event.BREACH_REPORT_RELEASED,
+        actor_id=actor_id,
+        detail={
+            "kind": Kind.CERT_IN.value,
+            "version": version,
+            "queued": queued,
+            "left_out": sum(bool(line["removed"]) for line in lines),
+        },
+    )
 
 
 async def record_result(

@@ -36,6 +36,12 @@ class BoardRecipientOut(Out):
     email: str
     added_at: datetime
     added_by_name: str | None
+    #: Goes with every report, and cannot be taken off the list while it is.
+    mandatory: bool
+    #: When it was last made mandatory or optional again, and by whom (sealed).
+    #: None if it never was.
+    mandatory_changed_at: datetime | None
+    mandatory_changed_by_name: str | None
 
 
 class BreachSettingsOut(Out):
@@ -57,6 +63,10 @@ class IntakeRolesIn(Schema):
 class BoardRecipientIn(Schema):
     full_name: Annotated[str, Field(max_length=200)] | None = None
     email: Annotated[str, Field(min_length=3, max_length=255)]
+
+
+class BoardRecipientMandatoryIn(Schema):
+    mandatory: bool
 
 
 @router.get("", response_model=BreachSettingsOut, summary="Who hears of a breach, and how")
@@ -100,4 +110,21 @@ async def remove_board_recipient(
     async with transaction() as conn:
         return await settings.remove_board_recipient(
             conn, recipient_uuid=str(recipient_uuid), actor_id=principal.user_id
+        )
+
+
+@router.put(
+    "/board-recipients/{recipient_uuid}/mandatory",
+    response_model=BreachSettingsOut,
+    summary="Make an address on the organisation's board mandatory, or optional again",
+)
+async def set_board_recipient_mandatory(
+    recipient_uuid: UUID, body: BoardRecipientMandatoryIn, principal: BreachSettingsWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        return await settings.set_board_recipient_mandatory(
+            conn,
+            recipient_uuid=str(recipient_uuid),
+            mandatory=body.mandatory,
+            actor_id=principal.user_id,
         )

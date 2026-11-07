@@ -48,12 +48,22 @@ def _dpo(seeded: dict[str, Any]) -> int:
 @pytest.fixture(autouse=True)
 async def _nobody_on_the_list(conn: Any, seeded: dict[str, Any]) -> None:
     """The board's list is the database's, not the test's, and one that has run
-    `tests/http` holds that suite's address. Each test starts with an empty
-    list; the rollback puts the rest back."""
+    `tests/http` holds that suite's addresses, a mandatory one among them. Each
+    test starts with an empty list; the rollback puts the rest back. A mark
+    moves only with its event, and a mandatory entry is never taken off, so
+    each is made optional first, as the service would."""
+    await execute(
+        conn,
+        """INSERT INTO breach_board_recipient_event (recipient_id, kind, recorded_by)
+           SELECT recipient_id, 'optional', %s FROM breach_board_recipient
+            WHERE removed_at IS NULL AND NOT one_off AND mandatory""",
+        (_dpo(seeded),),
+    )
+    await execute(conn, "UPDATE breach_board_recipient SET mandatory = false WHERE mandatory")
     await execute(
         conn,
         """UPDATE breach_board_recipient SET removed_at = now(), removed_by = %s
-            WHERE removed_at IS NULL""",
+            WHERE removed_at IS NULL AND NOT one_off""",
         (_dpo(seeded),),
     )
 
@@ -146,7 +156,11 @@ async def _finalise(conn: Any, seeded: dict[str, Any], uuid: str, kind: str) -> 
     doc = await _draft(conn, seeded, uuid, kind)
     return _latest(
         await reports.finalise(
-            conn, breach_uuid=uuid, report_uuid=str(doc["report_uuid"]), actor_id=_dpo(seeded)
+            conn,
+            breach_uuid=uuid,
+            report_uuid=str(doc["report_uuid"]),
+            recipients=None,
+            actor_id=_dpo(seeded),
         ),
         kind,
     )
@@ -265,6 +279,99 @@ async def _trail(conn: Any, uuid: str, event: str) -> list[dict[str, Any]]:
     )
 
 
+async def _entries(conn: Any) -> dict[str, str]:
+    """Each address on the list, opened, and the uuid of its entry."""
+    return {
+        str(plain(r["email"])): str(r["recipient_uuid"])
+        for r in await recipients_repo.board_recipients(conn)
+    }
+
+
+async def _mark(conn: Any, seeded: dict[str, Any], email: str, *, mandatory: bool = True) -> None:
+    await breach_settings.set_board_recipient_mandatory(
+        conn,
+        recipient_uuid=(await _entries(conn))[email],
+        mandatory=mandatory,
+        actor_id=_dpo(seeded),
+    )
+
+
+async def _send(
+    conn: Any,
+    seeded: dict[str, Any],
+    uuid: str,
+    doc: dict[str, Any],
+    *,
+    to: list[str] | None,
+    extra: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Finalise a draft to the entries named by address, as the window would
+    send them, and to the addresses for this report alone."""
+    entries = await _entries(conn)
+    return _latest(
+        await reports.finalise(
+            conn,
+            breach_uuid=uuid,
+            report_uuid=str(doc["report_uuid"]),
+            recipients=None if to is None else [entries[e] for e in to],
+            extra=extra or [],
+            actor_id=_dpo(seeded),
+        ),
+        str(doc["kind"]),
+    )
+
+
+async def _addresses(conn: Any, deliveries: list[str]) -> list[str]:
+    """Where the worker would mail each delivery, opened."""
+    out = []
+    for delivery in deliveries:
+        job = await reports.job(conn, delivery)
+        assert job is not None and job["removed"] is False
+        out.append(str(plain(job["email"])))
+    return sorted(out)
+
+
+def _lines(doc: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    return {str(plain(r["email"])): r for r in doc["mail"]["recipients"]}
+
+
+async def _one_offs(conn: Any) -> int:
+    [row] = await fetch_all(conn, "SELECT count(*) AS n FROM breach_board_recipient WHERE one_off")
+    return int(row["n"])
+
+
+async def _determine(conn: Any, seeded: dict[str, Any], uuid: str, outcome: str) -> None:
+    await service.determine(
+        conn,
+        breach_uuid=uuid,
+        outcome=outcome,
+        reasoning="Read and decided",
+        became_aware_at=datetime.now(UTC) - HOUR if outcome == "yes" else None,
+        actor_id=_dpo(seeded),
+    )
+
+
+async def _cert_in_draft(conn: Any, seeded: dict[str, Any], uuid: str) -> dict[str, Any]:
+    """Marked reportable, and a report to CERT-In with every section said."""
+    await service.mark_cert_in(conn, breach_uuid=uuid, actor_id=_dpo(seeded))
+    doc = await _draft(conn, seeded, uuid, "cert_in")
+    await reports.edit(
+        conn,
+        breach_uuid=uuid,
+        report_uuid=str(doc["report_uuid"]),
+        bodies={s["key"]: "Said" for s in doc["sections"]},
+        actor_id=_dpo(seeded),
+    )
+    return doc
+
+
+async def _set_aside_after_a_no(conn: Any, seeded: dict[str, Any], uuid: str) -> None:
+    await _determine(conn, seeded, uuid, "no")
+    await service.set_aside_cert_in(
+        conn, breach_uuid=uuid, reason="A false alarm", actor_id=_dpo(seeded)
+    )
+
+
 class TestADraft:
     async def test_it_starts_from_what_the_register_holds(
         self, conn: Any, seeded: dict[str, Any], mailed: list[str]
@@ -366,6 +473,7 @@ class TestADraft:
                 conn,
                 breach_uuid=other,
                 report_uuid=str(doc["report_uuid"]),
+                recipients=None,
                 actor_id=_dpo(seeded),
             )
 
@@ -415,7 +523,11 @@ class TestFinalising:
         doc = await _draft(conn, seeded, uuid, "closure")
         with pytest.raises(ValidationFailed) as refused:
             await reports.finalise(
-                conn, breach_uuid=uuid, report_uuid=str(doc["report_uuid"]), actor_id=_dpo(seeded)
+                conn,
+                breach_uuid=uuid,
+                report_uuid=str(doc["report_uuid"]),
+                recipients=None,
+                actor_id=_dpo(seeded),
             )
         assert refused.value.details["missing"] == ["conclusion"]
 
@@ -433,7 +545,11 @@ class TestFinalising:
             actor_id=_dpo(seeded),
         )
         await reports.finalise(
-            conn, breach_uuid=uuid, report_uuid=str(first["report_uuid"]), actor_id=_dpo(seeded)
+            conn,
+            breach_uuid=uuid,
+            report_uuid=str(first["report_uuid"]),
+            recipients=None,
+            actor_id=_dpo(seeded),
         )
         second = await _draft(conn, seeded, uuid, "board_intimation")
         assert second["version"] == 2
@@ -725,6 +841,35 @@ class TestTakingAnAddressOffTheList:
         doc = _latest(await reports.overview(conn, breach_uuid=uuid), "org_board")
         assert _counts(doc) == {"delivered": 1, "queued": 0, "failed": 0}
 
+    async def test_a_retry_under_the_row_it_was_sent_under_stops_when_the_address_goes(
+        self, conn: Any, seeded: dict[str, Any], told: list[tuple[Any, ...]], monkeypatch: Any
+    ) -> None:
+        """Taken off and put back, an address is retried under the row its
+        version was sent to. Taking the new row off stops that retry too: it
+        is the same address."""
+        sent: list[str] = []
+        import cmp.tasks.dispatch as dispatch
+
+        def queue(task: Any, *args: Any) -> None:
+            if task is mail_task.send_breach_report:
+                sent.append(args[0])
+            elif task is mail_task.record_breach_report_result:
+                told.append(args)
+
+        monkeypatch.setattr(dispatch, "dispatch_optional", queue)
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        doc = await _finalise(conn, seeded, uuid, "org_board")
+        await _not_reached(conn, *sent)
+        await _take_off(conn, seeded, "chair@example.org")
+        await _board(conn, seeded, "chair@example.org")
+        await _resend(conn, seeded, uuid, doc)
+        retry = sent[-1]
+        told.clear()
+        await _take_off(conn, seeded, "chair@example.org")
+        assert [t[0] for t in told] == [retry]
+        assert await reports.job(conn, retry) == {"removed": True}
+
     async def test_it_reaches_both_offices_and_serves_neither(
         self, conn: Any, seeded: dict[str, Any], told: list[tuple[Any, ...]]
     ) -> None:
@@ -746,7 +891,11 @@ class TestTakingAnAddressOffTheList:
             actor_id=legal,
         )
         await reports.finalise(
-            conn, breach_uuid=mine, report_uuid=str(doc["report_uuid"]), actor_id=legal
+            conn,
+            breach_uuid=mine,
+            report_uuid=str(doc["report_uuid"]),
+            recipients=None,
+            actor_id=legal,
         )
         await _as_office(conn, "rnd")
         await _take_off(conn, seeded, "chair@example.org")
@@ -801,12 +950,12 @@ class TestSendingAgain:
         self, conn: Any, seeded: dict[str, Any], mailed: list[str], monkeypatch: Any
     ) -> None:
         monkeypatch.setattr(reports, "STALE_AFTER", timedelta(minutes=-1))
-        await _board(conn, seeded, "chair@example.org")
+        await _board(conn, seeded)
         uuid = await _breach(conn, seeded)
         doc = await _finalise(conn, seeded, uuid, "board_intimation")
-        await _reached(conn, *mailed)
-        await _board(conn, seeded, "member@example.org")
-        await _resend(conn, seeded, uuid, doc)
+        [chair, _] = mailed
+        await _reached(conn, chair)
+        # Lost: the worker never saw it, and nothing records it as anything.
         await _take_off(conn, seeded, "member@example.org")
         mailed.clear()
         again = await _resend(conn, seeded, uuid, doc)
@@ -823,9 +972,11 @@ class TestSendingAgain:
         await _take_off(conn, seeded, "chair@example.org")
         assert await reports.job(conn, delivery) == {"removed": True}
 
-    async def test_an_address_added_since_is_sent_its_first_attempt(
+    async def test_an_address_added_to_the_list_since_is_not_sent_a_version_it_was_not_addressed(
         self, conn: Any, seeded: dict[str, Any], mailed: list[str]
     ) -> None:
+        """A wrong address is put right by a new version, sent to whoever is
+        chosen for it: Try again sends what was frozen to whom it was frozen."""
         await _board(conn, seeded, "wrong@example.org")
         uuid = await _breach(conn, seeded)
         doc = await _finalise(conn, seeded, uuid, "board_intimation")
@@ -834,16 +985,12 @@ class TestSendingAgain:
         await _board(conn, seeded, "right@example.org")
         mailed.clear()
         again = await _resend(conn, seeded, uuid, doc)
-        [delivery] = mailed
-        job = await reports.job(conn, delivery)
-        assert job is not None and plain(job["email"]) == "right@example.org"
-        by_address = {plain(r["email"]): r for r in again["mail"]["recipients"]}
-        assert by_address["right@example.org"]["attempt"] == 1
-        assert by_address["right@example.org"]["status"] == "queued"
-        assert by_address["wrong@example.org"]["status"] == "failed"
-        [trail] = await _trail(conn, uuid, "breach.report_resent")
-        assert trail["actor_user_id"] == _dpo(seeded)
-        assert trail["detail_json"]["queued"] == 1 and trail["detail_json"]["added"] == 1
+        assert mailed == []
+        [line] = again["mail"]["recipients"]
+        assert plain(line["email"]) == "wrong@example.org", "the new address has no line"
+        assert (line["status"], line["removed"]) == ("failed", True)
+        assert again["mail"]["retryable"] == 0
+        assert await _trail(conn, uuid, "breach.report_resent") == []
 
     async def test_a_failure_is_a_new_attempt(
         self, conn: Any, seeded: dict[str, Any], mailed: list[str]
@@ -985,7 +1132,7 @@ class TestSendingAgain:
         assert again["queued"] == 0
         assert "kinds" in again and "board_recipients" in again, "the rest is as it was"
 
-    async def test_an_empty_list_is_refused_and_says_where_to_add_one(
+    async def test_an_emptied_list_refuses_nothing_and_tries_nobody_taken_off(
         self, conn: Any, seeded: dict[str, Any], mailed: list[str]
     ) -> None:
         await _board(conn, seeded, "chair@example.org")
@@ -993,10 +1140,12 @@ class TestSendingAgain:
         doc = await _finalise(conn, seeded, uuid, "board_intimation")
         await _not_reached(conn, *mailed)
         await _take_off(conn, seeded, "chair@example.org")
-        with pytest.raises(Conflict) as refused:
-            await _resend(conn, seeded, uuid, doc)
-        assert refused.value.code == "no_board_recipients"
-        assert "Breach settings" in refused.value.message
+        mailed.clear()
+        again = await reports.resend(
+            conn, breach_uuid=uuid, report_uuid=str(doc["report_uuid"]), actor_id=_dpo(seeded)
+        )
+        assert again["queued"] == 0 and mailed == []
+        assert _latest(again, "board_intimation")["mail"]["retryable"] == 0
 
     async def test_a_version_a_later_one_replaced_is_not_sent_again(
         self, conn: Any, seeded: dict[str, Any], mailed: list[str]
@@ -1047,7 +1196,7 @@ class TestSendingAgain:
         job = await reports.job(conn, delivery)
         assert job is not None and plain(job["email"]) == "member@example.org"
         [trail] = await _trail(conn, uuid, "breach.report_resent")
-        assert trail["detail_json"]["queued"] == 1 and trail["detail_json"]["added"] == 0
+        assert trail["detail_json"]["queued"] == 1 and trail["detail_json"]["first"] == 0
         assert again["mail"]["delivered"] == 1
         assert len(again["mail"]["recipients"]) == 2, "one line for the chair, not two"
         [line] = [r for r in again["mail"]["recipients"] if r["status"] == "delivered"]
@@ -1065,9 +1214,12 @@ class TestSendingAgain:
         await _board(conn, seeded, "chair@example.org")
         mailed.clear()
         again = await _resend(conn, seeded, uuid, doc)
-        assert len(mailed) == 1
+        [delivery] = mailed
         [line] = again["mail"]["recipients"]
-        assert (line["status"], line["attempt"], line["removed"]) == ("queued", 1, False)
+        assert (line["status"], line["attempt"], line["removed"]) == ("queued", 2, False)
+        job = await reports.job(conn, delivery)
+        assert job is not None and job["removed"] is False, "under the row it was sent under"
+        assert plain(job["email"]) == "chair@example.org"
 
     async def test_a_delivery_still_on_its_way_is_left_alone(
         self, conn: Any, seeded: dict[str, Any], mailed: list[str]
@@ -1092,7 +1244,7 @@ class TestSendingAgain:
         [trail] = await _trail(conn, uuid, "breach.report_resent")
         detail = trail["detail_json"]
         assert (detail["kind"], detail["version"]) == ("board_intimation", 1)
-        assert (detail["queued"], detail["added"], detail["retried"]) == (2, 1, 1)
+        assert (detail["queued"], detail["first"], detail["retried"]) == (1, 0, 1)
         assert "example.org" not in str(detail)
 
 
@@ -1115,6 +1267,8 @@ class TestWhatTheOfficeIsShownOfTheMail:
             "delivered",
             "queued",
             "failed",
+            "unsent",
+            "held",
             "stale",
             "retryable",
             "recipients",
@@ -1129,7 +1283,10 @@ class TestWhatTheOfficeIsShownOfTheMail:
             "error",
             "recorded_at",
             "removed",
+            "mandatory",
+            "added_for_this_send",
         }
+        assert (first["mandatory"], first["added_for_this_send"]) == (False, False)
         assert str(first["email"]).startswith("SE::"), "sealed; the console opens it"
         assert str(first["full_name"]).startswith("SE::")
         assert plain(first["full_name"]) == "The Chair"
@@ -1169,8 +1326,8 @@ class TestWhatTheOfficeIsShownOfTheMail:
     async def test_retryable_is_what_sending_again_would_queue(
         self, conn: Any, seeded: dict[str, Any], mailed: list[str]
     ) -> None:
-        """Failed, lost, and added since: the one that is hidden if the console
-        reads only the first two."""
+        """Failed and lost. An address added to the list since was never this
+        version's, so it is not counted."""
         await _board(conn, seeded, "failed@example.org", "lost@example.org", "fine@example.org")
         uuid = await _breach(conn, seeded)
         doc = await _finalise(conn, seeded, uuid, "board_intimation")
@@ -1180,11 +1337,11 @@ class TestWhatTheOfficeIsShownOfTheMail:
         await _reached(conn, fine)
         await _board(conn, seeded, "added@example.org")
         read = _latest(await reports.overview(conn, breach_uuid=uuid), "board_intimation")
-        assert read["mail"]["retryable"] == 3
+        assert read["mail"]["retryable"] == 2
         resent = await reports.resend(
             conn, breach_uuid=uuid, report_uuid=str(doc["report_uuid"]), actor_id=_dpo(seeded)
         )
-        assert resent["queued"] == 3
+        assert resent["queued"] == 2
 
     async def test_every_address_reached_leaves_nothing_to_send(
         self, conn: Any, seeded: dict[str, Any], mailed: list[str]
@@ -1385,6 +1542,7 @@ class TestFiling:
                 conn,
                 breach_uuid=uuid,
                 report_uuid=str(closure["report_uuid"]),
+                recipients=None,
                 actor_id=_dpo(seeded),
             ),
             "closure",
@@ -1475,10 +1633,16 @@ class TestFiling:
         )
         done = _latest(
             await reports.finalise(
-                conn, breach_uuid=uuid, report_uuid=str(doc["report_uuid"]), actor_id=_dpo(seeded)
+                conn,
+                breach_uuid=uuid,
+                report_uuid=str(doc["report_uuid"]),
+                recipients=None,
+                actor_id=_dpo(seeded),
             ),
             "cert_in",
         )
+        assert mailed == [], "the board's mail waits for a yes"
+        assert done["mail"]["held"] == 2
         for proof in ("approval", "sent_mail"):
             await _proof(conn, seeded, uuid, done, proof)
         await _file(conn, seeded, uuid, done, reference="CERT/1")
@@ -1516,7 +1680,9 @@ async def test_a_closure_report_never_stands_in_the_way_of_closing(
         bodies={"conclusion": "Nothing further was found"},
         actor_id=_dpo(seeded),
     )
-    await reports.finalise(conn, breach_uuid=uuid, report_uuid=report, actor_id=_dpo(seeded))
+    await reports.finalise(
+        conn, breach_uuid=uuid, report_uuid=report, recipients=None, actor_id=_dpo(seeded)
+    )
     await _draft(conn, seeded, uuid, "closure")
     breach = await service.require(conn, uuid)
     duties = await service.duties_of(conn, int(breach["breach_id"]))
@@ -1701,7 +1867,11 @@ class TestACertInReportOnceTheDutyIsSetAside:
         assert "Mark it reportable again" in str(read["blocked_by"])
         with pytest.raises(Conflict) as refused:
             await reports.finalise(
-                conn, breach_uuid=uuid, report_uuid=str(doc["report_uuid"]), actor_id=_dpo(seeded)
+                conn,
+                breach_uuid=uuid,
+                report_uuid=str(doc["report_uuid"]),
+                recipients=None,
+                actor_id=_dpo(seeded),
             )
         assert "Mark it reportable again" in refused.value.message
         assert mailed == []
@@ -1722,16 +1892,24 @@ class TestACertInReportOnceTheDutyIsSetAside:
         )
         await self._set_aside(conn, seeded, uuid)
         await service.mark_cert_in(conn, breach_uuid=uuid, actor_id=_dpo(seeded))
-        await reports.finalise(
-            conn, breach_uuid=uuid, report_uuid=str(doc["report_uuid"]), actor_id=_dpo(seeded)
+        done = await reports.finalise(
+            conn,
+            breach_uuid=uuid,
+            report_uuid=str(doc["report_uuid"]),
+            recipients=None,
+            actor_id=_dpo(seeded),
         )
-        assert len(mailed) == 1
+        assert mailed == [], "never validated yes, so its mail waits for one"
+        read = _latest(done, "cert_in")
+        assert read["state"] == "finalised" and read["mail"]["held"] == 1
 
     async def test_a_finalised_one_is_not_mailed_again(
         self, conn: Any, seeded: dict[str, Any], mailed: list[str]
     ) -> None:
+        """Finalised on a recorded breach, so mailed at once; a No and the
+        set-aside after it stop the next press, and leave what went."""
         await _board(conn, seeded, "chair@example.org")
-        uuid = await _incident(conn, seeded)
+        uuid = await _breach(conn, seeded)
         await service.mark_cert_in(conn, breach_uuid=uuid, actor_id=_dpo(seeded))
         doc = await _draft(conn, seeded, uuid, "cert_in")
         await reports.edit(
@@ -1742,15 +1920,21 @@ class TestACertInReportOnceTheDutyIsSetAside:
             actor_id=_dpo(seeded),
         )
         await reports.finalise(
-            conn, breach_uuid=uuid, report_uuid=str(doc["report_uuid"]), actor_id=_dpo(seeded)
+            conn,
+            breach_uuid=uuid,
+            report_uuid=str(doc["report_uuid"]),
+            recipients=None,
+            actor_id=_dpo(seeded),
         )
-        await _not_reached(conn, *mailed)
+        [sent] = mailed
+        await _not_reached(conn, sent)
         await self._set_aside(conn, seeded, uuid)
         read = _latest(await reports.overview(conn, breach_uuid=uuid), "cert_in")
-        assert read["mail"]["retryable"] == 0
+        assert read["mail"]["failed"] == 1 and read["mail"]["retryable"] == 0
         mailed.clear()
-        with pytest.raises(Conflict):
+        with pytest.raises(Conflict) as refused:
             await _resend(conn, seeded, uuid, doc)
+        assert refused.value.code == "breach_not_recorded"
         assert mailed == []
 
     @staticmethod
@@ -1765,7 +1949,11 @@ class TestACertInReportOnceTheDutyIsSetAside:
             actor_id=_dpo(seeded),
         )
         await reports.finalise(
-            conn, breach_uuid=uuid, report_uuid=str(doc["report_uuid"]), actor_id=_dpo(seeded)
+            conn,
+            breach_uuid=uuid,
+            report_uuid=str(doc["report_uuid"]),
+            recipients=None,
+            actor_id=_dpo(seeded),
         )
         return doc
 
@@ -1899,7 +2087,7 @@ class TestTheTaskMails:
         finally:
             mail_task.send_breach_report.pop_request()
 
-    async def test_the_organisations_board_gets_its_report_as_the_list_has_it(
+    async def test_the_organisations_board_gets_its_report_as_the_sender_chose(
         self,
         conn: Any,
         seeded: dict[str, Any],
@@ -2063,6 +2251,502 @@ async def test_a_pdf_is_rendered_off_the_event_loop(
     assert len(threads) == 1 and threads[0] is not threading.current_thread()
 
 
+class TestWhoItGoesTo:
+    """The sender chooses, in the window: the list less any left out, never a
+    mandatory one, and any address for this report alone. What was chosen is
+    frozen with the version (2026-11-07)."""
+
+    async def test_the_picks_are_who_it_goes_to_and_one_left_out_gets_nothing(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org", "member@example.org", "spare@example.org")
+        uuid = await _breach(conn, seeded)
+        doc = await _draft(conn, seeded, uuid, "board_intimation")
+        sent = await _send(conn, seeded, uuid, doc, to=["chair@example.org", "member@example.org"])
+        assert await _addresses(conn, mailed) == ["chair@example.org", "member@example.org"]
+        assert sorted(_lines(sent)) == ["chair@example.org", "member@example.org"]
+
+    async def test_an_address_for_this_report_alone_is_mailed_sealed_and_kept_off_the_list(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        doc = await _draft(conn, seeded, uuid, "board_intimation")
+        sent = await _send(
+            conn,
+            seeded,
+            uuid,
+            doc,
+            to=["chair@example.org"],
+            extra=[{"full_name": " The Auditor ", "email": " Auditor@Elsewhere.org "}],
+        )
+        assert await _addresses(conn, mailed) == ["auditor@elsewhere.org", "chair@example.org"]
+        line = _lines(sent)["auditor@elsewhere.org"]
+        assert (line["added_for_this_send"], line["mandatory"], line["removed"]) == (
+            True,
+            False,
+            False,
+        )
+        assert str(line["email"]).startswith("SE::") and str(line["full_name"]).startswith("SE::")
+        assert plain(line["full_name"]) == "The Auditor"
+        assert list(await _entries(conn)) == ["chair@example.org"], "never on the list"
+        kept = await breach_settings.overview(conn)
+        assert [plain(r["email"]) for r in kept["board_recipients"]] == ["chair@example.org"]
+        offered = await reports.board_list(conn, breach_uuid=uuid)
+        assert [plain(r["email"]) for r in offered["recipients"]] == ["chair@example.org"]
+
+    async def test_an_extra_already_on_the_list_is_that_entry(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org", "member@example.org")
+        uuid = await _breach(conn, seeded)
+        doc = await _draft(conn, seeded, uuid, "board_intimation")
+        before = await _one_offs(conn)
+        sent = await _send(
+            conn,
+            seeded,
+            uuid,
+            doc,
+            to=["member@example.org"],
+            extra=[{"email": "CHAIR@example.org"}],
+        )
+        assert await _one_offs(conn) == before, "no address for one report was made"
+        assert len(mailed) == 2
+        lines = _lines(sent)
+        assert sorted(lines) == ["chair@example.org", "member@example.org"]
+        assert not any(r["added_for_this_send"] for r in lines.values())
+        entry = (await _entries(conn))["chair@example.org"]
+        assert str(lines["chair@example.org"]["recipient_uuid"]) == entry
+
+    async def test_two_extras_alike_are_one(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        doc = await _draft(conn, seeded, uuid, "board_intimation")
+        before = await _one_offs(conn)
+        sent = await _send(
+            conn,
+            seeded,
+            uuid,
+            doc,
+            to=["chair@example.org"],
+            extra=[{"email": "auditor@elsewhere.org"}, {"email": "Auditor@Elsewhere.org"}],
+        )
+        assert await _one_offs(conn) == before + 1
+        assert len(mailed) == 2 and len(sent["mail"]["recipients"]) == 2
+
+    async def test_a_mandatory_entry_left_out_is_refused_and_nothing_is_made(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org", "member@example.org")
+        await _mark(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        doc = await _draft(conn, seeded, uuid, "board_intimation")
+        before = await _one_offs(conn)
+        with pytest.raises(Conflict) as refused:
+            await _send(
+                conn,
+                seeded,
+                uuid,
+                doc,
+                to=["member@example.org"],
+                extra=[{"email": "auditor@elsewhere.org"}],
+            )
+        assert refused.value.code == "recipient_mandatory"
+        assert refused.value.details["missing"] == [(await _entries(conn))["chair@example.org"]]
+        assert await _one_offs(conn) == before and mailed == []
+        still = _latest(await reports.overview(conn, breach_uuid=uuid), "board_intimation")
+        assert still["state"] == "draft"
+        sent = await _send(conn, seeded, uuid, doc, to=None)
+        assert _lines(sent)["chair@example.org"]["mandatory"] is True
+
+    async def test_an_entry_taken_off_since_the_window_opened_is_refused(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org", "member@example.org")
+        uuid = await _breach(conn, seeded)
+        doc = await _draft(conn, seeded, uuid, "board_intimation")
+        offered = await _entries(conn)
+        await _take_off(conn, seeded, "member@example.org")
+        with pytest.raises(Conflict) as refused:
+            await reports.finalise(
+                conn,
+                breach_uuid=uuid,
+                report_uuid=str(doc["report_uuid"]),
+                recipients=list(offered.values()),
+                actor_id=_dpo(seeded),
+            )
+        assert refused.value.code == "recipient_not_listed"
+        assert refused.value.details["gone"] == [offered["member@example.org"]]
+        assert mailed == []
+
+    async def test_nothing_chosen_is_refused_on_recipients(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        doc = await _draft(conn, seeded, uuid, "board_intimation")
+        with pytest.raises(ValidationFailed) as refused:
+            await _send(conn, seeded, uuid, doc, to=[])
+        assert refused.value.field == "recipients"
+
+    @pytest.mark.parametrize(
+        ("extra", "field"),
+        [
+            ({"email": "not an address"}, "extra.0.email"),
+            ({"full_name": "SE::v1:abc", "email": "auditor@elsewhere.org"}, "extra.0.full_name"),
+        ],
+        ids=["address", "sealed name"],
+    )
+    async def test_an_extra_is_an_address_and_its_name_carries_no_ciphertext(
+        self,
+        conn: Any,
+        seeded: dict[str, Any],
+        mailed: list[str],
+        extra: dict[str, Any],
+        field: str,
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        doc = await _draft(conn, seeded, uuid, "board_intimation")
+        with pytest.raises(ValidationFailed) as refused:
+            await _send(conn, seeded, uuid, doc, to=["chair@example.org"], extra=[extra])
+        assert refused.value.field == field
+
+    async def test_an_empty_list_takes_an_extra_and_without_one_says_where_to_add_one(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        uuid = await _breach(conn, seeded)
+        doc = await _draft(conn, seeded, uuid, "board_intimation")
+        with pytest.raises(Conflict) as refused:
+            await _send(conn, seeded, uuid, doc, to=[])
+        assert refused.value.code == "no_board_recipients"
+        assert "Breach settings" in refused.value.message
+        sent = await _send(conn, seeded, uuid, doc, to=[], extra=[{"email": "a@elsewhere.org"}])
+        assert await _addresses(conn, mailed) == ["a@elsewhere.org"]
+        assert sent["state"] == "finalised"
+
+    async def test_the_trail_counts_what_was_chosen_and_names_nobody(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org", "member@example.org", "spare@example.org")
+        uuid = await _breach(conn, seeded)
+        doc = await _draft(conn, seeded, uuid, "board_intimation")
+        await _send(
+            conn,
+            seeded,
+            uuid,
+            doc,
+            to=["chair@example.org"],
+            extra=[{"full_name": "The Auditor", "email": "auditor@elsewhere.org"}],
+        )
+        [trail] = await _trail(conn, uuid, "breach.report_finalised")
+        detail = trail["detail_json"]
+        assert {k: detail[k] for k in ("mailed", "held", "added", "left_out")} == {
+            "mailed": 2,
+            "held": False,
+            "added": 1,
+            "left_out": 2,
+        }
+        assert "example.org" not in str(detail) and "elsewhere" not in str(detail)
+        assert "Auditor" not in str(detail)
+
+    async def test_a_versions_lines_stay_as_they_were_when_the_list_changes(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org", "member@example.org")
+        uuid = await _breach(conn, seeded)
+        doc = await _draft(conn, seeded, uuid, "board_intimation")
+        await _send(conn, seeded, uuid, doc, to=None)
+        await _board(conn, seeded, "late@example.org")
+        await _mark(conn, seeded, "chair@example.org")
+        await _take_off(conn, seeded, "member@example.org")
+        lines = _lines(_latest(await reports.overview(conn, breach_uuid=uuid), "board_intimation"))
+        assert sorted(lines) == ["chair@example.org", "member@example.org"]
+        assert lines["chair@example.org"]["mandatory"] is False, "as it was when it went"
+        assert lines["member@example.org"]["removed"] is True
+
+
+class TestTryAgainTriesTheReportsOwn:
+    async def test_an_address_added_since_is_not_tried(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        doc = await _finalise(conn, seeded, uuid, "board_intimation")
+        await _not_reached(conn, *mailed)
+        await _board(conn, seeded, "member@example.org")
+        mailed.clear()
+        again = await _resend(conn, seeded, uuid, doc)
+        assert await _addresses(conn, mailed) == ["chair@example.org"]
+        assert sorted(_lines(again)) == ["chair@example.org"]
+
+    async def test_one_for_this_report_alone_is_tried_and_never_taken_off(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        uuid = await _breach(conn, seeded)
+        doc = await _draft(conn, seeded, uuid, "board_intimation")
+        await _send(conn, seeded, uuid, doc, to=[], extra=[{"email": "auditor@elsewhere.org"}])
+        await _not_reached(conn, *mailed)
+        mailed.clear()
+        again = await _resend(conn, seeded, uuid, doc)
+        assert await _addresses(conn, mailed) == ["auditor@elsewhere.org"]
+        assert _lines(again)["auditor@elsewhere.org"]["attempt"] == 2
+
+    async def test_a_version_withheld_at_the_yes_is_sent_once_marked_again(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _incident(conn, seeded)
+        doc = await _cert_in_draft(conn, seeded, uuid)
+        await _send(conn, seeded, uuid, doc, to=None)
+        await _set_aside_after_a_no(conn, seeded, uuid)
+        await _determine(conn, seeded, uuid, "yes")
+        assert mailed == []
+        withheld = _latest(await reports.overview(conn, breach_uuid=uuid), "cert_in")
+        assert [r["status"] for r in withheld["mail"]["recipients"]] == ["unsent"]
+        assert withheld["mail"]["retryable"] == 0, "not while it is set aside"
+        await service.mark_cert_in(conn, breach_uuid=uuid, actor_id=_dpo(seeded))
+        marked = _latest(await reports.overview(conn, breach_uuid=uuid), "cert_in")
+        assert marked["mail"]["unsent"] == 1 and marked["mail"]["retryable"] == 1
+        assert mailed == [], "marking it again sends nothing by itself"
+        again = await _resend(conn, seeded, uuid, doc)
+        assert await _addresses(conn, mailed) == ["chair@example.org"]
+        assert _lines(again)["chair@example.org"]["attempt"] == 1
+        [trail] = await _trail(conn, uuid, "breach.report_resent")
+        assert (trail["detail_json"]["first"], trail["detail_json"]["queued"]) == (1, 1)
+
+
+class TestACertInReportBeforeAYes:
+    """Decision 6 of 2026-11-07: finalised before the incident is validated as a
+    personal data breach, its mail to the board waits for the first yes, and
+    goes then to whom it was chosen for. Never, if no yes comes."""
+
+    async def test_finalised_before_validation_nothing_is_queued(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded)
+        uuid = await _incident(conn, seeded)
+        doc = await _cert_in_draft(conn, seeded, uuid)
+        assert _kind(await reports.overview(conn, breach_uuid=uuid), "cert_in")["holds_mail"]
+        held = await _send(conn, seeded, uuid, doc, to=None)
+        assert mailed == [] and await _queued(conn, uuid) == []
+        mail = held["mail"]
+        assert (mail["held"], mail["queued"], mail["retryable"]) == (2, 0, 0)
+        assert {(r["status"], r["attempt"], r["recorded_at"]) for r in mail["recipients"]} == {
+            ("held", 0, None)
+        }
+        with pytest.raises(Conflict) as refused:
+            await _resend(conn, seeded, uuid, doc)
+        assert refused.value.code == "report_held"
+        [trail] = await _trail(conn, uuid, "breach.report_finalised")
+        assert (trail["detail_json"]["held"], trail["detail_json"]["mailed"]) == (True, 0)
+
+    async def test_the_first_yes_sends_it_to_whom_it_was_chosen_for(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org", "member@example.org", "spare@example.org")
+        uuid = await _incident(conn, seeded)
+        doc = await _cert_in_draft(conn, seeded, uuid)
+        await _send(
+            conn,
+            seeded,
+            uuid,
+            doc,
+            to=["chair@example.org", "member@example.org"],
+            extra=[{"email": "auditor@elsewhere.org"}],
+        )
+        await _board(conn, seeded, "late@example.org")
+        await _mark(conn, seeded, "spare@example.org")
+        await _determine(conn, seeded, uuid, "yes")
+        assert await _addresses(conn, mailed) == [
+            "auditor@elsewhere.org",
+            "chair@example.org",
+            "member@example.org",
+        ]
+        [trail] = await _trail(conn, uuid, "breach.report_released")
+        assert trail["actor_user_id"] == _dpo(seeded)
+        detail = trail["detail_json"]
+        assert {k: detail[k] for k in ("kind", "version", "queued", "left_out")} == {
+            "kind": "cert_in",
+            "version": 1,
+            "queued": 3,
+            "left_out": 0,
+        }
+        assert str(detail["reference"]).startswith("BR-")
+        assert "example.org" not in str(detail) and "elsewhere" not in str(detail)
+        view = _kind(await reports.overview(conn, breach_uuid=uuid), "cert_in")
+        assert view["holds_mail"] is False
+        assert {r["status"] for r in view["versions"][0]["mail"]["recipients"]} == {"queued"}
+
+    async def test_an_older_held_version_never_goes_and_reads_superseded(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _incident(conn, seeded)
+        first = await _cert_in_draft(conn, seeded, uuid)
+        await _send(conn, seeded, uuid, first, to=None)
+        second = await _draft(conn, seeded, uuid, "cert_in")
+        await _send(conn, seeded, uuid, second, to=None)
+        await _determine(conn, seeded, uuid, "yes")
+        assert len(mailed) == 1
+        job = await reports.job(conn, mailed[0])
+        assert job is not None and job["file_name"].endswith("-cert_in-v2.pdf")
+        [newest, older] = _kind(await reports.overview(conn, breach_uuid=uuid), "cert_in")[
+            "versions"
+        ]
+        assert (newest["superseded"], older["superseded"]) == (False, True)
+        assert [r["status"] for r in older["mail"]["recipients"]] == ["unsent"]
+        assert older["mail"]["retryable"] == 0
+        with pytest.raises(Conflict) as refused:
+            await _resend(conn, seeded, uuid, first)
+        assert refused.value.code == "report_superseded"
+
+    async def test_a_no_keeps_it_held_and_a_later_yes_sends_it(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded)
+        uuid = await _incident(conn, seeded)
+        doc = await _cert_in_draft(conn, seeded, uuid)
+        await _send(conn, seeded, uuid, doc, to=None)
+        await _determine(conn, seeded, uuid, "no")
+        assert mailed == []
+        read = _latest(await reports.overview(conn, breach_uuid=uuid), "cert_in")
+        assert read["mail"]["held"] == 2, "a no issues no reference, so the yes is still to come"
+        await _determine(conn, seeded, uuid, "yes")
+        assert len(mailed) == 2
+        assert len(await _trail(conn, uuid, "breach.report_released")) == 1
+
+    async def test_set_aside_at_the_yes_it_is_withheld_and_says_so(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded)
+        uuid = await _incident(conn, seeded)
+        doc = await _cert_in_draft(conn, seeded, uuid)
+        await _send(conn, seeded, uuid, doc, to=None)
+        await _set_aside_after_a_no(conn, seeded, uuid)
+        await _determine(conn, seeded, uuid, "yes")
+        assert mailed == []
+        [trail] = await _trail(conn, uuid, "breach.report_withheld")
+        assert trail["actor_user_id"] == _dpo(seeded)
+        assert {k: trail["detail_json"][k] for k in ("kind", "version", "why")} == {
+            "kind": "cert_in",
+            "version": 1,
+            "why": "cert_in_set_aside",
+        }
+        assert await _trail(conn, uuid, "breach.report_released") == []
+        read = _latest(await reports.overview(conn, breach_uuid=uuid), "cert_in")
+        assert read["mail"]["unsent"] == 2 and read["mail"]["held"] == 0
+        with pytest.raises(Conflict) as refused:
+            await _resend(conn, seeded, uuid, doc)
+        assert refused.value.code == "breach_not_recorded"
+
+    async def test_marked_again_after_the_yes_a_later_yes_does_not_send_it(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        """What the first yes withheld a person sends, with Try again: by then
+        the office may be writing a new version, and two would reach the board."""
+        await _board(conn, seeded)
+        uuid = await _incident(conn, seeded)
+        doc = await _cert_in_draft(conn, seeded, uuid)
+        await _send(conn, seeded, uuid, doc, to=None)
+        await _set_aside_after_a_no(conn, seeded, uuid)
+        await _determine(conn, seeded, uuid, "yes")
+        await service.mark_cert_in(conn, breach_uuid=uuid, actor_id=_dpo(seeded))
+        await _determine(conn, seeded, uuid, "yes")
+        assert mailed == []
+        read = _latest(await reports.overview(conn, breach_uuid=uuid), "cert_in")
+        assert read["mail"]["unsent"] == 2 and read["mail"]["retryable"] == 2
+
+    async def test_set_aside_and_marked_again_before_the_yes_it_goes_at_the_yes(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded)
+        uuid = await _incident(conn, seeded)
+        doc = await _cert_in_draft(conn, seeded, uuid)
+        await _send(conn, seeded, uuid, doc, to=None)
+        await _set_aside_after_a_no(conn, seeded, uuid)
+        await service.mark_cert_in(conn, breach_uuid=uuid, actor_id=_dpo(seeded))
+        assert mailed == []
+        await _determine(conn, seeded, uuid, "yes")
+        assert len(mailed) == 2
+
+    async def test_a_held_report_may_be_filed_and_still_goes_at_the_yes(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded)
+        uuid = await _incident(conn, seeded)
+        doc = await _cert_in_draft(conn, seeded, uuid)
+        held = await _send(conn, seeded, uuid, doc, to=None)
+        for proof in ("approval", "sent_mail"):
+            await _proof(conn, seeded, uuid, held, proof)
+        await _file(conn, seeded, uuid, held, reference="CERT/1")
+        assert _duty(await service.detail(conn, uuid), "cert_in")["state"] == "done"
+        assert mailed == []
+        await _determine(conn, seeded, uuid, "yes")
+        assert len(mailed) == 2
+
+    async def test_an_address_taken_off_before_the_yes_is_left_out(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded)
+        uuid = await _incident(conn, seeded)
+        doc = await _cert_in_draft(conn, seeded, uuid)
+        await _send(conn, seeded, uuid, doc, to=None)
+        await _take_off(conn, seeded, "member@example.org")
+        await _determine(conn, seeded, uuid, "yes")
+        assert await _addresses(conn, mailed) == ["chair@example.org"]
+        [trail] = await _trail(conn, uuid, "breach.report_released")
+        assert (trail["detail_json"]["queued"], trail["detail_json"]["left_out"]) == (1, 1)
+
+    async def test_a_second_yes_releases_nothing_and_the_release_runs_once(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded)
+        uuid = await _incident(conn, seeded)
+        doc = await _cert_in_draft(conn, seeded, uuid)
+        await _send(conn, seeded, uuid, doc, to=None)
+        await _determine(conn, seeded, uuid, "yes")
+        await _not_reached(conn, *mailed)
+        mailed.clear()
+        await _determine(conn, seeded, uuid, "yes")
+        breach = await service.require(conn, uuid)
+        await reports.after_yes(conn, breach, first=True, actor_id=_dpo(seeded))
+        assert mailed == []
+        assert len(await _trail(conn, uuid, "breach.report_released")) == 1
+
+    async def test_a_finalise_that_waited_behind_a_first_yes_mails_at_once(
+        self,
+        conn: Any,
+        seeded: dict[str, Any],
+        mailed: list[str],
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Two people at once: the yes holds the breach's row, and the finalise
+        read the breach before it waited for it. Read again once it holds the
+        row, it finds the reference the yes issued. Read only before, it would
+        hold a mail for a yes that had come and gone, and nothing would send it."""
+        await _board(conn, seeded)
+        uuid = await _incident(conn, seeded)
+        doc = await _cert_in_draft(conn, seeded, uuid)
+        lock = breach_repo.lock
+        waited = False
+
+        async def behind_a_yes(c: Any, breach_id: int) -> Any:
+            nonlocal waited
+            if not waited:
+                waited = True
+                await _determine(conn, seeded, uuid, "yes")
+            return await lock(c, breach_id)
+
+        monkeypatch.setattr(breach_repo, "lock", behind_a_yes)
+        sent = await _send(conn, seeded, uuid, doc, to=None)
+        assert waited and len(mailed) == 2
+        assert sent["mail"]["queued"] == 2
+        assert await _trail(conn, uuid, "breach.report_released") == [], "nothing was held"
+
+
 class TestTheDatabaseHoldsTheRule:
     """Raw SQL, past the service."""
 
@@ -2224,4 +2908,55 @@ class TestTheDatabaseHoldsTheRule:
                    SELECT breach_id, 'approval', 'x', 'x', %s, 1, 'x', %s FROM breach
                     WHERE breach_uuid = %s""",
                 ("a" * 64, _dpo(seeded), uuid),
+            )
+
+    async def test_a_finalised_report_takes_no_new_addressee(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        doc = await _finalise(conn, seeded, uuid, "board_intimation")
+        await _board(conn, seeded, "late@example.org")
+        with pytest.raises(psycopg.errors.RestrictViolation):
+            await conn.execute(
+                """INSERT INTO breach_report_addressee (report_id, recipient_id)
+                   SELECT r.report_id, x.recipient_id
+                     FROM breach_report r, breach_board_recipient x
+                    WHERE r.report_uuid = %s AND x.recipient_uuid = %s""",
+                (str(doc["report_uuid"]), (await _entries(conn))["late@example.org"]),
+            )
+
+    @pytest.mark.parametrize(
+        "statement",
+        [
+            "UPDATE breach_report_addressee SET mandatory = true WHERE report_id = "
+            "(SELECT report_id FROM breach_report WHERE report_uuid = %s)",
+            "DELETE FROM breach_report_addressee WHERE report_id = "
+            "(SELECT report_id FROM breach_report WHERE report_uuid = %s)",
+        ],
+        ids=["update", "delete"],
+    )
+    async def test_who_a_version_went_to_is_only_added_to(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str], statement: str
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        doc = await _finalise(conn, seeded, uuid, "board_intimation")
+        with pytest.raises(psycopg.errors.InsufficientPrivilege):
+            await conn.execute(statement, (str(doc["report_uuid"]),))
+
+    async def test_a_delivery_goes_only_to_an_address_the_report_went_to(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org", "spare@example.org")
+        uuid = await _breach(conn, seeded)
+        doc = await _draft(conn, seeded, uuid, "board_intimation")
+        await _send(conn, seeded, uuid, doc, to=["chair@example.org"])
+        with pytest.raises(psycopg.errors.ForeignKeyViolation):
+            await conn.execute(
+                """INSERT INTO breach_report_delivery (report_id, recipient_id, attempt, status)
+                   SELECT r.report_id, x.recipient_id, 1, 'queued'
+                     FROM breach_report r, breach_board_recipient x
+                    WHERE r.report_uuid = %s AND x.recipient_uuid = %s""",
+                (str(doc["report_uuid"]), (await _entries(conn))["spare@example.org"]),
             )

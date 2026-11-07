@@ -134,6 +134,9 @@ APPEND_ONLY = {
     # do not change (0059). Sealed when written, like the rest.
     "incident_report": "trg_incident_report_outcome_once",
     "breach_report_section": "trg_breach_report_section_frozen",
+    # An entry on the board's list is written once, and only its removal and
+    # its mark change after (0064). Sealed when written, like the rest.
+    "breach_board_recipient": "trg_breach_board_recipient_read_only",
 }
 
 

@@ -13330,6 +13330,49 @@
     },
     {
       "module": "breaches",
+      "method": "GET",
+      "path": "/breaches/{breach_uuid}/reports/recipients",
+      "summary": "The organisation's board list, as the finalise window offers it",
+      "function": "report_recipients",
+      "operation_id": "report_recipients_breaches__breach_uuid__reports_recipients_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachReader",
+      "resolved_gate": "RequireResource(breach, hidden=True)",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one.",
+        "The organisation's board list as the finalise window offers it: each entry's uuid, its name and address sealed, and whether it is mandatory. Never an address added for one report alone, the row's key or its blind index. Read through the breach, so another office's breach is 404 like a uuid that was never one, although the list is no office's. (0064, ADR 0037, amended 2026-11-07)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/reports.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "breaches",
       "method": "POST",
       "path": "/breaches/{breach_uuid}/reports",
       "summary": "Start the next version of a report, drafted from the register",
@@ -16230,6 +16273,49 @@
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/reports.py"
+      ]
+    },
+    {
+      "module": "breach settings",
+      "method": "PUT",
+      "path": "/breach-settings/board-recipients/{recipient_uuid}/mandatory",
+      "summary": "Make an address on the organisation's board mandatory, or optional again",
+      "function": "set_board_recipient_mandatory",
+      "operation_id": "set_board_recipient_mandatory_breach_settings_board_recipients__recipient_uuid__mandatory_put",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachSettingsWriter",
+      "resolved_gate": "RequireResource(breach_settings, write=True)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach_settings",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "Resource `breach_settings`, read and write for the administrator, the DPO and the Legal PoC (0058, ADR 0037): the administrator keeps it with the officers and sees no breach by it; every other role is answered 403. A mandatory entry goes with every report finalised while it is set, and cannot be taken off the list until it is made optional again. Each change writes an event (who and when) and the trail, never the address, and mails every active DPO and Legal account, naming the address and no breach. An unchanged mark records nothing and mails nobody. Not on the list, taken off, or an address added for one report alone is 404; a broker that cannot be reached is 503 and nothing changes. (0064, amended 2026-11-07)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breach_settings.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/settings.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/alerts/__init__.py"
       ]
     },
     {

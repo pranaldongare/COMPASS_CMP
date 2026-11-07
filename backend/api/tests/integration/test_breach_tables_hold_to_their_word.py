@@ -1,8 +1,9 @@
-"""What 0058 to 0062 left open, closed by 0063, and 0061's way down.
+"""What 0058 to 0062 left open, closed by 0063, and the ways down from 0061 and 0064.
 
 The rules live in the migrations, so these read them from there: the grants
 the application's role keeps, the section a finalised report cannot gain, the
-board duties of the old rule, and a downgrade that would lose ticket dates.
+board duties of the old rule, a downgrade that would lose ticket dates, and
+one that puts 0034's CHECK back without making a CERT-In event a lie.
 `scripts/reseal.py` is checked here against the catalogue it runs on.
 """
 
@@ -40,6 +41,7 @@ def _load(path: str) -> Any:
 
 
 M0063 = _load("migrations/versions/0063_breach_tables_hold_to_their_word.py")
+M0064 = _load("migrations/versions/0064_who_a_report_goes_to.py")
 M0061 = _load("migrations/versions/0061_breach_ticket_resolve_by.py")
 RESEAL = _load("scripts/reseal.py")
 PROBE = "cmp_hardening_probe"
@@ -54,6 +56,9 @@ REFUSED = {
     "breach_report_section": ("DELETE", "TRUNCATE"),
     "breach_board_recipient": ("DELETE", "TRUNCATE"),
     "breach_settings": ("INSERT", "DELETE", "TRUNCATE"),
+    # 0064: who a version went to, and each mark on the list, only added to.
+    "breach_report_addressee": ("UPDATE", "DELETE", "TRUNCATE"),
+    "breach_board_recipient_event": ("UPDATE", "DELETE", "TRUNCATE"),
 }
 KEPT = {
     "breach_report_delivery": ("SELECT", "INSERT"),
@@ -62,6 +67,8 @@ KEPT = {
     "breach_report_section": ("SELECT", "INSERT", "UPDATE"),
     "breach_board_recipient": ("SELECT", "INSERT", "UPDATE"),
     "breach_settings": ("SELECT", "UPDATE"),
+    "breach_report_addressee": ("SELECT", "INSERT"),
+    "breach_board_recipient_event": ("SELECT", "INSERT"),
 }
 
 
@@ -80,6 +87,7 @@ class TestGrants:
         for table in REFUSED:
             await conn.execute(f"GRANT ALL ON TABLE {table} TO {PROBE}")
         await conn.execute(M0063._harden(PROBE))
+        await conn.execute(M0064._grants(PROBE))
         for table, privileges in REFUSED.items():
             for privilege in privileges:
                 assert not await self._may(conn, table, privilege), f"{table} {privilege}"
@@ -89,6 +97,7 @@ class TestGrants:
 
     async def test_no_such_role_is_passed_over_quietly(self, conn: Any) -> None:
         await conn.execute(M0063._harden("cmp_no_such_role"))
+        await conn.execute(M0064._grants("cmp_no_such_role"))
 
 
 class TestTheBoardDutiesOfTheOldRule:
@@ -246,6 +255,27 @@ class TestTheWayDownFrom0061:
         with pytest.raises(psycopg.errors.RaiseException, match="dates were changed"):
             async with conn.transaction():
                 await conn.execute(M0061.GUARD)
+
+
+class TestTheWayDownFrom0064:
+    def test_the_guard_comes_first_and_the_check_comes_back_not_valid(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Run as it would be, with nothing executed: the DDL would hold the
+        shared database's tables until the rollback."""
+        said: list[str] = []
+        monkeypatch.setattr(M0064, "op", SimpleNamespace(execute=said.append))
+        M0064.downgrade()
+        assert said.index(M0064.GUARD) < said.index(M0064.DOWNGRADE)
+        down = M0064.DOWNGRADE
+        dropped = down.index(
+            "DROP TRIGGER IF EXISTS trg_breach_obligation_event_cites_determination"
+        )
+        put_back = down.index("ADD CONSTRAINT breach_obligation_event_cites_determination CHECK")
+        assert dropped < put_back
+        statement = down[put_back : down.index(";", put_back)]
+        assert statement.rstrip().endswith("NOT VALID"), "a CERT-In event written stays"
+        assert "VALIDATE CONSTRAINT" not in down
 
 
 class TestResealReadsTheCatalogue:

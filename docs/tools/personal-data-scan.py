@@ -60,6 +60,8 @@ IDENTITY = {
     # Who reported an incident through the public link (0058), who dismissed
     # such a report, and who finalised and filed a report on a breach (0059).
     "reporter_name", "dismissed_by_name", "finalised_by_name", "filed_by_name",
+    # Who last made an entry on the board's list mandatory or optional (0064).
+    "mandatory_changed_by_name",
     "username",
 }
 CONTACT = {

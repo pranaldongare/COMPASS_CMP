@@ -17523,6 +17523,49 @@
         }
       }
     },
+    "/breaches/{breach_uuid}/reports/recipients": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "The organisation's board list, as the finalise window offers it",
+        "operationId": "report_recipients_breaches__breach_uuid__reports_recipients_get",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachBoardListOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/breaches/{breach_uuid}/reports": {
       "get": {
         "tags": [
@@ -17685,7 +17728,7 @@
         "tags": [
           "breaches"
         ],
-        "summary": "Freeze a report and mail the organisation's board; never a regulator",
+        "summary": "Freeze a report and mail the addresses chosen; a CERT-In report before a yes waits for it; never a regulator",
         "operationId": "finalise_report_breaches__breach_uuid__reports__report_uuid__finalise_post",
         "parameters": [
           {
@@ -17709,6 +17752,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachDocumentFinaliseIn"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -17738,7 +17791,7 @@
         "tags": [
           "breaches"
         ],
-        "summary": "Mail the report to every address on the list it has not reached",
+        "summary": "Mail the report again to the addresses it was sent to that it has not reached",
         "operationId": "resend_report_breaches__breach_uuid__reports__report_uuid__resend_post",
         "parameters": [
           {
@@ -18999,6 +19052,59 @@
             }
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachSettingsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breach-settings/board-recipients/{recipient_uuid}/mandatory": {
+      "put": {
+        "tags": [
+          "breach settings"
+        ],
+        "summary": "Make an address on the organisation's board mandatory, or optional again",
+        "operationId": "set_board_recipient_mandatory_breach_settings_board_recipients__recipient_uuid__mandatory_put",
+        "parameters": [
+          {
+            "name": "recipient_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Recipient Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BoardRecipientMandatoryIn"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -21583,6 +21689,20 @@
         ],
         "title": "BoardRecipientIn"
       },
+      "BoardRecipientMandatoryIn": {
+        "properties": {
+          "mandatory": {
+            "type": "boolean",
+            "title": "Mandatory"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "mandatory"
+        ],
+        "title": "BoardRecipientMandatoryIn"
+      },
       "BoardRecipientOut": {
         "properties": {
           "recipient_uuid": {
@@ -21620,6 +21740,33 @@
               }
             ],
             "title": "Added By Name"
+          },
+          "mandatory": {
+            "type": "boolean",
+            "title": "Mandatory"
+          },
+          "mandatory_changed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mandatory Changed At"
+          },
+          "mandatory_changed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mandatory Changed By Name"
           }
         },
         "type": "object",
@@ -21628,7 +21775,10 @@
           "full_name",
           "email",
           "added_at",
-          "added_by_name"
+          "added_by_name",
+          "mandatory",
+          "mandatory_changed_at",
+          "mandatory_changed_by_name"
         ],
         "title": "BoardRecipientOut"
       },
@@ -22902,6 +23052,58 @@
         ],
         "title": "BreachAttachmentOut"
       },
+      "BreachBoardListEntryOut": {
+        "properties": {
+          "recipient_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Recipient Uuid"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "mandatory": {
+            "type": "boolean",
+            "title": "Mandatory"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recipient_uuid",
+          "full_name",
+          "email",
+          "mandatory"
+        ],
+        "title": "BreachBoardListEntryOut"
+      },
+      "BreachBoardListOut": {
+        "properties": {
+          "recipients": {
+            "items": {
+              "$ref": "#/components/schemas/BreachBoardListEntryOut"
+            },
+            "type": "array",
+            "title": "Recipients"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recipients"
+        ],
+        "title": "BreachBoardListOut"
+      },
       "BreachCandidateOut": {
         "properties": {
           "person_uuid": {
@@ -23416,6 +23618,34 @@
         ],
         "title": "BreachDocumentCreateIn"
       },
+      "BreachDocumentExtraRecipientIn": {
+        "properties": {
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Email"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "BreachDocumentExtraRecipientIn"
+      },
       "BreachDocumentFilingIn": {
         "properties": {
           "filed_at": {
@@ -23442,6 +23672,33 @@
           "filed_at"
         ],
         "title": "BreachDocumentFilingIn"
+      },
+      "BreachDocumentFinaliseIn": {
+        "properties": {
+          "recipients": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "title": "Recipients"
+          },
+          "extra": {
+            "items": {
+              "$ref": "#/components/schemas/BreachDocumentExtraRecipientIn"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Extra"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "recipients"
+        ],
+        "title": "BreachDocumentFinaliseIn"
       },
       "BreachDocumentIn": {
         "properties": {
@@ -23519,6 +23776,10 @@
             "type": "boolean",
             "title": "Goes To Regulator"
           },
+          "holds_mail": {
+            "type": "boolean",
+            "title": "Holds Mail"
+          },
           "versions": {
             "items": {
               "$ref": "#/components/schemas/BreachDocumentOut"
@@ -23536,6 +23797,7 @@
           "duty_state",
           "blocked_by",
           "goes_to_regulator",
+          "holds_mail",
           "versions"
         ],
         "title": "BreachDocumentKindOut"
@@ -23553,6 +23815,14 @@
           "failed": {
             "type": "integer",
             "title": "Failed"
+          },
+          "unsent": {
+            "type": "integer",
+            "title": "Unsent"
+          },
+          "held": {
+            "type": "integer",
+            "title": "Held"
           },
           "stale": {
             "type": "integer",
@@ -23575,6 +23845,8 @@
           "delivered",
           "queued",
           "failed",
+          "unsent",
+          "held",
           "stale",
           "retryable",
           "recipients"
@@ -23623,13 +23895,28 @@
             "title": "Error"
           },
           "recorded_at": {
-            "type": "string",
-            "format": "date-time",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Recorded At"
           },
           "removed": {
             "type": "boolean",
             "title": "Removed"
+          },
+          "mandatory": {
+            "type": "boolean",
+            "title": "Mandatory"
+          },
+          "added_for_this_send": {
+            "type": "boolean",
+            "title": "Added For This Send"
           }
         },
         "type": "object",
@@ -23641,7 +23928,9 @@
           "attempt",
           "error",
           "recorded_at",
-          "removed"
+          "removed",
+          "mandatory",
+          "added_for_this_send"
         ],
         "title": "BreachDocumentMailRecipientOut"
       },
@@ -23667,6 +23956,10 @@
           "state": {
             "type": "string",
             "title": "State"
+          },
+          "superseded": {
+            "type": "boolean",
+            "title": "Superseded"
           },
           "sections": {
             "items": {
@@ -23771,6 +24064,7 @@
           "title",
           "version",
           "state",
+          "superseded",
           "sections",
           "created_at",
           "created_by_name",

@@ -1329,6 +1329,23 @@ class BreachDocumentIn(Schema):
     sections: Annotated[dict[str, Annotated[str, Field(max_length=20_000)] | None], Field()]
 
 
+class BreachDocumentExtraRecipientIn(Schema):
+    #: Optional. Sealed when it is kept; the sealed prefix is refused.
+    full_name: Annotated[str, Field(max_length=200)] | None = None
+    email: Annotated[str, Field(min_length=3, max_length=255)]
+
+
+class BreachDocumentFinaliseIn(Schema):
+    #: Entries on the organisation's board list to send it to. Every mandatory
+    #: entry must be among them.
+    recipients: Annotated[list[UUID], Field(max_length=200)]
+    #: Addresses for this report alone, never put on the list. One already on
+    #: the list is that entry, and two alike are one.
+    extra: Annotated[list[BreachDocumentExtraRecipientIn], Field(max_length=20)] = Field(
+        default_factory=list
+    )
+
+
 class BreachDocumentFilingIn(Schema):
     #: When a person sent it to the regulator, as entered.
     filed_at: AwareDatetime
@@ -1346,20 +1363,31 @@ class BreachDocumentSectionOut(Out):
 
 
 class BreachDocumentMailRecipientOut(Out):
+    #: The entry on the list it was chosen as, or the address added for this
+    #: report alone.
     recipient_uuid: UUID
-    #: Sealed. None where the list holds only an address.
+    #: Sealed. None where only an address was given.
     full_name: str | None
     #: Sealed.
     email: str
-    #: queued, delivered or failed: its latest.
+    #: Its latest: queued, delivered or failed; held while the report waits for
+    #: the first yes; unsent if it was chosen and never queued (withheld at the
+    #: yes, or replaced by a later version while it waited).
     status: str
+    #: 0 when it was never queued.
     attempt: int
     #: Why it failed, as an error's class. RecipientRemoved if it was taken off
     #: the list before the worker reached it.
     error: str | None
-    recorded_at: datetime
-    #: Taken off the list since. Sending again leaves it as it stands.
+    #: None when it was never queued.
+    recorded_at: datetime | None
+    #: Taken off the list since, by address. Sending again leaves it as it
+    #: stands. Never true of an address added for this report alone.
     removed: bool
+    #: Mandatory on the list when the report was finalised.
+    mandatory: bool
+    #: Added by the sender for this report alone, and never on the list.
+    added_for_this_send: bool
 
 
 class BreachDocumentMailOut(Out):
@@ -1367,14 +1395,20 @@ class BreachDocumentMailOut(Out):
     #: To addresses still on the list, as `failed` is.
     queued: int
     failed: int
+    #: Chosen and never queued, and not taken off since.
+    unsent: int
+    #: Waiting for the first yes, and not taken off since.
+    held: int
     #: Of the queued: lost before the worker saw them, which sending again
     #: queues again.
     stale: int
-    #: How many addresses sending again would queue now. 0 on a draft, a
-    #: version a later one replaced, or anything else that would be refused.
+    #: How many addresses sending again would queue now: failed, lost or never
+    #: queued, and not taken off. 0 on a draft, while held, on a version a later
+    #: one replaced, or anything else that would be refused.
     retryable: int
-    #: Each address mailed, once, its latest state. An address taken off the
-    #: list stays here, marked `removed`, and counts as neither failed nor queued.
+    #: Each address the report was sent to, once, its latest state. An address
+    #: taken off the list stays here, marked `removed`, and counts as neither
+    #: failed nor queued.
     recipients: list[BreachDocumentMailRecipientOut]
 
 
@@ -1399,6 +1433,8 @@ class BreachDocumentOut(Out):
     version: int
     #: draft, finalised or filed.
     state: str
+    #: A later version of this kind has been finalised.
+    superseded: bool
     sections: list[BreachDocumentSectionOut]
     created_at: datetime
     created_by_name: str | None
@@ -1425,6 +1461,9 @@ class BreachDocumentKindOut(Out):
     blocked_by: str | None
     #: False for the report to the organisation's board.
     goes_to_regulator: bool
+    #: Finalising this kind now would hold the board's mail until the first
+    #: yes: a report to CERT-In before the incident is recorded.
+    holds_mail: bool
     #: Newest first.
     versions: list[BreachDocumentOut]
 
@@ -1446,7 +1485,33 @@ class BreachDocumentsResentOut(BreachDocumentsOut):
     queued: int
 
 
+class BreachBoardListEntryOut(Out):
+    recipient_uuid: UUID
+    #: Sealed.
+    full_name: str | None
+    #: Sealed.
+    email: str
+    #: Goes with every report, and cannot be left out.
+    mandatory: bool
+
+
+class BreachBoardListOut(Out):
+    #: The list as it stands, in the order it was added to.
+    recipients: list[BreachBoardListEntryOut]
+
+
 _REPORT = "/{breach_uuid}/reports/{report_uuid}"
+
+
+# Before the `_REPORT` routes: "recipients" is not a uuid.
+@router.get(
+    "/{breach_uuid}/reports/recipients",
+    response_model=BreachBoardListOut,
+    summary="The organisation's board list, as the finalise window offers it",
+)
+async def report_recipients(breach_uuid: UUID, principal: BreachReader) -> dict[str, Any]:
+    async with connection() as conn:
+        return await reports.board_list(conn, breach_uuid=str(breach_uuid))
 
 
 @router.get(
@@ -1491,16 +1556,21 @@ async def edit_report(
 @router.post(
     f"{_REPORT}/finalise",
     response_model=BreachDocumentsOut,
-    summary="Freeze a report and mail the organisation's board; never a regulator",
+    summary=(
+        "Freeze a report and mail the addresses chosen; a CERT-In report before a yes waits "
+        "for it; never a regulator"
+    ),
 )
 async def finalise_report(
-    breach_uuid: UUID, report_uuid: UUID, principal: BreachWriter
+    breach_uuid: UUID, report_uuid: UUID, body: BreachDocumentFinaliseIn, principal: BreachWriter
 ) -> dict[str, Any]:
     async with transaction() as conn:
         return await reports.finalise(
             conn,
             breach_uuid=str(breach_uuid),
             report_uuid=str(report_uuid),
+            recipients=[str(u) for u in body.recipients],
+            extra=[e.model_dump() for e in body.extra],
             actor_id=principal.user_id,
         )
 
@@ -1508,7 +1578,7 @@ async def finalise_report(
 @router.post(
     f"{_REPORT}/resend",
     response_model=BreachDocumentsResentOut,
-    summary="Mail the report to every address on the list it has not reached",
+    summary="Mail the report again to the addresses it was sent to that it has not reached",
 )
 async def resend_report(
     breach_uuid: UUID, report_uuid: UUID, principal: BreachWriter

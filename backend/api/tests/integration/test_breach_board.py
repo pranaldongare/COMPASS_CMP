@@ -168,6 +168,13 @@ async def test_the_dashboard_shows_every_open_breach_and_each_duty(
         became_aware_at=datetime.now(UTC) - 100 * HOUR,
         actor_id=dpo,
     )
+    # The register shows the 500 most recently noticed, and a database the HTTP
+    # suite has run on holds more than that open. Closed here, and rolled back
+    # with the test, they leave this one on the list whatever else is there.
+    await conn.execute(
+        "UPDATE breach SET status = 'closed' WHERE status = 'open' AND breach_uuid <> %s",
+        (uuid,),
+    )
     data = await dashboard._dpo(conn)
     [mine] = [b for b in data["breaches"] if str(b["breach_uuid"]) == uuid]
     assert {d["duty"] for d in mine["obligations"]} == {
@@ -244,7 +251,8 @@ def test_nothing_in_the_breach_code_can_reach_a_regulator() -> None:
 
     # A report goes to the addresses on the organisation's board list, in one
     # of two sets of words (ADR 0037). The address is the job's, read from the
-    # delivery's entry on that list, and comes from nowhere else: no regulator's.
+    # report's addressee: an entry on the list or an address added for that
+    # report. It comes from nowhere else: no regulator's.
     task = ast.parse((src / "tasks/notifications/breach_reports.py").read_text(encoding="utf-8"))
     calls = [
         node

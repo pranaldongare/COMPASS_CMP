@@ -11,6 +11,7 @@ messages complete.
 """
 
 from cmp.tasks.notifications.alerts import (
+    send_breach_board_list_changed,
     send_breach_duty_due,
     send_breach_ticket_returned,
     send_delegation_arranged,
@@ -69,6 +70,7 @@ from cmp.tasks.notifications.withdrawal import (
 # lost quietly. `tests/unit/tasks/test_registry.py` checks the roster.
 __all__ = [
     "record_breach_report_result",
+    "send_breach_board_list_changed",
     "send_breach_duty_due",
     "send_breach_notice",
     "send_breach_report",

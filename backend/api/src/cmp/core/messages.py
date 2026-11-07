@@ -104,6 +104,8 @@ class Message(StrEnum):
     #: A report on a breach, mailed to the organisation's board (0059).
     BREACH_BOARD_REPORT = "breach_board_report"
     BREACH_REPORT_FINALISED = "breach_report_finalised"
+    #: The officers' word that the organisation's board list changed (0064).
+    BREACH_BOARD_LIST_CHANGED = "breach_board_list_changed"
     STAFF_ROLE_CHANGED = "staff_role_changed"
     STAFF_ACCESS_ENDED = "staff_access_ended"
     DELEGATION_ARRANGED = "delegation_arranged"
@@ -1616,7 +1618,11 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "It is attached as a PDF.\n\n{report_text}" + _SIGN_OFF_EMAIL
         ),
         sms_body=None,
-        to="Every address on the organisation's board list, under Breach settings.",
+        to=(
+            "The addresses chosen when the report was finalised: the organisation's board "
+            "list under Breach settings, less any the sender left out (never a mandatory "
+            "one), with any added for that report alone."
+        ),
         attachment="The report as a PDF.",
     ),
     Junction(
@@ -1625,7 +1631,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
         description=(
             "Sent to the organisation's board when the Privacy Office finalises a report for "
             "the DPDP Board or CERT-In, or a closure report. It tells the organisation's board "
-            "only: this message does not go to any regulator."
+            "only: this message does not go to any regulator. A report to CERT-In finalised "
+            "before the incident is validated as a personal data breach is held, and sent at "
+            "the first validation of yes; if that never comes, it is never sent."
         ),
         group="Breach",
         channels=EMAIL_ONLY,
@@ -1643,8 +1651,55 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "Office does that once it has been approved.\n\n{report_text}" + _SIGN_OFF_EMAIL
         ),
         sms_body=None,
-        to="Every address on the organisation's board list, under Breach settings.",
+        to=(
+            "The addresses chosen when the report was finalised: the organisation's board "
+            "list under Breach settings, less any the sender left out (never a mandatory "
+            "one), with any added for that report alone."
+        ),
         attachment="The report as a PDF.",
+    ),
+    Junction(
+        key=Message.BREACH_BOARD_LIST_CHANGED,
+        title="The organisation's board list has changed",
+        description=(
+            "Sent to the officers of both offices whenever an address is added to the "
+            "organisation's board list, taken off it, made mandatory or made optional again. "
+            "It says who made the change and names the address, so that the other office sees "
+            "an address that should not be there. It names no breach."
+        ),
+        group="Breach",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("actor_name", "Who made the change.", "Dee Pee"),
+            Variable("actor_role", "Their role.", "Data Protection Officer"),
+            Variable("change", "What they did, in words.", "made this address mandatory on"),
+            Variable(
+                "recipient_name",
+                "The name given with the address, or 'No name given'.",
+                "The Chair",
+            ),
+            Variable("recipient_email", "The address.", "chair@example.org"),
+            Variable("changed_at", "When, in UTC.", "7 November 2026, 10:02 UTC"),
+            Variable(
+                "console_url",
+                "Breach settings in the console (CONSOLE_BASE_URL).",
+                "https://console.example.org/breach-settings",
+            ),
+            ORGANISATION,
+        ),
+        email_subject="{organisation}: the organisation's board list has changed",
+        email_body=(
+            "{actor_name}, {actor_role}, {change} the organisation's board list at "
+            "{changed_at}:\n\n    {recipient_name}\n    {recipient_email}\n\n"
+            "Every report on a breach, in either office, is offered to the addresses on this "
+            "list, and a mandatory one goes with every report. If this change was not "
+            "expected, look at the list under Breach settings:\n{console_url}" + _SIGN_OFF_EMAIL
+        ),
+        sms_body=None,
+        to=(
+            "Every active account of the two officers' roles - the Data Protection Officer and "
+            "the Legal PoC - at their primary email, including whoever made the change."
+        ),
     ),
     Junction(
         key=Message.INCIDENT_REPORT_CODE,

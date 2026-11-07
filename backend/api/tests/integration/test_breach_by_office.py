@@ -176,9 +176,10 @@ class TestTheReportsAreTheOffices:
         both = {"breach_uuid": uuid, "report_uuid": report}
         calls = {
             "overview": reports.overview(conn, breach_uuid=uuid),
+            "board_list": reports.board_list(conn, breach_uuid=uuid),
             "draft": reports.draft(conn, breach_uuid=uuid, kind="closure", actor_id=dpo),
             "edit": reports.edit(conn, **both, bodies={"timing": "x"}, actor_id=dpo),
-            "finalise": reports.finalise(conn, **both, actor_id=dpo),
+            "finalise": reports.finalise(conn, **both, recipients=None, actor_id=dpo),
             "resend": reports.resend(conn, **both, actor_id=dpo),
             "check_proof": reports.check_proof(conn, **both, kind="approval"),
             "add_proof": reports.add_proof(

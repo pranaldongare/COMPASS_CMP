@@ -2,9 +2,9 @@
 
 A project waiting for approval, approved, sent back or closed; a collector
 named; a rights request arriving, falling due or about the DPO; a breach duty
-falling due; a breach ticket answered; a role changed, console access ended,
-cover arranged. Before, staff saw these only in the console's bell, if they
-looked.
+falling due; a breach ticket answered; the organisation's board list changed;
+a role changed, console access ended, cover arranged. Before, staff saw these
+only in the console's bell, if they looked.
 
 Each task sends one junction to one address, passed sealed and opened at
 `deliver()` like every other message, so no plaintext sits in the broker. The
@@ -183,6 +183,29 @@ def send_breach_ticket_returned(
         holder_name=holder_name,
         outcome=outcome,
         breach_url=console(f"/breaches/{breach_uuid}#tickets"),
+    )
+
+
+@shared_task(name="cmp.notifications.send_breach_board_list_changed", **RETRY_KW)
+def send_breach_board_list_changed(
+    to: str,
+    actor_name: str,
+    actor_role: str,
+    change: str,
+    recipient_name: str,
+    recipient_email: str,
+    changed_at: str,
+) -> dict[str, Any]:
+    return deliver(
+        Message.BREACH_BOARD_LIST_CHANGED,
+        to=to,
+        actor_name=actor_name,
+        actor_role=actor_role,
+        change=change,
+        recipient_name=recipient_name,
+        recipient_email=recipient_email,
+        changed_at=changed_at,
+        console_url=console("/breach-settings"),
     )
 
 

@@ -352,3 +352,155 @@ async def test_role_access_and_cover_reach_the_people_concerned(
     assert sorted(_to(queued, "send_delegation_arranged")) == sorted(
         [await _email(conn, int(seeded["users"]["dpo"]["id"])), "dpo2@test.local"]
     )
+
+
+# ------------------------------------------- the organisation's board list (0064)
+
+
+async def _officers(conn: Any) -> list[str]:
+    """Every active DPO and Legal account, as stored: whoever keeps a breach.
+    Compared as stored, since this database holds hundreds from earlier runs."""
+    from cmp.db.repositories import incident_reports
+
+    return sorted(await incident_reports.active_emails(conn, ["dpo", "legal"]))
+
+
+def _list_changed(queued: list[tuple[str, tuple[Any, ...]]]) -> list[tuple[Any, ...]]:
+    return [args for name, args in queued if name == "send_breach_board_list_changed"]
+
+
+async def test_a_change_to_the_board_list_reaches_both_offices_officers_naming_the_address(
+    conn: Any, seeded: dict[str, Any], queued: list[Any]
+) -> None:
+    from uuid import uuid4
+
+    from cmp.domain.breach import settings as breach_settings
+    from tests.integration.test_rights_by_office import _legal_poc
+
+    admin = int(seeded["users"]["admin"]["id"])
+    dpo = int(seeded["users"]["dpo"]["id"])
+    legal = await _legal_poc(conn)
+    officers = await _officers(conn)
+    address = f"chair.{uuid4().hex[:8]}@example.org"
+
+    added = await breach_settings.add_board_recipient(
+        conn, full_name="The Chair", email=address, actor_id=admin
+    )
+    [entry] = [r for r in added["board_recipients"] if plain(r["email"]) == address]
+    recipient = str(entry["recipient_uuid"])
+    steps = [
+        ("Administrator", "added this address to"),
+        ("Data Protection Officer", "made this address mandatory on"),
+        ("Legal PoC", "made this address optional again on"),
+        ("Data Protection Officer", "took this address off"),
+    ]
+    await breach_settings.set_board_recipient_mandatory(
+        conn, recipient_uuid=recipient, mandatory=True, actor_id=dpo
+    )
+    await breach_settings.set_board_recipient_mandatory(
+        conn, recipient_uuid=recipient, mandatory=False, actor_id=legal
+    )
+    await breach_settings.remove_board_recipient(conn, recipient_uuid=recipient, actor_id=dpo)
+
+    told = _list_changed(queued)
+    assert len(told) == len(steps) * len(officers), "each change, once to each officer"
+    for i, (role, change) in enumerate(steps):
+        batch = told[i * len(officers) : (i + 1) * len(officers)]
+        assert sorted(str(args[0]) for args in batch) == officers
+        assert {args[1:] for args in batch} == {batch[0][1:]}, "the same words to each"
+        _, actor_name, actor_role, words, name, email, when = batch[0]
+        assert (actor_role, words) == (role, change)
+        assert str(name).startswith("SE::") and str(email).startswith("SE::"), "opened at send"
+        assert (plain(name), plain(email)) == ("The Chair", address)
+        assert plain(actor_name) and "UTC" in when
+        assert not any(s in str(batch[0]) for s in ("BR-", "INC-", "/breaches/"))
+
+
+async def test_with_no_officer_to_tell_it_says_so_at_error_and_the_change_stands(
+    conn: Any, seeded: dict[str, Any], queued: list[Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from cmp.db.repositories import incident_reports
+    from cmp.domain.breach import settings as breach_settings
+
+    logged: list[tuple[str, dict[str, Any]]] = []
+
+    class Log:
+        def error(self, event: str, **fields: Any) -> None:
+            logged.append((event, fields))
+
+    async def nobody(*_: Any) -> list[str]:
+        return []
+
+    monkeypatch.setattr(incident_reports, "active_emails", nobody)
+    monkeypatch.setattr(alerts, "log", Log())
+    added = await breach_settings.add_board_recipient(
+        conn,
+        full_name=None,
+        email="nobody.told@example.org",
+        actor_id=int(seeded["users"]["admin"]["id"]),
+    )
+    assert "nobody.told@example.org" in {plain(r["email"]) for r in added["board_recipients"]}
+    assert _list_changed(queued) == []
+    assert logged == [("breach_settings.nobody_to_tell", {"change": "added"})]
+
+
+async def test_a_broker_that_cannot_be_reached_refuses_the_change(
+    conn: Any, seeded: dict[str, Any], queued: list[Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The officers' mail is the check on the list: a change nobody could be
+    told of is not made."""
+    from cmp.core.errors import ServiceUnavailable
+    from cmp.domain.breach import settings as breach_settings
+
+    dpo = int(seeded["users"]["dpo"]["id"])
+    added = await breach_settings.add_board_recipient(
+        conn, full_name=None, email="kept@example.org", actor_id=dpo
+    )
+    [entry] = [r for r in added["board_recipients"] if plain(r["email"]) == "kept@example.org"]
+    recipient = str(entry["recipient_uuid"])
+    trail = await conn.execute(
+        "SELECT count(*) AS n FROM audit_log WHERE event_type = 'breach_settings.changed'"
+    )
+    before = (await trail.fetchone())["n"]
+    queued.clear()
+
+    def down() -> None:
+        raise ConnectionRefusedError("the broker is down")
+
+    monkeypatch.setattr(dispatch_mod, "_touch_broker", down)
+    with pytest.raises(ServiceUnavailable):
+        await breach_settings.add_board_recipient(
+            conn, full_name=None, email="refused@example.org", actor_id=dpo
+        )
+    with pytest.raises(ServiceUnavailable):
+        await breach_settings.set_board_recipient_mandatory(
+            conn, recipient_uuid=recipient, mandatory=True, actor_id=dpo
+        )
+    with pytest.raises(ServiceUnavailable):
+        await breach_settings.remove_board_recipient(conn, recipient_uuid=recipient, actor_id=dpo)
+    kept = {
+        plain(r["email"]): r for r in (await breach_settings.overview(conn))["board_recipients"]
+    }
+    assert "refused@example.org" not in kept
+    assert kept["kept@example.org"]["mandatory"] is False
+    trail = await conn.execute(
+        "SELECT count(*) AS n FROM audit_log WHERE event_type = 'breach_settings.changed'"
+    )
+    assert (await trail.fetchone())["n"] == before and queued == []
+
+
+async def test_a_mark_that_changes_nothing_tells_nobody(
+    conn: Any, seeded: dict[str, Any], queued: list[Any]
+) -> None:
+    from cmp.domain.breach import settings as breach_settings
+
+    dpo = int(seeded["users"]["dpo"]["id"])
+    added = await breach_settings.add_board_recipient(
+        conn, full_name=None, email="as.it.was@example.org", actor_id=dpo
+    )
+    [entry] = [r for r in added["board_recipients"] if plain(r["email"]) == "as.it.was@example.org"]
+    queued.clear()
+    await breach_settings.set_board_recipient_mandatory(
+        conn, recipient_uuid=str(entry["recipient_uuid"]), mandatory=False, actor_id=dpo
+    )
+    assert queued == []

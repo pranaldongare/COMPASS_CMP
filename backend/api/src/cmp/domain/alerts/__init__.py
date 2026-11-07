@@ -43,6 +43,13 @@ CHANNELS: Final[dict[str, str]] = {
     "nominee": "a nominee",
     "staff_logged": "the Privacy Office",
 }
+#: What was done to the organisation's board list, as the officers' mail says it.
+LIST_CHANGES: Final[dict[str, str]] = {
+    "added": "added this address to",
+    "removed": "took this address off",
+    "mandatory": "made this address mandatory on",
+    "optional": "made this address optional again on",
+}
 
 
 def _queue(task: Any, *args: Any) -> None:
@@ -338,6 +345,40 @@ async def incident_reported(conn: Conn, *, report: Row) -> None:
         str(report["reporter_name"]),
         str(report["reference"]),
     )
+
+
+async def board_list_changed(conn: Conn, *, change: str, recipient: Row, actor_id: int) -> None:
+    """An address added to the organisation's board list, taken off it, made
+    mandatory or optional again: to every active officer of both offices, the
+    one who made it included, naming who did it and the address. Anybody who
+    keeps the list could otherwise add their own and nobody would know; an
+    inbox told of a change its owner did not make is the alarm against a
+    stolen session. It names no breach, so it may cross the wall between the
+    offices, and the list is no office's. The name and address stay sealed as
+    read and are opened at `deliver()`."""
+    from cmp.core.permissions import OFFICER_OF
+    from cmp.db.repositories import incident_reports as reports
+    from cmp.tasks.notifications import alerts as tasks
+
+    emails = await reports.active_emails(conn, list(OFFICER_OF.values()))
+    if not emails:
+        # The change stands: the list is kept by the administrator too, and a
+        # list nobody can be told of is a fault to raise, not a reason to refuse.
+        log.error("breach_settings.nobody_to_tell", change=change)
+        return
+    actor = await user_repo.by_id(conn, actor_id)
+    assert actor is not None
+    for email in emails:
+        _queue(
+            tasks.send_breach_board_list_changed,
+            email,
+            actor["full_name"],
+            ROLE_TITLES.get(str(actor["role"]), str(actor["role"])),
+            LIST_CHANGES[change],
+            recipient["full_name"] or "No name given",
+            recipient["email"],
+            moment(datetime.now(UTC)),
+        )
 
 
 # ------------------------------------------------------------------ accounts

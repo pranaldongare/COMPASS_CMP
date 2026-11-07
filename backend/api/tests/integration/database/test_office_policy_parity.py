@@ -72,6 +72,7 @@ CHILDREN = {
     "breach_obligation_event",
     "breach_recording",
     "breach_report",
+    "breach_report_addressee",
     "breach_report_delivery",
     "breach_report_section",
     "breach_status_history",

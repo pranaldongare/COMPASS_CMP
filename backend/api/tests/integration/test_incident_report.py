@@ -588,7 +588,7 @@ class TestWhoIsTold:
 
 class TestTheOrganisationsBoard:
     async def test_an_address_is_listed_once_and_sealed(
-        self, conn: Any, seeded: dict[str, Any]
+        self, conn: Any, seeded: dict[str, Any], sent: Any
     ) -> None:
         added = await breach_settings.add_board_recipient(
             conn, full_name="The Chair", email="Chair@Example.org", actor_id=_dpo(seeded)
@@ -600,14 +600,16 @@ class TestTheOrganisationsBoard:
                 conn, full_name=None, email="chair@example.org", actor_id=_dpo(seeded)
             )
 
-    async def test_a_bad_address_is_refused(self, conn: Any, seeded: dict[str, Any]) -> None:
+    async def test_a_bad_address_is_refused(
+        self, conn: Any, seeded: dict[str, Any], sent: Any
+    ) -> None:
         with pytest.raises(ValidationFailed):
             await breach_settings.add_board_recipient(
                 conn, full_name=None, email="not an address", actor_id=_dpo(seeded)
             )
 
     async def test_an_address_taken_off_may_come_back(
-        self, conn: Any, seeded: dict[str, Any]
+        self, conn: Any, seeded: dict[str, Any], sent: Any
     ) -> None:
         added = await breach_settings.add_board_recipient(
             conn, full_name=None, email="member@example.org", actor_id=_dpo(seeded)

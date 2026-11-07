@@ -80,6 +80,7 @@ SEALED: frozenset[str] = frozenset(
         "finalised_by_name",
         "filed_by_name",
         "added_by_name",
+        "mandatory_changed_by_name",
         # joined contacts
         "delegate_email",
         "delegator_email",

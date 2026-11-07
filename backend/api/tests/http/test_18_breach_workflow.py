@@ -3,14 +3,18 @@
 The public link: a code to the address typed, then the report with it. It waits
 in the shared intake, on no clock, until an officer claims or dismisses it.
 Who hears of it, and who is on the organisation's board, is kept by the
-administrator, the DPO and Legal; nobody else reaches it. A breach ticket's
-date moves on either side, with a reason.
+administrator, the DPO and Legal; nobody else reaches it. An entry on the list
+may be made mandatory, and both offices' officers hear of every change to it
+(2026-11-07). The sender chooses who each report goes to, and a report to
+CERT-In before a yes waits for it. A breach ticket's date moves on either side,
+with a reason.
 """
 
 from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from uuid import uuid4
 
 import httpx
 import pytest
@@ -18,9 +22,12 @@ import pytest
 from cmp.auth.authentication import otp
 from cmp.auth.rate_limit import service as ratelimit
 from cmp.core.config import settings
+from cmp.db.pool import transaction
+from cmp.db.repositories import incident_reports
 from tests.conftest import plain
-from tests.http.conftest import DOMAIN, SessionFactory
+from tests.http.conftest import DOMAIN, SessionFactory, fresh_email
 from tests.http.contract import assert_sealed, call
+from tests.http.test_06_breaches import everyone, on_the_board
 from tests.http.world import World, build
 
 B = "/breaches/{breach_uuid}"
@@ -344,7 +351,7 @@ class TestTheOfficersBell:
 
 class TestBreachSettings:
     async def test_the_three_who_keep_it_keep_it(
-        self, http: httpx.AsyncClient, world: World
+        self, http: httpx.AsyncClient, world: World, queued: Any
     ) -> None:
         for who in (world.admin, world.dpo):
             read = await call(http, "GET", "/breach-settings", session=who)
@@ -365,32 +372,335 @@ class TestBreachSettings:
             json={"roles": []},
         )
 
+        address = fresh_email("vice.chair.")
         added = await call(
             http,
             "POST",
             "/breach-settings/board-recipients",
             session=world.admin,
-            json={"full_name": "The Vice Chair", "email": "vice.chair@http-suite.test"},
+            json={"full_name": "The Vice Chair", "email": address},
+        )
+        [mine] = [r for r in added.json()["board_recipients"] if plain(r["email"]) == address]
+        assert str(mine["email"]).startswith("SE::"), "sealed; the console opens it"
+        assert "email_hash" not in mine, "the blind index stays on the server"
+        assert (mine["mandatory"], mine["mandatory_changed_at"]) == (False, None)
+
+        entry = f"/breach-settings/board-recipients/{mine['recipient_uuid']}"
+        template = "/breach-settings/board-recipients/{recipient_uuid}"
+        before = len(queued)
+        marked = await call(
+            http,
+            "PUT",
+            f"{entry}/mandatory",
+            template=f"{template}/mandatory",
+            session=world.admin,
+            json={"mandatory": True},
         )
         [mine] = [
             r
-            for r in added.json()["board_recipients"]
-            if plain(r["email"]) == "vice.chair@http-suite.test"
+            for r in marked.json()["board_recipients"]
+            if r["recipient_uuid"] == mine["recipient_uuid"]
         ]
-        assert str(mine["email"]).startswith("SE::"), "sealed; the console opens it"
-        assert "email_hash" not in mine, "the blind index stays on the server"
+        assert mine["mandatory"] is True and mine["mandatory_changed_at"]
+        assert str(mine["mandatory_changed_by_name"]).startswith("SE::")
+        refused = await call(
+            http, "DELETE", entry, template=template, session=world.dpo, expect=409
+        )
+        assert "recipient_mandatory" in refused.text
+        for who in (world.dco, world.rnd):
+            await call(
+                http,
+                "PUT",
+                f"{entry}/mandatory",
+                template=f"{template}/mandatory",
+                session=who,
+                json={"mandatory": False},
+                expect=403,
+            )
         await call(
             http,
-            "DELETE",
-            f"/breach-settings/board-recipients/{mine['recipient_uuid']}",
-            template="/breach-settings/board-recipients/{recipient_uuid}",
+            "PUT",
+            f"{entry}/mandatory",
+            template=f"{template}/mandatory",
             session=world.dpo,
+            json={"mandatory": False},
         )
+        await call(http, "DELETE", entry, template=template, session=world.dpo)
+        await call(
+            http,
+            "PUT",
+            f"{entry}/mandatory",
+            template=f"{template}/mandatory",
+            session=world.dpo,
+            json={"mandatory": True},
+            expect=404,
+        )
+
+        told = [a for n, a in queued[before:] if n.endswith("send_breach_board_list_changed")]
+        async with transaction() as conn:
+            officers = await incident_reports.active_emails(conn, ["dpo", "legal"])
+            trail = await (
+                await conn.execute(
+                    """SELECT detail_json FROM audit_log
+                        WHERE event_type = 'breach_settings.changed'
+                          AND detail_json->>'recipient' = %s
+                        ORDER BY log_id""",
+                    (str(mine["recipient_uuid"]),),
+                )
+            ).fetchall()
+        assert sorted(str(a[0]) for a in told) == sorted(officers * 3), "both offices, each time"
+        assert [a[3] for a in told[:: len(officers)]] == [
+            "made this address mandatory on",
+            "made this address optional again on",
+            "took this address off",
+        ]
+        assert [r["detail_json"]["board_recipient"] for r in trail] == [
+            "added",
+            "made_mandatory",
+            "made_optional",
+            "removed",
+        ]
+        assert "@" not in str(trail), "the trail names no address"
 
     async def test_nobody_else_reaches_it(self, http: httpx.AsyncClient, world: World) -> None:
         for who in (world.dco, world.rnd):
             await call(http, "GET", "/breach-settings", session=who, expect=403)
         await call(http, "GET", "/breach-settings", expect=401)
+
+
+async def _incident(
+    http: httpx.AsyncClient, world: World, *, title: str, cyber_attack: str | None = None
+) -> str:
+    made = await call(
+        http,
+        "POST",
+        "/breaches",
+        session=world.dpo,
+        expect=201,
+        json={
+            "title": title,
+            "detected_at": (datetime.now(UTC) - timedelta(hours=2)).isoformat(),
+            "location_kind": "platform",
+            **({"cyber_attack": cyber_attack} if cyber_attack else {}),
+        },
+    )
+    return f"/breaches/{made.json()['breach_uuid']}"
+
+
+async def _yes(http: httpx.AsyncClient, world: World, path: str) -> None:
+    await call(
+        http,
+        "POST",
+        f"{path}/determinations",
+        template=f"{B}/determinations",
+        session=world.dpo,
+        json={
+            "outcome": "yes",
+            "reasoning": "Yes",
+            "became_aware_at": (datetime.now(UTC) - timedelta(hours=1)).isoformat(),
+        },
+    )
+
+
+async def _written(http: httpx.AsyncClient, world: World, path: str, kind: str) -> str:
+    """A draft of this kind with every section said, by its path."""
+    drafted = await call(
+        http,
+        "POST",
+        f"{path}/reports",
+        template=f"{B}/reports",
+        session=world.dpo,
+        json={"kind": kind},
+        expect=201,
+    )
+    [view] = [k for k in drafted.json()["kinds"] if k["kind"] == kind]
+    doc = view["versions"][0]
+    report = f"{path}/reports/{doc['report_uuid']}"
+    await call(
+        http,
+        "PUT",
+        report,
+        template=f"{B}/reports/{{report_uuid}}",
+        session=world.dpo,
+        json={"sections": {s["key"]: "As the office wrote it" for s in doc["sections"]}},
+    )
+    return report
+
+
+def _mailed(queued: Any, before: int) -> int:
+    return sum(1 for n, _ in queued[before:] if n.endswith("send_breach_report"))
+
+
+class TestWhoAReportGoesTo:
+    async def test_the_sender_chooses_and_a_mandatory_entry_goes_with_it(
+        self,
+        http: httpx.AsyncClient,
+        world: World,
+        session_for: SessionFactory,
+        queued: Any,
+    ) -> None:
+        path = await _incident(http, world, title="A spreadsheet mailed to the wrong list")
+        await _yes(http, world, path)
+        await on_the_board(http, world)
+        address = fresh_email("member.")
+        added = await call(
+            http,
+            "POST",
+            "/breach-settings/board-recipients",
+            session=world.dpo,
+            json={"full_name": "A Member", "email": address},
+        )
+        [member] = [r for r in added.json()["board_recipients"] if plain(r["email"]) == address]
+        entry = f"/breach-settings/board-recipients/{member['recipient_uuid']}"
+        try:
+            window = f"{B}/reports/recipients"
+
+            offered = await call(
+                http, "GET", f"{path}/reports/recipients", template=window, session=world.dpo
+            )
+            listed = offered.json()["recipients"]
+            assert listed and all(str(r["email"]).startswith("SE::") for r in listed)
+            assert all(
+                set(r) == {"recipient_uuid", "full_name", "email", "mandatory"} for r in listed
+            )
+            legal = await session_for("legal")
+            for who in (world.dco, world.admin, legal):
+                await call(
+                    http,
+                    "GET",
+                    f"{path}/reports/recipients",
+                    template=window,
+                    session=who,
+                    expect=404,
+                )
+
+            report = await _written(http, world, path, "board_intimation")
+            finalise = f"{B}/reports/{{report_uuid}}/finalise"
+            await call(
+                http, "POST", f"{report}/finalise", template=finalise, session=world.dpo, expect=422
+            )
+            await call(
+                http,
+                "PUT",
+                f"{entry}/mandatory",
+                template="/breach-settings/board-recipients/{recipient_uuid}/mandatory",
+                session=world.admin,
+                json={"mandatory": True},
+            )
+            others = [
+                r["recipient_uuid"]
+                for r in listed
+                if r["recipient_uuid"] != member["recipient_uuid"]
+            ]
+            left_out = await call(
+                http,
+                "POST",
+                f"{report}/finalise",
+                template=finalise,
+                session=world.dpo,
+                json={"recipients": others},
+                expect=409,
+            )
+            assert "recipient_mandatory" in left_out.text
+            gone = await call(
+                http,
+                "POST",
+                f"{report}/finalise",
+                template=finalise,
+                session=world.dpo,
+                json={"recipients": [*others, member["recipient_uuid"], str(uuid4())]},
+                expect=409,
+            )
+            assert "recipient_not_listed" in gone.text
+
+            mandatory = [
+                r["recipient_uuid"]
+                for r in (
+                    await call(
+                        http,
+                        "GET",
+                        f"{path}/reports/recipients",
+                        template=window,
+                        session=world.dpo,
+                    )
+                ).json()["recipients"]
+                if r["mandatory"]
+            ]
+            alone = fresh_email("auditor.")
+            before = len(queued)
+            sent = await call(
+                http,
+                "POST",
+                f"{report}/finalise",
+                template=finalise,
+                session=world.dpo,
+                json={
+                    "recipients": mandatory,
+                    "extra": [{"full_name": "An Auditor", "email": alone}],
+                },
+            )
+            [view] = [k for k in sent.json()["kinds"] if k["kind"] == "board_intimation"]
+            lines = {plain(r["email"]): r for r in view["versions"][0]["mail"]["recipients"]}
+            assert set(lines) >= {address, alone} and len(lines) == len(mandatory) + 1
+            assert (
+                lines[alone]["added_for_this_send"] is True and lines[address]["mandatory"] is True
+            )
+            assert _mailed(queued, before) == len(lines)
+            kept = await call(http, "GET", "/breach-settings", session=world.dpo)
+            assert alone not in {plain(r["email"]) for r in kept.json()["board_recipients"]}
+        finally:
+            # A mandatory entry left behind would go with every report this
+            # database's suites finalise, so it comes off whatever happened.
+            await call(
+                http,
+                "PUT",
+                f"{entry}/mandatory",
+                template="/breach-settings/board-recipients/{recipient_uuid}/mandatory",
+                session=world.admin,
+                json={"mandatory": False},
+            )
+            await call(
+                http,
+                "DELETE",
+                entry,
+                template="/breach-settings/board-recipients/{recipient_uuid}",
+                session=world.dpo,
+            )
+
+
+class TestACertInReportWaitsForAYes:
+    async def test_finalised_before_validation_it_goes_at_the_first_yes(
+        self, http: httpx.AsyncClient, world: World, queued: Any
+    ) -> None:
+        path = await _incident(
+            http, world, title="A ransom note on the file server", cyber_attack="yes"
+        )
+        await on_the_board(http, world)
+        report = await _written(http, world, path, "cert_in")
+        before = len(queued)
+        held = await call(
+            http,
+            "POST",
+            f"{report}/finalise",
+            template=f"{B}/reports/{{report_uuid}}/finalise",
+            session=world.dpo,
+            json=await everyone(http, world, path),
+        )
+        assert _mailed(queued, before) == 0, "nothing goes to the board before a yes"
+        [view] = [k for k in held.json()["kinds"] if k["kind"] == "cert_in"]
+        mail = view["versions"][0]["mail"]
+        assert view["holds_mail"] is True and mail["held"] >= 1 and mail["retryable"] == 0
+        waiting = await call(
+            http,
+            "POST",
+            f"{report}/resend",
+            template=f"{B}/reports/{{report_uuid}}/resend",
+            session=world.dpo,
+            expect=409,
+        )
+        assert "report_held" in waiting.text
+        await _yes(http, world, path)
+        assert _mailed(queued, before) == mail["held"]
 
 
 class TestTheDateOnATicket:

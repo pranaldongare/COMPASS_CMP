@@ -2,7 +2,9 @@
 
 A report is a version and its sections. A draft's words may be rewritten;
 finalising freezes both, by trigger, and filing is written once after that.
-The deliveries are append-only, shaped like a notice's. Every word is sealed
+Each version has its addressed set, written before it is frozen (0064): who
+the sender chose to send it to. The deliveries are append-only, shaped like a
+notice's, and each names one of its report's addressees. Every word is sealed
 here, at the write, and the rows served carry ciphertext the console opens.
 """
 
@@ -147,35 +149,62 @@ async def add_delivery(
     )
 
 
+async def address(conn: Conn, report_id: int, chosen: list[tuple[int, bool]]) -> None:
+    """Who this version goes to: each entry or one-off address by its row, and
+    whether it was mandatory as it was chosen. Before the version is frozen,
+    which refuses any after it."""
+    for recipient_id, mandatory in chosen:
+        await conn.execute(
+            """INSERT INTO breach_report_addressee (report_id, recipient_id, mandatory)
+               VALUES (%s, %s, %s)""",
+            (report_id, recipient_id, mandatory),
+        )
+
+
 async def latest_states(conn: Conn, report_ids: list[int]) -> list[Row]:
-    """Each row of the list's latest state on each report: who it is, sealed,
-    which attempt came last, and whether it has been taken off the list since.
-    Delivered outranks anything written after it. Recording takes no breach
-    lock, so a re-queue or a removal can land just behind it, and neither
-    unsends a mail that has gone."""
+    """Each addressee of each report and its latest state: who it is, sealed,
+    which attempt came last, whether it was mandatory when chosen and whether
+    it was added for this report alone. An addressee never queued, a report to
+    CERT-In waiting for a yes, carries a NULL status. Delivered outranks
+    anything written after it. Recording takes no breach lock, so a re-queue or
+    a removal can land just behind it, and neither unsends a mail that has
+    gone."""
     return await fetch_all(
         conn,
-        """SELECT DISTINCT ON (d.report_id, d.recipient_id)
-                  d.report_id, d.recipient_id, d.attempt, d.status, d.detail, d.recorded_at,
-                  max(d.attempt) OVER (PARTITION BY d.report_id, d.recipient_id) AS last_attempt,
-                  x.recipient_uuid, x.full_name, x.email, x.email_hash, x.removed_at
-             FROM breach_report_delivery d
-             JOIN breach_board_recipient x ON x.recipient_id = d.recipient_id
-            WHERE d.report_id = ANY(%s)
-            ORDER BY d.report_id, d.recipient_id, (d.status = 'delivered') DESC,
-                     d.delivery_id DESC""",
+        """SELECT a.report_id, a.recipient_id, a.mandatory, x.recipient_uuid, x.full_name,
+                  x.email, x.email_hash, x.removed_at, x.one_off,
+                  s.attempt, s.status, s.detail, s.recorded_at, s.last_attempt
+             FROM breach_report_addressee a
+             JOIN breach_board_recipient x ON x.recipient_id = a.recipient_id
+             LEFT JOIN LATERAL (
+                    SELECT d.attempt, d.status, d.detail, d.recorded_at,
+                           max(d.attempt) OVER () AS last_attempt
+                      FROM breach_report_delivery d
+                     WHERE d.report_id = a.report_id AND d.recipient_id = a.recipient_id
+                     ORDER BY (d.status = 'delivered') DESC, d.delivery_id DESC
+                     LIMIT 1
+                  ) s ON true
+            WHERE a.report_id = ANY(%s)
+            ORDER BY a.report_id, a.addressee_id""",
         (report_ids,),
     )
 
 
 async def job(conn: Conn, delivery_uuid: str) -> Row | None:
-    """One queued delivery, its address, whether that is still on the list,
-    whether its attempt has an outcome or a later attempt took its place, and
-    whether the address has this report already, under any row of the list."""
+    """One queued delivery, its address, whether that address has been taken
+    off the list since, whether its attempt has an outcome or a later attempt
+    took its place, and whether the address has this report already, under any
+    row of the list. Taken off is by address, as the office is shown it: an
+    address put back under a new row is on the list, and one added for this
+    report alone is never taken off."""
     return await fetch_one(
         conn,
         """SELECT d.delivery_id, d.report_id, d.recipient_id, d.attempt, d.status,
-                  x.email, x.email_hash, x.removed_at, r.breach_id,
+                  x.email, x.email_hash, r.breach_id,
+                  (NOT x.one_off AND NOT EXISTS (
+                     SELECT 1 FROM breach_board_recipient c
+                      WHERE c.email_hash = x.email_hash
+                        AND c.removed_at IS NULL AND NOT c.one_off)) AS removed,
                   EXISTS (SELECT 1 FROM breach_report_delivery o
                            WHERE o.report_id = d.report_id
                              AND o.recipient_id = d.recipient_id
@@ -195,15 +224,20 @@ async def job(conn: Conn, delivery_uuid: str) -> Row | None:
 
 
 async def queued_to(conn: Conn, recipient_uuid: str) -> list[str]:
-    """The deliveries still waiting on one row of the list, on every report."""
+    """The deliveries still waiting on an address, on every report: under this
+    row of the list or an older one for the same address, which a retry for an
+    address put back may still be queued under. Never one added for a report
+    alone, which is no row of the list."""
     rows = await fetch_all(
         conn,
         """SELECT s.delivery_uuid FROM (
-             SELECT DISTINCT ON (d.report_id) d.delivery_uuid, d.status
+             SELECT DISTINCT ON (d.report_id, d.recipient_id) d.delivery_uuid, d.status
                FROM breach_report_delivery d
                JOIN breach_board_recipient x ON x.recipient_id = d.recipient_id
-              WHERE x.recipient_uuid = %s
-              ORDER BY d.report_id, d.delivery_id DESC
+              WHERE x.email_hash = (SELECT email_hash FROM breach_board_recipient
+                                     WHERE recipient_uuid = %s)
+                AND NOT x.one_off
+              ORDER BY d.report_id, d.recipient_id, d.delivery_id DESC
            ) s WHERE s.status = 'queued'""",
         (recipient_uuid,),
     )
