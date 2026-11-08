@@ -13,6 +13,7 @@ never the SQL - it is a decision taken in the wrong order.
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -788,6 +789,23 @@ class TestGrievance:
 
 
 # ------------------------------------------------------------------ nomination
+async def _in_effect(conn: Any, seeded: dict[str, Any], *, mobile: str) -> dict[str, Any]:
+    """A nomination of the right of access alone, accepted and so in effect."""
+    nomination = await service.nominate(
+        conn,
+        principal_user_id=seeded["subject"]["id"],
+        nominee_name="Ravi Verma",
+        nominee_mobile=mobile,
+        nominee_email=None,
+        rights=["access"],
+    )
+    await conn.execute(
+        "UPDATE nomination SET status = 'active', accepted_at = now() WHERE nomination_id = %s",
+        (nomination["nomination_id"],),
+    )
+    return dict(nomination)
+
+
 class TestNomination:
     async def test_a_nomination_naming_a_registered_person_is_listed_for_her(
         self, conn: Any, seeded: dict[str, Any], redis_conn: Any
@@ -1192,6 +1210,144 @@ class TestNomination:
             "otp_invalid",
             "Invalid or expired code",
         ), "the request made spent the code"
+
+    async def test_a_wrong_code_says_nothing_of_the_nomination(
+        self, conn: Any, seeded: dict[str, Any], redis_conn: Any
+    ) -> None:
+        """The code is checked before the request is. Somebody holding a
+        nomination's reference who guesses a code, and asks for a right that
+        was not nominated, for an event that is neither death nor incapacity,
+        or for a kind the office does not take, is told only that the code is
+        wrong, as a reference that names no nomination is told. Told the
+        request's fault instead, they would learn that the nomination is in
+        effect and which rights it holds."""
+        nomination = await _in_effect(conn, seeded, mobile="+915550000080")
+        ref = str(nomination["nomination_uuid"])
+        code = (await otp.issue(otp.Scope.NOMINEE_VERIFY, ref)).code
+        wrong = f"{(int(code) + 1) % 10 ** len(code):0{len(code)}d}"
+
+        async def answer(nomination_uuid: str, **changes: Any) -> tuple[Any, ...]:
+            asked = {"request_type": "access", "trigger_event": "death", **changes}
+            with pytest.raises(CmpError) as refused:
+                await service.nominee_submit(
+                    conn,
+                    nomination_uuid=nomination_uuid,
+                    code=wrong,
+                    request_type=asked["request_type"],
+                    request_text="The principal's records, please",
+                    trigger_event=asked["trigger_event"],
+                    evidence_ref=None,
+                    evidence_hash=None,
+                )
+            e = refused.value
+            return (type(e).__name__, e.status_code, e.code, e.field, e.message)
+
+        nobody = await answer(str(uuid.uuid4()))
+        assert nobody == ("BadRequest", 400, "otp_invalid", "code", "Invalid or expired code")
+        assert [
+            await answer(ref, request_type="erasure"),  # not nominated
+            await answer(ref, trigger_event="retirement"),  # neither event
+            await answer(ref, request_type="correction"),  # not taken (2026-10-07)
+        ] == [nobody] * 3
+
+        # Three wrong tries are within the budget, and none spent the code:
+        # the right one, for what was nominated, makes the request.
+        row = await service.nominee_submit(
+            conn,
+            nomination_uuid=ref,
+            code=code,
+            request_type="access",
+            request_text="The principal's records, please",
+            trigger_event="death",
+            evidence_ref=None,
+            evidence_hash=None,
+        )
+        assert row["channel"] == "nominee" and row["nomination_id"] == nomination["nomination_id"]
+
+    async def test_of_two_requests_at_once_with_one_code_one_is_made(
+        self,
+        conn: Any,
+        seeded: dict[str, Any],
+        redis_conn: Any,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """A double-submit of the nominee's form. The code is checked without
+        being spent before the request is checked, so two requests carrying
+        it can both pass that first check; the check that spends it, last, is
+        what lets only one through. Driven here so that neither goes on until
+        both have passed the first check: the first then makes its request,
+        the second is told the code is wrong, and the nomination holds one
+        request. A spend that only discarded the code, with no check of its
+        own, would make two."""
+        nomination = await _in_effect(conn, seeded, mobile="+915550000081")
+        ref = str(nomination["nomination_uuid"])
+        code = (await otp.issue(otp.Scope.NOMINEE_VERIFY, ref)).code
+
+        roles: dict[asyncio.Task[Any], str] = {}
+        passed = {"first": asyncio.Event(), "second": asyncio.Event()}
+        first_done = asyncio.Event()
+        real_require = otp.require
+
+        async def require(
+            scope: str, identity: str, given: str, *, field: str = "code", consume: bool = True
+        ) -> None:
+            await real_require(scope, identity, given, field=field, consume=consume)
+            task = asyncio.current_task()
+            role = roles.get(task) if task else None
+            if consume or role is None:
+                return
+            # Past the check that does not spend. The first waits here for the
+            # second to pass it too; the second waits for the first to finish.
+            passed[role].set()
+            waiting_for = passed["second"] if role == "first" else first_done
+            await asyncio.wait_for(waiting_for.wait(), timeout=10)
+
+        monkeypatch.setattr(otp, "require", require)
+
+        async def submit() -> Any:
+            return await service.nominee_submit(
+                conn,
+                nomination_uuid=ref,
+                code=code,
+                request_type="access",
+                request_text="The principal's records, please",
+                trigger_event="death",
+                evidence_ref=None,
+                evidence_hash="ev4",
+            )
+
+        async def first() -> Any:
+            try:
+                return await submit()
+            finally:
+                first_done.set()
+
+        a = asyncio.create_task(first())
+        roles[a] = "first"
+        reached = asyncio.ensure_future(passed["first"].wait())
+        await asyncio.wait({a, reached}, timeout=10, return_when=asyncio.FIRST_COMPLETED)
+        reached.cancel()
+        assert passed["first"].is_set(), "no check that leaves the code came before the request's"
+        b = asyncio.create_task(submit())
+        roles[b] = "second"
+        made, refused = await asyncio.gather(a, b, return_exceptions=True)
+
+        assert not isinstance(made, BaseException), made
+        assert made["channel"] == "nominee"
+        assert isinstance(refused, BadRequest), refused
+        assert (refused.status_code, refused.code, refused.field, refused.message) == (
+            400,
+            "otp_invalid",
+            "code",
+            "Invalid or expired code",
+        )
+        held = await conn.execute(
+            "SELECT request_id FROM rights_request WHERE nomination_id = %s",
+            (nomination["nomination_id"],),
+        )
+        assert [r["request_id"] for r in await held.fetchall()] == [made["request_id"]]
+        used = await repo.nomination_by_uuid(conn, ref)
+        assert used is not None and used["invoked_reference"] == made["reference"]
 
 
 # ---------------------------------------------------------------- public form
