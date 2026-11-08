@@ -116,7 +116,7 @@ add(
     steps=[
         {
             "action": "Ask the test coordinator for the invitation sent to uat.dco01@cmp.local (from the test outbox). Open the link it contains in the browser.",
-            "expected": "A page titled 'Set your password' opens, saying 'Enter the code sent to uat.dco01@cmp.local and choose a password.' It shows the fields 'Code', 'New password' and 'Confirm new password'.",
+            "expected": "A page titled 'Set your password' opens, saying 'Enter the code sent to uat.dco01@cmp.local and choose a password.' It shows the fields 'Code', 'New password' and 'Confirm new password', the line 'A code stops working once it expires, or after five wrong tries; then send a new one.' under 'Code', and 'Send a new code' and 'Use a different address' under the button.",
         },
         {
             "action": "Type the code from the invitation in 'Code', 'UatPassw0rd!2026' in 'New password' and 'UatPassw0rd!2027' in 'Confirm new password'. Click 'Set the new password'.",

@@ -189,24 +189,44 @@ consent link's code (`POST /c/{token}/otp/verify`), a password reset
 (`POST /rights/requests/verify`) - a wrong code, a code of the wrong length and a
 spent budget of five tries all answer 400 `otp_invalid`, "Invalid or expired
 code", as a contact nobody holds does; a body the schema refuses (a code of fewer
-than four or more than ten digits, or not digits) is 422 for every caller alike.
-Told apart, they said whom the register
-knows: the length was checked only once an account had been found, and the fifth
-try ended in 429 "Too many incorrect attempts" only where a code had been sent,
-which is only to a contact somebody holds. The fifth wrong try still discards the
-code, so guessing stays bounded. What answers 429 on those routes is the limit per
-address: 30 failures in fifteen minutes at the sign-in and the reset
-(`AUTH_FAILURES_PER_ADDRESS`), ten requests an hour at a nominee's request and 30
-an hour at the rights form; a consent link's tries never answer 429. Finishing a
-sign-up answers on the field of the medium whose code was refused (`mobile_code`
-or `email_code`), and an account with nothing left to answer is refused as an
-unknown mobile is: from 2026-09-06 until 2026-11-08 the mobile alone, with no code,
-opened a session on any data principal's account whose every contact had
-answered once, since no code was outstanding to check. Where a code goes to
-whatever address was typed or to the one a link names - the public link's report,
-a holder ticket, a nomination - the answer has nothing of the register to give
-away, and a code of the wrong length still answers "Invalid code" and the fifth
-wrong try 429.
+than four or more than ten digits, or not digits) is 422 for every caller alike,
+before anything is looked up. Told apart, they said whom the register knows: the
+length was checked only once an account had been found, and the fifth try ended in
+429 "Too many incorrect attempts" only where a code had been sent, which is only
+to a contact somebody holds. The fifth wrong try still discards the code, so
+guessing stays bounded. A nominee's request has refused a code that is not digits
+with the 422 since bd6cef1; its form checked only the length before, and such a
+code answered the neutral 400. What answers 429 on those routes is the limit per
+address: 30 failures in fifteen minutes at the sign-in, the reset and finishing a
+sign-up, each counted apart (`AUTH_FAILURES_PER_ADDRESS`), ten requests an hour at
+a nominee's request and 30 an hour at the rights form; a consent link's tries
+never answer 429. Where a code goes to whatever address was typed or to the one a
+link names - the public link's report, a holder ticket, a nomination - the answer
+has nothing of the register to give away, and a code of the wrong length still
+answers "Invalid code" and the fifth wrong try 429.
+
+**Finishing a sign-up answers every refusal as it answers an unknown mobile**
+(bd6cef1): 400 `otp_invalid`, "Invalid or expired code", on `mobile_code`, whether
+the mobile is nobody's or on an account that cannot finish a sign-up (a member of
+staff's, or a suspended or deactivated one), the account has nothing left to
+answer, a code it is waiting for was left out, or a code for either contact is
+wrong, of the wrong length or past its budget. Every code waiting is checked
+before any is spent, so a wrong email code does not burn a right mobile code. Its
+failures count against the address, at a door of their own (`sign_up_fail_ip`),
+and that limit is its only 429: once an address has spent it, even the right codes
+are refused until the window passes. Before, a code left out answered 422 "Enter
+the code we sent to your email as well" before any code was checked, a refusal
+came on the field of the contact waiting (`email_code` when only the email was),
+and nothing limited the asking, so anybody could tell from a mobile nobody holds
+an unfinished sign-up, which `POST /auth/register` keeps to itself, and an account
+whose email had not answered. The sign-up page sends a code for every contact it
+was given, so the one answer costs it nothing, and since that answer cannot say
+that a code was cancelled, the page says to everybody that each code expires in
+ten minutes or after five wrong tries, and offers **Send the codes again** (67b3dc0).
+Refusing an account with nothing left to answer closed a hole (32d483a): from
+2026-09-06 until 2026-11-08 the mobile alone, with no code, opened a session on
+any data principal's account whose every contact had answered once, since no code
+was outstanding to check.
 
 ## What a code proves
 

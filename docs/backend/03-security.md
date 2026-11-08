@@ -178,6 +178,7 @@ buckets, which let requests through.
 | `mfa_resend` | user | 3 / 10 min |
 | `subject_otp`, `subject_register` | contact | 5 / hour |
 | `pwreset` | email | 3 / hour |
+| `login_fail_ip`, `otp_login_fail_ip`, `reset_fail_ip`, `sign_up_fail_ip` | address | 30 failures / 15 min each (sign-in, code sign-in, reset, finishing a sign-up) |
 | `public_link` | address | 60 / minute |
 | `consent_otp_contact` / `consent_otp_token` | contact / link | 5 / hour, 20 / hour |
 | `rights_public_contact` / `rights_public_ip` | contact / address | 5 / hour, 20 / hour |

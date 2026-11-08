@@ -284,10 +284,11 @@ Creating it sends an invitation to the address on the account: the role in
 words, a link to the console's reset page with the address already filled in,
 and a six-digit code that lasts `STAFF_INVITE_TTL_H` hours. Setting a password
 with that code is what activates the account, and until then sign-in refuses
-it. If the invitation expires, "Forgotten your password?" sends a working
-replacement, because the invitation carries the reset flow's own code rather
-than a second kind; an administrator can also send it again from the register,
-but only while the account is still pending.
+it. If the invitation expires, or five wrong tries cancel its code, **Send a new
+code** on that page (a7bf92c) or "Forgotten your password?" sends a working
+replacement, a reset's code of fifteen minutes, because the invitation carries
+the reset flow's own code rather than a second kind; an administrator can also
+send it again from the register, but only while the account is still pending.
 
 **The one exception: a temporary login** (S3-09,
 [ADR 0023](../decisions/0023-breach-tickets-and-breach-only-logins.md)). When

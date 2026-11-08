@@ -1444,8 +1444,8 @@
         "expected": "A red box reads 'Invalid or expired code'. No reference is shown."
       },
       {
-        "action": "Reload the page, send a new code, enter the correct relayed code, choose 'Complaint (grievance) (s.13)' and click 'Record the request'.",
-        "expected": "A red box reads 'That right was not included in the nomination'. Nothing is recorded."
+        "action": "Click 'Send me a new code' under the notice in step 1 (the request text stays), type the new code the coordinator relays, choose 'Complaint (grievance) (s.13)' and click 'Record the request'.",
+        "expected": "After 'Send me a new code' the line 'If the details match, a new code is on its way, and the earlier one no longer works.' appears. After 'Record the request' a red box reads 'That right was not included in the nomination'. Nothing is recorded."
       },
       {
         "action": "In Browser A on 'My nominations' click 'Revoke this nomination'.",

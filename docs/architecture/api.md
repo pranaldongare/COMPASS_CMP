@@ -144,8 +144,11 @@ when reporting a failure and the log line is one search away.
 Some routes deliberately answer the same way whatever happened, because the
 difference would tell a stranger something about who is registered:
 
-- `POST /auth/register`: identical whether the contact is new or already an
-  account
+- `POST /auth/register`: identical for a new contact and a sign-up never
+  finished, whose codes are sent again; a contact already on an account answers
+  409 `contact_taken`, naming the field, by product decision, so this route does
+  say who is registered
+  ([03-security.md](../backend/03-security.md#data-principal-sign-in))
 - `POST /auth/otp/request`: identical whether the contact is registered
 - `POST /rights/requests`: a reference is issued either way; a code goes only
   to a contact on file, and the reply says it went to the contact held, never
@@ -163,11 +166,17 @@ difference would tell a stranger something about who is registered:
   `POST /auth/register/verify`: a wrong code, a code of the wrong length and a
   spent budget of five tries answer 400 `otp_invalid`, "Invalid or expired code",
   as a contact, an email or a nomination nobody holds does; at the sign-in also a
-  code typed with another contact of the same account. Only the limit per address
-  answers 429: 30 failures in fifteen minutes at the sign-in and the reset, ten
-  requests an hour at the nominee's; the consent link's tries never do. Finishing
-  a sign-up answers on the field of the medium, and refuses an account with
-  nothing left to answer as it refuses an unknown mobile (2026-11-08)
+  code typed with another contact of the same account. A code that is not four to
+  ten digits is the schema's 422 `validation_failed` on all five, the same for
+  every caller. Only the limit per address answers 429: 30 failures in fifteen
+  minutes at the sign-in, the reset and finishing a sign-up, ten requests an hour
+  at the nominee's; the consent link's tries never do (2026-11-08)
+- `POST /auth/register/verify`: every refusal is the unknown mobile's, one
+  sentence on one field, `mobile_code` - a mobile nobody holds, an account that
+  cannot finish a sign-up or has nothing left to answer, a code left out for a
+  contact still waiting, and a wrong, short or spent code for either contact. A
+  code left out is no longer a 422, and a refusal no longer comes on `email_code`
+  (bd6cef1)
 - `POST /requests/{uuid}/verification/code` and `/confirm` on a request with no
   account: 403 `officers_only` to anybody but the DPO and the Legal PoC,
   whether or not the contact sent a dismissed report (2026-11-08)

@@ -619,7 +619,7 @@ For state changes whose only interesting output is that they happened.
 | Field | Type | Required | Validation | Description |
 |---|---|---:|---|---|
 | `nomination_uuid` | `string` | Yes | format: `uuid` | — |
-| `code` | `string` | Yes | min length: `4`; max length: `10` | — |
+| `code` | `string` | Yes | min length: `4`; max length: `10`; pattern: `^[0-9]+$` | — |
 | `request_type` | `string` | Yes | — | — |
 | `request_text` | `string` | Yes | min length: `1`; max length: `20000` | — |
 | `trigger_event` | `string` | Yes | — | — |

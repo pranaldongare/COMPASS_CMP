@@ -6,7 +6,7 @@ thing an attacker cannot cheaply rotate.
 | Surface | Bound | Keyed on | Why |
 |---|---|---|---|
 | Sign-in | 5 attempts / 30 min, 30 min lockout | **account** - its uuid, whichever name was typed | An attacker rotates addresses; a NAT'd office should not be locked out by one typo |
-| Sign-in, code sign-in, password reset | 30 **failures** / 15 min | address | The lockout protects one account from many guesses; this protects every account from one guesser. Only failures count, so an office signing in all morning never comes near it |
+| Sign-in, code sign-in, password reset, finishing a sign-up | 30 **failures** / 15 min, each door counted apart | address | The lockout protects one account from many guesses; this protects every account from one guesser. Only failures count, so an office signing in all morning never comes near it |
 | OTP verify | 5 attempts per code, for as long as the code lives | code | The cap is what makes six digits strong enough |
 | OTP request | 5 / hour per contact, 20 / hour per link | contact | Otherwise the form is an SMS pump aimed at someone else's number |
 | Public link | 60 / minute | address | Unauthenticated, and there is no account to key on |
@@ -28,7 +28,7 @@ suite clears between runs. The buckets in use:
 | `nomination_code` | codes sent for one nomination's acceptance link, per nomination, 5 an hour |
 | `holder_link_ip`, `holder_link_act_ip` | an outside holder's ticket link (0049): opening it, 60 a minute per address; asking for and entering a code, 20 an hour per address |
 | `holder_ticket_code` | codes sent for one ticket's link, per ticket, 5 an hour |
-| `login_fail_ip`, `otp_login_fail_ip`, `reset_fail_ip` | failed staff sign-ins, code sign-ins and password resets, per address (failures only) |
+| `login_fail_ip`, `otp_login_fail_ip`, `reset_fail_ip`, `sign_up_fail_ip` | failed staff sign-ins, code sign-ins, password resets and attempts to finish a sign-up, per address (failures only; `sign_up_fail_ip` since bd6cef1, 2026-11-08) |
 
 **The lockout counts the account, not what was typed.** `account_key()` keys
 it on the account's uuid, so an email and a username are one budget; a login
@@ -91,9 +91,11 @@ a password reset (`POST /auth/password/reset/confirm`), a nominee's request
 (`POST /auth/register/verify`) - because "too many" would say a code had been
 issued, and so that the contact is somebody's or, on the rights form, sent a
 report an office dismissed (2026-11-08). What answers 429 there is the limit per
-address: `rights_verify_ip` (30 an hour), `otp_login_fail_ip` and
-`reset_fail_ip` (30 failures in fifteen minutes) and `nominee_request_ip` (ten an
-hour); the consent link's tries never answer 429. Where a code goes to whatever
-address was typed or to the one a link names - the public link's report, a holder
-ticket, a nomination - the fifth wrong try still answers 429
-([authentication.md](authentication.md#one-time-codes)).
+address: `rights_verify_ip` (30 an hour), `otp_login_fail_ip`, `reset_fail_ip`
+and `sign_up_fail_ip` (30 failures in fifteen minutes) and `nominee_request_ip`
+(ten an hour); the consent link's tries never answer 429. Finishing a sign-up
+has been limited per address only since bd6cef1; every refusal there counts, a
+stranger's too, and once the address has spent its budget even the right codes
+answer 429. Where a code goes to whatever address was typed or to the one a link
+names - the public link's report, a holder ticket, a nomination - the fifth wrong
+try still answers 429 ([authentication.md](authentication.md#one-time-codes)).

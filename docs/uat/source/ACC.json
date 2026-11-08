@@ -406,7 +406,7 @@
       },
       {
         "action": "Fill in Full name 'Tester One', Mobile number '+91 98111 22301', Email address 'tester01@example.org' and Date of birth 15 August 1990. Click 'Create account'.",
-        "expected": "The page 'Confirm your contacts' opens with the text 'If those details are new to us, a code has gone to your mobile and another to your email. Enter both.' It shows 'Code sent to your mobile' (with the mobile number under it), 'Code sent to your email' (with the email under it) and a 'Confirm and sign in' button."
+        "expected": "The page 'Confirm your contacts' opens with the text 'A code has gone to your mobile and another to your email. Enter both.' It shows 'Code sent to your mobile' (with the mobile number under it), 'Code sent to your email' (with the email under it), the line 'Each code expires in ten minutes, or after five wrong tries; then send the codes again.', a 'Confirm and sign in' button, and below it 'Send the codes again' and 'Change the details'."
       },
       {
         "action": "Type 000000 in both code boxes and click 'Confirm and sign in'.",

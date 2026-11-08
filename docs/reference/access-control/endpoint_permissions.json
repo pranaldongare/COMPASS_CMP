@@ -606,7 +606,7 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "Public entry point; valid registration contact codes are required to complete registration. A wrong code, a code of the wrong length and a spent budget answer 400 otp_invalid \"Invalid or expired code\", as an unknown mobile does, on the field of the medium (mobile_code or email_code). An account with nothing left to answer is refused as an unknown mobile is (field mobile_code): from 2026-09-06 until 2026-11-08 the mobile alone, with no code, opened a session on a data principal's account whose every contact had answered once."
+        "Public entry point; valid registration contact codes are required to complete registration. Every refusal answers 400 otp_invalid \"Invalid or expired code\" on mobile_code, as an unknown mobile does: a mobile nobody holds or one on an account that cannot finish a sign-up (a member of staff's, or a suspended or deactivated one), an account with nothing left to answer, a code left out for a contact still waiting, and a wrong code, one of the wrong length or a spent budget for either contact. Every code waiting is checked before any is spent. Failures count against the address, and only the limit of 30 failures in fifteen minutes per address answers 429, even to the right codes once it is spent. Until bd6cef1 a code left out answered 422 and a refusal came on the field of the contact waiting (email_code when only the email was), with no limit per address, which told an unfinished sign-up and an account whose email had not answered from a mobile nobody holds. Refusing an account with nothing left to answer closed a hole (32d483a): from 2026-09-06 until 2026-11-08 the mobile alone, with no code, opened a session on a data principal's account whose every contact had answered once."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/auth.py#L260",
@@ -6194,7 +6194,7 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "Accepted/usable nomination and nominee code required; trigger event is recorded and evidence is reviewed before substantive processing. A wrong code, a code of the wrong length and a spent budget of five tries answer 400 otp_invalid \"Invalid or expired code\", as a nomination not in effect does, so the answer says neither that the nomination is in effect nor that the contact typed at the start matched; only the limit of ten an hour per address answers 429 (2026-11-08)."
+        "Accepted/usable nomination and nominee code required; trigger event is recorded and evidence is reviewed before substantive processing. A wrong code, a code of the wrong length and a spent budget of five tries answer 400 otp_invalid \"Invalid or expired code\", as a nomination not in effect does, so the answer says neither that the nomination is in effect nor that the contact typed at the start matched; only the limit of ten an hour per address answers 429 (2026-11-08). A code that is not four to ten digits is refused by the form's schema with 422 validation_failed, before anything is looked up, the same for every caller, as on every other code route; before bd6cef1 the form checked only the length, and a code that was not digits answered the neutral 400."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/rights.py#L369",
@@ -16610,6 +16610,11 @@
       "on": "2026-11-08",
       "commit": "The third review of that build, 32d483a",
       "note": "No operation added or removed. Rules changed: POST /rights/nominations/{token}/accept stamps only a nominee account it makes, and links an account already there with no stamp; /code issues the code under the nomination and the contact it goes to, one live, and accept and /decline find it there; POST /auth/otp/verify, /c/{token}/otp/verify, /auth/password/reset/confirm, /rights/nominee/requests and /auth/register/verify answer a code of the wrong length and a spent budget as a wrong code, 400 otp_invalid, the limit per address staying the 429, and /auth/register/verify refuses an account with nothing left to answer as an unknown mobile; /c/{token}/otp/verify notes the stamp on an unfinished sign-up (open); GET /breaches/{breach_uuid}/reports serves why the first yes withheld a report to CERT-In; POST /breaches/{breach_uuid}/determinations passes over a version still sending; GET /requests/{request_uuid}, /trail and /linked/trail note the verification method the administrator reads (open). Evidence links unchanged."
+    },
+    {
+      "on": "2026-11-08",
+      "commit": "The fourth review of that build, bd6cef1",
+      "note": "No operation added or removed. Rules changed: POST /auth/register/verify answers every refusal as an unknown mobile, 400 otp_invalid on mobile_code, a code left out included, and counts its failures against the address, that limit being its only 429; POST /rights/nominee/requests refuses a code that is not digits with the schema's 422. Evidence links unchanged."
     }
   ]
 }

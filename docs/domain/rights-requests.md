@@ -509,7 +509,14 @@ code for it goes to the contact the principal recorded, and a wrong code, one of
 the wrong length and a spent budget of five tries all answer 400 `otp_invalid`,
 as a nomination not in effect does, so the answer says neither that the
 nomination is in effect nor that the contact typed matched (2026-11-08); only the
-limit of ten an hour per address answers 429 (`POST /rights/nominee/requests`).
+limit of ten an hour per address answers 429 (`POST /rights/nominee/requests`). A
+code that is not four to ten digits is refused before anything is looked up, with
+422 `validation_failed`, the same for every caller, as on the other code routes
+(bd6cef1; the form checked only the length before, and a code that was not digits
+answered the neutral 400). Since the answer cannot say that a code was cancelled,
+the nominee's page says to everybody that a code expires in ten minutes or after
+five wrong tries, and offers **Send me a new code**, which keeps the request text
+and the evidence (67b3dc0).
 Death closes the principal's account; incapacity does not. The nomination
 records which request invoked it.
 

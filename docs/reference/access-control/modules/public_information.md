@@ -113,7 +113,7 @@ A nominee makes a request on her behalf.
 
 - **Who:** public.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** Accepted/usable nomination and nominee code required; trigger event is recorded and evidence is reviewed before substantive processing. A wrong code, a code of the wrong length and a spent budget of five tries answer 400 otp_invalid "Invalid or expired code", as a nomination not in effect does, so the answer says neither that the nomination is in effect nor that the contact typed at the start matched; only the limit of ten an hour per address answers 429 (2026-11-08).
+- **Rules:** Accepted/usable nomination and nominee code required; trigger event is recorded and evidence is reviewed before substantive processing. A wrong code, a code of the wrong length and a spent budget of five tries answer 400 otp_invalid "Invalid or expired code", as a nomination not in effect does, so the answer says neither that the nomination is in effect nor that the contact typed at the start matched; only the limit of ten an hour per address answers 429 (2026-11-08). A code that is not four to ten digits is refused by the form's schema with 422 validation_failed, before anything is looked up, the same for every caller, as on every other code route; before bd6cef1 the form checked only the length, and a code that was not digits answered the neutral 400.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/rights.py#L369), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/service.py#L1).
 
 ## POST /rights/nominee/start

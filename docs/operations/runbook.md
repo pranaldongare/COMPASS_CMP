@@ -11,6 +11,7 @@ API error carries a `request_id`; ask for it first, then search the log.
 | The code never arrives (staff) | worker not running, the email transport is `console`, **or the key service cannot be reached from the worker** | `curl <api>/ready` - the `encryption` check names the URL and the reason; then the worker is consuming `high_priority`; in local, read `var/outbox.log` |
 | The code never arrives (data principal) | as above, or the SMS transport | the same; the sign-in page offers the other contact if one is on file |
 | "Too many codes" | five per contact per hour | wait, or clear `rate:otp_request:<contact>` |
+| "Invalid or expired code" though the code typed is the one that arrived | the code expired, or its fifth wrong try cancelled it; the answer is the same for everybody, so it cannot say which | a new code, which replaces the last: on the portal's sign-in page **Use a different contact** and ask again; **Send a new code** on a consent link and on the console's reset and invitation page; **Send the codes again** on the sign-up page; **Send me a new code** on the nominee's page |
 | Signed in, then everything answers 401 `mfa_required` | the second factor was never completed | finish the code step; the partial session is worth nothing else |
 | Signed in on the wrong portal | a staff account on the portal or a principal on the console | each portal points the wrong kind of account at the other |
 | Works on `localhost`, not on `127.0.0.1` | the cookie is first-party to one origin | use the proxied origin |
@@ -399,7 +400,7 @@ ticket, read "breach" below as "request".
 
 | Tickets card shows | Cause | Do |
 |---|---|---|
-| **Temporary login · not yet signed in** | They have not set a password: the email's code expired (`STAFF_INVITE_TTL_H`), went to spam, or was never sent | "Forgotten your password?" on the sign-in page sends a working code to the same address; an administrator can also **Resend invitation** while the account is pending. Locally the code is in `var/outbox.log`; otherwise check the worker and `/ready` as for any code |
+| **Temporary login · not yet signed in** | They have not set a password: the email's code expired (`STAFF_INVITE_TTL_H`), went to spam, or was never sent | **Send a new code** on the page the email links to, or "Forgotten your password?" on the sign-in page, sends a working code to the same address; an administrator can also **Resend invitation** while the account is pending. Locally the code is in `var/outbox.log`; otherwise check the worker and `/ready` as for any code |
 | **Temporary login**, but "Those credentials are not valid" | A wrong password, or the account is locked after five tries | As for staff: wait thirty minutes, or a reset |
 | **Temporary login · read only**, signs in but cannot write | Their ticket was withdrawn or the breach closed; their part is over | Intended. If they still need to act, **Reopen** their ticket; they are emailed that it is waiting. A closed breach must be reopened first |
 | **Temporary login · read only**, and "Those credentials are not valid" | An administrator chose **End temporary access**, which clears the password | Intended. Assigning them again sends a new access email |
