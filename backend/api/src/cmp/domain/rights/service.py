@@ -3990,13 +3990,19 @@ async def nominee_submit(
     evidence_hash: str | None,
 ) -> Row:
     """The nominee makes a request. It then runs as normal, and the DPO decides
-    first whether the triggering event is evidenced."""
+    first whether the triggering event is evidenced.
+
+    The code is checked first and spent last. The checks of the request come
+    after the code, so they say nothing to a stranger; and a request refused
+    for its right, its event or its kind leaves the code for the next try,
+    where spending it first answered the right code "Invalid or expired".
+    """
     row = await repo.nomination_by_uuid(conn, nomination_uuid)
     refused = BadRequest("Invalid or expired code", code="otp_invalid", field="code")
     if not row or row["status"] != NominationStatus.ACTIVE:
         raise refused
     try:
-        await otp.require(otp.Scope.NOMINEE_VERIFY, nomination_uuid, code)
+        await otp.require(otp.Scope.NOMINEE_VERIFY, nomination_uuid, code, consume=False)
     except (BadRequest, RateLimited):
         # A code of the wrong length, and a spent budget, answered as a wrong
         # code: told apart, they would say the nomination is in place, and that
@@ -4013,6 +4019,12 @@ async def nominee_submit(
         raise ValidationFailed(
             "Say whether the event is death or incapacity", field="trigger_event"
         )
+    try:
+        # Accepted: the code is spent now, by the check that consumes it, so
+        # of two requests racing with one code only one is made.
+        await otp.require(otp.Scope.NOMINEE_VERIFY, nomination_uuid, code)
+    except (BadRequest, RateLimited):
+        raise refused from None
     created = await create(
         conn,
         request_type=kind,

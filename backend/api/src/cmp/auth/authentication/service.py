@@ -915,23 +915,31 @@ async def register_data_subject(
     becomes a privilege escalation, and no amount of validation downstream is as
     reliable as never reading the field.
 
-    **A contact that already belongs to an active account is refused, and the
+    **A contact that already belongs to an account is refused, and the
     refusal names which one.** This is a product decision taken with its cost
     in view: sign-up is unauthenticated, so a form that says "this mobile is
     taken" lets anyone test whether a person is a data principal here - which,
-    for a consent register, is close to "who is in this study". The brakes
-    that remain are the per-contact limit above and the per-address limit on
-    the route. What it buys is a form that can be corrected: the earlier,
-    neutral behaviour sent the existing account a *sign-in* code while the form
-    advanced to the *registration*-code step, where that code could never
-    verify, and the person was stuck without knowing why.
+    for a consent register, is close to "who is in this study". The brake
+    that remains is the per-contact limit below. What it buys is a form that
+    can be corrected: the earlier, neutral behaviour sent the existing account
+    a *sign-in* code while the form advanced to the *registration*-code step,
+    where that code could never verify, and the person was stuck without
+    knowing why.
 
-    A registration that was started and never finished is not a conflict: the
-    same codes are sent again so it can be completed.
+    A data principal's registration that was started and never finished is
+    not a conflict: the same codes are sent again so it can be completed. Any
+    other pending account - a member of staff who has not set a password, a
+    breach holder's login - is an account like any other, and is refused: its
+    codes could never finish a sign-up, and sending them would mail a person
+    who never asked.
 
     Date of birth is required, and a child is refused before anything is
-    written: section 9 makes it the input to whether this is a child's account,
-    and there is no guardian route yet (`cmp.domain.users.age`).
+    looked up or written: section 9 makes it the input to whether this is a
+    child's account, and there is no guardian route yet
+    (`cmp.domain.users.age`). It comes before the lookup, so a child's date is
+    the same 422 for a new contact, an unfinished sign-up and an account;
+    checked after it, the 202 an unfinished sign-up got told it apart from a
+    contact nobody holds.
     """
     mobile = normalise_mobile(mobile)
     email = email.strip().lower() if email and email.strip() else None
@@ -947,14 +955,17 @@ async def register_data_subject(
                 message="Too many registration attempts for this contact.",
             )
 
+    await age.refuse_a_minor(conn, dob=dob)
     existing = await user_repo.by_contact(conn, mobile)
     taken = "mobile"
     if not existing and email:
         existing = await user_repo.by_contact(conn, email)
         taken = "email"
     if existing:
-        if existing["status"] == "pending":
-            # Started and never finished: the same codes again, so she can.
+        if existing["status"] == "pending" and existing["role"] == Role.DATA_SUBJECT.value:
+            # Started and never finished: the same codes again, so they can.
+            # Only a data principal's: on any other row `pending` is a console
+            # or breach login waiting for its password, and is an account.
             await _send_registration_codes(existing)
             log.info("auth.register_resumed")
             return
@@ -968,7 +979,6 @@ async def register_data_subject(
             field=taken,
         )
 
-    await age.refuse_a_minor(conn, dob=dob)
     user = await user_repo.create(
         conn,
         full_name=full_name,

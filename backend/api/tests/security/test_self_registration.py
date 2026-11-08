@@ -28,17 +28,18 @@ from __future__ import annotations
 # function-scoped because a redis-py connection belongs to the event loop it was
 # created on, and the limiter fails closed rather than open - so without it these
 # tests fail with ServiceUnavailable rather than silently skipping the check.
+import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
 
 from cmp.auth.authentication import service as auth_service
-from cmp.core.errors import ValidationFailed
+from cmp.core.errors import CmpError, ValidationFailed
 from cmp.db.redis import K_RATE
 from cmp.db.redis import key as rkey
 from cmp.db.repositories import users as user_repo
-from tests.conftest import plain
+from tests.conftest import office_of, plain
 
 # Deliberately *not* marked `anyio`. Every other module here runs under
 # pytest-asyncio's auto mode, and mixing the two plugins in one module had
@@ -213,6 +214,119 @@ async def test_registering_a_taken_contact_is_refused_and_names_the_field(
     dpo = await user_repo.by_contact(conn, "dpo@test.local")
     assert dpo["role"] == "dpo"
     assert dpo["full_name"] != "Impostor"
+
+
+REGISTRATION = "cmp.notifications.send_registration_code"
+
+
+@pytest.fixture
+def queued(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, tuple[Any, ...]]]:
+    """Every task the code under test queues, captured instead of sent."""
+    from cmp.tasks import dispatch as dispatch_mod
+
+    kept: list[tuple[str, tuple[Any, ...]]] = []
+
+    def capture(task: Any, *args: Any, **kwargs: Any) -> str:
+        kept.append((task.name, args))
+        return "queued-in-a-test"
+
+    monkeypatch.setattr(dispatch_mod, "dispatch_optional", capture)
+    monkeypatch.setattr(dispatch_mod, "dispatch_required", capture)
+    return kept
+
+
+def _fresh_mobile() -> str:
+    """A mobile nobody holds: this file runs on a database other suites commit to."""
+    return f"+9194{uuid.uuid4().int % 10**8:08d}"
+
+
+def _fresh_email(tag: str) -> str:
+    return f"{tag}.{uuid.uuid4().hex[:10]}@example.org"
+
+
+async def _account(conn: Any, *, role: str, status: str) -> dict[str, Any]:
+    """An account with an email and a mobile of its own, in `role` and `status`."""
+    return dict(
+        await user_repo.create(
+            conn,
+            full_name="Already Here",
+            email=_fresh_email(role),
+            mobile=_fresh_mobile(),
+            role=role,
+            person_type="external" if role == "data_subject" else "employee",
+            status=status,
+            office=office_of(role),
+        )
+    )
+
+
+async def test_a_child_s_date_is_one_answer_whoever_holds_the_contact(
+    conn: Any, redis_conn: Any, queued: list[tuple[str, tuple[Any, ...]]]
+) -> None:
+    """The age was checked only once the lookup had found nobody, so a child's
+    date of birth sorted every contact: 422 for one nobody holds, 409 for an
+    account, and 202 - the codes sent again - for a sign-up never finished,
+    which this route otherwise answers as it answers a new contact. It is
+    checked before the lookup now, and is the one 422 for all three."""
+    unfinished = await _account(conn, role="data_subject", status="pending")
+    active = await _account(conn, role="data_subject", status="active")
+
+    async def outcome(mobile: str, email: str | None = None) -> tuple[str, ...]:
+        try:
+            await auth_service.register_data_subject(
+                conn, full_name="Young Person", mobile=mobile, email=email, dob=_years_ago(10)
+            )
+        except CmpError as refused:
+            return (type(refused).__name__, refused.code, refused.message, str(refused.field))
+        return ("accepted",)
+
+    new = await outcome(_fresh_mobile())
+    assert new[:2] == ("ValidationFailed", "minor_not_permitted")
+    assert new[3] == "dob"
+    for person in (unfinished, active):
+        assert await outcome(plain(person["mobile"])) == new
+        assert await outcome(_fresh_mobile(), plain(person["email"])) == new
+    assert queued == [], "a child's date sends nothing, to anybody"
+    still = await user_repo.by_id(conn, unfinished["id"])
+    assert still is not None and still["status"] == "pending"
+
+
+async def test_only_a_data_principal_s_unfinished_sign_up_is_sent_its_codes_again(
+    conn: Any, redis_conn: Any, queued: list[tuple[str, tuple[Any, ...]]]
+) -> None:
+    """Any pending account counted as a sign-up never finished, so a stranger
+    could have sign-up codes sent to a member of staff who had not yet set a
+    password, or to a breach holder's login - codes that could never finish
+    anything, to people who never asked. Those are accounts, and are refused
+    as any account is, naming the field; nothing is sent. A data principal's
+    unfinished sign-up still gets its codes again."""
+    from cmp.core.errors import Conflict
+
+    for role in ("dco", "breach_holder"):
+        held = await _account(conn, role=role, status="pending")
+        before = await _count(conn)
+        for field, mobile, email in (
+            ("mobile", plain(held["mobile"]), None),
+            ("email", _fresh_mobile(), plain(held["email"])),
+        ):
+            with pytest.raises(Conflict) as taken:
+                await auth_service.register_data_subject(
+                    conn, full_name="X Y", mobile=mobile, email=email, dob=_years_ago(30)
+                )
+            assert (taken.value.code, taken.value.field) == ("contact_taken", field), role
+        assert await _count(conn) == before, "no account made beside it"
+        still = await user_repo.by_id(conn, held["id"])
+        assert still is not None and (still["role"], still["status"]) == (role, "pending")
+    assert queued == [], "no code to a pending account that is not a sign-up"
+
+    unfinished = await _account(conn, role="data_subject", status="pending")
+    await auth_service.register_data_subject(
+        conn, full_name="X Y", mobile=plain(unfinished["mobile"]), dob=_years_ago(30)
+    )
+    sent = sorted((str(args[0]), plain(args[1])) for name, args in queued if name == REGISTRATION)
+    assert sent == sorted(
+        (str(unfinished["uuid"]), plain(unfinished[medium])) for medium in ("mobile", "email")
+    )
 
 
 async def test_an_implausible_date_is_refused_by_the_database(

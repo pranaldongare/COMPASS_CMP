@@ -22,7 +22,7 @@ import pytest
 from cmp.auth.authentication import otp
 from cmp.auth.rate_limit.service import contact_key
 from cmp.core.enums import RightsRequestType as Kind
-from cmp.core.errors import BadRequest, Conflict, Forbidden, NotFound, ValidationFailed
+from cmp.core.errors import BadRequest, CmpError, Conflict, Forbidden, NotFound, ValidationFailed
 from cmp.core.permissions import Role
 from cmp.core.security import new_token, token_fingerprint
 from cmp.db.redis import K_RATE
@@ -1131,6 +1131,67 @@ class TestNomination:
             conn, nomination_uuid=str(nomination["nomination_uuid"]), principal_user_id=principal
         )
         assert revoked["status"] == "revoked"
+
+    async def test_a_request_refused_for_what_it_asks_leaves_the_code(
+        self, conn: Any, seeded: dict[str, Any], redis_conn: Any
+    ) -> None:
+        """The code was spent before the request was checked, so a right the
+        principal had not nominated - which the page offers - answered the next
+        try, with the same right code, "Invalid or expired code". The code is
+        checked first and spent last now: a right not nominated, an event that
+        is neither, and a kind the office does not take each leave it, the
+        right request is made with it, and that spends it."""
+        nomination = await service.nominate(
+            conn,
+            principal_user_id=seeded["subject"]["id"],
+            nominee_name="Ravi Verma",
+            nominee_mobile="+915550000079",
+            nominee_email=None,
+            rights=["access"],
+        )
+        await conn.execute(
+            "UPDATE nomination SET status = 'active', accepted_at = now() WHERE nomination_id = %s",
+            (nomination["nomination_id"],),
+        )
+        ref = str(nomination["nomination_uuid"])
+        code = (await otp.issue(otp.Scope.NOMINEE_VERIFY, ref)).code
+
+        async def submit(**changes: Any) -> Any:
+            asked = {"request_type": "access", "trigger_event": "death", **changes}
+            return await service.nominee_submit(
+                conn,
+                nomination_uuid=ref,
+                code=code,
+                request_type=asked["request_type"],
+                request_text="The principal's records, please",
+                trigger_event=asked["trigger_event"],
+                evidence_ref=None,
+                evidence_hash="ev3",
+            )
+
+        refusals = []
+        for changes in (
+            {"request_type": "erasure"},
+            {"trigger_event": "retirement"},
+            {"request_type": "correction"},
+        ):
+            with pytest.raises(CmpError) as refused:
+                await submit(**changes)
+            refusals.append((type(refused.value).__name__, refused.value.field))
+        assert refusals == [
+            ("ValidationFailed", "request_type"),
+            ("ValidationFailed", "trigger_event"),
+            ("ValidationFailed", "request_type"),
+        ]
+
+        row = await submit()
+        assert row["channel"] == "nominee" and row["request_type"] == "access"
+        with pytest.raises(BadRequest) as spent:
+            await submit()
+        assert (spent.value.code, spent.value.message) == (
+            "otp_invalid",
+            "Invalid or expired code",
+        ), "the request made spent the code"
 
 
 # ---------------------------------------------------------------- public form

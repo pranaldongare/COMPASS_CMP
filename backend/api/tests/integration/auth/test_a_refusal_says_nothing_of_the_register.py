@@ -427,7 +427,13 @@ class TestTheSignUpsConfirmation:
         """A code left out for a contact still waiting was a 422 "Enter the code
         we sent to your ...", answered before any code was checked: with no
         code at all, it named an unfinished sign-up. It is the stranger's
-        refusal now, and spends nothing: the codes sent still finish it."""
+        refusal now, and spends nothing: each code is left out more times than
+        its budget of wrong tries, and the codes sent still finish it.
+
+        An account that cannot finish a sign-up - staff, pending or not, and a
+        data principal suspended or deactivated - is refused as a stranger is,
+        with the right codes for it waiting, so it is the role and the status
+        that refuse it and nothing it was sent."""
         pending = await _principal(conn, status="pending")
         codes = await self._codes(pending, "mobile", "email")
         unanswered = await _principal(conn)  # active, and neither contact has answered
@@ -437,10 +443,27 @@ class TestTheSignUpsConfirmation:
         assert unknown == ON_THE_MOBILE
         assert await self._confirm(conn, stranger, codes["mobile"]) == unknown
         assert await self._confirm(conn, mobile) == unknown
-        assert await self._confirm(conn, mobile, codes["mobile"]) == unknown
-        assert await self._confirm(conn, mobile, None, codes["email"]) == unknown
+        for _ in range(settings.otp_max_verify_attempts):
+            assert await self._confirm(conn, mobile, codes["mobile"]) == unknown
+            assert await self._confirm(conn, mobile, None, codes["email"]) == unknown
         assert await self._confirm(conn, plain(unanswered["mobile"])) == unknown
         assert await _stamps(conn, pending["id"]) == (False, False, False)
+
+        cannot_finish = [
+            await _staff(conn, status="active"),
+            await _staff(conn, status="pending"),
+            await _principal(conn, status="suspended"),
+            await _principal(conn, status="deactivated"),
+        ]
+        for person in cannot_finish:
+            theirs = await self._codes(person, "mobile", "email")
+            answer = await self._confirm(
+                conn, plain(person["mobile"]), theirs["mobile"], theirs["email"]
+            )
+            assert answer == unknown, (person["role"], person["status"])
+            assert await _stamps(conn, person["id"]) == (False, False, False)
+            still = await user_repo.by_id(conn, person["id"])
+            assert still is not None and still["status"] == person["status"]
 
         result = await auth_service.confirm_registration(
             conn,
