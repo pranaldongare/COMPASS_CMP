@@ -74,7 +74,9 @@ export default function ReportIncidentPage() {
                     We keep your name and email with the report. The people handling it can see
                     them, and may contact you if they need to know more. If we close your report
                     without taking it up, you can ask us through your rights, from the same email
-                    address, to see it or to erase your name and email from it.
+                    address, to see it or to erase your name and email from it. If that address is
+                    also on your account with us, sign in with it once, or confirm it on your
+                    profile, first.
                   </li>
                 </ol>
                 <p className="mt-3 text-xs text-text-subtle">

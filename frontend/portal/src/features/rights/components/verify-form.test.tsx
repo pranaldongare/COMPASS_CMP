@@ -40,6 +40,14 @@ describe("VerifyForm", () => {
 
     expect(await screen.findByText("Invalid or expired code")).toBeInTheDocument();
     expect(screen.getByText(NEW_CODE)).toBeInTheDocument();
+    // Where a new code goes, as the server's reply says: the contact held,
+    // which for an account is its email whichever contact was typed.
+    expect(
+      screen.getByText(
+        /if we hold records for the contact you gave, a new code is sent to the contact we hold for you\.$/,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/a new code is sent to it\./)).not.toBeInTheDocument();
     expect(tries.n).toBe(1);
     await user.click(screen.getByRole("button", { name: "Make the request again" }));
     expect(onNewRequest).toHaveBeenCalledTimes(1);

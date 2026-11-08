@@ -56,3 +56,51 @@ describe("asking for a sign-in code", () => {
     expect(screen.queryByText(/check your messages/i)).not.toBeInTheDocument();
   });
 });
+
+/**
+ * A sign-in code verifies only with the contact it was sent to (2026-11-08):
+ * the server keys it on the account and that contact, so a code sent to the
+ * mobile is refused with the email typed. The page sends back exactly what it
+ * asked a code for, the contact chosen again included.
+ */
+describe("verifying a sign-in code", () => {
+  it("sends the contact the code was asked for, and the new one once it is changed", async () => {
+    const asked: string[] = [];
+    const verified: unknown[] = [];
+    server.use(
+      http.post(`${API}/auth/otp/request`, async ({ request }) => {
+        asked.push(((await request.json()) as { contact: string }).contact);
+        return HttpResponse.json({ ok: true, message: "" });
+      }),
+      http.post(`${API}/auth/otp/verify`, async ({ request }) => {
+        verified.push(await request.json());
+        return HttpResponse.json(
+          { error: { code: "otp_invalid", message: "Invalid or expired code", request_id: "t" } },
+          { status: 400 },
+        );
+      }),
+    );
+    const { user } = render(<SignInPage />);
+
+    await ask(user);
+    await user.type(await screen.findByLabelText(/six-digit code/i), "123456");
+    await user.click(screen.getByRole("button", { name: "Verify" }));
+    await vi.waitFor(() => expect(verified).toHaveLength(1));
+
+    await user.click(screen.getByRole("button", { name: "Use a different contact" }));
+    await user.click(screen.getByRole("radio", { name: "Email" }));
+    const field = await screen.findByLabelText(/email address/i);
+    await user.clear(field);
+    await user.type(field, "Asha@Example.org");
+    await user.click(screen.getByRole("button", { name: /send me a code/i }));
+    await user.type(await screen.findByLabelText(/six-digit code/i), "654321");
+    await user.click(screen.getByRole("button", { name: "Verify" }));
+    await vi.waitFor(() => expect(verified).toHaveLength(2));
+
+    expect(asked).toEqual(["+919876500001", "Asha@Example.org"]);
+    expect(verified).toEqual([
+      { contact: "+919876500001", code: "123456" },
+      { contact: "Asha@Example.org", code: "654321" },
+    ]);
+  });
+});

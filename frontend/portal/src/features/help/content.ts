@@ -331,7 +331,7 @@ export const SECTIONS: HelpSection[] = [
       {
         kind: "note",
         title: "What happens next",
-        text: "The Privacy Office reads every report, and either takes it up as an incident or closes it and records why. We keep your name and email with the report, and the people handling it may contact you. If we close your report without taking it up, you can ask us through your rights, from the same email address, to see it or to erase your name and email from it.",
+        text: "The Privacy Office reads every report, and either takes it up as an incident or closes it and records why. We keep your name and email with the report, and the people handling it may contact you. If we close your report without taking it up, you can ask us through your rights, from the same email address, to see it or to erase your name and email from it. If that address is also on your account with us, sign in with it once, or confirm it under [[My profile]], first.",
       },
     ],
   },

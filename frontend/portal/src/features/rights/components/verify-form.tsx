@@ -24,10 +24,13 @@ import {
 import type { PublicVerifyResult } from "@/types";
 
 /** How to get a new code, said to everybody alike: it names no contact and
- *  does not say whether one was ever sent. */
+ *  does not say whether one was ever sent. A new code goes where the first
+ *  did, to the contact we hold - for an account, its email when it has one,
+ *  whichever contact was typed - so it says so, as the field's hint does. */
 export const NEW_CODE =
   "A code stops working after ten minutes, or after too many wrong tries. To get a new one, make " +
-  "your request again: if we hold records for the contact you gave, a new code is sent to it.";
+  "your request again: if we hold records for the contact you gave, a new code is sent to the " +
+  "contact we hold for you.";
 
 export function VerifyForm({
   reference,

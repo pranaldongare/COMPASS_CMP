@@ -162,7 +162,9 @@ test.describe("public rights page", () => {
     await expect(form.getByText(/recorded/i).first()).toBeVisible({ timeout: 10_000 });
     // Anchored: the verify form below shows an example reference in its hint.
     await expect(form.getByText(/^RR-\d{4}-\d{6}$/)).toBeVisible();
-    await expect(form).toContainText(/if we hold records for the contact you gave/i);
+    await expect(form).toContainText(
+      /if we hold records for the contact you gave, a verification code has been sent to the contact we hold for you/i,
+    );
     await expect(form).not.toContainText(/no account|not found|unknown contact/i);
 
     // The second half is offered at once.
@@ -177,7 +179,7 @@ test.describe("public rights page", () => {
       timeout: 10_000,
     });
     await expect(form).toContainText(
-      /to get a new one, make your request again: if we hold records for the contact you gave/i,
+      /to get a new one, make your request again: if we hold records for the contact you gave, a new code is sent to the contact we hold for you\./i,
     );
     await expect(form).not.toContainText(/too many incorrect/i);
     await form.getByRole("button", { name: "Make the request again" }).click();
