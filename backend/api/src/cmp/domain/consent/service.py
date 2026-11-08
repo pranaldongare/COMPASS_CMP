@@ -38,7 +38,7 @@ from cmp.db.sql import Conn
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.domain.users import age
-from cmp.validation import is_mobile, normalise_contact, normalise_mobile
+from cmp.validation import normalise_contact, normalise_mobile
 
 log = get_logger("cmp.consent")
 
@@ -317,9 +317,11 @@ async def verify_contact_code(conn: Conn, *, token: str, contact: str, code: str
     if not user:
         raise NotFound("Registration")
 
-    user = await user_repo.mark_contact_verified(
-        conn, user["id"], "mobile" if is_mobile(contact) else "email"
-    )
+    # The medium the code went to, the contact typed: a second email is the
+    # second email, never the first, which no code went to.
+    medium = user_repo.medium_of(user, contact)
+    if medium:
+        user = await user_repo.mark_contact_verified(conn, user["id"], medium)
 
     # An account that is already active belongs to a data principal the register
     # knows, and one contact she has just proved authenticates her - which is

@@ -178,14 +178,15 @@ async def test_a_request_lists_fifty_and_counts_them_all(
         (datetime(2026, 1, 1, tzinfo=UTC), None, True),
         (datetime(2026, 1, 1, tzinfo=UTC), datetime(2026, 1, 1, tzinfo=UTC), True),
         (None, datetime(2026, 1, 1, tzinfo=UTC), False),
-        (None, None, True),
+        (None, None, False),
     ],
-    ids=["email-proved", "both-proved", "only-the-mobile", "from-before-the-stamps"],
+    ids=["email-proved", "both-proved", "only-the-mobile", "neither-stamped"],
 )
-def test_an_account_s_email_counts_once_proved_or_from_before_the_proofs(
+def test_an_account_s_email_counts_once_a_code_to_it_came_back_and_only_then(
     email_at: datetime | None, mobile_at: datetime | None, counts: bool
 ) -> None:
-    """The legacy rule a receipt keeps: never an email beside a proved mobile
-    when the email itself was never proved."""
+    """Neither stamped is not read as a row from before the stamps: a changed
+    mobile loses its stamp and an unfinished sign-up carries none, so it is how
+    an address somebody else typed would count again."""
     person = {"email_verified_at": email_at, "mobile_verified_at": mobile_at}
     assert public_reports.email_proved(person) is counts

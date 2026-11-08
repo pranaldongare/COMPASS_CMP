@@ -150,7 +150,9 @@ class TestSelfRegistration:
         self, conn: Any, redis_conn: Any
     ) -> None:
         user = await _register(conn, redis_conn)
-        code = (await otp.issue(otp.Scope.SUBJECT_LOGIN, str(user["uuid"]))).code
+        code = (
+            await otp.issue(otp.Scope.SUBJECT_LOGIN, auth_service.login_code_identity(user, MOBILE))
+        ).code
         with pytest.raises(BadRequest) as refused:
             await auth_service.verify_subject_otp(
                 conn, contact=MOBILE, code=code, ip_address=None, user_agent=None
@@ -167,7 +169,8 @@ class TestSelfRegistration:
         subject = await user_repo.by_id(conn, seeded["subject"]["id"])
         assert subject is not None
         for contact in (subject["email"], subject["mobile"]):
-            code = (await otp.issue(otp.Scope.SUBJECT_LOGIN, str(subject["uuid"]))).code
+            identity = auth_service.login_code_identity(subject, contact)
+            code = (await otp.issue(otp.Scope.SUBJECT_LOGIN, identity)).code
             result = await auth_service.verify_subject_otp(
                 conn, contact=contact, code=code, ip_address=None, user_agent=None
             )

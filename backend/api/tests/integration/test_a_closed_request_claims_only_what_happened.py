@@ -27,6 +27,7 @@ import pytest
 
 from cmp.core.errors import TransitionNotPermitted, ValidationFailed
 from cmp.core.permissions import Role
+from cmp.db.repositories import users as user_repo
 from cmp.domain.rights import package, public_reports, service
 from tests.integration.test_public_reports_and_rights import _dismissed
 from tests.integration.test_rights_flows import _asset_with_her, _consent, _portal_request
@@ -238,9 +239,16 @@ async def test_an_access_request_is_untouched(conn: Any, seeded: dict[str, Any])
     assert row["outcome"] == "complete"
 
 
+async def _her_email_proved(conn: Any, seeded: dict[str, Any]) -> None:
+    """The seeded principal's email, as a code to it coming back leaves it: only
+    a proved email finds her reports (`public_reports.email_proved`)."""
+    await user_repo.mark_contact_verified(conn, int(seeded["subject"]["id"]), "email")
+
+
 async def test_an_erasure_whose_only_act_was_a_report_closes_complete_and_says_so(
     conn: Any, seeded: dict[str, Any]
 ) -> None:
+    await _her_email_proved(conn, seeded)
     reference = await _dismissed(conn, seeded, "subject@test.local")
     row, items = await _erasure_in_scope(conn, seeded, refs=())
     assert items == []
@@ -259,6 +267,7 @@ async def test_an_erasure_whose_only_act_was_a_report_closes_complete_and_says_s
 async def test_a_report_still_naming_her_closes_partial_and_is_named_as_not_done(
     conn: Any, seeded: dict[str, Any]
 ) -> None:
+    await _her_email_proved(conn, seeded)
     reference = await _dismissed(conn, seeded, "subject@test.local")
     row, _items = await _erasure_in_scope(conn, seeded, refs=())
     row = await _collating(conn, seeded, row)

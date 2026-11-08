@@ -31,6 +31,7 @@ from cmp.core.errors import BadRequest, CmpError, Conflict, NotFound, Validation
 from cmp.core.pagination import PageRequest
 from cmp.core.permissions import Role
 from cmp.db.repositories import audit as audit_repo
+from cmp.db.repositories import users as user_repo
 from cmp.db.sql import fetch_all, fetch_one
 from cmp.domain.breach import intake
 from cmp.domain.rights import execution, holds, package, public_reports, service
@@ -63,7 +64,7 @@ async def _person(
     """A data principal of the test's own whose email a code came back from,
     with a second email, proved or not. `email_proved=False` leaves the email
     as somebody typed it: with `mobile_proved`, the shape of a nominee's
-    account; without, a row from before each medium's proof was stamped."""
+    account; without, of a changed number or an older account."""
     email = email or _address("principal")
     mobile = f"+9196{uuid.uuid4().int % 10**8:08d}"
     now = datetime.now(UTC)
@@ -300,21 +301,203 @@ async def test_an_email_only_the_mobile_s_proof_stands_behind_finds_nothing(
     assert built["summary"]["reports_from_the_public_link"] == 0
 
     erasure = await _request(conn, seeded, person)
-    shown = await public_reports.erase(conn, erasure, role=DPO, actor_id=_dpo(seeded))
-    assert shown["total"] == 0 and shown["erased"] == 0
+    with pytest.raises(Conflict) as refused:
+        await public_reports.erase(conn, erasure, role=DPO, actor_id=_dpo(seeded))
+    assert refused.value.code == "no_proved_email"
     assert await _report_row(conn, theirs) == before, "nothing blanked"
 
 
-async def test_a_row_from_before_the_proofs_were_stamped_finds_by_its_email(
+async def test_neither_medium_stamped_finds_nothing_by_the_email(
     conn: Any, seeded: dict[str, Any]
 ) -> None:
-    """Neither medium carries a stamp: the account is older than them, and its
-    email counts, as a receipt is sent to it."""
+    """No stamp on either medium is not read as an account older than the
+    stamps: the email has never answered a code, so it is nobody's yet. An
+    older account counts from the next code to it."""
     person = await _person(conn, email_proved=False, mobile_proved=False)
     mine = await _dismissed(conn, seeded, person["email"])
-    assert mine in _found(
-        await public_reports.found(conn, await _request(conn, seeded, person, "access"))
+    access = await _request(conn, seeded, person, "access")
+    assert await public_reports.address_hashes(conn, access) == []
+    assert mine not in _found(await public_reports.found(conn, access))
+
+
+async def test_a_number_changed_and_not_yet_confirmed_does_not_make_the_email_count(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    """A nominee's account (the email typed by the principal, the mobile
+    proved) whose holder changes the number: the new one is unconfirmed, so
+    neither medium is stamped, and that must not bring the email back."""
+    stranger = _address("stranger")
+    theirs = await _dismissed(conn, seeded, stranger)
+    person = await _person(conn, email=stranger, email_proved=False, mobile_proved=True)
+    # What PATCH /me {mobile} does: the new number is unconfirmed.
+    after = await user_repo.update_profile(
+        conn, person["id"], mobile=f"+9197{uuid.uuid4().int % 10**8:08d}"
     )
+    assert after["mobile_verified_at"] is None and after["email_verified_at"] is None
+    access = await _request(conn, seeded, person, "access")
+    assert await public_reports.address_hashes(conn, access) == []
+    assert theirs not in _found(await public_reports.found(conn, access))
+    erasure = await _request(conn, seeded, person)
+    before = await _report_row(conn, theirs)
+    with pytest.raises(Conflict):
+        await public_reports.erase(conn, erasure, role=DPO, actor_id=_dpo(seeded))
+    assert await _report_row(conn, theirs) == before, "nothing blanked"
+
+
+async def test_a_member_of_staff_signed_in_by_mobile_still_finds_their_own_report(
+    conn: Any, seeded: dict[str, Any], redis_conn: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A provisioned account: the invitation's code to the work email set the
+    first password, which proves that mailbox. Signed in to the portal by a
+    code to the mobile, as ADR 0013 lets a member of staff act as a data
+    principal, the email still finds the report they sent from it."""
+    from cmp.auth.authentication import service as auth_service
+    from cmp.core.security import hash_password, new_token
+    from cmp.tasks import dispatch as dispatch_mod
+
+    queued: list[tuple[str, tuple[Any, ...]]] = []
+
+    def capture(task: Any, *args: Any, **kwargs: Any) -> str:
+        queued.append((task.name, args))
+        return "queued-in-a-test"
+
+    monkeypatch.setattr(dispatch_mod, "dispatch_optional", capture)
+    monkeypatch.setattr(dispatch_mod, "dispatch_required", capture)
+    email, mobile = _address("staff"), f"+9197{uuid.uuid4().int % 10**8:08d}"
+    staff = await user_repo.create(
+        conn,
+        full_name="Ravi Iyer",
+        email=email,
+        role=Role.RND_USER.value,
+        status="pending",
+        password_hash=hash_password(new_token(32)),
+        office="rnd",
+    )
+    await auth_service.invite_staff(conn, user=staff)
+    [invitation] = [a for n, a in queued if n == "cmp.notifications.send_staff_invitation"]
+    await auth_service.confirm_password_reset(
+        conn, email=email, code=invitation[4], new_password="a-well-chosen-passphrase-2026"
+    )
+    mine = await _dismissed(conn, seeded, email)
+
+    await user_repo.update_profile(conn, int(staff["id"]), mobile=mobile)
+    await auth_service.request_subject_otp(conn, contact=mobile)
+    [login] = [a for n, a in queued if n == "cmp.notifications.send_login_code"]
+    await auth_service.verify_subject_otp(
+        conn, contact=mobile, code=login[2], ip_address="127.0.0.1", user_agent="test"
+    )
+    after = await user_repo.by_id(conn, int(staff["id"]))
+    assert after is not None and after["mobile_verified_at"] is not None
+
+    row = await _request(conn, seeded, {"id": int(staff["id"]), "email": email}, "access")
+    assert mine in _found(await public_reports.found(conn, row))
+
+
+async def test_a_pending_account_carrying_somebody_s_address_finds_none_of_their_reports(
+    conn: Any, seeded: dict[str, Any], redis_conn: Any, sent: Any
+) -> None:
+    """A sign-up started with one's own mobile and a stranger's address, and
+    never finished: neither medium stamped. A request attached to it by the
+    mobile, verified by hand, is not the stranger's to read or erase."""
+    stranger = _address("stranger")
+    theirs = await _dismissed(conn, seeded, stranger)
+    before = await _report_row(conn, theirs)
+    mobile = f"+9197{uuid.uuid4().int % 10**8:08d}"
+    pending = await user_repo.create(
+        conn,
+        full_name="Mallory",
+        email=stranger,
+        mobile=mobile,
+        role="data_subject",
+        person_type="external",
+        status="pending",
+    )
+    row = await _from_the_form(conn, seeded, redis_conn, mobile)
+    assert row["subject_user_id"] == pending["id"]
+    row = await _start(conn, seeded, await _verified_by_hand(conn, seeded, row))
+    assert await public_reports.address_hashes(conn, row) == []
+    shown = await public_reports.view(conn, row, role=DPO)
+    assert shown is not None and shown["items"] == []
+    assert shown["not_looked_because"] == public_reports.NO_PROVED_EMAIL
+    with pytest.raises(Conflict) as refused:
+        await public_reports.erase(conn, row, role=DPO, actor_id=_dpo(seeded))
+    assert refused.value.code == "no_proved_email"
+    assert await _report_row(conn, theirs) == before, "nothing blanked"
+
+
+async def test_the_owner_s_own_coded_request_through_that_account_finds_nothing_either(
+    conn: Any, seeded: dict[str, Any], redis_conn: Any, sent: Any
+) -> None:
+    """The owner of the address asks from the form. `users.by_contact` attaches
+    the request to the pending account and the code goes to the owner, who
+    answers it. That proves the request, and stamps nothing on an account
+    whose sign-up is unfinished, so the account's email still counts for
+    nobody and the reports stay with the owner."""
+    owner = _address("owner")
+    theirs = await _dismissed(conn, seeded, owner)
+    pending = await user_repo.create(
+        conn,
+        full_name="Mallory",
+        email=owner,
+        mobile=f"+9197{uuid.uuid4().int % 10**8:08d}",
+        role="data_subject",
+        person_type="external",
+        status="pending",
+    )
+    await _unthrottle(redis_conn, owner)
+    made = await service.submit_public(
+        conn,
+        request_type="access",
+        contact=owner,
+        name=None,
+        request_text="What do you hold about me?",
+        ip_address="127.0.0.1",
+    )
+    [code] = [a[2] for a in sent if a[0] == "send_rights_verification_code"]
+    await service.verify_public_code(conn, reference=made["reference"], code=code)
+    row = await service.require(
+        conn, await _request_uuid(conn, made["reference"]), role=DPO, user_id=_dpo(seeded)
+    )
+    assert row["subject_user_id"] == pending["id"] and row["verification_status"] == "verified"
+    still = await user_repo.by_id(conn, int(pending["id"]))
+    assert still is not None and still["email_verified_at"] is None
+    found = await public_reports.found(conn, row)
+    assert theirs not in _found(found)
+    assert found["not_looked_because"] == public_reports.NO_PROVED_EMAIL
+
+
+async def test_a_request_with_no_proved_email_is_told_nothing_was_looked_for(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    """The card would otherwise say no report carries the requester's email,
+    when no email was searched for. Nothing is held back for it: complete is
+    not blocked by reports nobody looked for, and the answer names none."""
+    person = await _person(conn, email_proved=False, mobile_proved=True)
+    await _dismissed(conn, seeded, person["email"])
+    for kind in ("access", "erasure"):
+        row = await _request(conn, seeded, person, kind)
+        found = await public_reports.found(conn, row)
+        assert found["looked"] is False and found["unavailable"] is False
+        assert found["not_looked_because"] == public_reports.NO_PROVED_EMAIL
+        shown = await public_reports.view(conn, row, role=DPO)
+        assert shown is not None
+        assert (shown["looked"], shown["items"], shown["may_erase"]) == (False, [], False)
+        assert shown["erase_blocked_by"] == public_reports.NO_PROVED_EMAIL
+        detail = await rights_router._detail(
+            conn, row, SimpleNamespace(role=DPO, user_id=_dpo(seeded))
+        )
+        assert detail["public_reports"]["not_looked_because"] == public_reports.NO_PROVED_EMAIL
+        blocked = str(detail["complete_blocked_by"] or "")
+        assert "public link" not in blocked and "could not be checked" not in blocked
+        built = await package.build_response(
+            conn, row, holders=[], response_text="Our answer.", generated_at=datetime.now(UTC)
+        )
+        assert built["reports_from_the_public_link"] == []
+        assert "REPORTS YOU SENT" not in package.digest_text(built)
+    with pytest.raises(Conflict) as refused:
+        await public_reports.erase(conn, row, role=DPO, actor_id=_dpo(seeded))
+    assert refused.value.code == "no_proved_email"
+    assert refused.value.message == public_reports.NO_PROVED_EMAIL
 
 
 async def test_a_grievance_finds_nothing(conn: Any, seeded: dict[str, Any]) -> None:
@@ -358,6 +541,36 @@ async def test_a_request_with_no_account_finds_by_the_email_it_gave_once_verifie
     assert mine in _found(await public_reports.found(conn, row))
 
 
+async def test_the_neutral_reply_says_the_code_goes_to_the_contact_held(
+    conn: Any, seeded: dict[str, Any], redis_conn: Any, sent: Any
+) -> None:
+    """Asked by an account's mobile, the code goes to its email: the reply says
+    it goes to the contact held for them, which is true for everybody, and is
+    the same for somebody nobody holds."""
+    person = await _person(conn, mobile_proved=True)
+    mobile = plain(
+        (await fetch_one(conn, "SELECT mobile FROM auth_user WHERE id = %s", (person["id"],)))[
+            "mobile"
+        ]
+    )
+    replies = []
+    for contact in (mobile, _address("stranger")):
+        await _unthrottle(redis_conn, contact)
+        made = await service.submit_public(
+            conn,
+            request_type="access",
+            contact=contact,
+            name=None,
+            request_text="What do you hold about me?",
+            ip_address="127.0.0.1",
+        )
+        replies.append(made["message"])
+    assert replies[0] == replies[1] == service.NEUTRAL_MESSAGE
+    assert "a verification code has been sent to the contact we hold for you" in replies[0]
+    [code] = [a for a in sent if a[0] == "send_rights_verification_code"]
+    assert plain(code[1]) == person["email"], "not to the mobile typed"
+
+
 async def test_a_dismissed_reporter_and_a_stranger_fail_verification_alike(
     conn: Any, seeded: dict[str, Any], redis_conn: Any, sent: Any
 ) -> None:
@@ -388,14 +601,16 @@ async def test_a_dismissed_reporter_and_a_stranger_fail_verification_alike(
         await service.verify_public_code(conn, reference=reporter["reference"], code=code)
 
 
-async def test_a_mobile_contact_finds_nothing(
+async def test_a_mobile_contact_finds_nothing_and_says_nothing_was_looked_for(
     conn: Any, seeded: dict[str, Any], redis_conn: Any, sent: Any
 ) -> None:
     row = await _from_the_form(conn, seeded, redis_conn, f"+9195{uuid.uuid4().int % 10**8:08d}")
     assert row["subject_user_id"] is None
     row = await _verified_by_hand(conn, seeded, row)
     found = await public_reports.found(conn, row)
-    assert found["looked"] is True and found["open"] == []
+    assert found["looked"] is False and found["open"] == []
+    assert found["not_looked_because"] == public_reports.NO_PROVED_EMAIL
+    assert found["unavailable"] is False
 
 
 async def test_the_key_service_down_leaves_the_page_and_holds_complete(
@@ -469,6 +684,95 @@ async def test_the_channel_is_asked_only_while_identity_waits_and_only_by_an_off
     other = await _from_the_form(conn, seeded, redis_conn, reporter)
     verified = await _verified_by_hand(conn, seeded, other)
     assert await _channel(conn, seeded, verified) is None, "nothing waits for a code"
+
+
+async def test_the_administrator_learns_nothing_of_the_register_from_send_a_code(
+    conn: Any, seeded: dict[str, Any], sent: Any
+) -> None:
+    """On a request about the office with no account, the administrator is
+    refused alike whether the contact sent a dismissed report or not, and no
+    code goes to the reporter: code_channel is null for them for that reason."""
+    admin = int(seeded["users"]["admin"]["id"])
+    reporter = _address()
+    await _dismissed(conn, seeded, reporter)
+    outcomes = []
+    for contact in (reporter, _address("stranger")):
+        row = await service.create(
+            conn,
+            request_type="access",
+            channel="staff_logged",
+            request_text="Logged from an email",
+            submitted_contact=contact,
+            submitted_name=None,
+            subject_user_id=None,
+            actor_id=admin,
+            about_dpo=True,
+        )
+        try:
+            await service.send_verification_code(conn, row, role=Role.ADMIN, actor_id=admin)
+            outcomes.append(("sent",))
+        except CmpError as refused:
+            outcomes.append(
+                (type(refused).__name__, refused.status_code, refused.code, refused.message)
+            )
+    assert outcomes[0] == outcomes[1]
+    assert outcomes[0] == ("Forbidden", 403, "officers_only", service.OFFICERS_ONLY)
+    assert not [a for a in sent if a[0] == "send_rights_verification_code"]
+
+
+async def test_nor_from_confirm_and_the_reporter_s_code_survives_their_tries(
+    conn: Any, seeded: dict[str, Any], redis_conn: Any, sent: Any
+) -> None:
+    """Five wrong codes would spend a reporter's code and say so, where a
+    stranger's request has none to spend. The administrator is refused before
+    any code is checked, so the reporter's still verifies."""
+    admin = int(seeded["users"]["admin"]["id"])
+    reporter = _address()
+    await _dismissed(conn, seeded, reporter)
+    from_a_report = await _from_the_form(conn, seeded, redis_conn, reporter)
+    [code] = [a[2] for a in sent if a[0] == "send_rights_verification_code"]
+    nobody = await _from_the_form(conn, seeded, redis_conn, _address("stranger"))
+    wrong = "111111" if code == "000000" else "000000"
+    seen = []
+    for row in (from_a_report, nobody):
+        await conn.execute(
+            "UPDATE rights_request SET about_dpo = true WHERE request_id = %s",
+            (int(row["request_id"]),),
+        )
+        row = await service.reload(conn, row)
+        out = []
+        for _ in range(settings.otp_max_verify_attempts + 1):
+            try:
+                await service.confirm_verification_code(
+                    conn, row, code=wrong, role=Role.ADMIN, actor_id=admin
+                )
+            except CmpError as refused:
+                out.append((type(refused).__name__, refused.code))
+        seen.append(out)
+    assert seen[0] == seen[1] == [("Forbidden", "officers_only")] * len(seen[0])
+    row = await service.reload(conn, from_a_report)
+    row = await service.confirm_verification_code(
+        conn, row, code=code, role=DPO, actor_id=_dpo(seeded)
+    )
+    assert row["verification_status"] == "verified"
+
+
+async def test_an_officer_still_sends_the_reporter_a_code_and_is_told_of_a_stranger(
+    conn: Any, seeded: dict[str, Any], redis_conn: Any, sent: Any
+) -> None:
+    reporter = _address()
+    await _dismissed(conn, seeded, reporter)
+    from_a_report = await _from_the_form(conn, seeded, redis_conn, reporter)
+    nobody = await _from_the_form(conn, seeded, redis_conn, _address("stranger"))
+    sent.clear()
+    for role in (DPO, Role.LEGAL):
+        await service.send_verification_code(conn, from_a_report, role=role, actor_id=_dpo(seeded))
+        [code] = [a for a in sent if a[0] == "send_rights_verification_code"]
+        assert plain(code[1]) == reporter
+        sent.clear()
+    with pytest.raises(ValidationFailed) as refused:
+        await service.send_verification_code(conn, nobody, role=DPO, actor_id=_dpo(seeded))
+    assert "matches nobody" in refused.value.message
 
 
 async def test_a_key_service_down_leaves_the_channel_unknown_and_the_page_open(

@@ -7,12 +7,12 @@ record of accountability stands on it, and the person who sent it may ask what
 is held about her and have her name and email taken off it.
 
 * **Found by its blind index**, once identity is verified, on an access or an
-  erasure request about everything held: her account's email once a code to
-  it came back (or on a row from before such proofs were stamped), and its
-  second email once that is proved; for a request with no account, the email
-  it gave. An email nobody proved may be somebody else's, and it would hand
-  that person's report over or erase it. Nothing is looked for on a request
-  confined to one consent, because a report is under none.
+  erasure request about everything held: the account's email once a code to
+  it came back, and its second email once one to that did; for a request with
+  no account, the email it gave. An email nobody proved may be somebody
+  else's, and it would hand that person's report over or erase it. Nothing is
+  looked for on a request confined to one consent, because a report is under
+  none, nor where no such address is held, and the request says so.
 * **Shown to the officers alone.** The register is theirs, and the
   administrator, who may read a request about the office, is shown nothing.
 * **Erased by an officer's act on the request**, not an item: an item is her
@@ -85,6 +85,12 @@ HOLD_UNKNOWN: Final = (
     "not be checked. Reload to try again."
 )
 NOTHING_LEFT: Final = "No report from the public link still carries the requester's name and email."
+#: Nothing to look by: the account's email has never answered a code, and it
+#: has no second email that has, or a request with no account gave a mobile. Said
+#: so, because "no report carries the email" would claim a search never made.
+NO_PROVED_EMAIL: Final = (
+    "No email address proved to be the requester's is held, so nothing was looked for."
+)
 
 #: What the response says became of each report.
 NOT_TAKEN_UP: Final = "Not taken up as an incident."
@@ -136,25 +142,30 @@ def is_officer(role: Role | str) -> bool:
 
 
 def email_proved(person: Row) -> bool:
-    """Whether an account's own email counts as the account holder's.
+    """Whether an account's own email counts as the account holder's: a code
+    sent to it came back, and nothing else.
 
-    A code came back from it, or the row is from before each medium's proof
-    was stamped: neither the email nor the mobile carries a stamp, the legacy
-    rule `consent.service.receipt_contact` keeps. An account that proved its
-    mobile and never its email is the case this refuses. A nominee's account
-    is made that way, carrying the email the principal typed, and so may carry
-    somebody else's address."""
-    return bool(person.get("email_verified_at")) or not person.get("mobile_verified_at")
+    No stamp is read as legacy. A stamp missing from both media says nothing
+    about the row's age: a changed mobile loses its stamp (`users.update_profile`),
+    and a sign-up nobody finished carries neither, so "neither stamped" is
+    reached on purpose by whoever typed somebody else's address. A nominee's
+    account carries the email the principal typed and proves only the mobile.
+    A sign-in, a reset or an invitation, the second factor and the other flows
+    that send an account's own email a code stamp it when the code comes back
+    (`users.mark_contact_verified`), so an older account counts from the next
+    code to it."""
+    return bool(person.get("email_verified_at"))
 
 
 async def address_hashes(conn: Conn, row: Row) -> list[str]:
-    """The blind indexes of the addresses this request may find her by.
+    """The blind indexes of the addresses this request may find the requester by.
 
     Only addresses the account holder has proved: the account's email by
     `email_proved`, and its second email once a code to it came back. A
     request with no account has only the contact it gave, opened to be hashed
-    as an email; a mobile finds nothing, because a report carries none. Raises
-    `DkmsUnavailable` when that contact cannot be opened."""
+    as an email; a mobile gives none, because a report carries none. Empty
+    then, which `found` says as `NO_PROVED_EMAIL`. Raises `DkmsUnavailable`
+    when that contact cannot be opened."""
     if why_not_look(row):
         return []
     if row.get("subject_user_id") is not None:
@@ -179,7 +190,13 @@ async def found(conn: Conn, row: Row, *, strict: bool = False) -> Row:
     Not strict, a key service that does not answer is said rather than raised,
     so the request's page still opens; `unavailable` tells a caller that the
     answer is unknown rather than empty. Strict, it is raised, for a write that
-    must not act on an unknown."""
+    must not act on an unknown.
+
+    A request that would look but holds no proved address to look by has not
+    looked, and says so (`NO_PROVED_EMAIL`): an empty list would read as "no
+    report carries the requester's email" when no email was searched for. It
+    is not unknown either, so it holds nothing back that a request confined to
+    one consent does not."""
     erased = await incident_repo.erased_under(conn, int(row["request_id"]))
     reason = why_not_look(row)
     if reason:
@@ -190,7 +207,9 @@ async def found(conn: Conn, row: Row, *, strict: bool = False) -> Row:
         if strict:
             raise
         return _result(UNAVAILABLE, erased=erased, unavailable=True)
-    reports = await incident_repo.found_for(conn, hashes, limit=None) if hashes else []
+    if not hashes:
+        return _result(NO_PROVED_EMAIL, erased=erased)
+    reports = await incident_repo.found_for(conn, hashes, limit=None)
     return {
         "looked": True,
         "not_looked_because": None,
@@ -306,12 +325,12 @@ async def erase(conn: Conn, row: Row, *, role: Role | str, actor_id: int) -> Row
         code, message = refused
         raise Conflict(message, code=code)
     hashes = await address_hashes(conn, row)
-    done = (
-        await incident_repo.erase_reporters(
-            conn, hashes, request_id=int(row["request_id"]), erased_by=actor_id
-        )
-        if hashes
-        else []
+    if not hashes:
+        # Refused as the page refuses it: with no proved address there is
+        # nothing to erase by, which is not the same as nothing left.
+        raise Conflict(NO_PROVED_EMAIL, code="no_proved_email")
+    done = await incident_repo.erase_reporters(
+        conn, hashes, request_id=int(row["request_id"]), erased_by=actor_id
     )
     for report in done:
         await audit.record(

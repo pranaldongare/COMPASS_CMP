@@ -408,7 +408,8 @@ class PublicReportsOut(Out):
 
     looked: bool
     #: Why nothing was looked for: identity not verified, a request of another
-    #: kind or confined to one consent, or the key service not answering.
+    #: kind or confined to one consent, no email address proved to be the
+    #: requester's to look by, or the key service not answering.
     not_looked_because: str | None
     #: Up to 50 still naming her, oldest first, then those erased under this request.
     items: list[PublicReportOut]

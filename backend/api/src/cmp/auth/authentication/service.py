@@ -45,7 +45,7 @@ from cmp.domain.audit.service import Event
 from cmp.domain.users import age
 from cmp.infrastructure.dkms import opened
 from cmp.infrastructure.dkms.blind import index_of
-from cmp.validation import is_mobile, normalise_contact, normalise_mobile
+from cmp.validation import normalise_contact, normalise_mobile
 
 log = get_logger("cmp.auth")
 
@@ -202,6 +202,11 @@ async def verify_mfa(conn: Conn, *, user_uuid: str, code: str, token: str) -> di
 
     user = await _user_by_uuid_id(conn, user_uuid)
     if user:
+        if user.get("email_hash"):
+            # The code went to the account's email (`authenticate`, `resend_mfa`),
+            # which no flow changes, so that mailbox is proved; the mobile is
+            # never sent one here.
+            await user_repo.mark_contact_verified(conn, user["id"], "email")
         await audit.record(
             conn,
             event=Event.MFA_VERIFIED,
@@ -238,6 +243,17 @@ async def resend_mfa(conn: Conn, *, user_uuid: str, email: str) -> None:
 
 
 # --------------------------------------------------- data subject OTP sign-in
+def login_code_identity(user: dict[str, Any], contact: str) -> str:
+    """What a sign-in code is issued under: the account and the contact it is
+    sent to, as the contact's keyed hash, so Redis holds no address.
+
+    Bound to the contact because the code proves that contact and no other.
+    Keyed on the account alone, a code sent to the mobile also answered with
+    the email typed beside it, and stamped the email proved although nothing
+    had gone there (`users.mark_contact_verified`)."""
+    return f"{user['uuid']}:{ratelimit.contact_key(contact)}"
+
+
 async def request_subject_otp(conn: Conn, *, contact: str) -> None:
     """Issue a sign-in code to a data subject.
 
@@ -262,7 +278,7 @@ async def request_subject_otp(conn: Conn, *, contact: str) -> None:
         log.info("auth.otp_requested_unknown_contact")
         return
 
-    issued = await otp.issue(otp.Scope.SUBJECT_LOGIN, str(user["uuid"]))
+    issued = await otp.issue(otp.Scope.SUBJECT_LOGIN, login_code_identity(user, contact))
     from cmp.tasks.authentication import send_login_code
     from cmp.tasks.dispatch import dispatch_required
 
@@ -289,14 +305,17 @@ async def verify_subject_otp(
         raise BadRequest("Invalid or expired code", code="otp_invalid", field="code")
 
     try:
-        await otp.require(otp.Scope.SUBJECT_LOGIN, str(user["uuid"]), code)
+        await otp.require(otp.Scope.SUBJECT_LOGIN, login_code_identity(user, contact), code)
     except (BadRequest, RateLimited):
         await ratelimit.record_address_failure(_CODE_SIGN_IN)
         raise
 
-    user = await user_repo.mark_contact_verified(
-        conn, user["id"], "mobile" if is_mobile(contact) else "email"
-    )
+    # The medium the code went to, which the identity above has just shown is
+    # the contact typed: a second email typed is the second email, never the
+    # first, which no code went to.
+    medium = user_repo.medium_of(user, contact)
+    if medium:
+        user = await user_repo.mark_contact_verified(conn, user["id"], medium)
     if user["status"] == "pending" and user["role"] == Role.DATA_SUBJECT.value:
         # A code proves the medium it came to. Sign-up authenticates every
         # medium she gave, so a pending account with one still unanswered is
@@ -459,6 +478,11 @@ async def confirm_password_reset(conn: Conn, *, email: str, code: str, new_passw
     # Whoever holds the reset code holds the mailbox; a lockout earned by
     # somebody guessing at the old password no longer protects anything.
     await ratelimit.clear_login_failures(ratelimit.account_key(str(user["uuid"])))
+    # And the mailbox is proved, as a sign-in code to it proves it: a reset and
+    # an invitation both send this code to the account's email, which no flow
+    # changes. Otherwise a provisioned account's email would never count as
+    # its holder's (`public_reports.email_proved`).
+    await user_repo.mark_contact_verified(conn, user["id"], "email")
 
     # Setting the first password is what activates a provisioned account, and it
     # has to happen here: `authenticate` refuses anything but an active account,

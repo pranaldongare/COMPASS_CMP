@@ -66,10 +66,20 @@ Row = dict[str, Any]
 
 #: The one message a stranger gets from the public form, whatever happened.
 #: Whether we hold records for the contact, whether a code went out, whether
-#: it verified: none of it is confirmed to the person typing.
+#: it verified: none of it is confirmed to the person typing. The code goes to
+#: the contact held for them, never to the one typed (an account's email before
+#: its mobile, or the address a dismissed report came from), so the sentence
+#: says where to look without saying whether anybody matched.
 NEUTRAL_MESSAGE = (
     "Thank you. Your request has been recorded. If we hold records for the contact "
-    "you gave, a verification code has been sent to it."
+    "you gave, a verification code has been sent to the contact we hold for you."
+)
+
+#: A request with no account has a code only by the register: the address a
+#: dismissed report came from (0065). Which it is, is the officers' to know, so
+#: anybody else is refused in words that do not depend on it.
+OFFICERS_ONLY: Final = (
+    "Only the DPO or the Legal office can send or confirm a code for a request with no account."
 )
 
 
@@ -520,6 +530,7 @@ async def verify_public_code(conn: Conn, *, reference: str, code: str) -> dict[s
         # guessing stays bounded, and the route's limit per IP address is what
         # stops more tries.
         raise refused from None
+    await _code_came_back(conn, row)
     row = await _mark_verified(conn, row, method="code", actor_id=None, note=None)
     return {
         "ok": True,
@@ -529,6 +540,29 @@ async def verify_public_code(conn: Conn, *, reference: str, code: str) -> dict[s
             f"{row['due_at'].date().isoformat()}."
         ),
     }
+
+
+async def _code_came_back(conn: Conn, row: Row) -> None:
+    """A code to the request's account came back: the address it went to is
+    proved, as a sign-in by it proves it (`users.mark_contact_verified`).
+
+    The code went to the account's email where it has one (`submit_public`,
+    `send_verification_code`), and an account's email never changes, so that
+    is the address stamped. With no email it went to the mobile, which can be
+    changed after the code went out; the code does not record which number it
+    was, so nothing is stamped then, and nothing a request finds turns on the
+    mobile's stamp. Never on a data principal mid-sign-up: finishing that is
+    the sign-up page's, with a code to each medium given, and a stamp here
+    would let it finish on the mobile's code alone. A request with no account
+    stamps nobody: its code went to the address on a report."""
+    if row.get("subject_user_id") is None:
+        return
+    person = await user_repo.by_id(conn, int(row["subject_user_id"]))
+    if not person or not person.get("email_hash"):
+        return
+    if person["status"] == "pending" and person["role"] == Role.DATA_SUBJECT.value:
+        return
+    await user_repo.mark_contact_verified(conn, int(person["id"]), "email")
 
 
 async def _mark_verified(
@@ -584,6 +618,7 @@ async def send_verification_code(conn: Conn, row: Row, *, role: Role | str, acto
     _before_collation(row)
     if row["verification_status"] == "verified":
         raise Conflict("Identity is already verified", code="already_verified")
+    _officers_only_without_an_account(row, role)
     if row["subject_user_id"] is None and (
         held := await public_reports.reporter_address_for(conn, row)
     ):
@@ -602,15 +637,30 @@ async def send_verification_code(conn: Conn, row: Row, *, role: Role | str, acto
     return await reload(conn, row)
 
 
+def _officers_only_without_an_account(row: Row, role: Role | str) -> None:
+    """Send a code and Confirm, on a request with no account, are the officers'.
+
+    Its only code is one to the address a dismissed report came from, so
+    whether one was sent, or could be, says whether the contact sent such a
+    report: a fact about the register, which `code_channel` keeps from anybody
+    else. Asked of anybody else, the answer is the same whatever the register
+    holds (a code to send, a wrong code's fifth try). Before anything is
+    opened or a code is checked."""
+    if row["subject_user_id"] is None and not public_reports.is_officer(role):
+        raise Forbidden(OFFICERS_ONLY, code="officers_only")
+
+
 async def confirm_verification_code(
     conn: Conn, row: Row, *, code: str, role: Role | str, actor_id: int
 ) -> Row:
-    """The DPO enters a code she read back over the phone."""
+    """An officer enters a code the requester read back over the phone."""
     _may_act(row, role)
     _before_collation(row)
     if row["verification_status"] == "verified":
         raise Conflict("Identity is already verified", code="already_verified")
+    _officers_only_without_an_account(row, role)
     await otp.require(otp.Scope.RIGHTS_VERIFY, row["reference"], code)
+    await _code_came_back(conn, row)
     return await _mark_verified(conn, row, method="code", actor_id=actor_id, note=None)
 
 
@@ -3752,7 +3802,9 @@ async def accept_nomination(conn: Conn, raw_token: str, *, code: str) -> Row:
     fresh = await _opened_nomination(fresh)
     ref = str(fresh["nomination_uuid"])
     proven = await get_redis().getdel(rkey(K_CACHE, "nomination_medium", ref))
-    medium = str(proven) if proven in ("mobile", "email") else "mobile"
+    # Unknown, nothing is stamped: a guess would mark proved a contact the
+    # code may not have gone to.
+    medium = str(proven) if proven in ("mobile", "email") else None
     has_account = await _ensure_nominee_account(conn, fresh, proven_medium=medium)
     # The reference and the page where he acts, to every contact recorded for
     # him - and, now that accepting has proven a contact, that he can sign in
@@ -3771,7 +3823,9 @@ async def accept_nomination(conn: Conn, raw_token: str, *, code: str) -> Row:
     return fresh
 
 
-async def _ensure_nominee_account(conn: Conn, nomination: Row, *, proven_medium: str) -> bool:
+async def _ensure_nominee_account(
+    conn: Conn, nomination: Row, *, proven_medium: str | None
+) -> bool:
     """A nominee who has just accepted can sign in.
 
     Accepting proved a contact the principal recorded - a code went there and
@@ -3783,7 +3837,10 @@ async def _ensure_nominee_account(conn: Conn, nomination: Row, *, proven_medium:
 
     Either way the account is written onto the nomination, which is what lets
     him follow the request he raises years later without the platform having
-    to guess from contact strings which account is his.
+    to guess from contact strings which account is his. On an account that was
+    there already, the contact the code went to is stamped proved where it is
+    that account's email or mobile, as a sign-in by it would stamp it; never on
+    a data principal mid-sign-up, whose sign-up asks a code of every medium.
 
     Returns whether he now has an account to sign in with. A nomination
     recorded before mobiles were required may name an email alone; a data
@@ -3793,12 +3850,21 @@ async def _ensure_nominee_account(conn: Conn, nomination: Row, *, proven_medium:
     """
     mobile = nomination.get("nominee_mobile")
     email = nomination.get("nominee_email")
+    proved = nomination.get(f"nominee_{proven_medium}") if proven_medium else None
     for contact in (mobile, email):
         existing = await user_repo.by_contact(conn, str(contact)) if contact else None
         if existing:
             await repo.link_nominee_account(
                 conn, int(nomination["nomination_id"]), int(existing["id"])
             )
+            on_it = user_repo.medium_of(existing, str(proved)) if proved else None
+            enrolling = (
+                existing["status"] == "pending" and existing["role"] == Role.DATA_SUBJECT.value
+            )
+            # The account's own email or mobile. A second email is confirmed by
+            # its holder from the account, with a session, and nowhere else.
+            if on_it in ("mobile", "email") and not enrolling:
+                await user_repo.mark_contact_verified(conn, int(existing["id"]), str(on_it))
             return True
     if not mobile:
         return False
@@ -3811,7 +3877,8 @@ async def _ensure_nominee_account(conn: Conn, nomination: Row, *, proven_medium:
         person_type="external",
         status="active",
     )
-    await user_repo.mark_contact_verified(conn, int(user["id"]), proven_medium)
+    if proven_medium:
+        await user_repo.mark_contact_verified(conn, int(user["id"]), proven_medium)
     await repo.link_nominee_account(conn, int(nomination["nomination_id"]), int(user["id"]))
     await audit.record(
         conn,
