@@ -180,6 +180,34 @@ Stored as a **keyed hash, scoped to their purpose** — never in plaintext, and 
 code issued for staff MFA cannot be replayed against the consent flow. Whoever
 can read Redis should not thereby be able to complete somebody else's sign-in.
 
+**A refused code says nothing of who is registered** (2026-11-08). Where anybody
+can type a contact or a reference - a sign-in by code (`POST /auth/otp/verify`), a
+consent link's code (`POST /c/{token}/otp/verify`), a password reset
+(`POST /auth/password/reset/confirm`), a nominee's request
+(`POST /rights/nominee/requests`), finishing a sign-up
+(`POST /auth/register/verify`) and the public rights form
+(`POST /rights/requests/verify`) - a wrong code, a code of the wrong length and a
+spent budget of five tries all answer 400 `otp_invalid`, "Invalid or expired
+code", as a contact nobody holds does; a body the schema refuses (a code of fewer
+than four or more than ten digits, or not digits) is 422 for every caller alike.
+Told apart, they said whom the register
+knows: the length was checked only once an account had been found, and the fifth
+try ended in 429 "Too many incorrect attempts" only where a code had been sent,
+which is only to a contact somebody holds. The fifth wrong try still discards the
+code, so guessing stays bounded. What answers 429 on those routes is the limit per
+address: 30 failures in fifteen minutes at the sign-in and the reset
+(`AUTH_FAILURES_PER_ADDRESS`), ten requests an hour at a nominee's request and 30
+an hour at the rights form; a consent link's tries never answer 429. Finishing a
+sign-up answers on the field of the medium whose code was refused (`mobile_code`
+or `email_code`), and an account with nothing left to answer is refused as an
+unknown mobile is: from 2026-09-06 until 2026-11-08 the mobile alone, with no code,
+opened a session on any data principal's account whose every contact had
+answered once, since no code was outstanding to check. Where a code goes to
+whatever address was typed or to the one a link names - the public link's report,
+a holder ticket, a nomination - the answer has nothing of the register to give
+away, and a code of the wrong length still answers "Invalid code" and the fifth
+wrong try 429.
+
 ## What a code proves
 
 A code that comes back proves the contact it went to, and the flows below stamp
@@ -200,8 +228,8 @@ as confirmed.
 | A sign-in by code (`POST /auth/otp/verify`) | The contact typed, which the code is bound to: the mobile, the email or the second email |
 | A password reset, a staff invitation and a breach holder's invitation (`POST /auth/password/reset/confirm`) | The email, where all three send the code |
 | The staff second factor (`POST /auth/mfa/verify`) | The email; the code never goes to the mobile |
-| A consent link's code (`POST /c/{token}/otp/verify`) | The contact typed: the mobile, the email or the second email |
-| A nomination accepted (`POST /rights/nominations/{token}/accept`) | On a new nominee account, the medium the code went to. On an account already there, that contact only where it is the account's own email or mobile: never a second email, never a sign-up not yet finished, and nothing when the record of where the code went is lost |
+| A consent link's code (`POST /c/{token}/otp/verify`) | The contact typed - the mobile, the email or the second email - on whatever account `users.by_contact` finds for it, a sign-up not yet finished included: the owner of an address typed into somebody else's sign-up, answering a code to it on a link, stamps it on that sign-up, which a sign-in by its other contact can then finish (open, [breaches.md](../domain/breaches.md#open-questions)) |
+| A nomination accepted (`POST /rights/nominations/{token}/accept`) | Only a nominee account it makes, for whoever accepted: the contact the code went to. The code is issued under the nomination and that contact, and asking for one to the other contact replaces it in the same write, so one code is live and which contact it proves is where it lives, never a record kept beside it. An account already there is linked to the nomination and stamped with nothing (below) |
 | Registration (`POST /auth/register/verify`) | Each medium answered |
 | Confirming a contact from the account (`POST /me/contact/verify`) | That contact |
 | An account created by SSO (`POST /c/{token}/sso/mobile/verify`) | The mobile, by its code, and the address the identity provider asserted |
@@ -215,6 +243,15 @@ These stamp nothing:
   to an account carrying that address unproved - a nominee's account, whose email
   the principal typed - so a stamp there would let that account's later requests
   find the dismissed reports of the address's owner.
+- **A nomination accepted on an account already there**
+  (`POST /rights/nominations/{token}/accept`), for the same reason: the account is
+  the one `users.by_contact` finds by either contact the principal recorded, which
+  may carry the address unproved, and the code proves only that whoever accepted
+  holds the contact it went to. Stamped there, as it was between 0923a5b and
+  32d483a on 2026-11-08, the address's owner accepting by it handed that account
+  their dismissed reports. The nomination is still linked to that account, so its
+  holder follows the requests the nominee later raises; that is open
+  ([breaches.md](../domain/breaches.md#open-questions)).
 - **An SSO sign-in to an account already there** (`GET /auth/sso/callback`): only
   creating one stamps. Whether the assertion should stamp the address, as creation
   does, is open ([breaches.md](../domain/breaches.md#open-questions)).
@@ -227,9 +264,10 @@ finds no dismissed report by it until one does, and the request's **Reports from
 the public link** card says that no email address proved to be the requester's is
 held: an account from before the stamps (0015) that has not signed in by email
 since, a staff or breach holder account activated before 2026-11-08 until its next
-second factor, a nominee's account whose code went to the mobile, an account whose
-email was never stamped and whose mobile was changed and not confirmed (read until
-2026-11-08 as one from before the stamps), and a sign-up nobody finished.
+second factor, a nominee's account whose code went to the mobile or that was there
+before the nomination, an account whose email was never stamped and whose mobile
+was changed and not confirmed (read until 2026-11-08 as one from before the
+stamps), and a sign-up nobody finished.
 
 ## Lockout
 

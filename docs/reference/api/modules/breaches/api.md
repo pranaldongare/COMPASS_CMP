@@ -6612,6 +6612,7 @@ A duty as the brief carries it: its clock, and nobody's name.
 | `held` | `integer` | Yes | — | — |
 | `stale` | `integer` | Yes | — | — |
 | `retryable` | `integer` | Yes | — | — |
+| `withheld_because` | enum: `cert_in_set_aside`, `nobody_on_the_list` or `null` | Yes | — | — |
 | `recipients` | array of [`BreachDocumentMailRecipientOut`](#schema-breachdocumentmailrecipientout) | Yes | — | — |
 
 <a id="schema-breachchannelcountout"></a>

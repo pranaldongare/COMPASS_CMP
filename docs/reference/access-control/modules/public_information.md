@@ -74,7 +74,7 @@ Accept a nomination.
 
 - **Who:** public.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** Valid nomination token plus contact code required to accept. It stamps the contact the code went to: on a new nominee account, that medium; on an account already there, only where it is that account's own email or mobile, never a second email and never a sign-up not yet finished; nothing when the record of where the code went is lost (2026-11-08).
+- **Rules:** Valid nomination token plus contact code required to accept. The code proves the contact it was issued under: the nomination and that contact, one code live at a time, so which contact it proves is where it lived; a wrong code costs one try of that code's five, whichever contact it went to. Only a nominee account the acceptance makes is stamped, with that contact. An account already there, found by either recorded contact through `users.by_contact`, is linked to the nomination and stamped with nothing, since it may carry somebody else's address unproved; the link is open (breaches.md). A code issued under the nomination alone before 2026-11-08 is refused once (2026-11-08).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/rights.py#L300), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/service.py#L1).
 
 ## POST /rights/nominations/{token}/code
@@ -87,7 +87,7 @@ A code to one of the contacts recorded on the nomination.
 
 - **Who:** public.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** Valid nomination token; code is sent to a contact recorded on that nomination.
+- **Rules:** Valid nomination token; code is sent to a contact recorded on that nomination. It is issued under the nomination and that contact and replaces the other contact's code in the same write (MULTI/EXEC), so one code is live, the last asked for (2026-11-08).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/rights.py#L287), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/service.py#L1).
 
 ## POST /rights/nominations/{token}/decline
@@ -100,7 +100,7 @@ Decline a nomination.
 
 - **Who:** public.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** Valid nomination token plus contact code required to decline.
+- **Rules:** Valid nomination token plus contact code required to decline. The code is the one live, under whichever recorded contact it went to; a wrong code costs one try of its five (2026-11-08).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/rights.py#L324), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/service.py#L1).
 
 ## POST /rights/nominee/requests
@@ -113,7 +113,7 @@ A nominee makes a request on her behalf.
 
 - **Who:** public.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** Accepted/usable nomination and nominee code required; trigger event is recorded and evidence is reviewed before substantive processing.
+- **Rules:** Accepted/usable nomination and nominee code required; trigger event is recorded and evidence is reviewed before substantive processing. A wrong code, a code of the wrong length and a spent budget of five tries answer 400 otp_invalid "Invalid or expired code", as a nomination not in effect does, so the answer says neither that the nomination is in effect nor that the contact typed at the start matched; only the limit of ten an hour per address answers 429 (2026-11-08).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/rights.py#L369), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/service.py#L1).
 
 ## POST /rights/nominee/start

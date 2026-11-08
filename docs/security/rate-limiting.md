@@ -81,9 +81,19 @@ the same reason.
 429 with `Retry-After`. The header is exposed through CORS, so a browser client
 can actually read it and back off rather than hammering.
 
-One exception: the public rights form's second half,
-`POST /rights/requests/verify`, answers a spent budget of tries as it answers a
-wrong code, 400 `otp_invalid` "Invalid or expired code", and discards the code,
-because "too many" would say a code had been issued, and so that the contact is
-somebody's or sent a report an office dismissed (2026-11-08). Only
-`rights_verify_ip`, 30 an hour, answers 429 there.
+One exception: a spent budget of tries on a code is answered as a wrong code
+is, 400 `otp_invalid` "Invalid or expired code", and the code is discarded,
+wherever anybody can type a contact or a reference - the public rights form's
+second half (`POST /rights/requests/verify`), a sign-in by code
+(`POST /auth/otp/verify`), a consent link's code (`POST /c/{token}/otp/verify`),
+a password reset (`POST /auth/password/reset/confirm`), a nominee's request
+(`POST /rights/nominee/requests`) and finishing a sign-up
+(`POST /auth/register/verify`) - because "too many" would say a code had been
+issued, and so that the contact is somebody's or, on the rights form, sent a
+report an office dismissed (2026-11-08). What answers 429 there is the limit per
+address: `rights_verify_ip` (30 an hour), `otp_login_fail_ip` and
+`reset_fail_ip` (30 failures in fifteen minutes) and `nominee_request_ip` (ten an
+hour); the consent link's tries never answer 429. Where a code goes to whatever
+address was typed or to the one a link names - the public link's report, a holder
+ticket, a nomination - the fifth wrong try still answers 429
+([authentication.md](authentication.md#one-time-codes)).

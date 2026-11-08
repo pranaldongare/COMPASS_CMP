@@ -411,7 +411,7 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "A valid contact code opens a session acting as data_subject, even when the underlying account is staff. The code verifies only with the contact it was sent to: another contact of the same account answers 400 otp_invalid, as a wrong code does. It stamps that contact proved - the mobile, the email or the second email typed - and no other (2026-11-08)."
+        "A valid contact code opens a session acting as data_subject, even when the underlying account is staff. The code verifies only with the contact it was sent to: another contact of the same account, a code of the wrong length and a spent budget of five tries answer 400 otp_invalid \"Invalid or expired code\", as a wrong code and an unknown contact do, so no refusal says whom the register knows; only the limit of 30 failures in fifteen minutes per address answers 429. It stamps that contact proved - the mobile, the email or the second email typed - and no other (2026-11-08)."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/auth.py#L279",
@@ -494,7 +494,7 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "Public entry point; an account-specific reset/invitation code is required. This activates a pending invited account. It stamps the account's email proved: a reset, a staff invitation and a breach holder's invitation all send this code there (2026-11-08)."
+        "Public entry point; an account-specific reset/invitation code is required. This activates a pending invited account. It stamps the account's email proved: a reset, a staff invitation and a breach holder's invitation all send this code there. A wrong code, a code of the wrong length and a spent budget of five tries answer 400 otp_invalid \"Invalid or expired code\", as an email with no account does; only the limit of 30 failures in fifteen minutes per address answers 429 (2026-11-08)."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/auth.py#L345",
@@ -606,7 +606,7 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "Public entry point; valid registration contact codes are required to complete registration."
+        "Public entry point; valid registration contact codes are required to complete registration. A wrong code, a code of the wrong length and a spent budget answer 400 otp_invalid \"Invalid or expired code\", as an unknown mobile does, on the field of the medium (mobile_code or email_code). An account with nothing left to answer is refused as an unknown mobile is (field mobile_code): from 2026-09-06 until 2026-11-08 the mobile alone, with no code, opened a session on a data principal's account whose every contact had answered once."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/auth.py#L260",
@@ -5902,7 +5902,7 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "Valid link and contact code(s) required. Completion opens a data_subject session, including for staff account holders. It stamps the contact typed proved - the mobile, the email or the second email - and no other (2026-11-08)."
+        "Valid link and contact code(s) required. Completion opens a data_subject session, including for staff account holders. It stamps the contact typed proved - the mobile, the email or the second email - and no other, on whatever account `users.by_contact` finds for it, a sign-up not yet finished included, which a sign-in by its other contact can then finish (open, breaches.md). A wrong code, a code of the wrong length and a spent budget of five tries answer 400 otp_invalid \"Invalid or expired code\", never 429: a code is sent only to a contact the register knows, so \"too many\" would say it is somebody's (2026-11-08)."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/consent.py#L168",
@@ -6086,7 +6086,7 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "Valid nomination token plus contact code required to accept. It stamps the contact the code went to: on a new nominee account, that medium; on an account already there, only where it is that account's own email or mobile, never a second email and never a sign-up not yet finished; nothing when the record of where the code went is lost (2026-11-08)."
+        "Valid nomination token plus contact code required to accept. The code proves the contact it was issued under: the nomination and that contact, one code live at a time, so which contact it proves is where it lived; a wrong code costs one try of that code's five, whichever contact it went to. Only a nominee account the acceptance makes is stamped, with that contact. An account already there, found by either recorded contact through `users.by_contact`, is linked to the nomination and stamped with nothing, since it may carry somebody else's address unproved; the link is open (breaches.md). A code issued under the nomination alone before 2026-11-08 is refused once (2026-11-08)."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/rights.py#L300",
@@ -6122,7 +6122,7 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "Valid nomination token; code is sent to a contact recorded on that nomination."
+        "Valid nomination token; code is sent to a contact recorded on that nomination. It is issued under the nomination and that contact and replaces the other contact's code in the same write (MULTI/EXEC), so one code is live, the last asked for (2026-11-08)."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/rights.py#L287",
@@ -6158,7 +6158,7 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "Valid nomination token plus contact code required to decline."
+        "Valid nomination token plus contact code required to decline. The code is the one live, under whichever recorded contact it went to; a wrong code costs one try of its five (2026-11-08)."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/rights.py#L324",
@@ -6194,7 +6194,7 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "Accepted/usable nomination and nominee code required; trigger event is recorded and evidence is reviewed before substantive processing."
+        "Accepted/usable nomination and nominee code required; trigger event is recorded and evidence is reviewed before substantive processing. A wrong code, a code of the wrong length and a spent budget of five tries answer 400 otp_invalid \"Invalid or expired code\", as a nomination not in effect does, so the answer says neither that the nomination is in effect nor that the contact typed at the start matched; only the limit of ten an hour per address answers 429 (2026-11-08)."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/rights.py#L369",
@@ -7418,6 +7418,7 @@
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
         "`public_reports`, the reports from the public link that an office dismissed and that the requester sent, found by the blind index of their proved email addresses (the account's email once a code sent to it came back, `email_verified_at`, an account with neither stamp no longer read as one from before the stamps; its second email once a code to that one came back; or a request with no account's email), is served to the DPO and the Legal PoC only, once identity is verified on an access or erasure request not confined to one consent; the administrator on a request about the office is served null, though a response the administrator releases on such a request carries the requester's own reports in its package (open, breaches.md). With no such address to look by - an account whose email no stamping flow has reached and with no proved second email, or a request with no account whose contact is a mobile - nothing is looked for: `looked` false, `not_looked_because` and `erase_blocked_by` \"No email address proved to be the requester's is held, so nothing was looked for.\", `may_erase` false, and nothing held back from Complete (2026-11-08). `code_channel` is served to the same two officers alone: true when a code can go to a channel already held for the requester (the account's, or with no account the address a dismissed report came from), false when none is, and null for the administrator, for a request not pending verification or past awaiting_holders, and when the key service does not answer; never the address. `complete_blocked_by` names no report, and to the administrator says only the DPO or the Legal office can take the name and email off. (0065, ADR 0037 as amended 2026-11-07; 2026-11-08)",
+        "`verification_method`, `verified_at` and `verified_by_name` are served to every reader, the administrator on a request about the office included. On a request with no account, verified by code can only be a dismissed reporter's request, since with no account a code goes to no other address, so these fields tell the administrator the fact of the register that `public_reports` null and `officers_only` keep from them; whether to serve them a neutral method is open (breaches.md, 2026-11-08).",
         "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
@@ -8430,7 +8431,7 @@
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
-        "On a request from the public form with no account, `rights.verification_code_sent` at submission, with no actor, is there only when the contact sent a dismissed report, so the administrator on a request about the office can read that fact of the register here; whether the trail should be filtered by role is open (breaches.md, 2026-11-08).",
+        "On a request from the public form with no account, `rights.verification_code_sent` at submission, with no actor, is there only when the contact sent a dismissed report, and `rights.verified` with method `code` can only follow such a code, so the administrator on a request about the office can read that fact of the register here; whether the trail should be filtered by role is open, and filtering it alone would not close it, since the request's detail serves its verification method too (breaches.md, 2026-11-08).",
         "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
@@ -8768,7 +8769,7 @@
       },
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
-        "On a request from the public form with no account, `rights.verification_code_sent` at submission, with no actor, is there only when the contact sent a dismissed report, so the administrator on a request about the office can read that fact of the register here; whether the trail should be filtered by role is open (breaches.md, 2026-11-08).",
+        "On a request from the public form with no account, `rights.verification_code_sent` at submission, with no actor, is there only when the contact sent a dismissed report, and `rights.verified` with method `code` can only follow such a code, so the administrator on a request about the office can read that fact of the register here; whether the trail should be filtered by role is open, and filtering it alone would not close it, since the request's detail serves its verification method too (breaches.md, 2026-11-08).",
         "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
@@ -10772,7 +10773,7 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Yes needs the time of awareness and creates the three DPDP duties, and the organisation's board's, due thirty minutes from the validation (ADR 0037); no sets aside those not done. On a yes, a duty it brings back whose work was done while a no had it aside is done at once from that work, and nobody is mailed: the organisation's board's from the first of its own reports to have reached the board, the initial intimation's and the 72-hour report's from the first filing recorded. The first yes also sends a report to CERT-In whose mail to the board was held for it, unless CERT-In is set aside then or nobody it was chosen for is still on the list, when it is recorded withheld (2026-11-08). Refused on a closed breach (409 `breach_closed`). (S3-01, ADR 0037 as amended 2026-11-07)",
+        "The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one. Yes needs the time of awareness and creates the three DPDP duties, and the organisation's board's, due thirty minutes from the validation (ADR 0037); no sets aside those not done. On a yes, a duty it brings back whose work was done while a no had it aside is done at once from that work, and nobody is mailed: the organisation's board's from the first of its own reports to have run its course and reached the board, a version still sending passed over, the initial intimation's and the 72-hour report's from the first filing recorded. The first yes also sends a report to CERT-In whose mail to the board was held for it, unless CERT-In is set aside then or nobody it was chosen for is still on the list, when it is recorded withheld (2026-11-08). Refused on a closed breach (409 `breach_closed`). (S3-01, ADR 0037 as amended 2026-11-07)",
         "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
@@ -13372,7 +13373,7 @@
       },
       "conditions": [
         "The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one.",
-        "Each of the five kinds of report: where it stands, what it would discharge, why it may not be written yet, and every version with its sealed sections, its proofs and what became of its mail. (0059, ADR 0037)",
+        "Each of the five kinds of report: where it stands, what it would discharge, why it may not be written yet, and every version with its sealed sections, its proofs and what became of its mail. A version of the report to CERT-In the first yes withheld serves why in its mail, `withheld_because`: `cert_in_set_aside` or `nobody_on_the_list`, read from that version's `breach.report_withheld` row, never from the list as it stands; null for every other version and kind, and kept once a person sends it with Try again (2026-11-08). (0059, ADR 0037)",
         "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
       ],
       "evidence": [
@@ -16604,6 +16605,11 @@
       "on": "2026-11-08",
       "commit": "The second review of that build, 0923a5b and ef0f0cc",
       "note": "No operation added or removed. Rules changed: GET /requests/{request_uuid} and POST /requests/{request_uuid}/public-reports/erase count an account's email only once a code sent to it came back, with no legacy reading, and say so when nothing could be looked for (erase 409 no_proved_email); POST /requests/{request_uuid}/verification/code and /confirm on a request with no account are the DPO's and the Legal PoC's (403 officers_only); POST /rights/requests says the code went to the contact held; POST /rights/requests/verify answers a malformed body 422 validation_failed, and neither it nor /confirm stamps the account; POST /auth/otp/request and /verify bind a sign-in code to its contact, and the reset, the second factor, a consent link's code and a nomination stamp what their code went to; GET /auth/sso/callback stamps nothing on an account already there (open); GET /requests/{request_uuid}/trail and /linked/trail note the code sent at submission (open); resend passes over a version still sending. Evidence links point at HEAD."
+    },
+    {
+      "on": "2026-11-08",
+      "commit": "The third review of that build, 32d483a",
+      "note": "No operation added or removed. Rules changed: POST /rights/nominations/{token}/accept stamps only a nominee account it makes, and links an account already there with no stamp; /code issues the code under the nomination and the contact it goes to, one live, and accept and /decline find it there; POST /auth/otp/verify, /c/{token}/otp/verify, /auth/password/reset/confirm, /rights/nominee/requests and /auth/register/verify answer a code of the wrong length and a spent budget as a wrong code, 400 otp_invalid, the limit per address staying the 429, and /auth/register/verify refuses an account with nothing left to answer as an unknown mobile; /c/{token}/otp/verify notes the stamp on an unfinished sign-up (open); GET /breaches/{breach_uuid}/reports serves why the first yes withheld a report to CERT-In; POST /breaches/{breach_uuid}/determinations passes over a version still sending; GET /requests/{request_uuid}, /trail and /linked/trail note the verification method the administrator reads (open). Evidence links unchanged."
     }
   ]
 }

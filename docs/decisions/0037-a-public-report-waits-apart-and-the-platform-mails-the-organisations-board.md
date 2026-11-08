@@ -5,8 +5,10 @@ and what the review of the work changed, at the end); amended again 2026-11-07
 (the product owner's six answers of that day, which confirmed and widened the
 set-aside, [at the end](#amended-2026-11-07-the-product-owners-answers)); corrected
 in place 2026-11-08, where a review of what the answers built found these words and
-the code apart, and again that day after its second review (an account's email
-counts only once a code to it came back). Migrations 0058 to 0065: 0058 to 0063
+the code apart, again that day after its second review (an account's email
+counts only once a code to it came back), and a third time after its third (a
+nomination stamps only an account it makes, and a report's mail says why the
+*yes* withheld it). Migrations 0058 to 0065: 0058 to 0063
 for the product owner's nine items of 2026-11-06, 0064 and 0065 for the answers.
 The answers also reach
 [ADR 0019](0019-erasure-reaches-every-store-but-the-record.md), whose erasure now
@@ -520,18 +522,18 @@ dismissed it.
   the contact typed (a sign-in code is now bound to it); a reset, the staff and
   breach holder invitations and the staff second factor stamp the email; a
   nomination, registration, confirming a contact and creating an account by SSO
-  stamp what their codes, or the identity provider, proved (a nomination, on an
-  account already there, only its own email or mobile)
+  stamp what their codes, or the identity provider, proved (a nomination only on a
+  nominee account it makes)
   ([authentication.md](../security/authentication.md#what-a-code-proves)). The
-  public form's code and an officer's Confirm stamp nothing: they prove that
-  whoever made the request holds the address, not that the account's holder does,
-  and `users.by_contact` may have attached the request to an account carrying
-  somebody else's address. With no proved address the request says nothing was
-  looked for, and its erasure is refused (409 `no_proved_email`). Only the two
-  officers are shown what it finds, on the
-  request's **Holders** tab. A response the administrator releases on a request
-  about the office still carries the requester's own reports in its package; who
-  should answer that part is open ([breaches.md](../domain/breaches.md#open-questions)).
+  public form's code, an officer's Confirm and a nomination accepted on an account
+  already there stamp nothing: they prove that whoever answered holds the address,
+  not that the account's holder does, and `users.by_contact` may have found an
+  account carrying somebody else's address. With no proved address the request
+  says nothing was looked for, and its erasure is refused (409 `no_proved_email`).
+  Only the two officers are shown what it finds, on the request's **Holders** tab.
+  A response the administrator releases on a request about the office still
+  carries the requester's own reports in its package; who should answer that part
+  is open ([breaches.md](../domain/breaches.md#open-questions)).
 - **Access** gives a requester with an account their own name, email and words, in
   the response package, with when the report was received and dismissed, and that it
   was not taken up. A request with no account has no package: it is answered by
@@ -571,12 +573,12 @@ later request cannot reach them; the reason stays and may name them too. No proo
 of an email was backfilled: an account whose email none of the stamping flows has
 reached since finds nothing by it until one does: a request from an older
 account, a staff or breach holder account not signed in since 2026-11-08, or a
-nominee's account whose code went to the mobile finds none of its own reports, and
-its card says nothing was looked for. A report
-that was claimed is not reached at all: it is the incident's record of what the
-office was told, and it may sit in the other office's register, so neither request
-surfaces it. Nothing expires a dismissed report: it is kept until a rights request
-erases its reporter. Each of these is for Legal or the owner to revisit
+nominee's account whose code went to the mobile or that was there before the
+nomination finds none of its own reports, and its card says nothing was looked
+for. A report that was claimed is not reached at all: it is the incident's record
+of what the office was told, and it may sit in the other office's register, so
+neither request surfaces it. Nothing expires a dismissed report: it is kept until a
+rights request erases its reporter. Each of these is for Legal or the owner to revisit
 ([breaches.md](../domain/breaches.md#open-questions)). ADR 0019's "every store" and
 ADR 0026's "everything held" now include these reports.
 
@@ -606,8 +608,11 @@ unchanged at the first *yes*.
 - **Nobody left to send it to.** If everybody it was chosen for has been taken off
   the list by the first *yes*, nothing goes, and the trail says withheld, not sent
   (`why: nobody_on_the_list`, with how many were left out; 2026-11-08). Try again has
-  nobody to try; a new version reaches the list as it then stands. The withheld row
-  reads *Report held for the board not sent at the validation* for either reason.
+  nobody to try while they stay off, and tries one put back on the list since; a new
+  version reaches the list as it then stands. The withheld row reads *Report held for
+  the board not sent at the validation* for either reason, and the version's mail on
+  the reports overview serves the reason it recorded (`withheld_because`), never one
+  read from the list as it stands, which may have changed since (2026-11-08).
 - **Only the newest goes.** An earlier version finalised before the *yes* was replaced
   before it went, and stays unsent.
 - **After the first *yes*** the board has the breach and its own report, so a report

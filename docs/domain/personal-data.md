@@ -308,8 +308,9 @@ no duty or accountability record stands on it, and the product owner's answer of
   no longer read as one from before the stamps, and a nominee's account carries the
   address the principal typed, which may be somebody else's. Which flows stamp
   what is in [authentication.md](../security/authentication.md#what-a-code-proves); the public
-  rights form's code and an officer's Confirm stamp nothing, since they prove only
-  that the requester holds the address. Nothing was backfilled, so an account whose
+  rights form's code, an officer's Confirm and a nomination accepted on an account
+  already there stamp nothing, since they prove only that whoever answered holds
+  the address. Nothing was backfilled, so an account whose
   email no such flow has reached finds nothing by it until one does, and the card
   says no email address proved to be the requester's is held. Only the
   two officers are shown what was found, on the request's **Holders** tab; the
@@ -900,25 +901,25 @@ the same token and are protected the same way.
 | Endpoint | Anonymous? | What it takes | What stops it being an oracle |
 |---|---|---|---|
 | `POST /auth/register` | Yes | `full_name`, `email`, `mobile`, `dob` | Rate-limited per contact and address; the account is `pending` until codes to both contacts come back |
-| `POST /auth/register/verify` | Carries codes | `mobile`, `email_code`, `mobile_code` | Five attempts, ten minutes, one atomic check-and-consume |
+| `POST /auth/register/verify` | Carries codes | `mobile`, `email_code`, `mobile_code` | Five attempts, ten minutes, one atomic check-and-consume; a wrong code, one of the wrong length and a spent budget are the unknown mobile's 400 `otp_invalid`, on the field of the medium, and an account with nothing left to answer is refused as an unknown mobile is, where until 2026-11-08 the mobile alone opened a session on it |
 | `POST /auth/login` | Carries the password | `login`, `password` | Five failures locks the account for 30 minutes; the reply does not distinguish a wrong password from an unknown login |
 | `POST /auth/otp/request` | Yes | `contact` | **The reply is the same sentence whether or not the contact is registered**, so it cannot be used to ask whether a number is on the register |
-| `POST /auth/otp/verify` | Carries the code | `contact`, `code` | Ten minutes, five attempts, one atomic check-and-consume; the code answers only to the contact it was sent to, and another contact of the same account is refused as a wrong code is (2026-11-08); a verified code mints a `data_subject` session **whatever role the account holds** |
+| `POST /auth/otp/verify` | Carries the code | `contact`, `code` | Ten minutes, five attempts, one atomic check-and-consume; the code answers only to the contact it was sent to, and another contact of the same account, a code of the wrong length and a spent budget are refused as a wrong code and an unknown contact are, 400 `otp_invalid` (2026-11-08); only the limit of 30 failures in fifteen minutes per address answers 429; a verified code mints a `data_subject` session **whatever role the account holds** |
 | `POST /auth/password/reset/request` | Yes | `email` | Neutral reply, rate-limited |
-| `POST /auth/password/reset/confirm` | Carries the code | `email`, `code`, `new_password` | Single-use code |
+| `POST /auth/password/reset/confirm` | Carries the code | `email`, `code`, `new_password` | Single-use code; a wrong code, one of the wrong length and a spent budget answer as an unknown email does, 400 `otp_invalid` (2026-11-08), and only the limit of 30 failures in fifteen minutes per address answers 429 |
 | `GET /c/{token}` | Link token | the token | Returns the project, the site and the languages available, and **no personal data**; an invalid link renders no notice content. The response sets `Referrer-Policy: no-referrer`, so the token cannot leak through a referer header, and it is rate-limited per address |
 | `GET /c/{token}/notice` | Link token | the token | Returns the notice text; `note` is projected out, because it is an instruction to the collector |
 | `POST /c/{token}/otp` | Link token | `contact` | The token is presented, never stored in the clear; the reply is neutral |
-| `POST /c/{token}/otp/verify` | Link token + code | `contact`, `code` | Signs in an **existing** data principal; it does not create one |
+| `POST /c/{token}/otp/verify` | Link token + code | `contact`, `code` | Signs in an **existing** data principal; it does not create one. A wrong code, one of the wrong length and a spent budget are one 400 `otp_invalid`, never 429 (2026-11-08) |
 | `POST /c/{token}/register` | Link token | `full_name`, `email`, `mobile`, `dob`, `organization_id`, `person_type` | Creates the account the link will then authenticate; a date of birth under eighteen creates nothing |
 | `POST /c/{token}/consent` | Link token, and a session it minted | `grants`, `action_type`, `served_at` | `served_at` in the body is **ignored**: the moment comes from the server's own record of showing her the notice |
 | `POST /rights/requests` | Carries a verification code | `contact`, `request_text` | Rate-limited; verification happens before anything is answered |
-| `POST /rights/requests/verify` | Carries the code | `code` | Five attempts, ten minutes; every failure of a well-formed body is the same 400 `otp_invalid`, and a malformed one the same 422 for everybody (2026-11-08) |
+| `POST /rights/requests/verify` | Carries the code | `code` | Five attempts, ten minutes; every failure of a well-formed body is the same 400 `otp_invalid`, and a malformed one the same 422 for everybody (2026-11-08); only the limit of 30 an hour per address answers 429 |
 | `POST /incident-reports/code` | Yes | `email` | Rate-limited per contact and address; the reply is the same sentence for any address; nothing is stored |
 | `POST /incident-reports` | Carries the code | `name`, `email`, `code`, `title`, what happened | Rate-limited per address; a wrong code takes nothing; the reply is a number and a sentence, and nothing that is in a report can be read back through it. It starts no clock and no duty |
 | `GET /rights/nominations/{token}` | Nomination token | — | Returns `principal_name` and `nominee_name` — **the one anonymous read that returns two people's names**, and the token is single-purpose, expiring and hashed at rest |
-| `POST /rights/nominations/{token}/accept`, `/decline`, `/code` | Nomination token | `code` | As above |
-| `POST /rights/nominee/start`, `/requests` | Carries a code or a token | `contact`, `request_text`, `evidence` | The nominee proves the trigger event before acting |
+| `POST /rights/nominations/{token}/accept`, `/decline`, `/code` | Nomination token | `code` | As above. One code is live per nomination, under the contact it went to (2026-11-08) |
+| `POST /rights/nominee/start`, `/requests` | Carries a code or a token | `contact`, `request_text`, `evidence` | The nominee proves the trigger event before acting; on `/requests` a wrong code, one of the wrong length and a spent budget answer as a nomination not in effect does, 400 `otp_invalid` (2026-11-08), and only the limit of ten an hour per address answers 429 |
 | `/holder-tickets/{token}` and its seven siblings (`/code`, `/verify`, `/ticket`, `/messages`, the evidence, `/answer`, `/sign-out`) | Link token, then a code | `code`, `body`, `evidence` | An outside holder's ticket (0049). The token alone shows the reference, the holder's name and where a code will go. The code goes only to the address on the ticket, rate-limited per ticket, and opens that one ticket for an hour: an HttpOnly cookie whose fingerprint in Redis names the ticket and the link, and both must agree. A ticket sent to somebody else gets a new link, which shuts the old one |
 
 ## What protects it

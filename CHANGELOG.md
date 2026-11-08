@@ -1320,12 +1320,20 @@ as a release yet.
   [authentication.md](docs/security/authentication.md#what-a-code-proves),
   [breaches.md](docs/domain/breaches.md#open-questions) for what it left open):
   - An account's email finds, packages and erases dismissed reports only once a code sent to it came back (`email_verified_at`), its second email once its own code did; an account with neither stamp is no longer read as one from before the stamps, a reading anybody could reach by changing the mobile or leaving a sign-up unfinished. Nothing was backfilled, so an account whose email no stamping flow has reached finds nothing by it until one does.
-  - Every code accepted for an account's own contact stamps what it went to and nothing else: a password reset and the staff and breach holder invitations, and the staff second factor, stamp the email; a sign-in by code and a consent link's code stamp the contact typed (a second email, never the first); a nomination on an account already there stamps its own email or mobile only, and nothing when where the code went is unknown.
+  - Every code accepted for an account's own contact stamps what it went to and nothing else: a password reset and the staff and breach holder invitations, and the staff second factor, stamp the email; a sign-in by code and a consent link's code stamp the contact typed (a second email, never the first); a nomination on an account already there stamps its own email or mobile only, and nothing when where the code went is unknown. (The stamp on an account already there, and the record of where the code went, are gone since 32d483a, below.)
   - A sign-in code is bound to the contact it went to: typed with another contact of the same account it is refused as a wrong code is (400 `otp_invalid`), so a code to the mobile no longer proves the email.
   - A request with no proved address to look by says nothing was looked for ("No email address proved to be the requester's is held, so nothing was looked for."), not that no report carries the email, and its erasure answers 409 `no_proved_email` instead of erasing by nothing.
   - **Send a code** and **Confirm** on a request with no account are the DPO's and the Legal PoC's: anybody else gets 403 `officers_only`, the same whether or not the contact sent a dismissed report, where Send a code told the administrator 200 or 422, and Confirm's fifth wrong code 429.
   - The public form's reply says the code went to "the contact we hold for you", not to the contact typed.
   - The public form's verify and an officer's **Confirm** stamp nothing on the account (ef0f0cc, reversing 0923a5b): the code proves the requester holds the address, and an account carrying somebody else's address, a nominee's, would otherwise have found that person's reports after they answered their own code.
+- **What the third review of that build found** (2026-11-08, 32d483a;
+  [authentication.md](docs/security/authentication.md#what-a-code-proves),
+  [breaches.md](docs/domain/breaches.md#open-questions) for what it left open):
+  - A nomination accepted stamps only a nominee account it makes, with the contact the code went to; an account already there is linked to the nomination and stamped with nothing. That account is the one `users.by_contact` finds, which may carry somebody else's address unproved, so the address's owner accepting by it stamped it there (0923a5b), and that account's requests then found the owner's dismissed reports. The link itself is open.
+  - A nomination's code is issued under the nomination and the contact it goes to, replacing the other contact's in the same write, so one code is live and accepting or declining knows the contact from where the code lived. A record of the contact kept beside the code let two requests at once leave the mobile's code live with "email" recorded, and accepting stamped an email no code had reached. A code issued under the nomination alone before this is refused once.
+  - A code of the wrong length and a spent budget of five tries answer as a wrong code, 400 `otp_invalid` "Invalid or expired code", on `POST /auth/otp/verify`, `/c/{token}/otp/verify`, `/auth/password/reset/confirm`, `/rights/nominee/requests` and `/auth/register/verify` (there on the field of the medium): "Invalid code" came only for a contact somebody holds, and the fifth try's 429 "Too many incorrect attempts" only where a code had been sent, so both said whom the register knows. The limit per address is the 429 that remains; a consent link's tries never answer 429.
+  - The reports overview serves why the first *yes* withheld a version of the report to CERT-In (`mail.withheld_because`: `cert_in_set_aside` or `nobody_on_the_list`), from that version's `breach.report_withheld` row, so the reason no longer depends on the list as it stands, which an address put back or taken off since had changed.
+  - The docs name every path that still stamps an address typed into somebody else's account: a sign-in by it, and a consent link's code to it, which stamps even a sign-up nobody finished and lets it be finished; the attachment of a public-form request and the nomination's link remain (Open question on `users.by_contact`). They also say that a request's verification fields tell the administrator what the trail does.
 - **A report sent before a later yes's awareness can be recorded as sent with its
   true date** (2026-11-07, logic-4). Filing was checked against the duty's clock,
   which a *yes* after a *no* starts again at its own awareness, and refused a true
@@ -1722,6 +1730,14 @@ as a release yet.
   and test instead of reporting delivery.
 
 ### Security
+- **Finishing a sign-up needs a code even when nothing is left to answer.**
+  `POST /auth/register/verify` with only the mobile of a data principal whose
+  every contact had answered once - any finished sign-up - checked no code,
+  since none was outstanding, and opened a session on that account, from
+  2026-09-06 (568f37b) until 2026-11-08. It now refuses as it refuses an
+  unknown mobile (400 `otp_invalid` on `mobile_code`); signing in is the code
+  sign-in's, with a code (32d483a, found during the third review of the six
+  answers' build).
 - **A refused request keeps its evidence.** A failed sign-in's audit row was
   rolled back by the raise that followed it, and no 403 was ever recorded.
   Failed sign-ins and second-factor codes now commit their record before

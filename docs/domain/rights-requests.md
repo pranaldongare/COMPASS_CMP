@@ -370,19 +370,21 @@ reporter's rights reach it (0065,
   else's, beside a proved mobile. The flows that stamp are a sign-in by code (the
   contact typed, which the code is bound to), a password reset and the staff and
   breach holder invitations (the email), the staff second factor (the email), a
-  consent link's code (the contact typed), a nomination accepted (on a new nominee
-  account the medium the code went to; on one already there only its own email or
-  mobile), registration, confirming a contact, and creating an account by SSO
+  consent link's code (the contact typed), a nomination accepted (only a nominee
+  account it makes, with the contact the code went to), registration, confirming a
+  contact, and creating an account by SSO
   ([what a code proves](../security/authentication.md#what-a-code-proves)). The
-  public form's code and an officer's **Confirm** stamp nothing: they prove that
-  whoever made the request holds the address, not that the account's holder does,
-  and the request may be attached to an account carrying somebody else's address.
+  public form's code, an officer's **Confirm** and a nomination accepted on an
+  account already there stamp nothing: they prove that whoever answered holds the
+  address, not that the account's holder does, and the request, or the nomination,
+  may be attached to an account carrying somebody else's address.
   No stamp was backfilled, so an account whose email none of those flows has
   reached finds nothing by it until one does - an older account, a staff or breach
   holder account activated before 2026-11-08 until its next second factor, a
-  nominee's account, one whose mobile was changed and not confirmed, a sign-up not
-  yet finished. With no such address to look by, or on a request with no account
-  whose contact is a mobile, nothing is looked for, and the card says so: "No email
+  nominee's account, including one that was there before the nomination, one whose
+  mobile was changed and not confirmed, a sign-up not yet finished. With no such
+  address to look by, or on a request with no account whose contact is a mobile,
+  nothing is looked for, and the card says so: "No email
   address proved to be the requester's is held, so nothing was looked for."
   (`not_looked_because` and `erase_blocked_by`). **Complete** is not held back by
   reports nobody looked for, and the response names none beyond those already
@@ -485,15 +487,29 @@ linked to it, and a grievance carries the request it disputes.
 A data principal names one nominee, by mobile with an optional email, while
 she is well. The nominee receives a link and must accept it with a code sent
 to the medium they choose; acceptance gives them an account and the reference
-they need to act. The contact the code went to is stamped proved on that
-account (on an account already there, only where it is the account's own email
-or mobile), and an email the principal typed that no code went to stays unproved
-until one does, so no dismissed report is found by it (2026-11-08). Acceptance
+they need to act. The code is issued under the nomination and the contact it
+went to, and asking for one to the other contact replaces it in the same write,
+so only the last code asked for counts, and accepting or declining knows which
+contact it proved from where the code lived (2026-11-08); a wrong code costs one
+try of that code's five, whichever contact it went to. An account the nomination
+makes is stamped with that contact, and an email the principal typed that no code
+went to stays unproved until one does, so no dismissed report is found by it. An
+account already there, found by either contact the principal recorded, is linked
+to the nomination and stamped with nothing: the code proves that whoever accepted
+holds the contact, not that the account is theirs, and the account may carry
+somebody else's address unproved
+([what a code proves](../security/authentication.md#what-a-code-proves);
+the link itself is open, [breaches.md](breaches.md#open-questions)). Acceptance
 is due within thirty days. Nominations can be
 declined, revoked, and are shown to both parties.
 
 When the nominee invokes the nomination they name the **trigger event**,
-`death` or `incapacity`, and the DPO evidences it before the request moves.
+`death` or `incapacity`, and the DPO evidences it before the request moves. The
+code for it goes to the contact the principal recorded, and a wrong code, one of
+the wrong length and a spent budget of five tries all answer 400 `otp_invalid`,
+as a nomination not in effect does, so the answer says neither that the
+nomination is in effect nor that the contact typed matched (2026-11-08); only the
+limit of ten an hour per address answers 429 (`POST /rights/nominee/requests`).
 Death closes the principal's account; incapacity does not. The nomination
 records which request invoked it.
 

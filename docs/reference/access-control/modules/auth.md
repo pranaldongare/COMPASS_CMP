@@ -110,7 +110,7 @@ Data-subject sign-in.
 
 - **Who:** public.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** A valid contact code opens a session acting as data_subject, even when the underlying account is staff. The code verifies only with the contact it was sent to: another contact of the same account answers 400 otp_invalid, as a wrong code does. It stamps that contact proved - the mobile, the email or the second email typed - and no other (2026-11-08).
+- **Rules:** A valid contact code opens a session acting as data_subject, even when the underlying account is staff. The code verifies only with the contact it was sent to: another contact of the same account, a code of the wrong length and a spent budget of five tries answer 400 otp_invalid "Invalid or expired code", as a wrong code and an unknown contact do, so no refusal says whom the register knows; only the limit of 30 failures in fifteen minutes per address answers 429. It stamps that contact proved - the mobile, the email or the second email typed - and no other (2026-11-08).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/auth.py#L279), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/auth/authentication/service.py#L52), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/dependencies/authentication.py#L61).
 
 ## POST /auth/password/change
@@ -136,7 +136,7 @@ Password Reset Confirm.
 
 - **Who:** public.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** Public entry point; an account-specific reset/invitation code is required. This activates a pending invited account. It stamps the account's email proved: a reset, a staff invitation and a breach holder's invitation all send this code there (2026-11-08).
+- **Rules:** Public entry point; an account-specific reset/invitation code is required. This activates a pending invited account. It stamps the account's email proved: a reset, a staff invitation and a breach holder's invitation all send this code there. A wrong code, a code of the wrong length and a spent budget of five tries answer 400 otp_invalid "Invalid or expired code", as an email with no account does; only the limit of 30 failures in fifteen minutes per address answers 429 (2026-11-08).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/auth.py#L345), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/auth/authentication/service.py#L52), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/dependencies/authentication.py#L61).
 
 ## POST /auth/password/reset/request
@@ -175,7 +175,7 @@ Finish sign-up: every medium given answers with its code.
 
 - **Who:** public.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** Public entry point; valid registration contact codes are required to complete registration.
+- **Rules:** Public entry point; valid registration contact codes are required to complete registration. A wrong code, a code of the wrong length and a spent budget answer 400 otp_invalid "Invalid or expired code", as an unknown mobile does, on the field of the medium (mobile_code or email_code). An account with nothing left to answer is refused as an unknown mobile is (field mobile_code): from 2026-09-06 until 2026-11-08 the mobile alone, with no code, opened a session on a data principal's account whose every contact had answered once.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/auth.py#L260), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/auth/authentication/service.py#L52), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/dependencies/authentication.py#L61).
 
 ## GET /auth/sessions

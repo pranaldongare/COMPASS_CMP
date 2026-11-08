@@ -158,8 +158,16 @@ difference would tell a stranger something about who is registered:
   not digits, a reference shorter than six or longer than 24 characters) is
   refused by the schema with 422 `validation_failed`, the same for every caller
   (2026-11-08)
-- `POST /auth/otp/verify`: a code typed with another contact of the same
-  account is refused as a wrong code is, 400 `otp_invalid` (2026-11-08)
+- `POST /auth/otp/verify`, `POST /c/{token}/otp/verify`,
+  `POST /auth/password/reset/confirm`, `POST /rights/nominee/requests` and
+  `POST /auth/register/verify`: a wrong code, a code of the wrong length and a
+  spent budget of five tries answer 400 `otp_invalid`, "Invalid or expired code",
+  as a contact, an email or a nomination nobody holds does; at the sign-in also a
+  code typed with another contact of the same account. Only the limit per address
+  answers 429: 30 failures in fifteen minutes at the sign-in and the reset, ten
+  requests an hour at the nominee's; the consent link's tries never do. Finishing
+  a sign-up answers on the field of the medium, and refuses an account with
+  nothing left to answer as it refuses an unknown mobile (2026-11-08)
 - `POST /requests/{uuid}/verification/code` and `/confirm` on a request with no
   account: 403 `officers_only` to anybody but the DPO and the Legal PoC,
   whether or not the contact sent a dismissed report (2026-11-08)

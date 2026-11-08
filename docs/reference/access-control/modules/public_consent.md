@@ -78,7 +78,7 @@ Render the notice - stamps served_at.
 
 - **Who:** public.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** Valid link and contact code(s) required. Completion opens a data_subject session, including for staff account holders. It stamps the contact typed proved - the mobile, the email or the second email - and no other (2026-11-08).
+- **Rules:** Valid link and contact code(s) required. Completion opens a data_subject session, including for staff account holders. It stamps the contact typed proved - the mobile, the email or the second email - and no other, on whatever account `users.by_contact` finds for it, a sign-up not yet finished included, which a sign-in by its other contact can then finish (open, breaches.md). A wrong code, a code of the wrong length and a spent budget of five tries answer 400 otp_invalid "Invalid or expired code", never 429: a code is sent only to a contact the register knows, so "too many" would say it is somebody's (2026-11-08).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/consent.py#L168), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/consent/service.py#L327), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/consent/service.py#L453).
 
 ## POST /c/{token}/register

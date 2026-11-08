@@ -499,8 +499,8 @@ shows has the report, so pressing it twice sends nothing twice.
   passed over. If the key service is still away the press fails (503); bring it
   back and press again.
 - **Nobody it went to can be reached any more**: every address it was sent to has
-  been taken off the list since. **Try again** has nobody to try. Write a new
-  version, which offers the list as it now stands.
+  been taken off the list since. **Try again** has nobody to try while they stay
+  off. Write a new version, which offers the list as it now stands.
 - **Nobody is on the organisation's board list** when finalising. Add the addresses
   under **Breach settings**, or add an address for this report alone in the window.
 - **Not changed: a service it needs did not answer just now** under **Breach
@@ -525,14 +525,20 @@ The platform never sends to CERT-In; a person does, whatever the board's mail do
   the board never gets it. **Try again** is not offered while it is held (409
   `report_held`).
 - **The *yes* came and it reads not sent**, with *Report held for the board not
-  sent at the validation* on the trail. CERT-In was set aside at that moment.
+  sent at the validation* on the trail (its detail reads `cert_in_set_aside`).
+  CERT-In was set aside at that moment.
   Nothing sends it by itself later. If it is reportable after all, **Mark
   reportable to CERT-In**, then press **Send to the board** on that version, or
   write a new version.
-- **The *yes* came and nobody it was chosen for is on the list**: every address it
-  was finalised for had been taken off the list since. The same trail row says it
-  was not sent (its detail reads `nobody_on_the_list`). **Try again** has nobody to
-  try; write a new version, which offers the list as it now stands.
+- **The *yes* came and nobody it was chosen for was on the list**: every address
+  it was finalised for had been taken off the list by then. The same trail row says
+  it was not sent (its detail reads `nobody_on_the_list`). **Try again** has nobody
+  to try while they stay off, and tries one put back since; otherwise write a new
+  version, which offers the list as it now stands.
+- **Which of the two it was** is the trail row's word, and the report's mail on
+  **Reports** serves the same (`withheld_because` in `GET /breaches/{uuid}/reports`):
+  an address put back on the list or taken off after the *yes* does not change it,
+  so do not read the reason from the list as it stands now.
 - **An older version reads not sent: a later version replaced it.** Only the newest
   finalised version goes at the *yes*. Nothing to do.
 - **Recorded as sent while held.** The CERT-In duty is done; the board's mail still

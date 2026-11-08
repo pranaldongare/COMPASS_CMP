@@ -75,7 +75,11 @@ holder opening its ticket:
 - Checking and spending the code is one Lua script, so two requests with the
   same code cannot both succeed.
 - The fifth wrong attempt discards the code.
-- A wrong code and an expired one get the same answer.
+- A wrong code and an expired one get the same answer. Wherever anybody can type
+  a contact or a reference, so do a code of the wrong length and a spent budget,
+  as a contact nobody holds does: 400 `otp_invalid`, never "too many", which would
+  say a code had gone to a registered contact (2026-11-08,
+  [authentication.md](../security/authentication.md#one-time-codes)).
 
 **Requesting a code** answers neutrally whether or not the contact is known,
 and sends one only to a known, active or pending account. **Registering**

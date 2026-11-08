@@ -155,7 +155,7 @@ Key `breach_ticket_access` · channels: email
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_breach_ticket_access` (`backend/api/src/cmp/tasks/notifications/staff.py:68`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/service.py:597` |
+| Queued from | `backend/api/src/cmp/auth/authentication/service.py:608` |
 | Variables | `full_name` (The person given access.), `code` (The six-digit one-time code.), `hours` (How many hours the code is valid for.), `reset_url` (The console page where they set their password, with their address filled in.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `The {organisation} Privacy Office has asked for your help`
@@ -266,7 +266,7 @@ Key `breach_board_report` · channels: email
 | CC | Never - a report on a breach goes to the addresses on the organisation's board's list and nobody else, and it may name a person; a copy would take it off that list. |
 | Attachment | The report as a PDF. |
 | Sent by | `cmp.notifications.send_breach_report` (`backend/api/src/cmp/tasks/notifications/breach_reports.py:146`) |
-| Queued from | `backend/api/src/cmp/domain/breach/reports.py:1348`, `backend/api/src/cmp/domain/breach/reports.py:566`, `backend/api/src/cmp/domain/breach/reports.py:661` |
+| Queued from | `backend/api/src/cmp/domain/breach/reports.py:1376`, `backend/api/src/cmp/domain/breach/reports.py:573`, `backend/api/src/cmp/domain/breach/reports.py:668` |
 | Variables | `breach_reference` (The breach's reference.), `report_title` (What the report is.), `report_text` (The report, as the office wrote it.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{organisation}: {breach_reference} - {report_title}`
@@ -293,7 +293,7 @@ Key `breach_report_finalised` · channels: email
 | CC | Never - a report on a breach goes to the addresses on the organisation's board's list and nobody else, and it may name a person; a copy would take it off that list. |
 | Attachment | The report as a PDF. |
 | Sent by | `cmp.notifications.send_breach_report` (`backend/api/src/cmp/tasks/notifications/breach_reports.py:148`) |
-| Queued from | `backend/api/src/cmp/domain/breach/reports.py:1348`, `backend/api/src/cmp/domain/breach/reports.py:566`, `backend/api/src/cmp/domain/breach/reports.py:661` |
+| Queued from | `backend/api/src/cmp/domain/breach/reports.py:1376`, `backend/api/src/cmp/domain/breach/reports.py:573`, `backend/api/src/cmp/domain/breach/reports.py:668` |
 | Variables | `breach_reference` (The breach's reference.), `report_title` (What the report is.), `report_text` (The report, as the office wrote it.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{organisation}: {breach_reference} - {report_title} finalised`
