@@ -7,7 +7,8 @@ once it is stamped. A flow that proves a mailbox without stamping it leaves the
 holder without their own reports; one that stamps a contact the code never
 went to makes an address somebody else typed count. So each place a code to an
 account comes back is checked both ways: what it went to is stamped, and
-nothing else is.
+nothing else is. The rights form's code is the exception, and stamps nothing:
+it proves the requester holds the address, not that the account's holder does.
 
 Every person and address here is the test's own, with a uuid in it: these run
 on a database the HTTP suite commits to.
@@ -296,11 +297,13 @@ async def _from_the_form(conn: Any, redis_conn: Any, contact: str) -> dict[str, 
 
 
 class TestTheRightsForm:
-    async def test_a_code_to_the_account_s_email_stamps_it_and_not_the_mobile(
+    async def test_a_code_to_the_account_s_email_verifies_the_request_and_stamps_nothing(
         self, conn: Any, request_context: Any, redis_conn: Any, sent: Any
     ) -> None:
-        """Asked by the mobile, the code goes to the account's email, and that
-        is what its coming back proves."""
+        """Asked by the mobile, the code goes to the account's email. Its coming
+        back proves the requester holds that address, not that the account's
+        holder does: an account can carry an address somebody else typed, and a
+        stamp would let its later requests find that address's reports."""
         person = await _principal(conn)
         row = await _from_the_form(conn, redis_conn, plain(person["mobile"]))
         assert row["subject_user_id"] == person["id"]
@@ -308,7 +311,10 @@ class TestTheRightsForm:
         assert to == plain(person["email"])
 
         await rights_service.verify_public_code(conn, reference=row["reference"], code=code)
-        assert await _stamps(conn, person["id"]) == (True, False, False)
+        assert (await rights_repo.by_reference(conn, row["reference"]))[
+            "verification_status"
+        ] == "verified"
+        assert await _stamps(conn, person["id"]) == (False, False, False)
 
     async def test_with_no_email_the_mobile_s_code_stamps_nothing(
         self, conn: Any, request_context: Any, redis_conn: Any, sent: Any
@@ -344,7 +350,7 @@ class TestTheRightsForm:
             )
         assert asked.value.field == "email_code", "the sign-up still wants the email's code"
 
-    async def test_an_officer_confirming_a_code_read_back_stamps_the_email(
+    async def test_an_officer_confirming_a_code_read_back_stamps_nothing(
         self, conn: Any, seeded: dict[str, Any], request_context: Any, sent: Any
     ) -> None:
         person = await _principal(conn)
@@ -363,10 +369,11 @@ class TestTheRightsForm:
         row = await rights_service.send_verification_code(conn, row, role=Role.DPO, actor_id=dpo)
         to, code = _rights_code(sent)
         assert to == plain(person["email"])
-        await rights_service.confirm_verification_code(
+        row = await rights_service.confirm_verification_code(
             conn, row, code=code, role=Role.DPO, actor_id=dpo
         )
-        assert await _stamps(conn, person["id"]) == (True, False, False)
+        assert row["verification_status"] == "verified"
+        assert await _stamps(conn, person["id"]) == (False, False, False)
 
 
 # ------------------------------------------------------- a nomination accepted

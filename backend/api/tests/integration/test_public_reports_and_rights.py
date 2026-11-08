@@ -466,6 +466,41 @@ async def test_the_owner_s_own_coded_request_through_that_account_finds_nothing_
     assert found["not_looked_because"] == public_reports.NO_PROVED_EMAIL
 
 
+async def test_the_owner_s_answered_code_does_not_hand_their_reports_to_the_account(
+    conn: Any, seeded: dict[str, Any], redis_conn: Any, sent: Any
+) -> None:
+    """An active account carries the owner's address as somebody else typed it
+    (a nominee's: the mobile proved, the email not). The owner asks from the
+    form, `users.by_contact` attaches the request to that account, and the
+    owner answers the code. That verifies the owner's request and stamps
+    nothing, so the account holder's own request afterwards still finds none
+    of the owner's reports."""
+    owner = _address("owner")
+    theirs = await _dismissed(conn, seeded, owner)
+    holder = await _person(conn, email=owner, email_proved=False, mobile_proved=True)
+    await _unthrottle(redis_conn, owner)
+    made = await service.submit_public(
+        conn,
+        request_type="access",
+        contact=owner,
+        name=None,
+        request_text="What do you hold about me?",
+        ip_address="127.0.0.1",
+    )
+    [code] = [a[2] for a in sent if a[0] == "send_rights_verification_code"]
+    await service.verify_public_code(conn, reference=made["reference"], code=code)
+    asked = await service.require(
+        conn, await _request_uuid(conn, made["reference"]), role=DPO, user_id=_dpo(seeded)
+    )
+    assert asked["subject_user_id"] == holder["id"] and asked["verification_status"] == "verified"
+    still = await user_repo.by_id(conn, int(holder["id"]))
+    assert still is not None and still["email_verified_at"] is None
+
+    theirs_now = await _request(conn, seeded, holder, "access")
+    assert await public_reports.address_hashes(conn, theirs_now) == []
+    assert theirs not in _found(await public_reports.found(conn, theirs_now))
+
+
 async def test_a_request_with_no_proved_email_is_told_nothing_was_looked_for(
     conn: Any, seeded: dict[str, Any]
 ) -> None:

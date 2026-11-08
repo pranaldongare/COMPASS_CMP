@@ -530,7 +530,11 @@ async def verify_public_code(conn: Conn, *, reference: str, code: str) -> dict[s
         # guessing stays bounded, and the route's limit per IP address is what
         # stops more tries.
         raise refused from None
-    await _code_came_back(conn, row)
+    # The code proves that whoever made this request holds the address it went
+    # to; it does not prove the address is the account holder's. An account can
+    # carry an address somebody else typed (a nominee's, attached here by
+    # `users.by_contact`), so nothing is stamped on the account: a stamp would
+    # let that account's later requests find the address's dismissed reports.
     row = await _mark_verified(conn, row, method="code", actor_id=None, note=None)
     return {
         "ok": True,
@@ -540,29 +544,6 @@ async def verify_public_code(conn: Conn, *, reference: str, code: str) -> dict[s
             f"{row['due_at'].date().isoformat()}."
         ),
     }
-
-
-async def _code_came_back(conn: Conn, row: Row) -> None:
-    """A code to the request's account came back: the address it went to is
-    proved, as a sign-in by it proves it (`users.mark_contact_verified`).
-
-    The code went to the account's email where it has one (`submit_public`,
-    `send_verification_code`), and an account's email never changes, so that
-    is the address stamped. With no email it went to the mobile, which can be
-    changed after the code went out; the code does not record which number it
-    was, so nothing is stamped then, and nothing a request finds turns on the
-    mobile's stamp. Never on a data principal mid-sign-up: finishing that is
-    the sign-up page's, with a code to each medium given, and a stamp here
-    would let it finish on the mobile's code alone. A request with no account
-    stamps nobody: its code went to the address on a report."""
-    if row.get("subject_user_id") is None:
-        return
-    person = await user_repo.by_id(conn, int(row["subject_user_id"]))
-    if not person or not person.get("email_hash"):
-        return
-    if person["status"] == "pending" and person["role"] == Role.DATA_SUBJECT.value:
-        return
-    await user_repo.mark_contact_verified(conn, int(person["id"]), "email")
 
 
 async def _mark_verified(
@@ -660,7 +641,7 @@ async def confirm_verification_code(
         raise Conflict("Identity is already verified", code="already_verified")
     _officers_only_without_an_account(row, role)
     await otp.require(otp.Scope.RIGHTS_VERIFY, row["reference"], code)
-    await _code_came_back(conn, row)
+    # Nothing stamped on the account, for the reason `verify_public_code` gives.
     return await _mark_verified(conn, row, method="code", actor_id=actor_id, note=None)
 
 
