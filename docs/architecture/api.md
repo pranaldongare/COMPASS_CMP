@@ -144,15 +144,22 @@ when reporting a failure and the log line is one search away.
 Some routes deliberately answer the same way whatever happened, because the
 difference would tell a stranger something about who is registered:
 
-- `POST /auth/register`: identical for a new contact and a data principal's
-  sign-up never finished, whose codes are sent again; a child's date of birth is
-  refused before the contact is looked up, the same 422 `minor_not_permitted` on
-  `dob` for those and for an account (7bdb710). A contact already on any other
-  account answers 409 `contact_taken`, naming the field, by product decision, so
-  this route does say who is registered; that includes a member of staff's or a
-  breach holder's account still `pending` its first password, which is sent
-  nothing (7bdb710)
-  ([03-security.md](../backend/03-security.md#data-principal-sign-in))
+- `POST /auth/register`: a child's date of birth is refused before the contact
+  is looked up, the same 422 `minor_not_permitted` on `dob` whoever holds the
+  contact (7bdb710). A contact already on any other account answers 409
+  `contact_taken`, naming the field, by product decision, so this route does say
+  who is registered; that includes a member of staff's or a breach holder's
+  account still `pending` its first password, which is sent nothing (7bdb710)
+  ([03-security.md](../backend/03-security.md#data-principal-sign-in)). A data
+  principal's sign-up never finished answers 202, as a new contact does, and its
+  codes are sent again, but the two are not always answered alike. The email is
+  looked up only when the mobile matches nobody, so with an email already on
+  another account an unfinished sign-up's mobile answers 202 where a new mobile
+  answers 409 on `email`; and a resumed sign-up's codes go to the contacts it was
+  first given, so an email typed now gets a code when the mobile is new and none
+  when the mobile is an unfinished sign-up begun without that email
+  ([authentication.md](../security/authentication.md#one-time-codes); open,
+  [breaches.md](../domain/breaches.md#open-questions))
 - `POST /auth/otp/request`: identical whether the contact is registered
 - `POST /rights/requests`: a reference is issued either way; a code goes only
   to a contact on file, and the reply says it went to the contact held, never

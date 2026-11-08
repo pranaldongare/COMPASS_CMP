@@ -230,9 +230,9 @@ are refused until the window passes. Before, a code left out answered 422 "Enter
 the code we sent to your email as well" before any code was checked, a refusal
 came on the field of the contact waiting (`email_code` when only the email was),
 and nothing limited the asking, so anybody could tell from a mobile nobody holds
-an unfinished sign-up, which `POST /auth/register` keeps to itself (for a child's
-date of birth too only since 7bdb710, below), and an account whose email had not
-answered. The sign-up page sends a code for every contact it
+an unfinished sign-up and an account whose email had not answered. Starting a
+sign-up still tells an unfinished sign-up from a new mobile, through an email
+already taken and through where its codes go (below). The sign-up page sends a code for every contact it
 was given, so the one answer costs it nothing, and since that answer cannot say
 that a code was cancelled, the page says to everybody that each code expires in
 ten minutes or after five wrong tries, and offers **Send the codes again** (67b3dc0).
@@ -244,29 +244,54 @@ Refusing an account with nothing left to answer closed a hole (32d483a): from
 any data principal's account whose every contact had answered once, since no code
 was outstanding to check.
 
-**Starting a sign-up says nothing of a sign-up left unfinished** (7bdb710).
-`POST /auth/register` refuses a child's date of birth before it looks the contact
-up: 422 `minor_not_permitted` on `dob`, the same for a contact nobody
+**Starting a sign-up refuses a child's date before the contact is looked up**
+(7bdb710). `POST /auth/register` refuses a child's date of birth before it looks
+the contact up: 422 `minor_not_permitted` on `dob`, the same for a contact nobody
 holds, a sign-up never finished and any account, and nothing is sent or written.
 Only the limit per contact, five an hour, comes first, so the try still counts
 against the contact. Checked after the lookup, a child's date answered 202 for an
 unfinished sign-up, 422 for a contact nobody holds and 409 for an account, so a
 stranger could tell an unfinished sign-up from a new contact. Only a data
 principal's unfinished sign-up is resumed: its codes are sent again, and it answers
-202 as a new contact does. Any other account found - by the mobile, or else the
+202. Any other account found - by the mobile, or else the
 email - answers 409 `contact_taken`, naming the field, as any account does, by
 product decision
 ([03-security.md](../backend/03-security.md#data-principal-sign-in)), and nothing
 is sent to it. That now includes a member of staff invited and not yet given a
 password and a breach holder's temporary login, both `pending` until a password
-is set; their way in is the invitation or a password reset, not the portal.
+is set. Their way into the console is the invitation or a password reset. Like
+any account, they can sign in to the portal by a code, as a data principal, which
+is what the sign-up page's notice on that 409 offers them: a code to sign in goes
+to any account `active` or `pending` (`request_subject_otp`), and only a data
+principal's `pending` row is held back when the code comes back
+(`verify_subject_otp`), so the session opened is a data principal's, with the
+account's own role kept as `account_role`
+([03-security.md](../backend/03-security.md#two-populations)).
 Before, every `pending` account was resumed, so such a person was mailed or texted
 sign-up codes nobody had asked them for and no sign-up could use. A resumed
 sign-up keeps what it was started with: it is found by the mobile typed again, or
 else the email, and its codes go to the contacts it was first given, never to any
 typed since, so a mistyped contact cannot be corrected by signing up again, and
 the sign-up page no longer offers **Change the details** as if it could (1f9fa41;
-open, [breaches.md](../domain/breaches.md#open-questions)).
+open, [breaches.md](../domain/breaches.md#open-questions)). An email added now to
+a sign-up begun with a mobile alone is neither stored nor sent a code: the step
+still says a code has gone to it and will not confirm until its box holds six
+digits, though the server asks no code of it, and the account then opens without
+that email.
+
+**Starting a sign-up still tells an unfinished sign-up from a new mobile**, in two
+ways, both from a resume that ignores the contacts typed now (open,
+[breaches.md](../domain/breaches.md#open-questions)). First, by the answer: the
+email is looked up only when the mobile matches nobody. With an email already on
+another account - a member of staff's, or the caller's own finished account - a data principal's
+unfinished sign-up's mobile answers 202 and is resumed without the email being
+looked at, where a mobile nobody holds answers 409 `contact_taken` on `email`, and
+a mobile on an account 409 on `mobile`; so one taken email sorts mobiles into all
+three, five tries an hour per contact. Second, by delivery: a resumed sign-up's
+codes go to the contacts it was first given, so an email the caller holds receives
+a code when the mobile is new - on a new sign-up, or on the caller's own sign-up
+found by that email - and none when the mobile is somebody's unfinished sign-up,
+though the answer is the same 202.
 
 ## What a code proves
 

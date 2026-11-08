@@ -16,7 +16,54 @@ where its status lives.
 | 2026-09-17 | [DPDP Act gap assessment](2026-09-17-dpdp-act-gap-assessment.md) | The Act, section by section, against what the platform does | Below: [the gap rows today](#the-2026-09-17-gap-rows-today) |
 | 2026-10-01 | [Frontend architecture review](2026-10-01-frontend-architecture-review.md) | Both portals: UX, security, architecture, scaling, DPDP findings, P1-P3 | Below: [every finding](#the-2026-10-01-review-finding-by-finding) |
 | 2026-10-05 | A frontend UX and UI review, with screenshots | Navigation, wording, layout, accessibility, per role | Kept outside the repository. Packages 1-5 done (926c5a9, 04b225b, 9939dde, 0e429b2, f672723, de134df, ce91d31, 2636084); package 6 open, [below](#open-decisions) |
-| 2026-11-08 | Five reviews of the build of the product owner's six answers of 2026-11-07 (the breach workflow and a dismissed reporter's rights) | The board's mail, the held report to CERT-In, a dismissed report found and erased by a rights request, what each code proves, and what a refused code says of who is registered | Kept outside the repository. What each found and what was done: the CHANGELOG's [Unreleased] Fixed entries (285d077; 0923a5b and ef0f0cc; 32d483a; bd6cef1; 7bdb710 and 1f9fa41), and under Security a sign-up finished with no code, found during the third; open decisions [below](#open-decisions) |
+| 2026-11-08 | Six reviews of the build of the product owner's six answers of 2026-11-07 (the breach workflow and a dismissed reporter's rights) | The board's mail, the held report to CERT-In, a dismissed report found and erased by a rights request, what each code proves, and what a refused code says of who is registered | Kept outside the repository. What each found and what was done: the CHANGELOG's [Unreleased] Fixed entries (285d077; 0923a5b and ef0f0cc; 32d483a; bd6cef1; 7bdb710 and 1f9fa41; the sixth changed no product code), and under Security a sign-up finished with no code, found during the third and still to be ported; where they ended [below](#the-2026-11-08-reviews-where-they-ended) |
+
+## The 2026-11-08 reviews, where they ended
+
+Six reviews ran on 2026-11-08 over the build of the product owner's six answers.
+The findings of the first five were fixed (285d077; 0923a5b and ef0f0cc; 32d483a;
+bd6cef1; 7bdb710 and 1f9fa41). The sixth, of 384b426, changed no product code, by
+decision; the docs now say what the code does. It found that
+`POST /auth/register` still tells a data principal's unfinished sign-up from a new
+mobile, through an email already on another account (202 against 409 on `email`)
+and through where a resumed sign-up's codes go; that an email added on resuming a
+sign-up begun with a mobile alone is neither stored nor sent a code while the
+page asks for its code; that the docs called the portal no way in for a member of
+staff or a breach holder still `pending` a password, though like any account they
+can sign in to it by a code (corrected); and that a nominee's code being checked
+first, and one of two requests at once being recorded, had no test (both added
+in 28b9852).
+
+What stays open:
+
+- `users.by_contact` accepting a primary email nobody proved, so a code to it
+  signs its owner in to, and stamps it on, somebody else's account (the
+  engineering lead; [breaches.md](../domain/breaches.md#open-questions)).
+- The resume: a sign-up started again ignores the contacts typed now, so it can
+  neither correct nor add one, and starting a sign-up tells an unfinished one
+  from a new mobile (the engineering lead and the product owner;
+  [breaches.md](../domain/breaches.md#open-questions),
+  [authentication.md](../security/authentication.md#one-time-codes)).
+- The administrator's view of the register on a request about the office
+  (`about_dpo`): the package they release carries the requester's dismissed
+  reports, and the trail and the request's verification fields say a code went
+  to a dismissed reporter (the product owner; the engineering lead for the trail
+  and the fields).
+- An SSO sign-in to an account already there stamping nothing (the engineering
+  lead and the product owner).
+- `POST /auth/register`'s 409 `contact_taken`, naming the field, which says who is
+  registered: a product decision
+  ([03-security.md](../backend/03-security.md#data-principal-sign-in)).
+- The public form's verify not equalised in time: a reference with no account
+  costs one key-service call more (the engineering lead).
+
+**A critical bypass from before this work, fixed here and not yet ported.** From
+568f37b (2026-09-06) `POST /auth/register/verify` with only the mobile of a data
+principal whose every contact had answered once checked no code and opened a
+session on that account. 32d483a fixed it on this branch. The fix is still to be
+ported: the bypass is present on `refactor/frontend-architecture`, on
+`sprint-4/hr-track` and on the pushed copy of this branch
+(`origin/integration/hr-track-sqs-relay`, 3d4fdd6), none of which holds 32d483a.
 
 ## The 2026-10-01 review, finding by finding
 
@@ -87,7 +134,7 @@ decision.
 | A regulator's own mailbox on the organisation's board's list, or added for one report, is not refused, against ADR 0021: which domains to refuse | Legal or the product owner | [breaches.md](../domain/breaches.md#open-questions), [ADR 0037](../decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md#who-a-report-goes-to) |
 | A dismissed report and its reporter's rights, as built on 2026-11-07: the office's reason and who dismissed it stay out of the access package; no retention period; a claimed report is not reached (a documented exception); the reporter's words stay after erasure | Legal, and the product owner for the words | [breaches.md](../domain/breaches.md#open-questions), [personal-data.md](../domain/personal-data.md#personal-data-breaches) |
 | What the three reviews of 2026-11-08 left open on a dismissed reporter's rights: who answers the reports part of a request about the office the administrator handles, whose package carries them, and whose trail still shows them a code sent at submission, which only a dismissed reporter's request with no account gets, as the request's own verification fields do (verified by code, which with no account only such a request can be); the time the public form's verify takes, one key-service call apart; an answer to a request with no account sent only by text, which carries the headline alone; `users.by_contact` matching an account's email nobody proved, so the address's owner stamps it on somebody else's account by answering a code to it - a sign-in by it, or a consent link's code to it, which stamps even a sign-up nobody finished and lets it be finished - and that account's requests then find the owner's reports, while a public-form request is still attached there and a nomination the owner accepts is still linked there (closing it needs `by_contact` to refuse an unproved primary email); an SSO sign-in to an account already there stamping nothing, though creating one by SSO does | The product owner; the engineering lead for the trail and the verification fields, the timing and `by_contact`, and with the product owner for SSO | [breaches.md](../domain/breaches.md#open-questions), [rights-requests.md](../domain/rights-requests.md#reports-from-the-public-link), [authentication.md](../security/authentication.md#what-a-code-proves) |
-| What the fifth review of 2026-11-08 left open: a sign-up begun with a mistyped contact cannot be corrected, since signing up again resumes it and sends its codes to the contacts it was first given; whether a resumed sign-up should take the contacts typed now or be replaced (the portal no longer offers **Change the details** on that step, 1f9fa41) | The engineering lead and the product owner | [breaches.md](../domain/breaches.md#open-questions), [authentication.md](../security/authentication.md#one-time-codes) |
+| What the fifth and sixth reviews of 2026-11-08 left open: a sign-up begun with a mistyped contact cannot be corrected, since signing up again resumes it and sends its codes to the contacts it was first given; an email added on resuming a sign-up begun with a mobile alone is neither stored nor sent a code, while the page asks for its code; and starting a sign-up tells an unfinished one from a new mobile, through an email on another account (the email is looked up only when the mobile matches nobody, so 202 against 409 on `email`) and through where its codes go. Whether a resumed sign-up should take the contacts typed now or be replaced, decided with these in view (the portal no longer offers **Change the details** on that step, 1f9fa41) | The engineering lead and the product owner | [breaches.md](../domain/breaches.md#open-questions), [authentication.md](../security/authentication.md#one-time-codes) |
 | The portal's public promise on the report page that a person whose report is closed without being taken up can ask for their name and email to be erased from it (planned as "If your report is closed without being taken up, you can ask for your name and email to be erased from it."): the page's own words | Product owner, to confirm | [breaches.md](../domain/breaches.md#open-questions) |
 | The organisation's own email domains (`BREACH_TICKET_EMAIL_DOMAINS`, `cmp.local` today) - needed before go-live; it decides breach tickets and how a rights holder is reached | Product owner | [ADR 0023](../decisions/0023-breach-tickets-and-breach-only-logins.md), [configuration](../operations/configuration.md) |
 | The public rights page's wording on correction, now that correction is not a request | DPO | `api/routers/public/rights.py`, [rights-requests.md](../domain/rights-requests.md) |

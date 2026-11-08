@@ -88,8 +88,13 @@ holder opening its ticket:
 and sends one only to a known, active or pending account. **Registering**
 refuses a contact already in use with 409 `contact_taken` - a deliberate
 trade of enumeration for a clear sign-up - and refuses anyone under 18. Only a
-data principal's unfinished sign-up is not refused: its codes are sent again,
-and it answers 202 as a new contact does. A member of staff's or a breach
+data principal's unfinished sign-up is not refused: its codes are sent again, to
+the contacts it was first given, and it answers 202. That is not always the new
+contact's answer: the email is looked up only when the mobile matches nobody, so
+with an email on another account an unfinished sign-up's mobile answers 202
+where a new mobile answers 409 on `email`, and an email typed now that the
+sign-up was not first given gets no code (open,
+[authentication.md](../security/authentication.md#one-time-codes)). A member of staff's or a breach
 holder's account still `pending` its first password is in use like any other,
 409 with nothing sent; an age under 18 is refused before the contact is looked
 up, so it is the same 422 `minor_not_permitted` whoever holds the contact

@@ -1,19 +1,19 @@
 # Testing
 
-Seven suites, each answering a different question. The backend's and the
-portals' unit counts are as of 2026-11-07 (the breach workflow, migration 0063),
-the browser suites' as of 2026-10-08 (rights tickets phase 2, migration 0049).
-They change with every feature; the commands do not.
+Seven suites, each answering a different question. The counts are as of
+2026-11-08, the owner's six answers and the fixes of five reviews of their build,
+migration 0065: the last full run, at 384b426, which left out the key service's
+suite (its 58 are older). They change with every feature; the commands do not.
 
 | Suite | Where | Runs against | Count |
 |---|---|---|---|
-| Backend unit | `backend/api/tests/unit` | nothing; pure functions | 1123 |
-| Backend integration | `backend/api/tests/integration` | real PostgreSQL, Redis and key service | 1063 |
-| Backend security | `backend/api/tests/security` | the ASGI app with real datastores | 576 |
-| Backend HTTP | `backend/api/tests/http` | the ASGI app over HTTP, real datastores and key service; **commits** | 189 |
+| Backend unit | `backend/api/tests/unit` | nothing; pure functions | 1209 |
+| Backend integration | `backend/api/tests/integration` | real PostgreSQL, Redis and key service | 1259 at the last full run |
+| Backend security | `backend/api/tests/security` | the ASGI app with real datastores | 620 |
+| Backend HTTP | `backend/api/tests/http` | the ASGI app over HTTP, real datastores and key service; **commits** | 199 |
 | Key service | `backend/dkms/tests` | the service in-process; nothing else | 58 |
-| Portal unit | `src/**/*.test.ts*` in each portal | vitest with MSW | 664 console, 294 portal |
-| Browser | `e2e/` in each portal | the running stack in a real browser | on 2026-11-07: console `chromium` 139 (136 pass, 1 is skipped, and the two project-form specs fail on a development database with more processors than the form loads); portal `chromium` and `mobile` 84 (72 pass, 11 skip, and `consent-flow.spec.ts:183` fails on `mobile`, where the sign-in page has shown COMPASS alone since 2026-10-11); portal through the relay 15 |
+| Portal unit | `src/**/*.test.ts*` in each portal | vitest with MSW | 761 console, 309 portal |
+| Browser | `e2e/` in each portal | the running stack in a real browser | on 2026-11-08: console `chromium` 147 with `setup` (146 pass, and 1 skips on development data with no draft notice carrying an unactivated purpose, `notice-review.spec.ts:95`), plus the two project-form specs, run apart, which fail on a development database with more processors than the form loads (`forms.spec.ts:22`, `routing.spec.ts:275`); portal 86 across `setup`, `chromium`, `mobile` and `localhost-cookies` (73 pass, 12 skip, and `consent-flow.spec.ts:183` fails on `mobile`, where the sign-in page has shown COMPASS alone since 2026-10-11); portal through the relay 15 |
 
 ### Which suites need the key service
 
@@ -247,6 +247,12 @@ values never reaching the page. `expectNoSidewaysScroll` in
 - A 429 in a suite means the bucket from a previous run is still full.
 - An audit-chain break reported by `verify_audit_chain` during a test run
   means two suites shared a database.
+- A `UniqueViolation` on `auth_user_mobile_hash_key` raised inside a test's
+  own helper, before any code under test runs, is development data, not a
+  regression: helpers that draw mobiles from a range of 100,000
+  values (`_person` in `test_search_over_sealed_names.py`, `+9198765` and five
+  random digits) can draw one that a row the HTTP suite committed to a shared
+  database already holds. Re-run that file once.
 
 ## What is not covered
 
