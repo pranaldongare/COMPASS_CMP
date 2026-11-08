@@ -168,6 +168,20 @@ test.describe("public rights page", () => {
     // The second half is offered at once.
     await expect(form.getByLabel(/the code we sent/i)).toBeVisible();
     await shot(page, "rights-public-recorded");
+
+    // A wrong code, a spent one and one never sent read alike, and the way to
+    // a new one is said in words true whether or not a code went anywhere.
+    await form.getByLabel(/the code we sent/i).fill("000000");
+    await form.getByRole("button", { name: /confirm it is me/i }).click();
+    await expect(form.getByText("Invalid or expired code")).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(form).toContainText(
+      /to get a new one, make your request again: if we hold records for the contact you gave/i,
+    );
+    await expect(form).not.toContainText(/too many incorrect/i);
+    await form.getByRole("button", { name: "Make the request again" }).click();
+    await expect(form.getByRole("button", { name: /send the request/i })).toBeVisible();
   });
 
   test("a reporter with no account asks on the rights page and is sent a code at their report's address", async ({

@@ -119,7 +119,11 @@ export default function RightsPage() {
                       Your reference is <Mono>{receipt.reference}</Mono>. Quote it if you contact us.
                     </p>
                   </Alert>
-                  <VerifyForm reference={receipt.reference} onDone={setVerified} />
+                  <VerifyForm
+                    reference={receipt.reference}
+                    onDone={setVerified}
+                    onNewRequest={() => setReceipt(null)}
+                  />
                 </>
               ) : verifyOnly ? (
                 <>
