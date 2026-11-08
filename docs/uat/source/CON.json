@@ -153,7 +153,7 @@
       },
       {
         "action": "Fill in 'Full name', 'Mobile number', 'Email address' and 'Date of birth' with the test data and click 'Create account'.",
-        "expected": "The page 'Confirm your contacts' opens: 'A code has gone to your mobile and another to your email. Enter both.' Two boxes are shown: 'Code sent to your mobile' and 'Code sent to your email', with the line 'Each code expires in ten minutes, or after five wrong tries; then send the codes again.' under them. Below the 'Confirm and sign in' button are 'Send the codes again' and 'Change the details'."
+        "expected": "The page 'Confirm your contacts' opens: 'A code has gone to your mobile and another to your email. Enter both.' Two boxes are shown: 'Code sent to your mobile' and 'Code sent to your email', with the line 'Each code expires in ten minutes, or after five wrong tries; then send the codes again. They go to the contacts given when this sign-up began.' under them. Below the 'Confirm and sign in' button is 'Send the codes again'; there is no way back to change the details."
       },
       {
         "action": "Type only the mobile code the coordinator relays.",
@@ -222,10 +222,10 @@
       },
       {
         "action": "Fill in 'Full name', 'Mobile number' and 'Date of birth' from the test data, leave 'Email address' empty and click 'Create account'.",
-        "expected": "'Confirm your contacts' opens with 'A code has gone to your mobile. Enter it to finish.' and only one box, 'Code sent to your mobile'."
+        "expected": "'Confirm your contacts' opens with 'A code has gone to your mobile. Enter it below.' Two boxes are shown: 'Code sent to your mobile' and 'Code sent to your email, if you gave one before', whose hint reads 'Only if you started signing up before and gave an email then: a code has gone there too. Otherwise leave this empty.'"
       },
       {
-        "action": "Type the code the coordinator relays and click 'Confirm and sign in'.",
+        "action": "Type the code the coordinator relays in 'Code sent to your mobile', leave the email's box empty and click 'Confirm and sign in'.",
         "expected": "You are signed in and 'My consents' opens with the empty message 'No consent records' / 'When you agree to a notice, it will appear here.'"
       },
       {

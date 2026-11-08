@@ -144,10 +144,14 @@ when reporting a failure and the log line is one search away.
 Some routes deliberately answer the same way whatever happened, because the
 difference would tell a stranger something about who is registered:
 
-- `POST /auth/register`: identical for a new contact and a sign-up never
-  finished, whose codes are sent again; a contact already on an account answers
-  409 `contact_taken`, naming the field, by product decision, so this route does
-  say who is registered
+- `POST /auth/register`: identical for a new contact and a data principal's
+  sign-up never finished, whose codes are sent again; a child's date of birth is
+  refused before the contact is looked up, the same 422 `minor_not_permitted` on
+  `dob` for those and for an account (7bdb710). A contact already on any other
+  account answers 409 `contact_taken`, naming the field, by product decision, so
+  this route does say who is registered; that includes a member of staff's or a
+  breach holder's account still `pending` its first password, which is sent
+  nothing (7bdb710)
   ([03-security.md](../backend/03-security.md#data-principal-sign-in))
 - `POST /auth/otp/request`: identical whether the contact is registered
 - `POST /rights/requests`: a reference is issued either way; a code goes only
@@ -190,8 +194,9 @@ Bounded surfaces and their keys are listed in
 [rate-limiting.md](../security/rate-limiting.md). The
 ones a developer meets first: five sign-in failures lock an account for
 thirty minutes; five one-time codes per contact per hour; five attempts per
-code. All counters live in Redis under `rate:*`, which is why a test suite
-clears its own buckets rather than waiting an hour.
+code. The rate limits live in Redis under `rate:*`, which is why a test suite
+clears its own buckets rather than waiting an hour; the lockout is `lfail:*` and
+`lock:*`, keyed on the account, and a code's tries are `otpa:*`.
 
 ## Generated artefacts
 

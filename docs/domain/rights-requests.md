@@ -513,10 +513,18 @@ limit of ten an hour per address answers 429 (`POST /rights/nominee/requests`). 
 code that is not four to ten digits is refused before anything is looked up, with
 422 `validation_failed`, the same for every caller, as on the other code routes
 (bd6cef1; the form checked only the length before, and a code that was not digits
-answered the neutral 400). Since the answer cannot say that a code was cancelled,
-the nominee's page says to everybody that a code expires in ten minutes or after
-five wrong tries, and offers **Send me a new code**, which keeps the request text
-and the evidence (67b3dc0).
+answered the neutral 400). The code is checked before anything about the request,
+so the request's own refusals say nothing to a stranger, and it is spent only once
+the request is accepted (7bdb710): a right the nomination did not include, an
+event other than death or incapacity and a kind the office does not take are each
+a 422 on its own field and leave the code for the next try, so the nominee can
+choose again and send the same code. Spent first, as it was before, the right
+code then answered "Invalid or expired code". Of two requests sent at once with
+one code, one is recorded and the other answers 400 `otp_invalid`; every try,
+refused or not, counts against the ten an hour per address. Since the answer
+cannot say that a code was cancelled, the nominee's page says to everybody that a
+code expires in ten minutes or after five wrong tries, and offers **Send me a new
+code**, which keeps the request text and the evidence (67b3dc0).
 Death closes the principal's account; incapacity does not. The nomination
 records which request invoked it.
 

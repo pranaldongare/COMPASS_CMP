@@ -101,7 +101,7 @@ Key `registration_code` · channels: email, sms
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_registration_code` (`backend/api/src/cmp/tasks/authentication/otp.py:54`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/service.py:1010` |
+| Queued from | `backend/api/src/cmp/auth/authentication/service.py:1020` |
 | Variables | `code` (The six-digit one-time code.), `minutes` (How many minutes the code is valid for.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{code} confirms this email address`

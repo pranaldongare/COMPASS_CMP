@@ -73,7 +73,10 @@ holder opening its ticket:
 - Redis keeps only `HMAC(SECRET_KEY, "<scope>:<code>")` at
   `otp:<scope>:<identity>`, so a code from one flow is useless in another.
 - Checking and spending the code is one Lua script, so two requests with the
-  same code cannot both succeed.
+  same code cannot both succeed. Finishing a sign-up is the exception: it checks
+  each code without spending it and discards them once all have passed, so two
+  finishes at once with the right pair can both succeed
+  ([authentication.md](../security/authentication.md#one-time-codes)).
 - The fifth wrong attempt discards the code.
 - A wrong code and an expired one get the same answer. Wherever anybody can type
   a contact or a reference, so do a code of the wrong length and a spent budget,
@@ -84,7 +87,13 @@ holder opening its ticket:
 **Requesting a code** answers neutrally whether or not the contact is known,
 and sends one only to a known, active or pending account. **Registering**
 refuses a contact already in use with 409 `contact_taken` - a deliberate
-trade of enumeration for a clear sign-up - and refuses anyone under 18.
+trade of enumeration for a clear sign-up - and refuses anyone under 18. Only a
+data principal's unfinished sign-up is not refused: its codes are sent again,
+and it answers 202 as a new contact does. A member of staff's or a breach
+holder's account still `pending` its first password is in use like any other,
+409 with nothing sent; an age under 18 is refused before the contact is looked
+up, so it is the same 422 `minor_not_permitted` whoever holds the contact
+(7bdb710).
 
 **Through a consent link**, one proven contact signs an existing person in;
 a new registration must prove every contact it gave. See
@@ -174,7 +183,7 @@ buckets, which let requests through.
 
 | Bucket | Keyed on | Limit |
 |---|---|---|
-| login lockout | typed login | 5 failures → 30 min lock |
+| login lockout (`lfail:u:<uuid>`, `lock:u:<uuid>`) | account - its uuid, whichever name was typed | 5 failures → 30 min lock |
 | `mfa_resend` | user | 3 / 10 min |
 | `subject_otp`, `subject_register` | contact | 5 / hour |
 | `pwreset` | email | 3 / hour |

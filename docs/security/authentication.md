@@ -175,6 +175,18 @@ requests carrying the same correct code cannot both be told yes. Until
 September 2026 the check was a `GET` and the delete a later pipeline, and an
 external review reproduced two concurrent callers both succeeding; the
 integration suite now races eight verifications of one code and expects one.
+A flow with more to check before it acts first checks the code with
+`consume=False`, which counts a wrong try but deletes nothing, and spends it at
+the end by a check that consumes it, so the one yes still holds: a report from the
+public link, and a nominee's request, which since 7bdb710 spends its code only
+once the request is accepted, so a request refused for its right, its event or its
+kind leaves the code for the next try
+([rights-requests.md](../domain/rights-requests.md#nominees)). **Finishing a
+sign-up is not one atomic step** (`POST /auth/register/verify`): it checks every
+code waiting without spending it, and once all have passed discards them in calls
+of their own, so two finishes at once with the right pair can both be told yes and
+both open a session - on the same account, and only for somebody holding both
+codes.
 
 Stored as a **keyed hash, scoped to their purpose** — never in plaintext, and a
 code issued for staff MFA cannot be replayed against the consent flow. Whoever
@@ -218,15 +230,43 @@ are refused until the window passes. Before, a code left out answered 422 "Enter
 the code we sent to your email as well" before any code was checked, a refusal
 came on the field of the contact waiting (`email_code` when only the email was),
 and nothing limited the asking, so anybody could tell from a mobile nobody holds
-an unfinished sign-up, which `POST /auth/register` keeps to itself, and an account
-whose email had not answered. The sign-up page sends a code for every contact it
+an unfinished sign-up, which `POST /auth/register` keeps to itself (for a child's
+date of birth too only since 7bdb710, below), and an account whose email had not
+answered. The sign-up page sends a code for every contact it
 was given, so the one answer costs it nothing, and since that answer cannot say
 that a code was cancelled, the page says to everybody that each code expires in
 ten minutes or after five wrong tries, and offers **Send the codes again** (67b3dc0).
+Since 1f9fa41 it also says that the codes go to the contacts given when the sign-up
+began, and with a mobile alone it keeps a box, to be left empty otherwise, for the
+code to an email given then.
 Refusing an account with nothing left to answer closed a hole (32d483a): from
 2026-09-06 until 2026-11-08 the mobile alone, with no code, opened a session on
 any data principal's account whose every contact had answered once, since no code
 was outstanding to check.
+
+**Starting a sign-up says nothing of a sign-up left unfinished** (7bdb710).
+`POST /auth/register` refuses a child's date of birth before it looks the contact
+up: 422 `minor_not_permitted` on `dob`, the same for a contact nobody
+holds, a sign-up never finished and any account, and nothing is sent or written.
+Only the limit per contact, five an hour, comes first, so the try still counts
+against the contact. Checked after the lookup, a child's date answered 202 for an
+unfinished sign-up, 422 for a contact nobody holds and 409 for an account, so a
+stranger could tell an unfinished sign-up from a new contact. Only a data
+principal's unfinished sign-up is resumed: its codes are sent again, and it answers
+202 as a new contact does. Any other account found - by the mobile, or else the
+email - answers 409 `contact_taken`, naming the field, as any account does, by
+product decision
+([03-security.md](../backend/03-security.md#data-principal-sign-in)), and nothing
+is sent to it. That now includes a member of staff invited and not yet given a
+password and a breach holder's temporary login, both `pending` until a password
+is set; their way in is the invitation or a password reset, not the portal.
+Before, every `pending` account was resumed, so such a person was mailed or texted
+sign-up codes nobody had asked them for and no sign-up could use. A resumed
+sign-up keeps what it was started with: it is found by the mobile typed again, or
+else the email, and its codes go to the contacts it was first given, never to any
+typed since, so a mistyped contact cannot be corrected by signing up again, and
+the sign-up page no longer offers **Change the details** as if it could (1f9fa41;
+open, [breaches.md](../domain/breaches.md#open-questions)).
 
 ## What a code proves
 

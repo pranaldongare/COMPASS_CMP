@@ -187,7 +187,7 @@ random token and stores only its keyed digest, `HMAC-SHA256` under
 | The record that a notice was served to a person (six hours) | Redis db 0, keys `nsrv:*` |
 | A mirror of the office's message words, for the worker (five minutes) | Redis db 0, key `cache:message_templates` |
 | One-time codes, MFA codes, their attempt counts | Redis db 0, with TTLs |
-| Rate-limit buckets and lockouts | Redis db 0, keys `rate:*` |
+| Rate-limit buckets and lockouts | Redis db 0, keys `rate:*`; the lockout `lfail:*` and `lock:*` |
 | An outside holder's hour on its ticket (one hour) | Redis db 0, keys `hts:*`, the `cmp_ticket` cookie's fingerprint naming the holder and the link |
 | Celery broker and results | Redis db 1 and db 2 |
 | Uploaded documents and released files | `UPLOAD_ROOT` (`backend/api/var/uploads` locally) under the local storage backend, referenced by path and hash |
