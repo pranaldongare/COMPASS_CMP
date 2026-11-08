@@ -6,9 +6,12 @@
  * gives is authenticated before the account is hers: a code goes to each, and
  * both are entered here, on the second step, after which she is signed in.
  *
- * The first step answers the same way whether or not the details are already
- * registered - sign-up is unauthenticated, and "this number is taken" would be
- * a membership oracle for who is a data principal on this platform.
+ * The first step refuses a contact that already belongs to an account, and
+ * says which (409 `contact_taken`), so the form can be corrected: a product
+ * decision taken with its cost in view, since "this number is taken" lets
+ * anyone test who is a data principal here (`features/auth/api.ts`). A sign-up
+ * that was started and never finished is not refused; its codes are sent
+ * again.
  */
 "use client";
 
@@ -23,7 +26,11 @@ import { z } from "zod";
 import { AuthLayout } from "@/components/layout/auth-layout";
 import { AuthPageGate } from "@/components/security";
 import { Alert, Button, Field, Input } from "@/components/ui/primitives";
-import { register as registerAccount, registerVerify } from "@/features/auth";
+import {
+  register as registerAccount,
+  registerVerify,
+  type RegistrationDetails,
+} from "@/features/auth";
 import { ApiError } from "@/lib/errors";
 import { safeRedirectPath } from "@/lib/security";
 import { useAuth } from "@/providers";
@@ -47,9 +54,9 @@ export default function SignUpPage() {
 }
 
 function SignUpFlow() {
-  const [given, setGiven] = React.useState<{ mobile: string; email: string | null } | null>(
-    null,
-  );
+  // Every detail given, not just the contacts: the second step sends them
+  // again when the codes have to be sent again.
+  const [given, setGiven] = React.useState<RegistrationDetails | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   // A contact that already belongs to an account. The message goes on that
   // field so it can be changed, and sign-in is offered with it filled in.
@@ -66,14 +73,15 @@ function SignUpFlow() {
   const onSubmit = form.handleSubmit(async (values) => {
     setError(null);
     setTaken(null);
+    const details: RegistrationDetails = {
+      full_name: values.full_name,
+      mobile: values.mobile,
+      dob: values.dob,
+      email: values.email ? values.email : null,
+    };
     try {
-      await registerAccount({
-        full_name: values.full_name,
-        mobile: values.mobile,
-        dob: values.dob,
-        email: values.email ? values.email : null,
-      });
-      setGiven({ mobile: values.mobile, email: values.email ? values.email : null });
+      await registerAccount(details);
+      setGiven(details);
     } catch (caught) {
       if (caught instanceof ApiError && caught.code === "contact_taken") {
         const field = caught.field === "email" ? "email" : "mobile";
@@ -102,7 +110,9 @@ function SignUpFlow() {
   });
 
   if (given) {
-    return <VerifyStep mobile={given.mobile} email={given.email} />;
+    // Back to the details keeps what was typed: the form's values outlive its
+    // inputs.
+    return <VerifyStep details={given} onChangeDetails={() => setGiven(null)} />;
   }
 
   return (
@@ -207,20 +217,31 @@ function SignUpFlow() {
  * The second step: a code for every contact given, entered together.
  *
  * Both are checked before either is spent, so a wrong email code does not burn
- * a right mobile code. If the details were already registered, the codes that
- * arrived are sign-in codes and belong on the sign-in page; the message below
- * says so without saying which case this is.
+ * a right mobile code. Every refusal is the same sentence, whoever is asking
+ * and whichever code was wrong (2026-11-08): a wrong code, an expired one and
+ * one cancelled by its fifth wrong try all read "Invalid or expired code", on
+ * no particular field. So what the server can no longer say to one person is
+ * said here to everybody: how long a code lasts, and how to get new ones.
  */
-function VerifyStep({ mobile, email }: { mobile: string; email: string | null }) {
+function VerifyStep({
+  details,
+  onChangeDetails,
+}: {
+  details: RegistrationDetails;
+  /** Back to the first step, with what was typed still there. */
+  onChangeDetails: () => void;
+}) {
+  const { mobile } = details;
+  const email = details.email ?? null;
   const params = useSearchParams();
   /**
-   * Where she was going before she was asked to sign up.
+   * Where they were going before they were asked to sign up.
    *
    * A consent link sends people here when they have no account, and landing
    * them on their consents afterwards would leave them to find that link again
    * - which at a collection site means asking somebody to re-open it. It is
    * attacker-controlled, being whatever was in the URL, so only a same-origin
-   * path survives `safeRedirectPath`; anything else becomes her home.
+   * path survives `safeRedirectPath`; anything else becomes their home.
    */
   const next = safeRedirectPath(params.get("next"), "/home");
   const router = useRouter();
@@ -229,13 +250,18 @@ function VerifyStep({ mobile, email }: { mobile: string; email: string | null })
   const [emailCode, setEmailCode] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
+  const [resending, setResending] = React.useState(false);
+  const [resent, setResent] = React.useState(false);
 
+  // Both codes whenever both contacts were given: the server finishes a
+  // sign-up only when every contact on it has answered.
   const ready = mobileCode.length === 6 && (!email || emailCode.length === 6);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
     setError(null);
+    setResent(false);
     try {
       await registerVerify({
         mobile,
@@ -251,6 +277,36 @@ function VerifyStep({ mobile, email }: { mobile: string; email: string | null })
     }
   }
 
+  /**
+   * New codes, by giving the same details again.
+   *
+   * `POST /auth/register` finds the sign-up these details started and sends a
+   * new code to every contact on it, each replacing the last and its count of
+   * wrong tries. It answers that the same way as a sign-up it has just made,
+   * so the page cannot tell the two apart and does not try. A contact that
+   * has meanwhile become an account's is refused in the server's own words,
+   * which say to sign in; so is a fifth request in an hour.
+   */
+  async function resend() {
+    setResending(true);
+    setResent(false);
+    setError(null);
+    try {
+      await registerAccount(details);
+      setMobileCode("");
+      setEmailCode("");
+      setResent(true);
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.userMessage()
+          : "We could not send new codes just now.",
+      );
+    } finally {
+      setResending(false);
+    }
+  }
+
   const digits = (value: string) => value.replace(/\D/g, "").slice(0, 6);
 
   return (
@@ -258,17 +314,17 @@ function VerifyStep({ mobile, email }: { mobile: string; email: string | null })
       title="Confirm your contacts"
       subtitle={
         email
-          ? "If those details are new to us, a code has gone to your mobile and another to your email. Enter both."
-          : "If that number is new to us, a code has gone to your mobile. Enter it to finish."
+          ? "A code has gone to your mobile and another to your email. Enter both."
+          : "A code has gone to your mobile. Enter it to finish."
       }
       footer={
         <p className="text-center text-sm text-text-muted">
-          Already had an account? The code you received is a sign-in code:{" "}
+          If you have already finished signing up,{" "}
           <Link
             href={`/sign-in?contact=${encodeURIComponent(mobile)}`}
             className="font-medium text-accent-text hover:underline"
           >
-            enter it on the sign-in page
+            sign in instead
           </Link>
           .
         </p>
@@ -308,6 +364,17 @@ function VerifyStep({ mobile, email }: { mobile: string; email: string | null })
           </Field>
         )}
 
+        {/* Said to everybody alike: the server's one refusal cannot say that a
+            code was cancelled, or which one. */}
+        <p className="text-sm text-text-muted">
+          Each code expires in ten minutes, or after five wrong tries; then send the codes
+          again.
+          {/* An unfinished sign-up gets its codes at the contacts it was
+              started with, and this step asks only for those typed now. */}
+          {!email &&
+            " If you gave an email when you first started signing up, a code has gone there too: change the details and give that email again."}
+        </p>
+
         <Button
           type="submit"
           variant="primary"
@@ -319,6 +386,21 @@ function VerifyStep({ mobile, email }: { mobile: string; email: string | null })
           Confirm and sign in
         </Button>
       </form>
+      {resent && (
+        <p className="mt-3 text-sm text-text-muted" role="status">
+          {email
+            ? "New codes are on their way. The earlier ones no longer work."
+            : "A new code is on its way. The earlier one no longer works."}
+        </p>
+      )}
+      <div className="border-border-subtle mt-4 flex flex-wrap justify-between gap-2 border-t pt-4">
+        <Button type="button" variant="ghost" loading={resending} onClick={resend}>
+          Send the codes again
+        </Button>
+        <Button type="button" variant="ghost" onClick={onChangeDetails}>
+          Change the details
+        </Button>
+      </div>
     </AuthLayout>
   );
 }

@@ -67,6 +67,9 @@ function NomineeForm() {
   const [evidence, setEvidence] = React.useState<File | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [pending, setPending] = React.useState(false);
+  const [resending, setResending] = React.useState(false);
+  const [resent, setResent] = React.useState(false);
+  const [resendError, setResendError] = React.useState<string | null>(null);
   const [done, setDone] = React.useState<{ reference: string; message: string } | null>(null);
 
   async function start(e: React.FormEvent) {
@@ -83,9 +86,47 @@ function NomineeForm() {
     }
   }
 
+  /**
+   * A new code, for the reference and contact already typed.
+   *
+   * `POST /rights/nominee/start` answers the same sentence whether or not a
+   * code went, so this says no more than the first answer did. A code that
+   * does go replaces the last one and its count of wrong tries; the request
+   * text and the evidence stay where they are.
+   */
+  async function resend() {
+    setResending(true);
+    setResent(false);
+    setResendError(null);
+    setError(null);
+    try {
+      const result = await nomineeStart({
+        nomination_uuid: nominationUuid.trim(),
+        contact: contact.trim(),
+      });
+      setStarted(result.message ?? "If the details match, a code has been sent.");
+      setCode("");
+      setResent(true);
+    } catch (err) {
+      setResendError(messageOf(err, "Could not send a new code."));
+    } finally {
+      setResending(false);
+    }
+  }
+
+  /** Back to the first step, the request text and the evidence kept. */
+  function changeDetails() {
+    setStarted(null);
+    setCode("");
+    setError(null);
+    setResent(false);
+    setResendError(null);
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setResent(false);
     setPending(true);
     try {
       setDone(
@@ -168,9 +209,38 @@ function NomineeForm() {
                     )}
                   </Field>
                   {started ? (
-                    <Alert tone="info">
-                      <p>{started}</p>
-                    </Alert>
+                    <>
+                      {/* Said to everybody alike: a wrong code, an expired one
+                          and one cancelled by its fifth wrong try are refused
+                          in the same words (2026-11-08). */}
+                      <Alert tone="info">
+                        <p>{started}</p>
+                        <p className="mt-2">
+                          A code expires in ten minutes, or after five wrong tries; then
+                          send a new one.
+                        </p>
+                      </Alert>
+                      {resent && (
+                        <p className="text-sm text-text-muted" role="status">
+                          If the details match, a new code is on its way, and the earlier
+                          one no longer works.
+                        </p>
+                      )}
+                      {resendError && <Alert tone="danger">{resendError}</Alert>}
+                      <div className="flex flex-wrap justify-between gap-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          loading={resending}
+                          onClick={resend}
+                        >
+                          Send me a new code
+                        </Button>
+                        <Button type="button" variant="ghost" onClick={changeDetails}>
+                          Change the details
+                        </Button>
+                      </div>
+                    </>
                   ) : (
                     <Button type="submit" variant="primary" loading={pending} disabled={!nominationUuid || !contact}>
                       Send me a code
@@ -193,7 +263,9 @@ function NomineeForm() {
                         <Input
                           {...p}
                           value={code}
-                          onChange={(e) => setCode(e.target.value)}
+                          // Digits only, as the server's schema takes them: a
+                          // stray space or letter would be its 422, in its words.
+                          onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                           inputMode="numeric"
                           autoComplete="one-time-code"
                           maxLength={10}
