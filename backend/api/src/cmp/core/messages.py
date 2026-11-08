@@ -682,9 +682,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             ),
             Variable(
                 "digest",
-                "Her record as held by the platform: consents, disclosures, returns, and the "
-                "reports she sent through the public link that were not taken up. With no "
-                "account, those reports alone, by number, dates and title.",
+                "The requester's record as held by the platform: consents, disclosures, "
+                "returns, and the reports they sent through the public link that were not "
+                "taken up. With no account, those reports alone, by number, dates and title.",
                 "CONSENTS\n  - Gait Study 2026: agreed on 1 September 2026",
             ),
             Variable(

@@ -149,7 +149,7 @@ Key `rights_response` · channels: email, sms
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_rights_response` (`backend/api/src/cmp/tasks/notifications/rights.py:148`) |
 | Queued from | `backend/api/src/cmp/domain/rights/service.py:3283` |
-| Variables | `reference` (The rights request reference.), `headline` (The outcome, as a sentence.), `response_text` (What the Privacy Office wrote.), `digest` (Her record as held by the platform: consents, disclosures, returns, and the reports she sent through the public link that were not taken up. With no account, those reports alone, by number, dates and title.), `availability` (Where and until when the full record can be read from the requester's account, as a sentence; with no account behind the request, that this message is the answer.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
+| Variables | `reference` (The rights request reference.), `headline` (The outcome, as a sentence.), `response_text` (What the Privacy Office wrote.), `digest` (The requester's record as held by the platform: consents, disclosures, returns, and the reports they sent through the public link that were not taken up. With no account, those reports alone, by number, dates and title.), `availability` (Where and until when the full record can be read from the requester's account, as a sentence; with no account behind the request, that this message is the answer.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Our response to your request {reference}`
 

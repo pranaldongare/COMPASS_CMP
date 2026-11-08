@@ -502,10 +502,12 @@ shows has the report, so pressing it twice sends nothing twice.
   version, which offers the list as it now stands.
 - **Nobody is on the organisation's board list** when finalising. Add the addresses
   under **Breach settings**, or add an address for this report alone in the window.
-- **Not changed: the officers could not be told** under **Breach settings** (503).
-  Every change to the board's list mails both officers, and the broker could not
-  take the mail, so nothing was changed. Bring back Redis or the worker's broker and
-  try again; see "The worker is running but nothing happens".
+- **Not changed: a service it needs did not answer just now** under **Breach
+  settings** (503). Either the broker could not take the officers' mail (every change
+  to the board's list mails both officers) or the key service could not seal a new
+  address; either way nothing was changed. The API log names which. Bring back Redis
+  or the worker's broker (see "The worker is running but nothing happens") or the key
+  service, and try again.
 
 The duty's time is when the first address was reached, so a late last address does
 not make it late. The worker log carries the delivery, never the address.
