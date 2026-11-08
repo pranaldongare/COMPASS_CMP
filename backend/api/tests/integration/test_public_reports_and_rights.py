@@ -30,7 +30,9 @@ from cmp.core.config import settings
 from cmp.core.errors import BadRequest, CmpError, Conflict, NotFound, ValidationFailed
 from cmp.core.pagination import PageRequest
 from cmp.core.permissions import Role
+from cmp.core.security import new_token, token_fingerprint
 from cmp.db.repositories import audit as audit_repo
+from cmp.db.repositories import rights as rights_repo
 from cmp.db.repositories import users as user_repo
 from cmp.db.sql import fetch_all, fetch_one
 from cmp.domain.breach import intake
@@ -499,6 +501,45 @@ async def test_the_owner_s_answered_code_does_not_hand_their_reports_to_the_acco
     theirs_now = await _request(conn, seeded, holder, "access")
     assert await public_reports.address_hashes(conn, theirs_now) == []
     assert theirs not in _found(await public_reports.found(conn, theirs_now))
+
+
+async def test_the_owner_s_accepted_nomination_does_not_hand_their_reports_to_the_account(
+    conn: Any, seeded: dict[str, Any], redis_conn: Any, sent: Any
+) -> None:
+    """The same account, carrying the owner's address unproved. Somebody else
+    nominates the owner by that address and a mobile no account holds, and
+    the owner accepts with a code to the address. `users.by_contact` finds
+    the account by the address and the nomination is linked to it; nothing is
+    stamped, so the account's own request still finds none of the owner's
+    reports."""
+    owner = _address("owner")
+    theirs = await _dismissed(conn, seeded, owner)
+    holder = await _person(conn, email=owner, email_proved=False, mobile_proved=True)
+    nomination = await service.nominate(
+        conn,
+        principal_user_id=seeded["subject"]["id"],
+        nominee_name="The Owner",
+        nominee_mobile=f"+9197{uuid.uuid4().int % 10**8:08d}",
+        nominee_email=owner,
+        rights=["access"],
+    )
+    raw = new_token()
+    await conn.execute(
+        "UPDATE nomination SET accept_token_hash = %s WHERE nomination_id = %s",
+        (token_fingerprint(raw), nomination["nomination_id"]),
+    )
+    await service.send_nomination_code(conn, raw, medium="email")
+    [(_task, to, code)] = [a for a in sent if a[0] == "send_nomination_code"]
+    assert to == owner
+    await service.accept_nomination(conn, raw, code=str(code))
+    linked = await rights_repo.nomination_by_uuid(conn, str(nomination["nomination_uuid"]))
+    assert linked is not None and linked["nominee_user_id"] == holder["id"]
+    still = await user_repo.by_id(conn, int(holder["id"]))
+    assert still is not None and still["email_verified_at"] is None
+
+    mine = await _request(conn, seeded, holder, "access")
+    assert await public_reports.address_hashes(conn, mine) == []
+    assert theirs not in _found(await public_reports.found(conn, mine))
 
 
 async def test_a_request_with_no_proved_email_is_told_nothing_was_looked_for(

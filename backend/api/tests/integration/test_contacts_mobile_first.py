@@ -301,7 +301,8 @@ class TestNomination:
         with pytest.raises(ValidationFailed):
             await rights_service.send_nomination_code(conn, raw, medium="fax")
 
-        code = (await otp.issue(otp.Scope.NOMINATION_ACCEPT, str(row["nomination_uuid"]))).code
+        identity = rights_service.nomination_code_identity(str(row["nomination_uuid"]), "email")
+        code = (await otp.issue(otp.Scope.NOMINATION_ACCEPT, identity)).code
         accepted = await rights_service.accept_nomination(conn, raw, code=code)
         assert accepted["status"] == "active"
         with pytest.raises(NotFound):

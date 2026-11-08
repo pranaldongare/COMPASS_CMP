@@ -41,8 +41,6 @@ from cmp.core.errors import (
 from cmp.core.logging import get_logger
 from cmp.core.permissions import OFFICE_TITLES, Role
 from cmp.core.security import new_token, token_fingerprint
-from cmp.db.redis import K_CACHE, get_redis
-from cmp.db.redis import key as rkey
 from cmp.db.repositories import breach_tickets as breach_ticket_repo
 from cmp.db.repositories import holdings
 from cmp.db.repositories import registry as registry_repo
@@ -3691,6 +3689,26 @@ def _recorded_contact(row: Row, typed: str) -> str | None:
     return None
 
 
+#: The recorded contacts a nomination's code can go to.
+NOMINATION_MEDIUMS: Final = ("mobile", "email")
+
+
+def nomination_code_identity(nomination_uuid: str, medium: str) -> str:
+    """What a nomination's code is issued under: the nomination and the
+    contact it was sent to, so that the code and where it went are one fact."""
+    return f"{nomination_uuid}:{medium}"
+
+
+async def _nomination_code_came_back(row: Row, code: str) -> str:
+    """The recorded contact this code went to, or the refusal a wrong code
+    gets. One code is live per nomination (`send_nomination_code`), so a
+    wrong one costs one try of its budget, whichever contact it went to."""
+    ref = str(row["nomination_uuid"])
+    by_identity = {nomination_code_identity(ref, m): m for m in NOMINATION_MEDIUMS}
+    matched = await otp.require_any(otp.Scope.NOMINATION_ACCEPT, list(by_identity), code)
+    return by_identity[matched]
+
+
 async def send_nomination_code(conn: Conn, raw_token: str, *, medium: str) -> dict[str, Any]:
     """A code to one of the contacts *she* recorded, chosen by the nominee.
 
@@ -3711,13 +3729,16 @@ async def send_nomination_code(conn: Conn, raw_token: str, *, medium: str) -> di
         window_s=3600,
         message="Too many code requests for this nomination. Try again later.",
     )
-    issued = await otp.issue(otp.Scope.NOMINATION_ACCEPT, str(row["nomination_uuid"]))
-    # Which contact the code went to, kept as long as the code is: acceptance
-    # turns that proven contact into the account he can then sign in with.
-    await get_redis().set(
-        rkey(K_CACHE, "nomination_medium", str(row["nomination_uuid"])),
-        medium,
-        ex=settings.otp_ttl_s,
+    ref = str(row["nomination_uuid"])
+    # Issued under the contact it goes to, replacing the other's in the same
+    # write: one code is live, and which contact it proves is where it lives.
+    # Recorded beside the code instead, two requests at once could leave the
+    # mobile's code live with "email" recorded, and accepting stamped an email
+    # no code had reached.
+    issued = await otp.issue(
+        otp.Scope.NOMINATION_ACCEPT,
+        nomination_code_identity(ref, medium),
+        replacing=[nomination_code_identity(ref, m) for m in NOMINATION_MEDIUMS if m != medium],
     )
     _dispatch("send_nomination_code", str(contact), issued.code)
     masked = mask_contact(str(contact))
@@ -3761,8 +3782,9 @@ async def _opened_nomination(row: Row) -> Row:
 async def accept_nomination(conn: Conn, raw_token: str, *, code: str) -> Row:
     """He accepts. Now it is effective, and she can see that it is."""
     row = await nomination_from_token(conn, raw_token)
-    # The link alone proves the link. The code proves a recorded contact.
-    await otp.require(otp.Scope.NOMINATION_ACCEPT, str(row["nomination_uuid"]), code)
+    # The link alone proves the link. The code proves a recorded contact, and
+    # which one is the identity it was issued under.
+    medium = await _nomination_code_came_back(row, code)
     await repo.update_nomination(
         conn,
         int(row["nomination_id"]),
@@ -3782,10 +3804,6 @@ async def accept_nomination(conn: Conn, raw_token: str, *, code: str) -> Row:
     assert fresh is not None
     fresh = await _opened_nomination(fresh)
     ref = str(fresh["nomination_uuid"])
-    proven = await get_redis().getdel(rkey(K_CACHE, "nomination_medium", ref))
-    # Unknown, nothing is stamped: a guess would mark proved a contact the
-    # code may not have gone to.
-    medium = str(proven) if proven in ("mobile", "email") else None
     has_account = await _ensure_nominee_account(conn, fresh, proven_medium=medium)
     # The reference and the page where he acts, to every contact recorded for
     # him - and, now that accepting has proven a contact, that he can sign in
@@ -3804,9 +3822,7 @@ async def accept_nomination(conn: Conn, raw_token: str, *, code: str) -> Row:
     return fresh
 
 
-async def _ensure_nominee_account(
-    conn: Conn, nomination: Row, *, proven_medium: str | None
-) -> bool:
+async def _ensure_nominee_account(conn: Conn, nomination: Row, *, proven_medium: str) -> bool:
     """A nominee who has just accepted can sign in.
 
     Accepting proved a contact the principal recorded - a code went there and
@@ -3814,14 +3830,19 @@ async def _ensure_nominee_account(
     account holds either recorded contact, one is made: a data principal's
     account, active, with the proven contact marked verified, so the sign-in
     code he asks for next actually arrives. Where an account already holds a
-    recorded contact, it is his already, and nothing is created.
+    recorded contact, nothing is created: that account is the one linked.
 
     Either way the account is written onto the nomination, which is what lets
     him follow the request he raises years later without the platform having
     to guess from contact strings which account is his. On an account that was
-    there already, the contact the code went to is stamped proved where it is
-    that account's email or mobile, as a sign-in by it would stamp it; never on
-    a data principal mid-sign-up, whose sign-up asks a code of every medium.
+    there already nothing is stamped. The code proves that whoever accepted
+    holds the contact it went to, not that the account `users.by_contact`
+    found is theirs: an account can carry an address somebody else typed (a
+    nominee's, named by an earlier principal), and a stamp there would let
+    that account's later requests find the dismissed reports of the address's
+    owner. The rights form's code stamps nothing for the same reason
+    (`verify_public_code`). Only an account made here, for whoever accepted,
+    is stamped with the contact the code went to.
 
     Returns whether he now has an account to sign in with. A nomination
     recorded before mobiles were required may name an email alone; a data
@@ -3831,21 +3852,12 @@ async def _ensure_nominee_account(
     """
     mobile = nomination.get("nominee_mobile")
     email = nomination.get("nominee_email")
-    proved = nomination.get(f"nominee_{proven_medium}") if proven_medium else None
     for contact in (mobile, email):
         existing = await user_repo.by_contact(conn, str(contact)) if contact else None
         if existing:
             await repo.link_nominee_account(
                 conn, int(nomination["nomination_id"]), int(existing["id"])
             )
-            on_it = user_repo.medium_of(existing, str(proved)) if proved else None
-            enrolling = (
-                existing["status"] == "pending" and existing["role"] == Role.DATA_SUBJECT.value
-            )
-            # The account's own email or mobile. A second email is confirmed by
-            # its holder from the account, with a session, and nowhere else.
-            if on_it in ("mobile", "email") and not enrolling:
-                await user_repo.mark_contact_verified(conn, int(existing["id"]), str(on_it))
             return True
     if not mobile:
         return False
@@ -3858,8 +3870,7 @@ async def _ensure_nominee_account(
         person_type="external",
         status="active",
     )
-    if proven_medium:
-        await user_repo.mark_contact_verified(conn, int(user["id"]), proven_medium)
+    await user_repo.mark_contact_verified(conn, int(user["id"]), proven_medium)
     await repo.link_nominee_account(conn, int(nomination["nomination_id"]), int(user["id"]))
     await audit.record(
         conn,
@@ -3882,7 +3893,7 @@ async def _ensure_nominee_account(
 async def decline_nomination(conn: Conn, raw_token: str, *, code: str) -> Row:
     row = await nomination_from_token(conn, raw_token)
     # The link alone proves the link. The code proves a recorded contact.
-    await otp.require(otp.Scope.NOMINATION_ACCEPT, str(row["nomination_uuid"]), code)
+    await _nomination_code_came_back(row, code)
     await repo.update_nomination(
         conn,
         int(row["nomination_id"]),
@@ -3981,9 +3992,18 @@ async def nominee_submit(
     """The nominee makes a request. It then runs as normal, and the DPO decides
     first whether the triggering event is evidenced."""
     row = await repo.nomination_by_uuid(conn, nomination_uuid)
+    refused = BadRequest("Invalid or expired code", code="otp_invalid", field="code")
     if not row or row["status"] != NominationStatus.ACTIVE:
-        raise BadRequest("Invalid or expired code", code="otp_invalid", field="code")
-    await otp.require(otp.Scope.NOMINEE_VERIFY, nomination_uuid, code)
+        raise refused
+    try:
+        await otp.require(otp.Scope.NOMINEE_VERIFY, nomination_uuid, code)
+    except (BadRequest, RateLimited):
+        # A code of the wrong length, and a spent budget, answered as a wrong
+        # code: told apart, they would say the nomination is in place, and that
+        # the contact typed at the start matched the one recorded, which
+        # `nominee_start` does not say. The code is discarded with its budget,
+        # and the route's limit per IP address is what stops more tries.
+        raise refused from None
     kind = taken(request_type)
     if kind.value not in list(row["rights"]):
         raise ValidationFailed(

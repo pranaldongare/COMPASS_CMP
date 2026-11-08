@@ -7,8 +7,10 @@ once it is stamped. A flow that proves a mailbox without stamping it leaves the
 holder without their own reports; one that stamps a contact the code never
 went to makes an address somebody else typed count. So each place a code to an
 account comes back is checked both ways: what it went to is stamped, and
-nothing else is. The rights form's code is the exception, and stamps nothing:
+nothing else is. The rights form's code is an exception, and stamps nothing:
 it proves the requester holds the address, not that the account's holder does.
+A nomination's code is the same on an account that was there already, and
+stamps only an account made for whoever accepted.
 
 Every person and address here is the test's own, with a uuid in it: these run
 on a database the HTTP suite commits to.
@@ -21,12 +23,12 @@ from typing import Any
 
 import pytest
 
+from cmp.auth.authentication import otp
 from cmp.auth.authentication import service as auth_service
-from cmp.core.errors import BadRequest, ValidationFailed
+from cmp.core.config import settings
+from cmp.core.errors import BadRequest, RateLimited, ValidationFailed
 from cmp.core.permissions import Role
 from cmp.core.security import hash_password, new_token, token_fingerprint
-from cmp.db.redis import K_CACHE, get_redis
-from cmp.db.redis import key as rkey
 from cmp.db.repositories import rights as rights_repo
 from cmp.db.repositories import users as user_repo
 from cmp.domain.consent import service as consent_service
@@ -378,18 +380,10 @@ class TestTheRightsForm:
 
 # ------------------------------------------------------- a nomination accepted
 class TestANominationAccepted:
-    async def _accept(
-        self,
-        conn: Any,
-        seeded: dict[str, Any],
-        sent: list[tuple[Any, ...]],
-        *,
-        mobile: str,
-        email: str | None,
-        medium: str | None,
-    ) -> None:
-        """Nominate, send the code to `medium` the way the link's page does,
-        and accept with it. None forgets where it went before the accept."""
+    async def _nominated(
+        self, conn: Any, seeded: dict[str, Any], *, mobile: str, email: str | None
+    ) -> tuple[dict[str, Any], str]:
+        """A nomination and the raw token its link carries."""
         nomination = await rights_service.nominate(
             conn,
             principal_user_id=seeded["subject"]["id"],
@@ -403,24 +397,69 @@ class TestANominationAccepted:
             "UPDATE nomination SET accept_token_hash = %s WHERE nomination_id = %s",
             (token_fingerprint(raw), nomination["nomination_id"]),
         )
-        await rights_service.send_nomination_code(conn, raw, medium=medium or "mobile")
-        if medium is None:
-            ref = str(nomination["nomination_uuid"])
-            await get_redis().delete(rkey(K_CACHE, "nomination_medium", ref))
+        return nomination, raw
+
+    async def _accept(
+        self,
+        conn: Any,
+        seeded: dict[str, Any],
+        sent: list[tuple[Any, ...]],
+        *,
+        mobile: str,
+        email: str | None,
+        medium: str,
+    ) -> dict[str, Any]:
+        """Nominate, send the code to `medium` the way the link's page does,
+        and accept with it."""
+        nomination, raw = await self._nominated(conn, seeded, mobile=mobile, email=email)
+        await rights_service.send_nomination_code(conn, raw, medium=medium)
         [(_task, _to, code)] = [a for a in sent if a[0] == "send_nomination_code"]
         await rights_service.accept_nomination(conn, raw, code=str(code))
+        return nomination
 
-    async def test_an_account_already_holding_the_proven_contact_is_stamped_on_it(
+    @staticmethod
+    async def _linked_to(conn: Any, nomination: dict[str, Any]) -> int | None:
+        row = await rights_repo.nomination_by_uuid(conn, str(nomination["nomination_uuid"]))
+        assert row is not None
+        return row["nominee_user_id"]
+
+    async def test_an_account_already_holding_the_proven_contact_is_linked_not_stamped(
         self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any, sent: Any
     ) -> None:
-        """The nominee has an account with the recorded email. The code went
-        to that email and came back, so it is stamped, and the account's
-        mobile, which nothing went to, is not."""
+        """An account carries the recorded email, unproved, and the code went
+        to that email and came back. That proves whoever accepted holds the
+        address, not that the account `users.by_contact` found is theirs, so
+        the account is linked and nothing on it is stamped."""
         person = await _principal(conn)
-        await self._accept(
+        nomination = await self._accept(
             conn, seeded, sent, mobile=_mobile(), email=plain(person["email"]), medium="email"
         )
-        assert await _stamps(conn, person["id"]) == (True, False, False)
+        assert await self._linked_to(conn, nomination) == person["id"]
+        assert await _stamps(conn, person["id"]) == (False, False, False)
+
+    async def test_an_address_on_somebody_else_s_account_is_not_stamped_by_its_owner_accepting(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any, sent: Any
+    ) -> None:
+        """A nominee's account: the email typed by a principal, its holder's
+        mobile proved. The address's owner is nominated by somebody else and
+        accepts with a code to it. The owner's proof is not the holder's."""
+        owner = _email("owner")
+        holder = await _principal(conn, email=owner)
+        await user_repo.mark_contact_verified(conn, holder["id"], "mobile")
+        await self._accept(conn, seeded, sent, mobile=_mobile(), email=owner, medium="email")
+        assert await _stamps(conn, holder["id"]) == (False, True, False)
+
+    async def test_an_account_found_by_the_proven_mobile_is_not_stamped_either(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any, sent: Any
+    ) -> None:
+        """Nothing on an account that was there already, whichever contact
+        found it: its holder proves its contacts by signing in."""
+        person = await _principal(conn)
+        nomination = await self._accept(
+            conn, seeded, sent, mobile=plain(person["mobile"]), email=None, medium="mobile"
+        )
+        assert await self._linked_to(conn, nomination) == person["id"]
+        assert await _stamps(conn, person["id"]) == (False, False, False)
 
     async def test_a_proven_contact_that_is_not_the_account_s_stamps_nothing_on_it(
         self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any, sent: Any
@@ -447,13 +486,115 @@ class TestANominationAccepted:
         )
         assert await _stamps(conn, person["id"]) == (False, False, False)
 
-    async def test_where_the_code_went_unknown_nothing_is_stamped(
+    async def test_an_account_made_for_whoever_accepted_carries_the_contact_proved(
         self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any, sent: Any
     ) -> None:
-        """The account made for the nominee carries both recorded contacts; a
-        guess at which one the code went to could stamp the wrong one."""
-        mobile = _mobile()
-        await self._accept(conn, seeded, sent, mobile=mobile, email=_email("nominee"), medium=None)
+        """No account holds either recorded contact, so one is made for the
+        person who answered, with the contact the code went to stamped, and
+        the other, which nothing reached, not."""
+        for medium, stamps in (("mobile", (False, True, False)), ("email", (True, False, False))):
+            mobile = _mobile()
+            sent.clear()
+            await self._accept(conn, seeded, sent, mobile=mobile, email=_email(), medium=medium)
+            made = await user_repo.by_contact(conn, mobile)
+            assert made is not None
+            assert await _stamps(conn, int(made["id"])) == stamps, medium
+            await rights_service.revoke_nomination(
+                conn,
+                nomination_uuid=str(
+                    (await rights_repo.live_nomination_of(conn, seeded["subject"]["id"]))[
+                        "nomination_uuid"
+                    ]
+                ),
+                principal_user_id=seeded["subject"]["id"],
+            )
+
+    async def test_a_code_proves_only_the_contact_it_was_sent_to(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any, sent: Any
+    ) -> None:
+        """Asked for at the email, then at the mobile: the mobile's code is the
+        live one, the email's is refused, and accepting stamps the mobile."""
+        mobile, email = _mobile(), _email("nominee")
+        _nomination, raw = await self._nominated(conn, seeded, mobile=mobile, email=email)
+        await rights_service.send_nomination_code(conn, raw, medium="email")
+        await rights_service.send_nomination_code(conn, raw, medium="mobile")
+        codes = {plain(a[1]): str(a[2]) for a in sent if a[0] == "send_nomination_code"}
+        with pytest.raises(BadRequest) as refused:
+            await rights_service.accept_nomination(conn, raw, code=codes[email])
+        assert (refused.value.code, refused.value.message) == (
+            "otp_invalid",
+            "Invalid or expired code",
+        )
+        await rights_service.accept_nomination(conn, raw, code=codes[mobile])
         made = await user_repo.by_contact(conn, mobile)
         assert made is not None
-        assert await _stamps(conn, int(made["id"])) == (False, False, False)
+        assert await _stamps(conn, int(made["id"])) == (False, True, False)
+
+    async def test_codes_asked_at_once_never_stamp_where_the_surviving_code_did_not_go(
+        self,
+        conn: Any,
+        seeded: dict[str, Any],
+        request_context: Any,
+        redis_conn: Any,
+        sent: Any,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Two requests for a code at once, interleaved: the email's code is
+        issued, a whole request for the mobile's runs, and only then does the
+        email's request finish. The mobile's code is the live one. Recorded
+        apart from the code, "email" was the last word on where it went, and
+        accepting with the mobile's code stamped an email no code reached."""
+        mobile, email = _mobile(), _email("nominee")
+        _nomination, raw = await self._nominated(conn, seeded, mobile=mobile, email=email)
+        real = otp.issue
+        nested: list[bool] = []
+
+        async def then_a_whole_request_for_the_mobile(*args: Any, **kw: Any) -> otp.Issued:
+            issued = await real(*args, **kw)
+            if not nested:
+                nested.append(True)
+                await rights_service.send_nomination_code(conn, raw, medium="mobile")
+            return issued
+
+        monkeypatch.setattr(otp, "issue", then_a_whole_request_for_the_mobile)
+        await rights_service.send_nomination_code(conn, raw, medium="email")
+        monkeypatch.setattr(otp, "issue", real)
+        assert nested == [True]
+        [code] = [a[2] for a in sent if a[0] == "send_nomination_code" and plain(a[1]) == mobile]
+        await rights_service.accept_nomination(conn, raw, code=str(code))
+        made = await user_repo.by_contact(conn, mobile)
+        assert made is not None
+        assert await _stamps(conn, int(made["id"])) == (False, True, False)
+
+    async def test_a_wrong_code_costs_one_try_whichever_contact_it_went_to(
+        self, conn: Any, seeded: dict[str, Any], request_context: Any, redis_conn: Any, sent: Any
+    ) -> None:
+        """One code is live, so five wrong ones spend its budget and no more,
+        and the answers are the same whether it went to the mobile or the
+        email."""
+        seen: dict[str, list[tuple[str, str]]] = {}
+        for medium in ("mobile", "email"):
+            nomination, raw = await self._nominated(
+                conn, seeded, mobile=_mobile(), email=_email("nominee")
+            )
+            sent.clear()
+            await rights_service.send_nomination_code(conn, raw, medium=medium)
+            [code] = [str(a[2]) for a in sent if a[0] == "send_nomination_code"]
+            wrong = f"{(int(code) + 1) % 10**6:06d}"
+            answers = []
+            for _ in range(settings.otp_max_verify_attempts):
+                with pytest.raises((BadRequest, RateLimited)) as refused:
+                    await rights_service.accept_nomination(conn, raw, code=wrong)
+                answers.append((type(refused.value).__name__, refused.value.code))
+            seen[medium] = answers
+            with pytest.raises(BadRequest):
+                await rights_service.accept_nomination(conn, raw, code=code)  # discarded
+            await rights_service.revoke_nomination(
+                conn,
+                nomination_uuid=str(nomination["nomination_uuid"]),
+                principal_user_id=seeded["subject"]["id"],
+            )
+        assert seen["mobile"] == seen["email"]
+        assert [a[0] for a in seen["mobile"]] == ["BadRequest"] * (
+            settings.otp_max_verify_attempts - 1
+        ) + ["RateLimited"]

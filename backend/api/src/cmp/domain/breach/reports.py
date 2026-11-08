@@ -97,6 +97,13 @@ _NOBODY: Final = (
 #: How a line never queued ranks against one that was.
 _NEVER: Final = datetime.min.replace(tzinfo=UTC)
 
+#: Why the first yes did not mail the report to CERT-In it was holding, as
+#: `breach.report_withheld` records it and a version's mail serves it: the
+#: mark was set aside then, or nobody it was chosen for was still on the list.
+SET_ASIDE: Final = "cert_in_set_aside"
+NOBODY_LEFT: Final = "nobody_on_the_list"
+WITHHELD: Final = (SET_ASIDE, NOBODY_LEFT)
+
 _EMAIL: Final = TypeAdapter(Email)
 
 
@@ -907,16 +914,27 @@ def _owed(line: Row, stale_before: datetime) -> bool:
     )
 
 
-def _mail(states: list[Row], listed: set[str], *, sendable: bool, held: bool) -> Row:
+def _mail(
+    states: list[Row],
+    listed: set[str],
+    *,
+    sendable: bool,
+    held: bool,
+    withheld_because: str | None = None,
+) -> Row:
     """What became of the mail, in all and address by address. The name and the
     address are served sealed. `retryable` is what sending again would queue
-    now; none of this is what the board's duty reads (`_settle`)."""
+    now; none of this is what the board's duty reads (`_settle`).
+    `withheld_because` is why the yes did not mail a version it was holding,
+    as the trail recorded it then (`WITHHELD`): the list may have changed
+    since, so `removed` cannot say which it was."""
     stale_before = datetime.now(UTC) - STALE_AFTER
     lines = _by_address(states, listed, held=held)
     return {
         **_counts(lines),
         "stale": sum(_lost(s, stale_before) for s in lines),
         "retryable": sum(_owed(s, stale_before) for s in lines) if sendable else 0,
+        "withheld_because": withheld_because if withheld_because in WITHHELD else None,
         "recipients": [
             {
                 "recipient_uuid": s["recipient_uuid"],
@@ -945,6 +963,7 @@ def _view(
     sendable: bool,
     held: bool,
     superseded: bool,
+    withheld_because: str | None = None,
 ) -> Row:
     kind = Kind(report["kind"])
     bodies = {str(s["section_key"]): s["body"] for s in sections}
@@ -968,7 +987,9 @@ def _view(
         "filed_reference": report["filed_reference"],
         "filed_by_name": report["filed_by_name"],
         "evidence": evidence,
-        "mail": _mail(states, listed, sendable=sendable, held=held),
+        "mail": _mail(
+            states, listed, sendable=sendable, held=held, withheld_because=withheld_because
+        ),
     }
 
 
@@ -991,6 +1012,10 @@ async def overview(conn: Conn, *, breach_uuid: str) -> Row:
     duties = await service.duties_of(conn, breach_id)
     board = await recipients_repo.board_recipients(conn)
     listed = {str(r["email_hash"]) for r in board}
+    # Only a report to CERT-In is held for a yes, and so withheld at one.
+    withheld = await repo.withheld_at_the_yes(
+        conn, breach_id, event=Event.BREACH_REPORT_WITHHELD, kind=Kind.CERT_IN.value
+    )
     kinds = []
     for kind in Kind:
         mine = [r for r in reports if r["kind"] == kind]
@@ -1020,6 +1045,9 @@ async def overview(conn: Conn, *, breach_uuid: str) -> Row:
                         ),
                         held=_held(kind, breach) and r["finalised_at"] is not None,
                         superseded=_superseded(r, mine),
+                        withheld_because=(
+                            withheld.get(int(r["version"])) if kind == Kind.CERT_IN else None
+                        ),
                     )
                     for r in mine
                 ],
@@ -1332,7 +1360,7 @@ async def _release_held(conn: Conn, breach: Row, *, actor_id: int) -> None:
             breach,
             Event.BREACH_REPORT_WITHHELD,
             actor_id=actor_id,
-            detail={"kind": Kind.CERT_IN.value, "version": version, "why": "cert_in_set_aside"},
+            detail={"kind": Kind.CERT_IN.value, "version": version, "why": SET_ASIDE},
         )
         return
     lines = _by_address(states, await _listed(conn), held=False)
@@ -1358,7 +1386,7 @@ async def _release_held(conn: Conn, breach: Row, *, actor_id: int) -> None:
             detail={
                 "kind": Kind.CERT_IN.value,
                 "version": version,
-                "why": "nobody_on_the_list",
+                "why": NOBODY_LEFT,
                 "left_out": left_out,
             },
         )

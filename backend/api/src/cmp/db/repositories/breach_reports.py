@@ -190,6 +190,29 @@ async def latest_states(conn: Conn, report_ids: list[int]) -> list[Row]:
     )
 
 
+async def withheld_at_the_yes(
+    conn: Conn, breach_id: int, *, event: str, kind: str
+) -> dict[int, str]:
+    """Why the yes did not mail each version of `kind` it withheld, by
+    version: the `why` its trail row recorded then (`reports._release_held`).
+    The list may change after the yes, so nothing read from it now can say
+    which it was. The earliest row for a version stands. No address is in it."""
+    rows = await fetch_all(
+        conn,
+        """SELECT (detail_json->>'version')::int AS version, detail_json->>'why' AS why
+             FROM audit_log
+            WHERE entity_type = 'breach' AND entity_id = %s AND event_type = %s
+              AND detail_json->>'kind' = %s AND detail_json ? 'version'
+            ORDER BY log_id""",
+        (breach_id, event, kind),
+    )
+    out: dict[int, str] = {}
+    for r in rows:
+        if r["why"] is not None:
+            out.setdefault(int(r["version"]), str(r["why"]))
+    return out
+
+
 async def job(conn: Conn, delivery_uuid: str) -> Row | None:
     """One queued delivery, its address, whether that address has been taken
     off the list since, whether its attempt has an outcome or a later attempt

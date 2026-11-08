@@ -298,17 +298,24 @@ async def verify_subject_otp(
     conn: Conn, *, contact: str, code: str, ip_address: str | None, user_agent: str | None
 ) -> dict[str, Any]:
     await ratelimit.refuse_spent_address(_CODE_SIGN_IN)
+    refused = BadRequest("Invalid or expired code", code="otp_invalid", field="code")
     user = await user_repo.by_contact(conn, contact)
     if not user:
         # Same message and roughly the same work as a wrong code.
         await ratelimit.record_address_failure(_CODE_SIGN_IN)
-        raise BadRequest("Invalid or expired code", code="otp_invalid", field="code")
+        raise refused
 
     try:
         await otp.require(otp.Scope.SUBJECT_LOGIN, login_code_identity(user, contact), code)
     except (BadRequest, RateLimited):
         await ratelimit.record_address_failure(_CODE_SIGN_IN)
-        raise
+        # A code of the wrong length, and a spent budget, answered as a wrong
+        # code. Told apart, they say whom the register knows: `otp.require`
+        # checks the length only for a contact somebody holds, and five tries
+        # end in "too many" only where a code was sent, which is only to a
+        # registered contact. The code is discarded with its budget, so
+        # guessing stays bounded, and the limit per address above is the 429.
+        raise refused from None
 
     # The medium the code went to, which the identity above has just shown is
     # the contact typed: a second email typed is the second email, never the
@@ -464,16 +471,20 @@ async def request_password_reset(conn: Conn, *, email: str) -> None:
 
 async def confirm_password_reset(conn: Conn, *, email: str, code: str, new_password: str) -> None:
     await ratelimit.refuse_spent_address(_RESET)
+    refused = BadRequest("Invalid or expired code", code="otp_invalid", field="code")
     user = await user_repo.by_email(conn, email)
     if not user:
         await ratelimit.record_address_failure(_RESET)
-        raise BadRequest("Invalid or expired code", code="otp_invalid", field="code")
+        raise refused
 
     try:
         await otp.require(otp.Scope.CONTACT_VERIFY, f"reset:{user['uuid']}", code)
     except (BadRequest, RateLimited):
         await ratelimit.record_address_failure(_RESET)
-        raise
+        # One answer, as at the code sign-in: a different one for a code of the
+        # wrong length, or "too many" after five, would say the address is an
+        # account's. The limit per address above is the 429.
+        raise refused from None
     await user_repo.set_password(conn, user["id"], hash_password(new_password))
     # Whoever holds the reset code holds the mailbox; a lockout earned by
     # somebody guessing at the old password no longer protects anything.
@@ -1012,8 +1023,10 @@ async def confirm_registration(
 
     Both codes are checked before either is spent, so a wrong email code does
     not burn a right mobile code and leave her unable to retry. A medium that
-    has already answered - a retry after a partial success - needs no code.
-    Failures are the same sentence whatever the reason, as everywhere a
+    has already answered - a retry after a partial success - needs no code,
+    but one must still be waiting: an account with none has no sign-up to
+    finish, and is refused as an unknown mobile is. A wrong code, one of the
+    wrong length and a spent budget are the same sentence, as everywhere a
     stranger can type a contact.
     """
     user = await user_repo.by_contact(conn, normalise_mobile(mobile))
@@ -1025,6 +1038,12 @@ async def confirm_registration(
         raise BadRequest("Invalid or expired code", code="otp_invalid", field="mobile_code")
     uuid = str(user["uuid"])
     outstanding = user_repo.unverified_mediums(user)
+    if not outstanding:
+        # Nothing left to answer is a sign-up already finished, and finishing
+        # one is all this does. Before, the loops below then checked no code
+        # at all, and the mobile alone signed anybody in to that account.
+        # Signing in is `verify_subject_otp`'s, with a code.
+        raise BadRequest("Invalid or expired code", code="otp_invalid", field="mobile_code")
     codes = {"mobile": mobile_code, "email": email_code}
     for medium in outstanding:
         if not codes[medium]:
@@ -1033,13 +1052,19 @@ async def confirm_registration(
                 f"Enter the code we sent to your {where}", field=f"{medium}_code"
             )
     for medium in outstanding:
-        await otp.require(
-            otp.Scope.SUBJECT_REGISTER,
-            f"{uuid}:{medium}",
-            str(codes[medium]),
-            field=f"{medium}_code",
-            consume=False,
-        )
+        try:
+            await otp.require(
+                otp.Scope.SUBJECT_REGISTER,
+                f"{uuid}:{medium}",
+                str(codes[medium]),
+                field=f"{medium}_code",
+                consume=False,
+            )
+        except (BadRequest, RateLimited):
+            # The unknown mobile's sentence, on the input that has to change.
+            raise BadRequest(
+                "Invalid or expired code", code="otp_invalid", field=f"{medium}_code"
+            ) from None
     for medium in outstanding:
         await otp.discard(otp.Scope.SUBJECT_REGISTER, f"{uuid}:{medium}")
         user = await user_repo.mark_contact_verified(conn, user["id"], medium)

@@ -13,7 +13,7 @@ is mailed by the platform (ADR 0037).
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, File, Form, Query, Response, UploadFile, status
@@ -1413,6 +1413,13 @@ class BreachDocumentMailOut(Out):
     #: queued, and not taken off. 0 on a draft, while held, on a version a later
     #: one replaced, or anything else that would be refused.
     retryable: int
+    #: Why the first yes did not mail this version of the report to CERT-In it
+    #: was holding, as the trail recorded it then: the mark was set aside
+    #: (`cert_in_set_aside`), or nobody it was chosen for was still on the list
+    #: (`nobody_on_the_list`). Not read from the list as it stands, which may
+    #: have changed since. Kept once a person sends it with Try again. None for
+    #: a version the yes did not withhold, and on every other kind.
+    withheld_because: Literal["cert_in_set_aside", "nobody_on_the_list"] | None
     #: Each address the report was sent to, once, its latest state. An address
     #: taken off the list stays here, marked `removed`, and counts as neither
     #: failed nor queued.

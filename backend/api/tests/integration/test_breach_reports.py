@@ -17,6 +17,7 @@ from typing import Any
 import psycopg
 import pytest
 
+from cmp.api.routers.v1.breaches import BreachDocumentMailOut
 from cmp.core.config import settings
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
 from cmp.core.messages import Message
@@ -1284,8 +1285,10 @@ class TestWhatTheOfficeIsShownOfTheMail:
             "held",
             "stale",
             "retryable",
+            "withheld_because",
             "recipients",
         }
+        assert doc["mail"]["withheld_because"] is None
         [first, second] = doc["mail"]["recipients"]
         assert set(first) == {
             "recipient_uuid",
@@ -2579,6 +2582,7 @@ class TestTryAgainTriesTheReportsOwn:
         again = await _resend(conn, seeded, uuid, doc)
         assert await _addresses(conn, mailed) == ["chair@example.org"]
         assert _lines(again)["chair@example.org"]["attempt"] == 1
+        assert again["mail"]["withheld_because"] == "cert_in_set_aside", "kept once sent"
         [trail] = await _trail(conn, uuid, "breach.report_resent")
         assert (trail["detail_json"]["first"], trail["detail_json"]["queued"]) == (1, 1)
 
@@ -2785,6 +2789,71 @@ class TestACertInReportBeforeAYes:
             "why": "nobody_on_the_list",
             "left_out": 1,
         }
+
+    async def test_why_it_was_withheld_is_what_the_yes_recorded_though_the_list_changed(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        """Withheld because nobody was left, then the address put back: read
+        from the list as it stands, the line is no longer removed and the card
+        named the set-aside, which never happened. The version's mail says what
+        the trail recorded at the yes."""
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _incident(conn, seeded)
+        doc = await _cert_in_draft(conn, seeded, uuid)
+        await _send(conn, seeded, uuid, doc, to=None)
+        await _take_off(conn, seeded, "chair@example.org")
+        await _determine(conn, seeded, uuid, "yes")
+        await _board(conn, seeded, "chair@example.org")
+        assert mailed == []
+        read = _latest(await reports.overview(conn, breach_uuid=uuid), "cert_in")
+        assert [r["removed"] for r in read["mail"]["recipients"]] == [False]
+        assert read["mail"]["withheld_because"] == "nobody_on_the_list"
+        served = BreachDocumentMailOut.model_validate(read["mail"])
+        assert served.withheld_because == "nobody_on_the_list"
+
+    async def test_set_aside_at_the_yes_it_says_so_though_everybody_is_taken_off_since(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        """The converse: set aside at the yes, with the address on the list.
+        Taken off afterwards, every line reads removed, and it still was not
+        for want of anybody that it did not go."""
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _incident(conn, seeded)
+        doc = await _cert_in_draft(conn, seeded, uuid)
+        await _send(conn, seeded, uuid, doc, to=None)
+        await _set_aside_cert_in(conn, seeded, uuid)
+        await _determine(conn, seeded, uuid, "yes")
+        await _take_off(conn, seeded, "chair@example.org")
+        read = _latest(await reports.overview(conn, breach_uuid=uuid), "cert_in")
+        assert [r["removed"] for r in read["mail"]["recipients"]] == [True]
+        assert read["mail"]["withheld_because"] == "cert_in_set_aside"
+        served = BreachDocumentMailOut.model_validate(read["mail"])
+        assert served.withheld_because == "cert_in_set_aside"
+        assert "example.org" not in str(read["mail"]["withheld_because"])
+
+    async def test_a_version_the_yes_mailed_or_never_held_names_no_reason(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        """Released at the yes, replaced before it, or never held at all: no
+        reason, because the yes withheld none of them."""
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _incident(conn, seeded)
+        first = await _cert_in_draft(conn, seeded, uuid)
+        await _send(conn, seeded, uuid, first, to=None)
+        second = await _draft(conn, seeded, uuid, "cert_in")
+        await _send(conn, seeded, uuid, second, to=None)
+        await _determine(conn, seeded, uuid, "yes")
+        assert len(mailed) == 1
+        overview = await reports.overview(conn, breach_uuid=uuid)
+        [newest, older] = _kind(overview, "cert_in")["versions"]
+        assert (newest["mail"]["withheld_because"], older["mail"]["withheld_because"]) == (
+            None,
+            None,
+        )
+        for kind in overview["kinds"]:
+            for version in kind["versions"]:
+                if kind["kind"] != "cert_in":
+                    assert version["mail"]["withheld_because"] is None
 
     async def test_a_second_yes_releases_nothing_and_the_release_runs_once(
         self, conn: Any, seeded: dict[str, Any], mailed: list[str]

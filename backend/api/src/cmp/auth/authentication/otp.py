@@ -22,6 +22,7 @@ and the ten-minute lifetime. Neither control is optional.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from cmp.core.config import settings
@@ -49,7 +50,8 @@ class Scope:
     #: medium: "<uuid>:mobile", "<uuid>:email".
     SUBJECT_REGISTER = "subject_register"
     #: A nominee proving a recorded contact before the link's accept or decline
-    #: counts. Keyed on the nomination uuid.
+    #: counts. Keyed on the nomination and the contact chosen, one live at a
+    #: time: "<uuid>:mobile", "<uuid>:email".
     NOMINATION_ACCEPT = "nomination_accept"
     #: An outside holder opening its ticket's link, proving the address the
     #: ticket was sent to (0049). Keyed on the holder uuid.
@@ -81,18 +83,34 @@ def _akey(scope: str, identity: str) -> str:
     return key(K_OTP_ATTEMPTS, scope, identity)
 
 
-async def issue(scope: str, identity: str, *, ttl_s: int | None = None) -> Issued:
+async def issue(
+    scope: str,
+    identity: str,
+    *,
+    ttl_s: int | None = None,
+    replacing: Sequence[str] = (),
+) -> Issued:
     """Generate and store a code for (scope, identity).
 
     Issuing replaces any outstanding code and resets the attempt counter, so a
     user who asks for a new code is not locked out by their own typos on the old
     one. Rate limiting on *requesting* a code lives at the route, where the
     per-contact and per-token quotas differ.
+
+    `replacing` names the other identities of a flow that keeps one code live
+    across several contacts (a nomination's: `rights.service`). Their codes
+    and counts go in the same transaction as this one is written, so of two
+    requests at once exactly one code is left, under the identity of the
+    contact it went to: which contact a code proves is where it lives, never a
+    record written beside it. `require_any` checks it.
     """
     ttl = ttl_s or settings.otp_ttl_s
     code = new_otp()
     r = get_redis()
-    pipe = r.pipeline()
+    # A transaction (MULTI/EXEC): the replaced codes and this one are one write.
+    pipe = r.pipeline(transaction=True)
+    for other in replacing:
+        pipe.delete(_ckey(scope, other), _akey(scope, other))
     pipe.setex(_ckey(scope, identity), ttl, hash_otp(code, scope=scope))
     pipe.delete(_akey(scope, identity))
     await pipe.execute()
@@ -199,6 +217,24 @@ async def require(
         raise BadRequest("Invalid code", code="otp_invalid", field=field)
     if not await verify(scope, identity, code, consume=consume):
         raise BadRequest("Invalid or expired code", code="otp_invalid", field=field)
+
+
+async def require_any(
+    scope: str, identities: Sequence[str], code: str, *, field: str = "code"
+) -> str:
+    """Verify against whichever of `identities` holds the live code, and return
+    that identity; or raise as `require` does.
+
+    For a flow `issue(..., replacing=...)` keeps one code live across them. An
+    identity holding no code counts nothing (`_VERIFY_SCRIPT`'s -1), so a wrong
+    code costs one try of the one live code's budget, as under `require`, and
+    the refusal is the same whichever identity it lives under."""
+    if not code.isdigit() or len(code) != settings.otp_length:
+        raise BadRequest("Invalid code", code="otp_invalid", field=field)
+    for identity in identities:
+        if await verify(scope, identity, code):
+            return identity
+    raise BadRequest("Invalid or expired code", code="otp_invalid", field=field)
 
 
 async def discard(scope: str, identity: str) -> None:

@@ -151,6 +151,25 @@ class TestMail:
         assert _mail(states, {"a", "b"}, sendable=True, held=False)["retryable"] == 2
         assert _mail(states, {"a", "b"}, sendable=False, held=False)["retryable"] == 0
 
+    def test_only_a_reason_the_yes_records_is_served(self) -> None:
+        """Why the yes withheld a version, as the trail named it; anything
+        else, and nothing, is served as no reason."""
+        states = [_state("a", None)]
+        for why in ("cert_in_set_aside", "nobody_on_the_list"):
+            assert (
+                _mail(states, {"a"}, sendable=False, held=False, withheld_because=why)[
+                    "withheld_because"
+                ]
+                == why
+            )
+        for why in (None, "", "chair@example.org"):
+            assert (
+                _mail(states, {"a"}, sendable=False, held=False, withheld_because=why)[
+                    "withheld_because"
+                ]
+                is None
+            )
+
     def test_each_address_says_what_it_was_chosen_as(self) -> None:
         mail = _mail(
             [
@@ -169,8 +188,10 @@ class TestMail:
             "held",
             "stale",
             "retryable",
+            "withheld_because",
             "recipients",
         }
+        assert mail["withheld_because"] is None
         [listed, alone] = mail["recipients"]
         assert set(listed) == {
             "recipient_uuid",

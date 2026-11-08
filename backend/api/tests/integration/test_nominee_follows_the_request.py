@@ -37,8 +37,6 @@ import pytest
 
 from cmp.auth.authentication import otp
 from cmp.core.security import new_token, token_fingerprint
-from cmp.db.redis import K_CACHE, get_redis
-from cmp.db.redis import key as rkey
 from cmp.db.repositories import rights as repo
 from cmp.db.repositories import users as user_repo
 from cmp.domain.rights import service
@@ -92,8 +90,8 @@ async def nominate_and_accept(
         (token_fingerprint(raw), nomination["nomination_id"]),
     )
     ref = str(nomination["nomination_uuid"])
-    code = (await otp.issue(otp.Scope.NOMINATION_ACCEPT, ref)).code
-    await get_redis().set(rkey(K_CACHE, "nomination_medium", ref), "mobile", ex=600)
+    identity = service.nomination_code_identity(ref, "mobile")
+    code = (await otp.issue(otp.Scope.NOMINATION_ACCEPT, identity)).code
     return dict(await service.accept_nomination(conn, raw, code=code))
 
 

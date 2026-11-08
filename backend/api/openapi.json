@@ -23876,6 +23876,21 @@
             "type": "integer",
             "title": "Retryable"
           },
+          "withheld_because": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "cert_in_set_aside",
+                  "nobody_on_the_list"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Withheld Because"
+          },
           "recipients": {
             "items": {
               "$ref": "#/components/schemas/BreachDocumentMailRecipientOut"
@@ -23893,6 +23908,7 @@
           "held",
           "stale",
           "retryable",
+          "withheld_because",
           "recipients"
         ],
         "title": "BreachDocumentMailOut"

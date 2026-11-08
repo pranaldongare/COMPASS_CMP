@@ -21,10 +21,12 @@ from cmp.auth.authentication import otp
 from cmp.auth.rate_limit import service as ratelimit
 from cmp.core.config import settings
 from cmp.core.errors import (
+    BadRequest,
     Conflict,
     ConsentDefective,
     LinkInvalid,
     NotFound,
+    RateLimited,
     ValidationFailed,
 )
 from cmp.core.logging import get_logger
@@ -311,7 +313,14 @@ async def verify_contact_code(conn: Conn, *, token: str, contact: str, code: str
     """
     link = await resolve_link(conn, token)
     contact = normalise_contact(contact)
-    await otp.require(otp.Scope.CONSENT_LINK, f"{link['link_uuid']}:{contact}", code)
+    try:
+        await otp.require(otp.Scope.CONSENT_LINK, f"{link['link_uuid']}:{contact}", code)
+    except (BadRequest, RateLimited):
+        # A spent budget too: five tries end in "too many" only where a code
+        # was sent, which `send_contact_code` does only for a contact the
+        # register knows. The code is discarded with its budget, so guessing
+        # stays bounded by the limits on asking for one.
+        raise BadRequest("Invalid or expired code", code="otp_invalid", field="code") from None
 
     user = await user_repo.by_contact(conn, contact)
     if not user:

@@ -855,8 +855,6 @@ class TestNomination:
         the contact the code went to marked verified, so the sign-in code he
         asks for next actually arrives. A nominee who already has an account
         under a recorded contact keeps that one; nothing is created."""
-        from cmp.db.redis import K_CACHE, get_redis
-        from cmp.db.redis import key as rkey
         from cmp.db.repositories import users as user_repo
 
         principal = seeded["subject"]["id"]
@@ -876,9 +874,9 @@ class TestNomination:
                 (token_fingerprint(raw), nomination["nomination_id"]),
             )
             ref = str(nomination["nomination_uuid"])
-            code = (await otp.issue(otp.Scope.NOMINATION_ACCEPT, ref)).code
-            # What `send_nomination_code` records: where the code went.
-            await get_redis().set(rkey(K_CACHE, "nomination_medium", ref), proven, ex=600)
+            # Issued, as `send_nomination_code` issues it, under where it went.
+            identity = service.nomination_code_identity(ref, proven)
+            code = (await otp.issue(otp.Scope.NOMINATION_ACCEPT, identity)).code
             accepted = await service.accept_nomination(conn, raw, code=code)
             await service.revoke_nomination(conn, nomination_uuid=ref, principal_user_id=principal)
             return dict(accepted)
@@ -968,7 +966,10 @@ class TestNomination:
             (token_fingerprint(raw), nomination["nomination_id"]),
         )
         code = (
-            await otp.issue(otp.Scope.NOMINATION_ACCEPT, str(nomination["nomination_uuid"]))
+            await otp.issue(
+                otp.Scope.NOMINATION_ACCEPT,
+                service.nomination_code_identity(str(nomination["nomination_uuid"]), "mobile"),
+            )
         ).code
         accepted = await service.accept_nomination(conn, raw, code=code)
         assert accepted["status"] == "active"
@@ -1063,7 +1064,10 @@ class TestNomination:
             (token_fingerprint(raw), nomination["nomination_id"]),
         )
         code = (
-            await otp.issue(otp.Scope.NOMINATION_ACCEPT, str(nomination["nomination_uuid"]))
+            await otp.issue(
+                otp.Scope.NOMINATION_ACCEPT,
+                service.nomination_code_identity(str(nomination["nomination_uuid"]), "mobile"),
+            )
         ).code
         await service.accept_nomination(conn, raw, code=code)
         issued = await otp.issue(otp.Scope.NOMINEE_VERIFY, str(nomination["nomination_uuid"]))
