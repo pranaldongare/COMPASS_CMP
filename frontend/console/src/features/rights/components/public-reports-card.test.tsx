@@ -97,6 +97,94 @@ describe("PublicReportsCard", () => {
     expect(screen.queryByRole("button", { name: BUTTON })).not.toBeInTheDocument();
   });
 
+  describe("with no proved email address to look by", () => {
+    const NO_PROVED_EMAIL =
+      "No email address proved to be the requester's is held, so nothing was looked for.";
+    const STILL_CARRIES = /still carries this person's email address/;
+    const notLooked = (over: Partial<RightsPublicReports> = {}) =>
+      found({
+        looked: false,
+        not_looked_because: NO_PROVED_EMAIL,
+        items: [],
+        total: 0,
+        erased: 0,
+        may_erase: false,
+        erase_blocked_by: NO_PROVED_EMAIL,
+        ...over,
+      });
+
+    it("says nothing was looked for, and never that no report carries the email", () => {
+      render(
+        <PublicReportsCard request={request(notLooked(), { request_type: "access" })} />,
+      );
+
+      expect(screen.getByText(NO_PROVED_EMAIL)).toBeInTheDocument();
+      expect(screen.queryByText(STILL_CARRIES)).not.toBeInTheDocument();
+      expect(
+        screen.queryByText("These go to them with the response."),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByRole("listitem")).not.toBeInTheDocument();
+    });
+
+    it("still lists what was erased under the request, below the reason", () => {
+      render(
+        <PublicReportsCard
+          request={request(
+            notLooked({
+              items: [
+                report({
+                  reporter_name: null,
+                  reporter_email: null,
+                  reporter_erased_at: "2026-11-07T10:00:00Z",
+                }),
+              ],
+              erased: 1,
+            }),
+          )}
+        />,
+      );
+
+      expect(screen.getByText(NO_PROVED_EMAIL)).toBeInTheDocument();
+      const [line] = screen.getAllByRole("listitem");
+      expect(within(line).getByText("INC-2026-0041")).toBeInTheDocument();
+      expect(within(line).getByText(/^Name and email erased /)).toBeInTheDocument();
+      expect(screen.queryByText(STILL_CARRIES)).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: BUTTON })).not.toBeInTheDocument();
+    });
+
+    it("reads the request again when erasure is refused for it, and shows the server's sentence", async () => {
+      server.use(
+        http.post(`${API}/requests/${UUID}/public-reports/erase`, () =>
+          HttpResponse.json(
+            {
+              error: { code: "no_proved_email", message: NO_PROVED_EMAIL, request_id: "r" },
+            },
+            { status: 409 },
+          ),
+        ),
+      );
+      const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+      });
+      queryClient.setQueryData(keys.rights.detail(UUID), request(found()));
+      const { user } = render(<PublicReportsCard request={request(found())} />, {
+        queryClient,
+      });
+
+      await user.click(screen.getByRole("button", { name: BUTTON }));
+      await user.click(
+        within(await screen.findByRole("dialog")).getByRole("button", {
+          name: "Erase name and email",
+        }),
+      );
+
+      await vi.waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith("Not erased", NO_PROVED_EMAIL),
+      );
+      expect(queryClient.getQueryState(keys.rights.detail(UUID))?.isInvalidated).toBe(true);
+    });
+  });
+
   it("lists the dismissed reports sent from the requester's email address, and says how many more there are", () => {
     render(
       <PublicReportsCard

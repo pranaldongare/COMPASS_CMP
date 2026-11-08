@@ -11,8 +11,10 @@
  * newest. The platform never sends to the DPDP Board or to CERT-In. The board's
  * own report is done when its mail lands, not when it is finalised. A report
  * to CERT-In finalised before the incident is recorded is held: its board mail
- * goes at the first yes, and never if no yes comes. What each report may do now
- * is the server's answer; a refusal shows its sentence.
+ * goes at the first yes to those chosen who are still on the list, and not at
+ * all if CERT-In is set aside then, nobody chosen is left, or no yes comes.
+ * What each report may do now is the server's answer; a refusal shows its
+ * sentence.
  */
 "use client";
 
@@ -730,13 +732,14 @@ function addressee(r: BreachDocumentMailRecipient): string {
 /** Why sending again can reach nobody: everyone this version went to is off
  *  the list, and Try again tries only its own. A new version goes to whoever
  *  is chosen then; where the list is empty, say where to fill it, for those
- *  who can. */
-function NobodyLeftToReach({ listed }: { listed: number }) {
+ *  who can. A version that never went has its line say so already (it was
+ *  never sent to anybody), so only the way on is added. */
+function NobodyLeftToReach({ listed, went }: { listed: number; went: boolean }) {
   const canReach = useOptionalAuth()?.me?.nav.includes("breach-settings");
   return (
     <>
-      Nobody this version went to is on the list any more, so there is nobody to try again. A new version goes to
-      whoever you choose.
+      {went && "Nobody this version went to is on the list any more, so there is nobody to try again. "}A new
+      version goes to whoever you choose.
       {listed === 0 && canReach && (
         <>
           {" "}
@@ -754,23 +757,32 @@ function NobodyLeftToReach({ listed }: { listed: number }) {
 /** Why a version's board mail has not gone, in one line, or null when it has
  *  gone (or is going) and the counts say the rest. Held: a report to CERT-In
  *  waiting for the first yes. Never queued and no longer waiting: replaced by
- *  a later version before the yes, or withheld because CERT-In was set aside
- *  at it. A replaced version never goes, so that comes first. */
+ *  a later version before the yes, or withheld at it, because everybody it was
+ *  chosen for had been taken off the list or because CERT-In was set aside. A
+ *  replaced version never goes, so that comes first. The server serves no
+ *  reason for a withheld version (the trail's `why`), so it is read from the
+ *  addresses as they stand: with every one off the list there was nobody to
+ *  send it to, and with any still on it, CERT-In was set aside. An address put
+ *  back on the list since the yes reads as the second; only the trail can tell.
+ *  Open or closed alike: closing the breach changes none of it. */
 function notGoneBecause(view: BreachDocumentKindView, doc: BreachDocument): string | null {
   const { recipients } = doc.mail;
+  const nobodyLeft = recipients.length > 0 && recipients.every((r) => r.removed);
   if (recipients.some((r) => r.status === "held")) {
     if (doc.superseded) return "replaced by a later version; it will not go.";
     if (view.duty_state === "not_applicable") {
       return "not sent while CERT-In is set aside; mark it reportable again before validation and it goes at the Yes.";
     }
     const n = doc.mail.held;
+    // An address off the list is in no count, so none held is nobody left.
     return n > 0
       ? `waiting for validation. It goes to ${addressCount(n)} at the first Yes, and not at all if the incident is never validated as a personal data breach.`
-      : "waiting for validation.";
+      : "waiting for validation, but everybody it was chosen for has been taken off the list, so at the Yes it goes to nobody.";
   }
   if (recipients.length > 0 && recipients.every((r) => r.attempt === 0)) {
-    return doc.superseded
-      ? "not sent: a later version replaced it."
+    if (doc.superseded) return "not sent: a later version replaced it.";
+    return nobodyLeft
+      ? "not sent: everybody it was chosen for had been taken off the list."
       : "not sent: CERT-In was set aside when the incident was validated.";
   }
   return null;
@@ -817,7 +829,10 @@ function MailLine({
     recipients.every((r) => r.removed) &&
     view.blocked_by === null &&
     newestSent(view)?.report_uuid === doc.report_uuid;
-  const why = nowhere ? null : notGoneBecause(view, doc);
+  // Whether it was ever sent to anybody. One never sent says why on its own
+  // line, open or closed, so the hint below adds only the way on.
+  const went = recipients.some((r) => r.attempt > 0);
+  const why = notGoneBecause(view, doc);
 
   // A press says what it did: a re-queued mail, or none at all, can look the
   // same on the screen as a press that went nowhere.
@@ -864,7 +879,7 @@ function MailLine({
       </p>
       {nowhere && (
         <p className="text-xs font-medium text-warning-text">
-          <NobodyLeftToReach listed={listed} />
+          <NobodyLeftToReach listed={listed} went={went} />
         </p>
       )}
       {recipients.length > 0 && (

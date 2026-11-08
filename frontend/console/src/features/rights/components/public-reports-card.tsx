@@ -8,7 +8,9 @@
  * it may see it and have their name and email taken off it. The server finds
  * them by the requester's proved addresses once identity is verified, says
  * whether they may be erased now and why not, and erases them all in one act:
- * this card names no report to the server, and holds no copy of the rule.
+ * this card names no report to the server, and holds no copy of the rule. With
+ * no proved address it has not looked, and says so; the reports already erased
+ * under the request are listed all the same.
  *
  * Shown to the DPO and Legal alone (`public_reports` is null for anyone else),
  * and never with the office's reason or who dismissed it.
@@ -88,21 +90,24 @@ export function PublicReportsCard({ request: r }: { request: RightsRequestDetail
         <CardTitle>Reports from the public link</CardTitle>
         <p className="mt-1 text-xs text-text-muted">
           Reports this person sent through the public link that an office did not take up,
-          found by their email address once identity was verified. Both offices can read
-          them under Dismissed reports.
+          found by an email address proved to be theirs once identity was verified. Both
+          offices can read them under Dismissed reports.
         </p>
       </CardHeader>
       <CardBody className="space-y-4">
-        {!found.looked ? (
-          <Alert tone="info">{found.not_looked_because}</Alert>
-        ) : found.items.length === 0 ? (
+        {/* Not looked for, and why: with no proved address to look by, the
+            reports erased under this request are still listed below it. */}
+        {!found.looked && <Alert tone="info">{found.not_looked_because}</Alert>}
+        {found.looked && found.items.length === 0 && (
           // Only what the server can see: a report an earlier erasure took the
           // address off is no longer found by it, though it came from them.
+          // Said only once it has looked by an address.
           <p className="text-sm text-text-muted">
             No dismissed report from the public link still carries this person&apos;s email
             address.
           </p>
-        ) : (
+        )}
+        {found.items.length > 0 && (
           <ul className="divide-y divide-border">
             {found.items.map((p) => (
               <ReportLine key={p.report_uuid} report={p} />

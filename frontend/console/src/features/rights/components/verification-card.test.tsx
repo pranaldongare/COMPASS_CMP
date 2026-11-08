@@ -3,8 +3,11 @@
  * code has somewhere to go (`code_channel`): the account's contact, or, with no
  * account, the address a dismissed report from the public link came from. With
  * nowhere to go the page says so and offers no code; when the server could not
- * tell, an officer is told to reload. For anyone the server does not answer,
- * the account alone decides, as before.
+ * tell, an officer is told to reload. For anyone the server does not answer, a
+ * request with an account offers its contact, and one with none says only that
+ * a code is the DPO's or the Legal office's: the server refuses anybody else
+ * alike there (403 `officers_only`), whatever the register holds, and the page
+ * claims no channel either way.
  */
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -29,6 +32,8 @@ const FROM_A_REPORT =
   /Sent to the address a report the requester sent through the public link came from/;
 const UNKNOWN =
   /could not be checked just now: the key service did not answer\. Reload to try again\./;
+const OFFICERS_ONLY =
+  "Only the DPO or the Legal office can send or confirm a code for a request with no account.";
 
 /** A request waiting for its identity, from the public form. */
 const waiting = (over: Partial<RightsRequestDetail> = {}) =>
@@ -123,23 +128,79 @@ describe("VerificationCard", () => {
     },
   );
 
-  it("keeps to the account for a role the server does not answer", () => {
+  it("tells the administrator a code with no account is the officers', and claims no channel either way", async () => {
+    // An about-the-DPO request with no account: the administrator acts on it,
+    // and the server answers them nothing of the register.
     auth.me = makeMe({ role: "admin" });
-    const { unmount } = render(
+    const { user } = render(
       <VerificationCard request={waiting({ ...noAccount, code_channel: null })} />,
     );
 
-    expect(screen.getByText(NO_CHANNEL)).toBeInTheDocument();
+    expect(
+      screen.getByText(`${OFFICERS_ONLY} Verify manually, or close as not verified.`),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(NO_CHANNEL)).not.toBeInTheDocument();
+    expect(screen.queryByText(FROM_A_REPORT)).not.toBeInTheDocument();
     expect(screen.queryByText(UNKNOWN)).not.toBeInTheDocument();
-    expect(offered().send).not.toBeInTheDocument();
-    unmount();
+    const { send, box, confirm } = offered();
+    expect(send).not.toBeInTheDocument();
+    expect(box).not.toBeInTheDocument();
+    expect(confirm).not.toBeInTheDocument();
+    // The other ways stay.
+    expect(screen.getByRole("button", { name: "Record as verified" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "No match, or not satisfied" }));
+    expect(
+      screen.getByRole("button", { name: "Close as not verified" }),
+    ).toBeInTheDocument();
+  });
 
+  it("keeps to the account for the administrator on a request with one", () => {
+    auth.me = makeMe({ role: "admin" });
     render(<VerificationCard request={waiting({ code_channel: null })} />);
+
     expect(
       screen.getByText(/Sent to the contact we hold for Meera Iyer/),
     ).toBeInTheDocument();
+    expect(screen.queryByText(OFFICERS_ONLY, { exact: false })).not.toBeInTheDocument();
     expect(offered().send).toBeInTheDocument();
   });
+
+  it.each([
+    ["Send a code", "code"],
+    ["Confirm", "confirm"],
+  ] as const)(
+    "shows the server's sentence when %s is refused as the officers', and offers the code no more",
+    async (pressed, route) => {
+      server.use(
+        http.post(`${API}/requests/:uuid/verification/${route}`, () =>
+          HttpResponse.json(
+            { error: { code: "officers_only", message: OFFICERS_ONLY, request_id: "r" } },
+            { status: 403 },
+          ),
+        ),
+      );
+      const { user } = render(
+        <VerificationCard request={waiting({ ...noAccount, code_channel: true })} />,
+      );
+      if (pressed === "Confirm") {
+        await user.type(offered().box as HTMLElement, "123456");
+      }
+      await user.click(screen.getByRole("button", { name: pressed }));
+
+      await vi.waitFor(() =>
+        expect(toast.error).toHaveBeenCalledWith("Not done", OFFICERS_ONLY),
+      );
+      expect(await screen.findByText(OFFICERS_ONLY)).toBeInTheDocument();
+      expect(screen.queryByText(FROM_A_REPORT)).not.toBeInTheDocument();
+      const { send, box, confirm } = offered();
+      expect(send).not.toBeInTheDocument();
+      expect(box).not.toBeInTheDocument();
+      expect(confirm).not.toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: "Record as verified" }),
+      ).toBeInTheDocument();
+    },
+  );
 
   it("keeps to the account for an officer once the request is past where the server asks", () => {
     // Not waiting for collation's side of the line: the server does not ask.

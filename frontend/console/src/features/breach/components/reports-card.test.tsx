@@ -1773,6 +1773,70 @@ describe("ReportsCard", () => {
       expect(screen.queryByRole("button", { name: "Send to the board" })).not.toBeInTheDocument();
     });
 
+    describe("withheld at the yes because everybody it was chosen for had been taken off the list", () => {
+      const NOBODY_CHOSEN = "Organisation's board: not sent: everybody it was chosen for had been taken off the list.";
+      const offList = mail({ recipients: [waiting({ status: "unsent", removed: true })] });
+
+      it("says so on a closed breach, and never that CERT-In was set aside", async () => {
+        // The officer recorded the CERT-In report as sent, so the duty is done
+        // and the breach could close.
+        serve(certIn([finalisedCertIn(offList)], { holds_mail: false, duty_state: "done" }));
+        render(<ReportsCard breach={breach({ status: "closed" })} />);
+
+        const row = await screen.findByTestId("report-cert_in");
+        expect(within(row).getByText(NOBODY_CHOSEN)).toBeInTheDocument();
+        expect(screen.queryByText(/CERT-In was set aside/)).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: /Try again|Send to the board/ })).not.toBeInTheDocument();
+      });
+
+      it("says so on an open breach too, with the way on and no claim that it went to anybody", async () => {
+        auth.me = makeMe({ role: "dpo", nav: ["breaches", "breach-settings"] });
+        serve(certIn([finalisedCertIn(offList)], { holds_mail: false }));
+        render(<ReportsCard breach={breach()} />);
+
+        const row = await screen.findByTestId("report-cert_in");
+        expect(within(row).getByText(NOBODY_CHOSEN)).toBeInTheDocument();
+        expect(within(row).getByText(/^A new version goes to whoever you choose\.$/)).toBeInTheDocument();
+        expect(screen.queryByText(/CERT-In was set aside/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/this version went to/)).not.toBeInTheDocument();
+        expect(screen.queryByText(/delivered/)).not.toBeInTheDocument();
+      });
+
+      it("says while it waits for the yes that nobody it was chosen for is left to send it to", async () => {
+        auth.me = makeMe({ role: "dpo", nav: ["breaches", "breach-settings"] });
+        serve(certIn([finalisedCertIn(mail({ recipients: [waiting({ removed: true })] }))]));
+        render(<ReportsCard breach={breach()} />);
+
+        const row = await screen.findByTestId("report-cert_in");
+        expect(
+          within(row).getByText(
+            "Organisation's board: waiting for validation, but everybody it was chosen for has been taken off the list, so at the Yes it goes to nobody.",
+          ),
+        ).toBeInTheDocument();
+        expect(screen.queryByText(/this version went to/)).not.toBeInTheDocument();
+      });
+
+      it.each([
+        [
+          "CERT-In set aside at the yes, with an address still on the list",
+          mail({ unsent: 1, recipients: [waiting({ status: "unsent" })] }),
+          {},
+          "Organisation's board: not sent: CERT-In was set aside when the incident was validated.",
+        ],
+        [
+          "replaced by a later version, everybody since taken off the list",
+          offList,
+          { superseded: true },
+          "Organisation's board: not sent: a later version replaced it.",
+        ],
+      ])("keeps the other reasons where they are true, on a closed breach as well (%s)", async (_, m, doc, line) => {
+        serve(certIn([finalisedCertIn(m, doc)], { holds_mail: false, duty_state: "done" }));
+        render(<ReportsCard breach={breach({ status: "closed" })} />);
+
+        expect(await screen.findByText(line)).toBeInTheDocument();
+      });
+    });
+
     it("offers to send it to the board once CERT-In is marked again after a yes that withheld it", async () => {
       const unsent = mail({ unsent: 1, retryable: 1, recipients: [waiting({ status: "unsent" })] });
       const world = serve(certIn([finalisedCertIn(unsent)], { holds_mail: false }));

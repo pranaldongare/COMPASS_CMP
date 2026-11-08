@@ -183,7 +183,9 @@ export const useRemoveHolder = (uuid: Uuid) =>
 
 /** The requester's name and email off the reports they sent through the
  *  public link. The Dismissed reports list on the register reads them too, so
- *  it is read again. */
+ *  it is read again. A refusal (409) is the request as it stands now - a hold
+ *  placed, or no proved address left to look by (`no_proved_email`) - so the
+ *  request is read again and the card says why. */
 export function useErasePublicReports(uuid: Uuid): Result<RightsPublicReports, void> {
   const qc = useQueryClient();
   const invalidate = useInvalidateRequest(uuid);
@@ -192,6 +194,9 @@ export function useErasePublicReports(uuid: Uuid): Result<RightsPublicReports, v
     onSuccess: () => {
       invalidate();
       void qc.invalidateQueries({ queryKey: keys.breach.intake() });
+    },
+    onError: (err) => {
+      if (err.isConflict) invalidate();
     },
   });
 }

@@ -44,4 +44,14 @@ describe("the breach manual", () => {
       /A report to CERT-In recorded as sent completes its duty at once/,
     );
   });
+
+  it("says when a report to CERT-In held for the yes is not mailed at it", () => {
+    const finalise = step("When a report is ready, choose who it goes to");
+
+    expect(finalise).not.toMatch(/mailed at the first yes, and never if no yes comes/);
+    expect(finalise).toMatch(/less any address taken off the list since/);
+    expect(finalise).toMatch(
+      /not at all if CERT-In is set aside then, if nobody it was chosen for is still on the list, or if no yes comes\./,
+    );
+  });
 });

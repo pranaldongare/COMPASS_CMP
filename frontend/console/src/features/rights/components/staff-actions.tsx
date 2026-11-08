@@ -48,6 +48,7 @@ import {
   holdersNotYetFound,
 } from "@/features/rights/components/request-summary";
 import { useUsers } from "@/features/users";
+import { isApiError } from "@/lib/errors";
 import { formatDateTime } from "@/lib/format";
 import { useAuth, useToast } from "@/providers";
 import type { RightsRequestDetail, RightsRequestType } from "@/types";
@@ -65,11 +66,20 @@ function messageOf(err: unknown, fallback: string): string {
  *  asks whether a code has somewhere to go only in these. */
 const BEFORE_COLLATION: ReadonlySet<string> = new Set(["received", "in_progress", "awaiting_holders"]);
 
+/** Said to anybody but the DPO and Legal on a request with no account: a code
+ *  there is theirs to send or confirm, and the server refuses everybody else
+ *  alike (`officers_only`), whatever the register holds. */
+const OFFICERS_ONLY =
+  "Only the DPO or the Legal office can send or confirm a code for a request with no account. " +
+  "Verify manually, or close as not verified.";
+
 /** Where a code to a stored channel would go, as the server answers it
  *  (`code_channel`, 0065): the account's contact, the address a dismissed
  *  report from the public link came from, nowhere, or not known just now. The
- *  server answers only the DPO and Legal, and only while identity waits; for
- *  anyone else the account alone decides, as it always has. */
+ *  server answers only the DPO and Legal, and only while identity waits. For
+ *  anyone else a request with an account offers the account's contact, and
+ *  one with none says only that a code is the officers': whether a channel is
+ *  held for it is a fact about the register, which is theirs. */
 function storedChannel(
   r: RightsRequestDetail,
   officer: boolean,
@@ -82,6 +92,7 @@ function storedChannel(
     offered: false,
     says: "No account matches this contact, so there is no stored channel. Verify manually, or close as not verified.",
   };
+  if (!officer && !r.subject_uuid) return { offered: false, says: OFFICERS_ONLY };
   if (r.code_channel === true) {
     return r.subject_uuid
       ? account
@@ -106,7 +117,10 @@ export function VerificationCard({ request: r }: { request: RightsRequestDetail 
   const toast = useToast();
   const { me } = useAuth();
   const officer = me?.role === "dpo" || me?.role === "legal";
-  const channel = storedChannel(r, officer);
+  // The server's own refusal of a code, once it has given one: it stands for
+  // this request whatever the page thought, so the code is offered no more.
+  const [refused, setRefused] = React.useState<string | null>(null);
+  const channel = refused ? { offered: false, says: refused } : storedChannel(r, officer);
   const uuid = r.request_uuid;
   const send = useSendVerificationCode(uuid);
   const confirm = useConfirmVerificationCode(uuid);
@@ -123,6 +137,9 @@ export function VerificationCard({ request: r }: { request: RightsRequestDetail 
       await fn();
       toast.success(title);
     } catch (err) {
+      // Send a code or Confirm on a request with no account, by anybody but
+      // the DPO or Legal: refused alike whatever the register holds.
+      if (isApiError(err) && err.code === "officers_only") setRefused(err.userMessage());
       toast.error("Not done", messageOf(err, "The server refused."));
     }
   }

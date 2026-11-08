@@ -597,7 +597,8 @@ export interface BreachDocumentMailRecipient {
   email: string;
   /** `held`: a report to CERT-In waiting for the first yes. `unsent`: never
    *  queued, and no longer waiting: replaced by a later version before it
-   *  went, or withheld because CERT-In was set aside at the yes. */
+   *  went, or withheld at the yes, because CERT-In was set aside then or
+   *  everybody it was chosen for had been taken off the list. */
   status: "queued" | "delivered" | "failed" | "held" | "unsent";
   /** 0 when it was never queued. */
   attempt: number;
