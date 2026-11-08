@@ -94,7 +94,7 @@ function ResetFlow() {
   const subtitle = !sentTo
     ? "We will send a code to your registered email address."
     : fromInvitation
-      ? `Enter the code sent to ${sentTo} and choose a password. If it has expired, start over and we will send another.`
+      ? `Enter the code sent to ${sentTo} and choose a password.`
       : `If ${sentTo} is registered, a six-digit code is on its way. It is valid for a few minutes.`;
 
   return (
@@ -198,6 +198,8 @@ function ConfirmStep({ email, onStartOver }: { email: string; onStartOver: () =>
   const hydrated = useHydrated();
   const [error, setError] = React.useState<string | null>(null);
   const [done, setDone] = React.useState(false);
+  const [resending, setResending] = React.useState(false);
+  const [resent, setResent] = React.useState(false);
 
   const form = useForm<ResetConfirmValues>({
     resolver: zodResolver(resetConfirmSchema),
@@ -205,8 +207,41 @@ function ConfirmStep({ email, onStartOver }: { email: string; onStartOver: () =>
     mode: "onBlur",
   });
 
+  /**
+   * A new code to the address already shown, in either mode.
+   *
+   * The confirm step refuses a wrong code, an expired one and one cancelled by
+   * its fifth wrong try in the same words, to everybody (2026-11-08), so it
+   * cannot tell the person to ask for another; this is how they do. The
+   * request answers the same whether or not the address is registered, which
+   * is why the confirmation below is conditional. A new code replaces the
+   * last, an invitation's included, and lasts as long as a reset code does.
+   */
+  async function resend() {
+    setResending(true);
+    setResent(false);
+    setError(null);
+    try {
+      await requestPasswordReset({ email });
+      form.resetField("code");
+      setResent(true);
+    } catch (err) {
+      // Leaving the empty Code field for this button checked it on the way;
+      // that is not an error the person made, and the failure is said above.
+      form.clearErrors("code");
+      setError(
+        err instanceof ApiError
+          ? err.userMessage()
+          : unexpectedErrorMessage(err, "sign-in/reset"),
+      );
+    } finally {
+      setResending(false);
+    }
+  }
+
   const submit = form.handleSubmit(async (values) => {
     setError(null);
+    setResent(false);
     try {
       await confirmPasswordReset({
         email: values.email,
@@ -262,6 +297,12 @@ function ConfirmStep({ email, onStartOver }: { email: string; onStartOver: () =>
           />
         )}
       </Field>
+      {/* Said to everybody alike, and kept apart from the field's hint, which
+          gives way to the field's error - the moment this is needed. */}
+      <p className="-mt-2 text-xs text-text-subtle">
+        A code stops working once it expires, or after five wrong tries; then send a new
+        one.
+      </p>
 
       <Field
         label="New password"
@@ -304,7 +345,22 @@ function ConfirmStep({ email, onStartOver }: { email: string; onStartOver: () =>
         Set the new password
       </Button>
 
-      <p className="text-center text-xs text-text-subtle">
+      {resent && (
+        <p role="status" className="text-center text-sm text-text-muted">
+          If {email} is registered, a new code is on its way, and the earlier one no longer
+          works.
+        </p>
+      )}
+
+      <p className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs text-text-subtle">
+        <button
+          type="button"
+          onClick={resend}
+          disabled={resending || !hydrated}
+          className="underline underline-offset-2 hover:text-text-muted disabled:no-underline disabled:opacity-60"
+        >
+          {resending ? "Sending…" : "Send a new code"}
+        </button>
         <button
           type="button"
           onClick={onStartOver}
