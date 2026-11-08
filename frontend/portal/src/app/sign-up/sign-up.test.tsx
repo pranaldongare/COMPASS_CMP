@@ -8,7 +8,7 @@ import { HttpResponse, http } from "msw";
 import { describe, expect, it, vi } from "vitest";
 
 import SignUpPage from "@/app/sign-up/page";
-import { render, screen } from "@/test/render";
+import { render, screen, waitFor } from "@/test/render";
 import { API, server } from "@/test/server";
 
 vi.mock("next/navigation", () => ({
@@ -63,6 +63,10 @@ describe("sign-up", () => {
  * incorrect attempts. Request a new code."; now nothing the server says tells
  * the person that the code is gone, or how to get another. So the page says
  * it, to everybody alike, and the details already given ask for new codes.
+ *
+ * Those codes go to the contacts the sign-up was begun with, whatever is typed
+ * later, so the step offers no way back to change the details: it says where
+ * the codes go instead (2026-11-08).
  */
 const ACCEPTED = {
   ok: true,
@@ -77,7 +81,9 @@ const NEUTRAL = {
   },
 };
 const HINT =
-  "Each code expires in ten minutes, or after five wrong tries; then send the codes again.";
+  "Each code expires in ten minutes, or after five wrong tries; then send the codes again. They go to the contacts given when this sign-up began.";
+const RESENT =
+  "A new code is on its way to each contact given when this sign-up began. The earlier ones no longer work.";
 
 async function giveDetails(
   user: ReturnType<typeof render>["user"],
@@ -131,13 +137,14 @@ describe("confirming the contacts", () => {
       `/sign-in?contact=${encodeURIComponent("+919870700009")}`,
     );
 
+    // No way back to change a contact: the codes would not follow it.
+    expect(
+      screen.queryByRole("button", { name: /change the details/i }),
+    ).not.toBeInTheDocument();
+
     await user.click(screen.getByRole("button", { name: "Send the codes again" }));
 
-    expect(
-      await screen.findByText(
-        "New codes are on their way. The earlier ones no longer work.",
-      ),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(RESENT)).toBeInTheDocument();
     expect(registered).toHaveLength(2);
     expect(registered[1]).toEqual(registered[0]);
     expect(registered[1]).toEqual({
@@ -181,31 +188,137 @@ describe("confirming the contacts", () => {
     expect(screen.queryByText(/on (its|their) way/i)).not.toBeInTheDocument();
   });
 
-  it("with a mobile alone, says where an earlier email's code went, and goes back with the details kept", async () => {
+  it("puts a contact taken since in the page's own words, offering no other contact", async () => {
+    let calls = 0;
+    server.use(
+      http.post(`${API}/auth/register`, () => {
+        calls += 1;
+        return calls === 1
+          ? HttpResponse.json(ACCEPTED, { status: 202 })
+          : HttpResponse.json(
+              {
+                error: {
+                  code: "contact_taken",
+                  message:
+                    "An account already exists with this email. Sign in with it instead, or use a different email.",
+                  field: "email",
+                  request_id: "t",
+                },
+              },
+              { status: 409 },
+            );
+      }),
+    );
+    const { user } = render(<SignUpPage />);
+    await giveDetails(user, { email: "asha@example.org" });
+
+    await user.click(screen.getByRole("button", { name: "Send the codes again" }));
+
+    expect(
+      await screen.findByText(
+        "An account already holds this email. If it is yours, sign in with it instead.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/use a different/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(RESENT)).not.toBeInTheDocument();
+  });
+
+  it("with a mobile alone, takes the code an earlier email was sent, and offers no way back", async () => {
+    const verified: unknown[] = [];
     server.use(
       http.post(`${API}/auth/register`, () => HttpResponse.json(ACCEPTED, { status: 202 })),
+      http.post(`${API}/auth/register/verify`, async ({ request }) => {
+        verified.push(await request.json());
+        return HttpResponse.json(NEUTRAL, { status: 400 });
+      }),
     );
     const { user } = render(<SignUpPage />);
     await giveDetails(user, { email: null });
 
-    expect(screen.queryByLabelText(/code sent to your email/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByText("A code has gone to your mobile. Enter it below."),
+    ).toBeInTheDocument();
+    expect(screen.getByText(HINT)).toBeInTheDocument();
+    const emailCode = screen.getByLabelText(
+      "Code sent to your email, if you gave one before",
+    );
+    expect(emailCode).not.toBeRequired();
     expect(
       screen.getByText(
-        /If you gave an email when you first started signing up, a code has gone there too/,
+        "Only if you started signing up before and gave an email then: a code has gone there too. Otherwise leave this empty.",
       ),
     ).toBeInTheDocument();
+    expect(screen.queryByText(/change the details/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /change the details/i }),
+    ).not.toBeInTheDocument();
+
+    const confirm = screen.getByRole("button", { name: /confirm and sign in/i });
+    await user.type(screen.getByLabelText(/code sent to your mobile/i), "123456");
+    // The mobile's code alone is enough to send...
+    expect(confirm).toBeEnabled();
+    await user.click(confirm);
+    expect(await screen.findByText("Invalid or expired code")).toBeInTheDocument();
+    // ...and a code half typed in the email's box is not sent.
+    await user.type(emailCode, "654");
+    expect(confirm).toBeDisabled();
+    await user.type(emailCode, "321");
+    await user.click(confirm);
+    await waitFor(() => expect(verified).toHaveLength(2));
+    expect(verified).toEqual([
+      { mobile: "+919870700009", mobile_code: "123456", email_code: null },
+      { mobile: "+919870700009", mobile_code: "123456", email_code: "654321" },
+    ]);
 
     await user.click(screen.getByRole("button", { name: "Send the codes again" }));
-    expect(
-      await screen.findByText("A new code is on its way. The earlier one no longer works."),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(RESENT)).toBeInTheDocument();
+  });
+});
 
-    await user.click(screen.getByRole("button", { name: "Change the details" }));
+/**
+ * The first step's refusals are answered by what the server says, not by who
+ * holds the contact (2026-11-08): a member of staff's email, pending or not,
+ * is as taken as a data principal's, and goes on its field with sign-in
+ * offered, as anybody's does.
+ */
+describe("giving the details", () => {
+  it("puts a taken email's refusal on the email field and offers sign-in with it", async () => {
+    server.use(
+      http.post(`${API}/auth/register`, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: "contact_taken",
+              message:
+                "An account already exists with this email. Sign in with it instead, or use a different email.",
+              field: "email",
+              request_id: "t",
+            },
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+    const { user } = render(<SignUpPage />);
+    await user.type(screen.getByLabelText(/full name/i), "Asha Tester");
+    await user.type(screen.getByLabelText(/mobile number/i), "+919870700009");
+    await user.type(screen.getByLabelText(/email address/i), "staff@example.org");
+    await user.type(screen.getByLabelText(/date of birth/i), "1990-01-01");
+    await user.click(screen.getByRole("button", { name: /create account/i }));
 
     expect(
-      await screen.findByRole("heading", { name: /create your account/i }),
+      await screen.findByText(
+        "An account already exists with this email. Sign in with it instead, or use a different email.",
+      ),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText(/full name/i)).toHaveValue("Asha Tester");
-    expect(screen.getByLabelText(/mobile number/i)).toHaveValue("+919870700009");
+    expect(screen.getByLabelText(/email address/i)).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText(/mobile number/i)).not.toHaveAttribute("aria-invalid");
+    expect(screen.getByRole("link", { name: /sign in with this email/i })).toHaveAttribute(
+      "href",
+      `/sign-in?contact=${encodeURIComponent("staff@example.org")}`,
+    );
+    expect(
+      screen.queryByRole("heading", { name: /confirm your contacts/i }),
+    ).not.toBeInTheDocument();
   });
 });
