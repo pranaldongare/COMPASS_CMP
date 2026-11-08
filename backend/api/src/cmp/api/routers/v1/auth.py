@@ -217,7 +217,8 @@ async def register(body: RegisterBody) -> dict[str, Any]:
             dob=body.dob.isoformat(),
             email=str(body.email) if body.email else None,
         )
-    # Identical whether the contact was new or already registered.
+    # Identical whether the contact was new or a sign-up never finished; an
+    # account already there was refused above with 409 contact_taken.
     return {
         "ok": True,
         "message": "We have sent a code to each contact you gave. Enter them to finish.",

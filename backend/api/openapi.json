@@ -22190,6 +22190,7 @@
             "type": "string",
             "maxLength": 10,
             "minLength": 4,
+            "pattern": "^[0-9]+$",
             "title": "Code"
           },
           "request_type": {

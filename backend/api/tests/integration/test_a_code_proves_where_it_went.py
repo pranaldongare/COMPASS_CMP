@@ -26,7 +26,7 @@ import pytest
 from cmp.auth.authentication import otp
 from cmp.auth.authentication import service as auth_service
 from cmp.core.config import settings
-from cmp.core.errors import BadRequest, RateLimited, ValidationFailed
+from cmp.core.errors import BadRequest, RateLimited
 from cmp.core.permissions import Role
 from cmp.core.security import hash_password, new_token, token_fingerprint
 from cmp.db.repositories import rights as rights_repo
@@ -341,16 +341,22 @@ class TestTheRightsForm:
         _to, code = _rights_code(sent)
         await rights_service.verify_public_code(conn, reference=row["reference"], code=code)
         assert await _stamps(conn, person["id"]) == (False, False, False)
-        with pytest.raises(ValidationFailed) as asked:
+        # The sign-up still wants the email's code: the mobile's own, right,
+        # is not enough. The refusal is the stranger's, which names no medium.
+        mobile_code = (await otp.issue(otp.Scope.SUBJECT_REGISTER, f"{person['uuid']}:mobile")).code
+        with pytest.raises(BadRequest) as asked:
             await auth_service.confirm_registration(
                 conn,
                 mobile=plain(person["mobile"]),
-                mobile_code="123456",
+                mobile_code=mobile_code,
                 email_code=None,
                 ip_address=None,
                 user_agent=None,
             )
-        assert asked.value.field == "email_code", "the sign-up still wants the email's code"
+        assert (asked.value.code, asked.value.field) == ("otp_invalid", "mobile_code")
+        still = await user_repo.by_id(conn, person["id"])
+        assert still is not None and still["status"] == "pending"
+        assert user_repo.unverified_mediums(still) == ["mobile", "email"]
 
     async def test_an_officer_confirming_a_code_read_back_stamps_nothing(
         self, conn: Any, seeded: dict[str, Any], request_context: Any, sent: Any

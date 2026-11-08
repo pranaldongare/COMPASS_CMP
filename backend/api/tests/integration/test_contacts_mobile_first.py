@@ -94,8 +94,9 @@ class TestSelfRegistration:
         mobile_code = (await otp.issue(otp.Scope.SUBJECT_REGISTER, f"{uuid}:mobile")).code
         email_code = (await otp.issue(otp.Scope.SUBJECT_REGISTER, f"{uuid}:email")).code
 
-        # The mobile alone is not enough while an email is on the account.
-        with pytest.raises(ValidationFailed) as refused:
+        # The mobile alone is not enough while an email is on the account. The
+        # refusal is an unknown mobile's: it does not say a code was left out.
+        with pytest.raises(BadRequest) as refused:
             await auth_service.confirm_registration(
                 conn,
                 mobile=MOBILE,
@@ -104,7 +105,7 @@ class TestSelfRegistration:
                 ip_address=None,
                 user_agent=None,
             )
-        assert refused.value.field == "email_code"
+        assert (refused.value.code, refused.value.field) == ("otp_invalid", "mobile_code")
         still = await user_repo.by_contact(conn, MOBILE)
         assert still is not None and still["status"] == "pending"
 

@@ -53,7 +53,7 @@ log = get_logger("cmp.auth")
 _GENERIC_FAILURE = "Those credentials are not valid"
 
 # The doors whose failures count against the address they came from.
-_SIGN_IN, _CODE_SIGN_IN, _RESET = "login", "otp_login", "reset"
+_SIGN_IN, _CODE_SIGN_IN, _RESET, _SIGN_UP = "login", "otp_login", "reset", "sign_up"
 
 
 async def authenticate(
@@ -1019,23 +1019,35 @@ async def confirm_registration(
     ip_address: str | None,
     user_agent: str | None,
 ) -> dict[str, Any]:
-    """Finish sign-up: every medium she gave answers with its code, then she is in.
+    """Finish sign-up: every medium they gave answers with its code, then they are in.
 
-    Both codes are checked before either is spent, so a wrong email code does
-    not burn a right mobile code and leave her unable to retry. A medium that
-    has already answered - a retry after a partial success - needs no code,
-    but one must still be waiting: an account with none has no sign-up to
-    finish, and is refused as an unknown mobile is. A wrong code, one of the
-    wrong length and a spent budget are the same sentence, as everywhere a
-    stranger can type a contact.
+    Every code waiting is checked before any is spent, so a wrong email code
+    does not burn a right mobile code and leave them unable to retry. A medium
+    that has already answered - a retry after a partial success - needs no
+    code, but one must still be waiting: an account with none has no sign-up
+    to finish.
+
+    **Every refusal is the unknown mobile's**: one sentence, on the mobile's
+    field, whether the mobile is nobody's, the account has nothing left to
+    answer, a code it is waiting for was left out, or a code is wrong, of the
+    wrong length or past its budget. Told apart - a 422 for a code left out,
+    or the email's field when only the email was waiting - the answers said
+    that a sign-up was left unfinished on the mobile, which `/auth/register`
+    keeps to itself, and which of an account's contacts had not answered.
+    The sign-up page sends a code for every contact it was given, so the one
+    answer costs it nothing. Failures count against the address, as at the
+    code sign-in, and that limit is the only 429.
     """
+    await ratelimit.refuse_spent_address(_SIGN_UP)
+    refused = BadRequest("Invalid or expired code", code="otp_invalid", field="mobile_code")
     user = await user_repo.by_contact(conn, normalise_mobile(mobile))
     if (
         not user
         or user["role"] != Role.DATA_SUBJECT.value
         or user["status"] not in ("pending", "active")
     ):
-        raise BadRequest("Invalid or expired code", code="otp_invalid", field="mobile_code")
+        await ratelimit.record_address_failure(_SIGN_UP)
+        raise refused
     uuid = str(user["uuid"])
     outstanding = user_repo.unverified_mediums(user)
     if not outstanding:
@@ -1043,28 +1055,22 @@ async def confirm_registration(
         # one is all this does. Before, the loops below then checked no code
         # at all, and the mobile alone signed anybody in to that account.
         # Signing in is `verify_subject_otp`'s, with a code.
-        raise BadRequest("Invalid or expired code", code="otp_invalid", field="mobile_code")
+        await ratelimit.record_address_failure(_SIGN_UP)
+        raise refused
     codes = {"mobile": mobile_code, "email": email_code}
     for medium in outstanding:
-        if not codes[medium]:
-            where = "mobile" if medium == "mobile" else "email as well"
-            raise ValidationFailed(
-                f"Enter the code we sent to your {where}", field=f"{medium}_code"
-            )
-    for medium in outstanding:
         try:
+            # A code left out is a wrong one: `otp.require` refuses an empty
+            # code before it touches the store, so it spends no budget.
             await otp.require(
                 otp.Scope.SUBJECT_REGISTER,
                 f"{uuid}:{medium}",
-                str(codes[medium]),
-                field=f"{medium}_code",
+                codes[medium] or "",
                 consume=False,
             )
         except (BadRequest, RateLimited):
-            # The unknown mobile's sentence, on the input that has to change.
-            raise BadRequest(
-                "Invalid or expired code", code="otp_invalid", field=f"{medium}_code"
-            ) from None
+            await ratelimit.record_address_failure(_SIGN_UP)
+            raise refused from None
     for medium in outstanding:
         await otp.discard(otp.Scope.SUBJECT_REGISTER, f"{uuid}:{medium}")
         user = await user_repo.mark_contact_verified(conn, user["id"], medium)

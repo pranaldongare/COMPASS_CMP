@@ -356,7 +356,9 @@ async def nominee_request(
     request: Request,
     response: Response,
     nomination_uuid: Annotated[UUID, Form()],
-    code: Annotated[str, Form(min_length=4, max_length=10)],
+    # The same shape as every other code field, so a code that is not digits
+    # is the schema's 422 here too, before anything is looked up.
+    code: Annotated[OtpCode, Form()],
     request_type: Annotated[str, Form()],
     request_text: Annotated[str, Form(min_length=1, max_length=20_000)],
     trigger_event: Annotated[str, Form()],
