@@ -193,10 +193,10 @@ could open at once, and every report, the genuine ones with them, showed sealed.
   (`GET /breaches/intake/dismissed`).
 - **The reporter's rights over a dismissed report** (2026-11-07, 0065,
   [ADR 0037](../decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md#a-dismissed-report-and-the-rights-of-the-person-who-sent-it)).
-  A rights request from the reporter finds it by the blind index of their email,
-  once identity is verified, and an erasure request blanks their name and email,
-  keeping the number, the words, the reason and who dismissed it
-  ([rights-requests.md](rights-requests.md#reports-from-the-public-link)).
+  A rights request from the reporter finds it by the blind index of their email (an
+  account's only once proved), once identity is verified, and an erasure request
+  blanks their name and email, keeping the number, the words, the reason and who
+  dismissed it ([rights-requests.md](rights-requests.md#reports-from-the-public-link)).
   **Dismissed reports** then shows "erased" and when, and never which request: both
   offices see that list, and a request is one office's.
 
@@ -389,8 +389,10 @@ entering a reference nobody returned.
 
 - **Whatever validation says.** Before any validation, while pending, after a *yes*
   or a *no*; the event cites no determination (migration 0064), since no validation
-  set it aside. It was first allowed only once the latest validation was *no*, and
-  409 `cert_in_not_validated_no` is gone with that rule. Set aside before any
+  set it aside. A set-aside or re-mark recorded before 0064 cites the validation then
+  latest, and is served with its `determination_uuid`. It was first allowed only
+  once the latest validation was *no*, and 409 `cert_in_not_validated_no` is gone
+  with that rule. Set aside before any
   validation, the incident still cannot close until it is validated.
 - **With a reason**, sealed on the duty's event and shown on its row. The trail says
   only that one was given.
@@ -416,8 +418,9 @@ A *no* sets aside the duties not yet done, and a later *yes* brings them back on
 clocks. The work may have been done meanwhile, and the product owner's answer of
 2026-11-07 is that it counts
 ([ADR 0037](../decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md#what-a-yes-finds-already-done)).
-The *yes* reads every duty it leaves outstanding again, under the breach's row, and
-mails nobody.
+The *yes* reads three of the duties it brings back again - the board's, the initial
+intimation and the 72-hour report - under the breach's row, and mails nobody; the
+principals' it does not (below).
 
 - **The organisation's board.** If one of the board's own reports reached it while
   the duty was aside, the *yes* completes the duty from that mail: dated when the
@@ -426,7 +429,12 @@ mails nobody.
   A mail still on its way completes the duty when it lands; one that reached nobody
   leaves the duty outstanding on its new thirty minutes. If the key service cannot
   open a name for it, the *yes* stands, the duty stays outstanding and
-  `breach.board_duty_unsettled` is logged; **Try again** reads it again.
+  `breach.board_duty_unsettled` is logged. **Try again**, on any version of the
+  board's report, reads every version again, oldest first, and completes the duty
+  from the first that reached somebody, recorded as a person's press
+  (`by: try_again`, with them as the actor); a key service still away fails the
+  press (503). The worker's re-read after any later outcome reads every version the
+  same way, so a later version that lands first is not the one recorded.
 - **The initial intimation and the 72-hour report.** A report filed while the duty
   was aside completes it at the *yes*, from when it was sent and the reference that
   came back, recorded as the filer's. Of several, the first filing recorded is the
@@ -434,10 +442,18 @@ mails nobody.
 - **CERT-In** is never brought back by a *yes*, and no report to CERT-In can be
   filed while it is set aside.
 
-Such a duty reads done, and on time, at a time before its own clock started; its
-earlier lapse stays on the trail. A *yes* recorded before this change that brought a
-duty back with its work done is not swept: the board's duty completes from **Try again**,
-and the next *yes* reads any duty again.
+Such a duty is checked against the clock the *yes* brings back, not the one the *no*
+set aside. The board's earlier mail always reads on time, dated before that clock
+started. A regulator's report reads late if it was sent after the reinstated due,
+and its date may fall before or after that clock's start, since a *yes* may enter
+any awareness from first noticed on. Nothing on the trail says the first clock
+lapsed: its due stays on the duty's row and on `breach.obligation_created`, and the
+*no* that set it aside on the duty's events. Notices to the people affected that
+were delivered while the *no* stood are not counted: the *yes* brings that duty back
+outstanding, and pressing **Send** again completes it ([open](#open-questions)). A
+*yes* recorded before this change that brought a duty back with its work done is not
+swept: the board's duty completes from **Try again**, and the next *yes* reads any
+duty again.
 
 ## The people affected
 
@@ -667,6 +683,11 @@ failed (`RecipientRemoved`) and the duty is re-read then, so a report does not w
 on an address nobody will try again.
 
 A press re-reads the board's duty first, whatever follows, and answers how many it
+queued. On any version of the board's own report it reads every finalised version,
+oldest first, as a *yes* does, and completes the duty from the first that reached
+somebody (`by: try_again`, the person pressing as the actor): the version that
+reached the board may be an older one the console offers no button on. A key
+service that cannot open a name for the duty fails the press (503), and nothing is
 queued. It is refused, and `retryable` is 0, on a report to CERT-In set aside (409
 `breach_not_recorded`), on a report to CERT-In whose mail waits for a *yes* (409
 `report_held`, "This goes to the organisation's board when the incident is validated
@@ -754,6 +775,12 @@ so the board never reads a report on an incident that was never validated *yes*.
   is marked again, **Send to the board** (Try again) sends it, as a person's act, or
   a new version does. Set aside and marked again before the *yes*, it goes at the
   *yes* as though never set aside.
+- **Nobody left to send it to**: everybody it was chosen for has been taken off the
+  list by the first *yes*. Nothing goes, and it is withheld too,
+  `breach.report_withheld` with `why: nobody_on_the_list` and how many were left
+  out, never a release that queued nobody (2026-11-08). Try again has nobody to try;
+  a new version reaches the list as it then stands. The trail reads *Report held for
+  the board not sent at the validation* for either reason.
 - **Only the newest version goes.** An older one finalised before the *yes* reads
   not sent, replaced, and Try again refuses it (409 `report_superseded`).
 - **Filed while held**, it completes its duty; the mail still waits for the *yes*,
@@ -1035,7 +1062,7 @@ Every change writes an audit row against `breach`: `breach.recorded` (an
 incident logged - the key predates the incident-first order), `.determined`,
 `.confirmed` (recorded as a breach, with its BR), `.assessed`, `.cert_in_marked`, `.cert_in_set_aside` (that a reason was given), `.obligation_created`,
 `.obligation_completed`, `.obligation_not_applicable`,
-`.obligation_reinstated`, `.obligation_extended`, `.affected_revised` (with the counts, and nobody's name or id), `.affected_uploaded` (a list taken: its kind and counts), `.obligation_reopened`, `.notice_drafted`, `.notice_edited`, `.notice_approved`, `.notice_sent` (with counts), `.closed`, `.reopened`, `.attachment_added` (the kind, never the name), `.attachment_read`, `.report_drafted`, `.report_edited`, `.report_finalised` (how many addresses were mailed, whether it is held, how many were added for that report and how many on the list were left out), `.report_resent` (how many it queued, how many of them for the first time and how many again, and only if it queued any), `.report_released` (a report to CERT-In held for the first *yes* and sent then: how many queued, how many left out because taken off the list), `.report_withheld` (the same report not sent, CERT-In being set aside at that *yes*), `.report_proof_added`, `.report_filed`, `.report_read` (each with the kind and the version). `.obligation_completed` says which duty, whether late, and `by` - `delivery`, `earlier_mail`, `filing` or `filed_report` - with the report's version where a report did it, and for the board how many were reached; never whom. A report from the public link is against `incident_report`: `incident_report.received`, `.claimed` (with the office), `.dismissed` (that a reason was given), `.reporter_erased` (its reporter's name and email blanked under a rights request: the request's reference and the INC, never a name or an address; shown to the person on their own trail when they have an account). A change under Breach settings is `breach_settings.changed`, with what changed - an address added or removed, made mandatory or optional again - and the entry's uuid, never naming an address. A breach ticket's events are against `breach_ticket`, with the holder as subject: `breach_ticket.assigned`, `.message`, `.returned` (with the outcome), `.sent_back`, `.closed`, `.withdrawn`, `.reopened`, `.date_changed` (with the two dates), `.file_read`, `.colleague_added` (with the adder's ticket's uuid); the administrator's trail names them by the breach reference only. A breach-only login's grant and end are against the account: `user.temporary_access_granted` and `user.temporary_access_ended`, with the breach reference and the cause, never a name or an address. Each person whose account a notice is written to gets `breach_notice.delivered` against her, naming the breach reference (the BR) and the version: that is her portal's notification, and the only breach event she is shown. The
+`.obligation_reinstated`, `.obligation_extended`, `.affected_revised` (with the counts, and nobody's name or id), `.affected_uploaded` (a list taken: its kind and counts), `.obligation_reopened`, `.notice_drafted`, `.notice_edited`, `.notice_approved`, `.notice_sent` (with counts), `.closed`, `.reopened`, `.attachment_added` (the kind, never the name), `.attachment_read`, `.report_drafted`, `.report_edited`, `.report_finalised` (how many addresses were mailed, whether it is held, how many were added for that report and how many on the list were left out), `.report_resent` (how many it queued, how many of them for the first time and how many again, and only if it queued any), `.report_released` (a report to CERT-In held for the first *yes* and sent then: how many queued, how many left out because taken off the list), `.report_withheld` (the same report not sent at that *yes*: `why` is `cert_in_set_aside`, CERT-In being set aside then, or `nobody_on_the_list`, everybody it was chosen for having been taken off the list since, with how many were left out), `.report_proof_added`, `.report_filed`, `.report_read` (each with the kind and the version). `.obligation_completed` says which duty, whether late, and `by` - `delivery`, `earlier_mail`, `try_again` (a person's press, who is the actor), `filing` or `filed_report` - with the report's version where a report did it, and for the board how many were reached; never whom. A report from the public link is against `incident_report`: `incident_report.received`, `.claimed` (with the office), `.dismissed` (that a reason was given), `.reporter_erased` (its reporter's name and email blanked under a rights request: the request's reference and the INC, never a name or an address; it carries the request's office, not the report's, so it is on that office's trail and the person's own when they have an account, and never on the other office's). A change under Breach settings is `breach_settings.changed`, with what changed - an address added or removed, made mandatory or optional again - and the entry's uuid, never naming an address. A breach ticket's events are against `breach_ticket`, with the holder as subject: `breach_ticket.assigned`, `.message`, `.returned` (with the outcome), `.sent_back`, `.closed`, `.withdrawn`, `.reopened`, `.date_changed` (with the two dates), `.file_read`, `.colleague_added` (with the adder's ticket's uuid); the administrator's trail names them by the breach reference only. A breach-only login's grant and end are against the account: `user.temporary_access_granted` and `user.temporary_access_ended`, with the breach reference and the cause, never a name or an address. Each person whose account a notice is written to gets `breach_notice.delivered` against her, naming the breach reference (the BR) and the version: that is her portal's notification, and the only breach event she is shown. The
 detail carries the reference, the outcome, which duty, a due time and that a
 reason was given - never the office's words, which are sealed on their rows
 ([ADR 0015](../decisions/0015-nothing-erasable-in-a-trail-nobody-can-erase.md)).
@@ -1052,6 +1079,7 @@ incident is never validated *yes*; and the earlier work a *yes* counts is the fi
 as it would have counted with no *no* - the first finalised version of the board's
 report that reached somebody, or the first filing ordered by when it was recorded
 and then by version.
+The last four rows are what the review of 2026-11-08 left for an owner.
 
 | Question | Owner |
 |---|---|
@@ -1066,3 +1094,7 @@ and then by version.
 | A claimed report is not reached by an access or erasure request, a documented exception: it is the incident's record of what the office was told, and may sit in the other office's register ([personal-data.md](personal-data.md#personal-data-breaches)) | Legal and the product owner |
 | A dismissed report's words stay after its reporter is erased, and may name them; once the index is gone a later request cannot reach them | The product owner |
 | The portal's public promise on the report page and in its help, that a person whose report is closed without being taken up can ask for their name and email to be erased from it. Planned as "If your report is closed without being taken up, you can ask for your name and email to be erased from it."; the words to confirm are the page's own (`frontend/portal/src/app/report-incident/page.tsx`) | The product owner, to confirm |
+| The administrator may answer an access or erasure request about the office, and the response package they release and can download (`GET /requests/{uuid}/download`) carries the requester's own dismissed reports - their name, email and words - although the register is hidden from them everywhere else (`public_reports` null, the erase 404; on an erasure, `complete_blocked_by` tells them only the DPO or the Legal office can take the name and email off). Whether that part is answered only by an officer (the response refused to the administrator while such reports are found), or left out of a package the administrator releases ([rights-requests.md](rights-requests.md#reports-from-the-public-link)) | The product owner |
+| `POST /rights/requests/verify` answers every failure in the same words, but not in the same time: a reference with no account costs a key-service call (the contact it gave is opened to look for a dismissed report) that one with an account does not, and a reference a code was issued for costs a Redis call a stranger's does not. So how long a reply takes can still say something about the contact. Not equalised | The engineering lead |
+| A request with no account whose contact is a mobile, verified by hand, is answered by text, and a text carries only the headline, never the Privacy Office's words or the digest; with no account to sign in to, that text is the whole answer. Whether it should carry them, or the answer go another way | The product owner |
+| `users.by_contact` takes an account's own email even when it was never proved. A public-form request from the real owner of an address that somebody else's account carries unproved is attached to that account, and its code goes to that address. Since 2026-11-08 such a request finds none of the owner's dismissed reports, which is safer than handing them to the other account but does not serve the owner. A request with no account verified by hand still finds and erases reports by the email it gave, unproved; `code_channel` now steers the officers to a code instead | The engineering lead and the product owner |

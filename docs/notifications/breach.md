@@ -266,7 +266,7 @@ Key `breach_board_report` · channels: email
 | CC | Never - a report on a breach goes to the addresses on the organisation's board's list and nobody else, and it may name a person; a copy would take it off that list. |
 | Attachment | The report as a PDF. |
 | Sent by | `cmp.notifications.send_breach_report` (`backend/api/src/cmp/tasks/notifications/breach_reports.py:146`) |
-| Queued from | `backend/api/src/cmp/domain/breach/reports.py:1329`, `backend/api/src/cmp/domain/breach/reports.py:566`, `backend/api/src/cmp/domain/breach/reports.py:653` |
+| Queued from | `backend/api/src/cmp/domain/breach/reports.py:1348`, `backend/api/src/cmp/domain/breach/reports.py:566`, `backend/api/src/cmp/domain/breach/reports.py:661` |
 | Variables | `breach_reference` (The breach's reference.), `report_title` (What the report is.), `report_text` (The report, as the office wrote it.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{organisation}: {breach_reference} - {report_title}`
@@ -293,7 +293,7 @@ Key `breach_report_finalised` · channels: email
 | CC | Never - a report on a breach goes to the addresses on the organisation's board's list and nobody else, and it may name a person; a copy would take it off that list. |
 | Attachment | The report as a PDF. |
 | Sent by | `cmp.notifications.send_breach_report` (`backend/api/src/cmp/tasks/notifications/breach_reports.py:148`) |
-| Queued from | `backend/api/src/cmp/domain/breach/reports.py:1329`, `backend/api/src/cmp/domain/breach/reports.py:566`, `backend/api/src/cmp/domain/breach/reports.py:653` |
+| Queued from | `backend/api/src/cmp/domain/breach/reports.py:1348`, `backend/api/src/cmp/domain/breach/reports.py:566`, `backend/api/src/cmp/domain/breach/reports.py:661` |
 | Variables | `breach_reference` (The breach's reference.), `report_title` (What the report is.), `report_text` (The report, as the office wrote it.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{organisation}: {breach_reference} - {report_title} finalised`

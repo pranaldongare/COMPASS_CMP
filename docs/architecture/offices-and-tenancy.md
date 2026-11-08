@@ -78,7 +78,8 @@ which RLS does not bind, and leaves the report no office's. The shared list of
 dismissed reports shows only that and when the reporter was erased, never the
 request: in production RLS would blank the other office's reference, and both
 offices see that list. The request and who erased it are on the request's own
-trail, in its office.
+trail, in its office: `incident_report.reporter_erased` carries the request's
+office, not the report's, so the other office's trail never shows it (2026-11-08).
 
 `legal_hold` carries no office scope in its queries yet (`list_holds()`
 returns every hold); only the matrix, which gives it to the DPO alone,

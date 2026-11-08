@@ -321,8 +321,12 @@ alarm.
    with their clocks. *No* marks them not applicable and keeps the reasoning,
    and the incident can close. Revise it as a new validation if it changes;
    nothing is edited, and a breach reference once issued stays. A *yes* after a
-   *no* completes on its own any duty whose work was done meanwhile - the board's
-   report that reached it, a report filed with the Board - and mails nobody.
+   *no* completes on its own the board's duty, if one of its reports reached the
+   board meanwhile, and the initial intimation or the 72-hour report, if a report
+   for it was filed with the Board meanwhile, and mails nobody. Notices to the
+   people affected are not: if they all landed while the *no* stood, press
+   **Send** again on **People & notices**, which sends nobody a notice twice and
+   completes that duty.
    **CERT-In does not go with a *no*.** If the mark was a mistake, press **Not
    reportable to CERT-In** on its row, at any point, before validation or after,
    and say why: the duty is set aside and nobody is mailed. It is refused once the
@@ -487,6 +491,12 @@ shows has the report, so pressing it twice sends nothing twice.
 - **Delivered: finish on the Reports tab**, with the duty outstanding. The mail
   landed, and re-reading the duty failed. Press **Try again**: it re-reads the duty,
   which completes, and mails nobody.
+- **`breach.board_duty_unsettled` after a *yes***: a report reached the board while
+  a *no* stood, and the key service could not open a name for the duty at the
+  *yes*. Press **Try again** on any version of the board's report, the newest
+  included: it reads every version, oldest first, and completes the duty from the
+  first that reached the board. If the key service is still away the press fails
+  (503); bring it back and press again.
 - **Nobody it went to can be reached any more**: every address it was sent to has
   been taken off the list since. **Try again** has nobody to try. Write a new
   version, which offers the list as it now stands.
@@ -512,10 +522,14 @@ The platform never sends to CERT-In; a person does, whatever the board's mail do
   the board never gets it. **Try again** is not offered while it is held (409
   `report_held`).
 - **The *yes* came and it reads not sent**, with *Report held for the board not
-  sent: CERT-In set aside* on the trail. CERT-In was set aside at that moment.
+  sent at the validation* on the trail. CERT-In was set aside at that moment.
   Nothing sends it by itself later. If it is reportable after all, **Mark
   reportable to CERT-In**, then press **Send to the board** on that version, or
   write a new version.
+- **The *yes* came and nobody it was chosen for is on the list**: every address it
+  was finalised for had been taken off the list since. The same trail row says it
+  was not sent (its detail reads `nobody_on_the_list`). **Try again** has nobody to
+  try; write a new version, which offers the list as it now stands.
 - **An older version reads not sent: a later version replaced it.** Only the newest
   finalised version goes at the *yes*. Nothing to do.
 - **Recorded as sent while held.** The CERT-In duty is done; the board's mail still

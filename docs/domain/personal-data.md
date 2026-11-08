@@ -54,9 +54,9 @@ member of staff who acted.
 
 ## Where it lives: the database
 
-74 objects - 72 application tables, `alembic_version` and the view
+76 objects - 74 application tables, `alembic_version` and the view
 `v_current_consent` - of which **42 tables and the view carry personal data**
-and 31 tables do not ([the generated list](pii-fields-and-endpoints.md)).
+and 33 tables do not ([the generated list](pii-fields-and-endpoints.md)).
 Each table below lists only its personal-data columns; the full column list, with types,
 defaults, constraints and triggers, is in
 [docs/reference/database/table_reference.md](../reference/database/table_reference.md).
@@ -302,17 +302,28 @@ no duty or accountability record stands on it, and the product owner's answer of
 
 - **Found by the blind index of the address**, once identity is verified, on an
   access or erasure request that is not confined to one consent: the account's
-  primary email, its second email once proved, or for a request with no account the
-  email it gave. Only the two officers are shown what was found, on the request's
-  **Holders** tab; the administrator on a request about the office is shown nothing.
-- **Access** returns the reporter's own name, email and words, when the report was
-  received and dismissed, and that it was not taken up. Not the office's reason or
-  who dismissed it, as the office's other notes on a request are not shown.
+  primary email once a code to it came back (or, on an account from before each
+  contact's proof was stamped, when neither is), its second email once proved, or
+  for a request with no account the email it gave. An email never proved beside a
+  mobile that was finds nothing: a nominee's account is made that way, carrying the
+  address the principal typed, which may be somebody else's (2026-11-08). Only the
+  two officers are shown what was found, on the request's **Holders** tab; the
+  administrator on a request about the office is shown nothing there and cannot
+  erase (404). A response the administrator releases on such a request still
+  carries the requester's own reports in its package, which the administrator can
+  download: whether it should is open ([breaches.md](breaches.md#open-questions)).
+- **Access** gives a requester with an account their own name, email and words, in
+  the response package, with when the report was received and dismissed, and that
+  it was not taken up. A request with no account has no package: it is answered by
+  mail with each report's number, dates and title only. Neither carries the office's
+  reason or who dismissed it, as the office's other notes on a request are not shown.
 - **Erasure** is an officer's act on an erasure request that has started
   (`POST /requests/{uuid}/public-reports/erase`). It blanks the name, the email and
   the index, and keeps the `INC-` number, the words, the reason and who dismissed
-  it; the response says what is kept. A legal hold on the person stops it, and
-  **Complete** waits for it. The trigger that writes a report's outcome once allows
+  it; the response says what is kept. A legal hold on the person stops it - on a
+  request with no account, a hold on any account the contact it gave is on, as an
+  email, proved or not, or the mobile, whatever its role - and **Complete** waits
+  for it. The trigger that writes a report's outcome once allows
   this one change, once, and CHECKs tie a blank name to an erasure.
 - **No retention period is set**: a dismissed report is kept until a rights request
   erases its reporter. Setting one is Legal's.

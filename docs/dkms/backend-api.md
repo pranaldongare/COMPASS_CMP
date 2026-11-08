@@ -216,11 +216,11 @@ list does not send today; the audit trail's About picker is where a request
 is found by name in practice. `nominee_name_ngrams` is written with every
 nomination and read by no query yet.
 
-## The endpoints that carry personal data — 277 of 389
+## The endpoints that carry personal data — 282 of 394
 
 The documentation generator, `docs/tools/pii-fields-and-endpoints.py`, counts
-277 of the API's 389 operations whose request or response holds a personal
-field, in 22 modules, 28 of them public. The count by module and the fields
+282 of the API's 394 operations whose request or response holds a personal
+field, in 25 modules, 34 of them public. The count by module and the fields
 each one carries are in
 [pii-fields-and-endpoints.md](../domain/pii-fields-and-endpoints.md), which
 is regenerated rather than copied here.

@@ -150,7 +150,10 @@ difference would tell a stranger something about who is registered:
 - `POST /rights/requests`: a reference is issued either way; a code goes only
   to a contact on file
 - `POST /rights/requests/verify` and `POST /rights/nominee/start`: the same
-  sentence for an unknown reference and a wrong code
+  sentence for an unknown reference and a wrong code; on the first, also for a
+  code of the wrong length and a spent budget of tries, which answer 400
+  `otp_invalid`, not 429; only the limit per address answers 429 there
+  (2026-11-08)
 - `GET /rights/nominations/{token}`: every failure is the same 404
 - `/holder-tickets/{token}`: every way a link can fail - unknown, replaced,
   or its ticket not yet issued - is the same 404

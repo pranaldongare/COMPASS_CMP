@@ -80,3 +80,10 @@ the same reason.
 
 429 with `Retry-After`. The header is exposed through CORS, so a browser client
 can actually read it and back off rather than hammering.
+
+One exception: the public rights form's second half,
+`POST /rights/requests/verify`, answers a spent budget of tries as it answers a
+wrong code, 400 `otp_invalid` "Invalid or expired code", and discards the code,
+because "too many" would say a code had been issued, and so that the contact is
+somebody's or sent a report an office dismissed (2026-11-08). Only
+`rights_verify_ip`, 30 an hour, answers 429 there.

@@ -28,7 +28,7 @@ that sends it and the code that queues it are listed per module in
 | Rights | `rights_acknowledgement` | email, SMS | a rights request is received |
 | Rights | `rights_verification_code` | email, SMS | a public-form request needs its contact confirmed; to the contact on file, an account's or, since 0065, the address a dismissed report from the public link came from - never one typed into the form |
 | Rights | `rights_response_ready` | email, SMS | a response can be read from her account |
-| Rights | `rights_response` | email, SMS | the response itself is sent; its digest lists the reports the requester sent through the public link that were not taken up, and for a request with no account those reports alone, by number, dates and title (0065) |
+| Rights | `rights_response` | email, SMS | the response itself is sent; its digest lists the reports the requester sent through the public link that were not taken up, and for a request with no account those reports alone, by number, dates and title (0065); with no account behind it, its availability line says the message is the answer, by mail and by text, and a text carries only the headline and that line (2026-11-08) |
 | Rights | `rights_closed` | email, SMS | a request is refused, reclassified, unverified, or a grievance decided |
 | Rights | `nomination_code` | email, SMS | a nominee proves a recorded contact before accepting or declining |
 | Rights | `nomination_invitation` | email, SMS | somebody is nominated |

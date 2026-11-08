@@ -50,11 +50,13 @@ as a release yet.
   link that an office dismissed, by the blind index of their proved email, once
   identity is verified: the request's detail serves them as `public_reports` to the
   DPO and the Legal PoC, and **Reports from the public link** on the Holders tab
-  lists them. Access returns the reporter's name, email and words, never the
-  office's reason or who dismissed it. On an erasure request that has started, an
-  officer erases them (`POST /requests/{uuid}/public-reports/erase`): the name, the
-  email and the index are blanked, and the number, the words, the reason and who
-  dismissed it stay; a legal hold stops it, and **Complete** waits for it. A
+  lists them. Access gives a requester with an account their name, email and words
+  in the package, and answers a request with no account by mail with each report's
+  number, dates and title only; never the office's reason or who dismissed it. On
+  an erasure request that has started, an officer erases them
+  (`POST /requests/{uuid}/public-reports/erase`): the name, the email and the index
+  are blanked, and the number, the words, the reason and who dismissed it stay; a
+  legal hold stops it, and **Complete** waits for it. A
   request with no account matching such a report's address is sent its code at
   that address. Claimed reports are not reached, a documented exception.
 - **A CERT-In mark made in error can be set aside** (2026-11-07, ADR 0037,
@@ -1300,6 +1302,19 @@ as a release yet.
   completes only by filing a report with both proofs.
 
 ### Fixed
+- **What the review of the six answers' build found** (2026-11-08, 285d077; ADR 0037,
+  [breaches.md](docs/domain/breaches.md#open-questions) for what it left open):
+  - An account's own email finds, packages and erases dismissed reports only once proved, or on a row from before proofs were stamped; never beside a mobile proved alone, as a nominee's account is made.
+  - `incident_report.reporter_erased` carries the rights request's office, so the other office's trail no longer shows the request, its subject and who erased.
+  - 0064's way down is refused also once a sender left a listed entry out of a version, which 0063's Try again would have mailed.
+  - A held report to CERT-In whose addressees were all taken off the list is recorded withheld (`why: nobody_on_the_list`), not released; the withheld label reads "Report held for the board not sent at the validation".
+  - Try again on any version of the board's report, and the worker after any outcome, read every version oldest first, so the duty is done from the first that reached the board after a key-service failure at the *yes*; Try again's completion is `by: try_again`, with the presser as actor.
+  - `GET /requests/{uuid}` serves `code_channel` to the DPO and the Legal PoC: whether a code can go to a channel already held, a dismissed report's address included; never the address.
+  - A no-account erasure answered before anybody erased says each report still carries the name and email, and says what is kept only once one was erased.
+  - `POST /rights/requests/verify` answers a spent budget of tries and a code of the wrong length as a wrong code (400 `otp_invalid`), not 429 (the limit per address still is), so tries no longer tell a dismissed reporter from a stranger.
+  - A legal hold on any account the contact of a no-account request is on stops the erasure of its dismissed reports.
+  - `complete_blocked_by` tells the administrator, on a request about the office, that only the DPO or the Legal office can take the name and email off, not to use a card they do not have.
+  - A request with no account is answered with no account link, by mail and by text: "this message is our answer"; the `rights_response` text default no longer says "Sign in to read the full response."
 - **A report sent before a later yes's awareness can be recorded as sent with its
   true date** (2026-11-07, logic-4). Filing was checked against the duty's clock,
   which a *yes* after a *no* starts again at its own awareness, and refused a true

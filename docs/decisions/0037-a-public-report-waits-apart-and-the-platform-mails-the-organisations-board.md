@@ -3,9 +3,10 @@
 **Status:** accepted · 2026-11-06; amended 2026-11-07 (a CERT-In mark set aside,
 and what the review of the work changed, at the end); amended again 2026-11-07
 (the product owner's six answers of that day, which confirmed and widened the
-set-aside, [at the end](#amended-2026-11-07-the-product-owners-answers)).
-Migrations 0058 to 0065: 0058 to 0063 for the product owner's nine items of
-2026-11-06, 0064 and 0065 for the answers. The answers also reach
+set-aside, [at the end](#amended-2026-11-07-the-product-owners-answers)); corrected
+in place 2026-11-08, where a review of what the answers built found these words and
+the code apart. Migrations 0058 to 0065: 0058 to 0063 for the product owner's nine
+items of 2026-11-06, 0064 and 0065 for the answers. The answers also reach
 [ADR 0019](0019-erasure-reaches-every-store-but-the-record.md), whose erasure now
 reaches a dismissed report from the public link, and
 [ADR 0026](0026-a-rights-request-is-access-erasure-or-a-grievance-about-everything.md),
@@ -462,8 +463,12 @@ row, and mails nobody.
   reached somebody. A mail still on its way completes the duty when it lands. One
   that reached nobody leaves it outstanding on its fresh thirty minutes. A key
   service that cannot open a name for the duty leaves the *yes* standing and the
-  duty outstanding, with `breach.board_duty_unsettled` in the log, and Try again
-  reads it again.
+  duty outstanding, with `breach.board_duty_unsettled` in the log. Try again, on any
+  version of the board's report, reads every version again, oldest first, and
+  completes the duty from the first that reached somebody (`by: try_again`, the
+  person pressing as the actor); a key service still away fails the press (503). The
+  worker's re-read after any later outcome reads them the same way (`by: delivery`),
+  so a later version that lands first is not the one recorded.
 - **A regulator's report filed while aside** completes the initial intimation or the
   72-hour report at the *yes*, from when it was sent and the reference that came
   back, recorded as the filer's (`by: filed_report`). If several were filed, the
@@ -475,11 +480,21 @@ row, and mails nobody.
   before the incident was first noticed").
 - **CERT-In is out of reach**: a *yes* does not bring it back, and it can be neither
   filed while set aside nor set aside once filed.
+- **Notices to the people affected** delivered while the *no* stood are not counted:
+  the *yes* brings that duty back outstanding, and **Send** again completes it.
+  Whether the same rule should reach them is open
+  ([breaches.md](../domain/breaches.md#open-questions)).
 
-What it costs: such a duty reads done, and on time, at a time before its own clock
-started, and its earlier lapse is on the trail. A filing between first noticed and
-awareness is now taken. Duties a *yes* brought back before this change are not
-swept: the board's completes from Try again, and the next *yes* reads any duty again.
+What it costs: such a duty is checked against the clock the *yes* brings back, not
+the one the *no* set aside. The board's earlier mail always reads on time, dated
+before that clock started. A regulator's report reads late if it was sent after the
+reinstated due, and its date may fall before or after that clock's start, since a
+*yes* may enter any awareness from first noticed on. Nothing on the trail says the
+first clock lapsed: its due stays on the duty's row and on
+`breach.obligation_created`, and the *no* that set it aside on the duty's events. A
+filing between first noticed and awareness is now taken. Duties a *yes* brought back
+before this change are not swept: the board's completes from Try again, and the next
+*yes* reads any duty again.
 
 ### A dismissed report and the rights of the person who sent it
 
@@ -493,24 +508,42 @@ dismissed it.
 - **Found by the address's blind index.** 0065 gives `incident_report` the same
   index as `auth_user.email_hash`, written with the report and backfilled through the
   key service. Once identity is verified, an access or erasure request about
-  everything held looks: by the account's email, and its second email once proved,
-  or for a request with no account by the email it gave. Only the two officers are
-  shown what it finds, on the request's **Holders** tab.
-- **Access** sends the reporter their own name, email and words, when the report was
-  received and dismissed, and that it was not taken up. Not the office's reason, and
-  not who dismissed it, as the office's other notes on a request are not shown.
+  everything held looks: by the account's email once a code to it came back (or, on
+  an account from before each contact's proof was stamped, when neither is), and its
+  second email once proved, or for a request with no account by the email it gave. An
+  email never proved beside a mobile that was is not looked by: a nominee's account
+  is made that way, with the address the principal typed, which may be somebody
+  else's (2026-11-08). Only the two officers are shown what it finds, on the
+  request's **Holders** tab. A response the administrator releases on a request
+  about the office still carries the requester's own reports in its package; who
+  should answer that part is open ([breaches.md](../domain/breaches.md#open-questions)).
+- **Access** gives a requester with an account their own name, email and words, in
+  the response package, with when the report was received and dismissed, and that it
+  was not taken up. A request with no account has no package: it is answered by
+  mail, with each report's number, dates and title only. Neither carries the
+  office's reason or who dismissed it, as the office's other notes on a request are
+  not shown.
 - **Erasure is an officer's act on the request**
   (`POST /requests/{uuid}/public-reports/erase`), not an item: an item is a person's
   appearance in an asset, and a report is not one. It names no report; it finds them
   again by the index, so nothing a caller sends can reach another person's, and
   blanks the name, the email and the index in one statement. It needs an erasure
   request that has started, not confined to one consent, with no legal hold on the
-  person. **Complete** waits until it is done, or the answer is partial. The trigger
-  that writes a report's outcome once allows this one change, once.
+  person; on a request with no account, none on any account the contact it gave is
+  on, as an email, proved or not, or the mobile, whatever its role (2026-11-08).
+  **Complete** waits until it is done, or the answer is partial. The trigger that
+  writes a report's outcome once allows this one change, once. The mail answering a
+  request with no account says of each report not yet erased that it still carries
+  the name and email, says what is kept only once one was erased, and points at no
+  account: the message is the answer.
 - **A code to that address.** A request with no account matching a dismissed report's
   address is sent a code to the address the report came from, so the public form's
   neutral reply stays true for these reporters and the office need not verify them
-  by hand.
+  by hand. The request's detail tells the officers whether a code has somewhere to
+  go (`code_channel`), never where. On the public form a wrong code, one of the
+  wrong length and a spent budget of tries all answer as a reference no code was
+  sent for does, so tries no longer tell a reporter from a stranger (2026-11-08);
+  how long the reply takes still may ([breaches.md](../domain/breaches.md#open-questions)).
 
 What it costs: the words stay, may name the reporter, and once the index is gone a
 later request cannot reach them; the reason stays and may name them too. A report
@@ -544,6 +577,11 @@ unchanged at the first *yes*.
   could mail the board a stale version beside the new one the office is likely to
   write. Set aside and marked again before the *yes*, it goes at the *yes* as though
   never set aside.
+- **Nobody left to send it to.** If everybody it was chosen for has been taken off
+  the list by the first *yes*, nothing goes, and the trail says withheld, not sent
+  (`why: nobody_on_the_list`, with how many were left out; 2026-11-08). Try again has
+  nobody to try; a new version reaches the list as it then stands. The withheld row
+  reads *Report held for the board not sent at the validation* for either reason.
 - **Only the newest goes.** An earlier version finalised before the *yes* was replaced
   before it went, and stays unsent.
 - **After the first *yes*** the board has the breach and its own report, so a report

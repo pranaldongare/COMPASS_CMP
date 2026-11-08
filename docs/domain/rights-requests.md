@@ -43,7 +43,17 @@ the contact is known, and the code goes only to a contact on file. A contact
 with no account that is the address of a report an office dismissed, not yet
 erased, is one: the code goes to the address stored on the report, never to the
 one typed, so the neutral reply stays true for a reporter with no account, and a
-code the office sends (`POST /requests/{uuid}/verification/code`) goes there too. An
+code the office sends (`POST /requests/{uuid}/verification/code`) goes there too.
+The request's detail tells the DPO and the Legal PoC whether a code has somewhere to
+go (`code_channel`, 2026-11-08): `true` with an account, or with none when the
+contact is such a report's address; `false` when no channel is held, so the request
+is verified by hand or closed as not verified; `null` for the administrator, for a
+request no longer waiting for its identity or past `awaiting_holders`, and when the
+key service does not answer. It never carries the address. On the form's second
+half (`POST /rights/requests/verify`) a wrong code, a code of the wrong length and a
+spent budget of five tries all answer 400 `otp_invalid`, "Invalid or expired code",
+as a reference no code was sent for does: the fifth wrong try discards the code, and
+only the limit per address (30 an hour) answers 429. An
 unverified request is closed by the nightly sweep after seven days, and a
 stranger who asks after it is told only that it is closed.
 
@@ -332,15 +342,21 @@ reporter's rights reach it (0065,
 
 - **Found by the address**, by its blind index, once identity is verified, on an
   access or erasure request not confined to one consent: the subject account's
-  email, and its second email once proved; for a request with no account, the email
-  it gave. A report that was claimed, or is still waiting in the intake, is not
-  reached. The request detail serves what was found as `public_reports` - up to 50
-  unerased reports, oldest first, with the total, then those erased under this
-  request - to the DPO and the Legal PoC only, and **Reports from the public link**
-  on the **Holders** tab shows it. The administrator, on a request about the office,
-  is served nothing (`public_reports` null). If the key service cannot open a request
-  with no account's contact, the card says nothing could be looked for and
-  **Complete** is held.
+  email once a code to it came back (or, on an account from before each contact's
+  proof was stamped, when neither is), and its second email once proved; for a
+  request with no account, the email it gave. An email never proved beside a mobile
+  that was finds nothing (2026-11-08): a nominee's account is made that way, with
+  the address the principal typed, which may be somebody else's. A report that was
+  claimed, or is still waiting in the intake, is not reached. The request detail
+  serves what was found as `public_reports` - up to 50 unerased reports, oldest
+  first, with the total, then those erased under this request - to the DPO and the
+  Legal PoC only, and **Reports from the public link** on the **Holders** tab shows
+  it. The administrator, on a request about the office, is served nothing
+  (`public_reports` null) and cannot erase (404), but a response they release on
+  such a request carries the requester's own reports in its package, which they can
+  download; whether it should is open. If the key service cannot open a request with
+  no account's contact, the card says nothing could be looked for and **Complete**
+  is held.
 - **Not items.** An item is a person's appearance in an asset; a report is not one,
   so it is not in the scope above.
 - **Erasure is an officer's act** (`POST /requests/{uuid}/public-reports/erase`, no
@@ -349,14 +365,27 @@ reporter's rights reach it (0065,
   on each in one statement, keeping the `INC-` number, the words, the reason and who
   dismissed it. It needs an erasure request (409 `not_erasure`, which also refuses
   an erasure confined to one consent) that is open (409 `request_closed`) and started
-  (409 `request_not_started`), and no legal hold on the person (409 `legal_hold`). A
-  second press finds nothing and writes nothing. Each report erased is
+  (409 `request_not_started`), and no legal hold on the person (409 `legal_hold`). On
+  a request with no account, an active hold on any account the contact it gave is on
+  stops it - as an email, proved or not, or the mobile, whatever its role - since the
+  public form opens such a request for a staff account's address or a second email
+  nobody proved (2026-11-08); if the key service cannot open that contact the card
+  says whether a hold covers the requester could not be checked, and the erasure
+  answers 503. A second press finds nothing and writes nothing. Each report erased is
   `incident_report.reporter_erased` on the trail, with the request's reference and
-  the INC, and the person sees it on their own trail.
+  the INC: on the request's office's trail, never the other office's, and on the
+  person's own when they have an account.
 - **Complete waits for it.** While a report found still carries the name and email,
   `complete` is refused (422 `response_partial_required`) and `complete_blocked_by`
-  says how many, never which: erase them, or answer partial. A request whose only act
-  was erasing such reports may close complete.
+  says how many, never which: erase them, or answer partial. The administrator, on a
+  request about the office, is told instead that only the DPO or the Legal office can
+  take them off, and that they can answer partial. A request whose only act was
+  erasing such reports may close complete.
+
+The open questions about these reports are kept with the breach register's
+([breaches.md](breaches.md#open-questions)): who answers them when the administrator
+handles a request about the office, how long the public form's verify takes, an
+answer sent only by text, and an account email nobody proved.
 
 **Backups are not covered yet.** There are no database backups today (parked,
 P-03), and whether a backup holding an erased item is scrubbed or left to
@@ -389,7 +418,16 @@ own name and email, their words, when it arrived and was dismissed, and that it 
 not taken up. Never the office's reason or who dismissed it, which are the office's
 notes, as a verification note is. A report erased under this request is named by its
 number and dates alone. A request with no account has no portal page to read the
-file from, so its mail's digest lists each report by number, dates and title.
+file from, so its mail's digest lists each report by number, dates and title. On an
+erasure, each report not yet erased says it still carries the name and email, and
+what is kept of a report is said only once one was erased (2026-11-08), so an
+answer of partial before anybody pressed **Erase** does not read as though they were
+gone. Its availability line points at no account - "There is no account behind this
+request to sign in to, so this message is our answer." - by mail and by text; an
+account holder's still points at `/my-requests`. A text carries only the headline
+and that line, never the Privacy Office's words or the digest; for a request with
+no account answered by text, that is the whole answer
+([open](breaches.md#open-questions)).
 
 The response is sent to her by email and appears on her portal page, together with
 any **response files** the office released, each downloadable for a bounded

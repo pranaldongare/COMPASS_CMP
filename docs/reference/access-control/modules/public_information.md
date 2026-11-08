@@ -152,7 +152,7 @@ Confirm the code.
 
 - **Who:** public.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** The request reference/contact verification code must match; no session required. Accepts, for a request with no account, the code sent to a dismissed reporter's stored address (0065).
+- **Rules:** The request reference/contact verification code must match; no session required. Accepts, for a request with no account, the code sent to a dismissed reporter's stored address (0065). Every failure answers 400 otp_invalid "Invalid or expired code": an unknown reference, one no code was sent for, a wrong code, a code of the wrong length and a spent budget of five tries, after which the code is discarded; the tries never answer 429, only the limit of 30 an hour per address does (2026-11-08).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/rights.py#L235), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/service.py#L1).
 
 ## GET /holder-tickets/{token}

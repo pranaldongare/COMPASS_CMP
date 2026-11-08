@@ -611,7 +611,8 @@ No request body.
     "erased": 1,
     "may_erase": true,
     "erase_blocked_by": "…"
-  }
+  },
+  "code_channel": true
 }
 ```
 
@@ -6048,6 +6049,7 @@ console holds no copy of the rule.
 | `attachments` | array of [`AttachmentOut`](#schema-attachmentout) | No | — | — |
 | `default_instruction` | `string` or `null` | No | — | — |
 | `public_reports` | [`PublicReportsOut`](#schema-publicreportsout) or `null` | No | — | — |
+| `code_channel` | `boolean` or `null` | No | — | — |
 
 <a id="schema-requestout"></a>
 #### `RequestOut`

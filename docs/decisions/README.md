@@ -42,7 +42,7 @@ one stays and points forward.
 | [0033](0033-hr-consent-is-governed-by-an-approved-template-version.md) | HR consent is governed by a template version Legal approves once; an activity inherits it and needs no approval of its own | proposed 2026-10-27 |
 | [0034](0034-an-employee-link-signs-in-through-the-organisations-sso.md) | An employee consent link signs in through the organisation's SSO, and the account is matched on the employee ID | proposed 2026-10-27 |
 | [0035](0035-a-public-request-reaches-the-inside-only-when-the-inside-collects-it.md) | A public request reaches the inside only when the inside collects it from a queue, sealed | proposed 2026-10-23 |
-| [0037](0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md) | A public report waits apart, the organisation's board is told on a yes by the platform's mail, and a regulator's duty completes only with proof | accepted; amended 2026-11-07 (a CERT-In mark set aside, and the review), and again 2026-11-07 (the product owner's six answers: who a report goes to, CERT-In at any time, what a yes finds done, a dismissed reporter's rights, a report to CERT-In held for a yes) |
+| [0037](0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md) | A public report waits apart, the organisation's board is told on a yes by the platform's mail, and a regulator's duty completes only with proof | accepted; amended 2026-11-07 (a CERT-In mark set aside, and the review), and again 2026-11-07 (the product owner's six answers: who a report goes to, CERT-In at any time, what a yes finds done, a dismissed reporter's rights, a report to CERT-In held for a yes); corrected 2026-11-08 (the review of that build) |
 
 ## Writing one
 
