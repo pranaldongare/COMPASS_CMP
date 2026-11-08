@@ -132,7 +132,9 @@ describe("PublicReportsCard", () => {
     ).toBeEnabled();
   });
 
-  it("says when none matches", () => {
+  it("says when none still carries the address, and no more than the server knows", () => {
+    // The server's answer for a person an earlier request erased: the report
+    // came from them, but nothing on it finds them now.
     render(
       <PublicReportsCard
         request={request(
@@ -148,10 +150,43 @@ describe("PublicReportsCard", () => {
     );
 
     expect(
-      screen.getByText("No dismissed report came from this person's email address."),
+      screen.getByText(
+        "No dismissed report from the public link still carries this person's email address.",
+      ),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/came from this person's email address/),
+    ).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: BUTTON })).not.toBeInTheDocument();
   });
+
+  it.each([
+    [
+      "a hold on an account the contact is on",
+      "A legal hold on the requester stops this until it is released.",
+    ],
+    [
+      "a hold check that could not be made",
+      "The key service did not answer, so whether a legal hold covers the requester could not be checked. Reload to try again.",
+    ],
+  ])(
+    "will not erase for a request with no account under %s, and says why as served",
+    (_, why) => {
+      render(
+        <PublicReportsCard
+          request={request(found({ may_erase: false, erase_blocked_by: why }), {
+            subject_uuid: null,
+            subject_name: null,
+          })}
+        />,
+      );
+
+      const button = screen.getByRole("button", { name: BUTTON });
+      expect(button).toBeDisabled();
+      expect(button).toHaveAttribute("title", why);
+      expect(screen.getByText(why)).toBeInTheDocument();
+    },
+  );
 
   it("erases the name and email after asking, and says what is kept", async () => {
     let asked = 0;

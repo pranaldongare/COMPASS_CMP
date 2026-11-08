@@ -61,8 +61,52 @@ function messageOf(err: unknown, fallback: string): string {
 
 /* ------------------------------------------------------------ verification */
 
+/** The states a request may still be closed as not verified from; the server
+ *  asks whether a code has somewhere to go only in these. */
+const BEFORE_COLLATION: ReadonlySet<string> = new Set(["received", "in_progress", "awaiting_holders"]);
+
+/** Where a code to a stored channel would go, as the server answers it
+ *  (`code_channel`, 0065): the account's contact, the address a dismissed
+ *  report from the public link came from, nowhere, or not known just now. The
+ *  server answers only the DPO and Legal, and only while identity waits; for
+ *  anyone else the account alone decides, as it always has. */
+function storedChannel(
+  r: RightsRequestDetail,
+  officer: boolean,
+): { offered: boolean; says: string } {
+  const account = {
+    offered: true,
+    says: `Sent to the contact we hold for ${r.subject_name ?? "this person"} - never to what was typed on the form.`,
+  };
+  const nowhere = {
+    offered: false,
+    says: "No account matches this contact, so there is no stored channel. Verify manually, or close as not verified.",
+  };
+  if (r.code_channel === true) {
+    return r.subject_uuid
+      ? account
+      : {
+          offered: true,
+          says:
+            "Sent to the address a report the requester sent through the public link came from - never to what " +
+            "was typed on the form. The public form may have sent one already.",
+        };
+  }
+  if (r.code_channel === false) return nowhere;
+  if (officer && r.verification_status === "pending" && BEFORE_COLLATION.has(r.status) && !r.subject_uuid) {
+    return {
+      offered: false,
+      says: "Whether a code can go to a stored channel could not be checked just now: the key service did not answer. Reload to try again.",
+    };
+  }
+  return r.subject_uuid ? account : nowhere;
+}
+
 export function VerificationCard({ request: r }: { request: RightsRequestDetail }) {
   const toast = useToast();
+  const { me } = useAuth();
+  const officer = me?.role === "dpo" || me?.role === "legal";
+  const channel = storedChannel(r, officer);
   const uuid = r.request_uuid;
   const send = useSendVerificationCode(uuid);
   const confirm = useConfirmVerificationCode(uuid);
@@ -117,12 +161,8 @@ export function VerificationCard({ request: r }: { request: RightsRequestDetail 
           <div className="space-y-4">
             <div className="rounded-md border border-border p-3">
               <p className="text-sm font-medium">A code to the stored channel</p>
-              <p className="mt-0.5 text-xs text-text-muted">
-                {r.subject_uuid
-                  ? `Sent to the contact we hold for ${r.subject_name ?? "this person"} - never to what was typed on the form.`
-                  : "No account matches this contact, so there is no stored channel. Verify manually, or close as not verified."}
-              </p>
-              {r.subject_uuid && (
+              <p className="mt-0.5 text-xs text-text-muted">{channel.says}</p>
+              {channel.offered && (
                 <div className="mt-2 flex flex-wrap items-end gap-2">
                   <Button
                     variant="secondary"

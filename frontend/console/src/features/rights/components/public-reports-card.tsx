@@ -96,8 +96,11 @@ export function PublicReportsCard({ request: r }: { request: RightsRequestDetail
         {!found.looked ? (
           <Alert tone="info">{found.not_looked_because}</Alert>
         ) : found.items.length === 0 ? (
+          // Only what the server can see: a report an earlier erasure took the
+          // address off is no longer found by it, though it came from them.
           <p className="text-sm text-text-muted">
-            No dismissed report came from this person&apos;s email address.
+            No dismissed report from the public link still carries this person&apos;s email
+            address.
           </p>
         ) : (
           <ul className="divide-y divide-border">

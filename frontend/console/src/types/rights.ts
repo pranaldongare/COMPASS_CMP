@@ -563,6 +563,13 @@ export interface RightsRequestDetail extends RightsRequest {
    *  dismissed, found by their proved email once identity is verified (0065).
    *  Null for a role that does not read the intake: only the DPO and Legal. */
   public_reports: RightsPublicReports | null;
+  /** Whether a code can go to a channel already held for the requester: true
+   *  with an account, or with none when the contact is the address a
+   *  dismissed report from the public link came from (0065); false when no
+   *  such channel is held. Null when not asked: a role that does not read the
+   *  register, a request no longer waiting for its identity, or a key service
+   *  that did not answer. Never the address itself. */
+  code_channel: boolean | null;
 }
 
 /** One dismissed report from the public link that names the requester. Never

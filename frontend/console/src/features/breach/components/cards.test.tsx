@@ -312,6 +312,15 @@ describe("validation", () => {
     );
   });
 
+  it("claims for a yes after a no only what the server completes", () => {
+    render(<DeterminationCard breach={recorded([board("not_applicable")])} />);
+
+    expect(screen.queryByText(/done already where the work was done meanwhile/)).not.toBeInTheDocument();
+    expect(screen.getByText(/That yes finds done only the duty to tell the organisation's board/)).toBeInTheDocument();
+    expect(screen.getByText(/The notice to the people affected is not done by it/)).toBeInTheDocument();
+    expect(screen.getByText(/A no leaves the CERT-In duty as it is/)).toBeInTheDocument();
+  });
+
   it("says no more than the outcome when a yes found nothing done", async () => {
     await validateYes(recorded([board("not_applicable")]), recorded([board("outstanding")]));
 

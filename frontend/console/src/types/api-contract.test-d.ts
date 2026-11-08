@@ -63,6 +63,7 @@ import type {
   BreachSettings,
   DismissedReport,
   RightsPublicReports,
+  RightsRequestDetail,
   CollectionListRow,
   ConsentListRow,
   ConsentRow,
@@ -204,6 +205,14 @@ export type _BreachSettings = Covers<"BreachSettings", Schemas["BreachSettingsOu
 // A dismissed reporter erased under a rights request (0065).
 export type _DismissedReport = Covers<"DismissedReport", Schemas["DismissedReportOut"], DismissedReport>;
 export type _RightsPublicReports = Covers<"RightsPublicReports", Schemas["PublicReportsOut"], RightsPublicReports>;
+// Whether a code can go to a channel held for the requester (0065), which the
+// identity tab decides Send a code on. The field alone: the whole detail is not
+// checked here, since the server types its clock loosely.
+export type _RightsRequestDetailCodeChannel = Covers<
+  "RightsRequestDetail.code_channel",
+  Pick<Schemas["RequestDetail"], "code_channel">,
+  Pick<RightsRequestDetail, "code_channel">
+>;
 
 /**
  * The check itself.
@@ -243,6 +252,7 @@ const _contractHolds: {
   BreachSettings: _BreachSettings;
   DismissedReport: _DismissedReport;
   RightsPublicReports: _RightsPublicReports;
+  RightsRequestDetailCodeChannel: _RightsRequestDetailCodeChannel;
 } = {
   Me: true,
   MeProfile: true,
@@ -275,6 +285,7 @@ const _contractHolds: {
   BreachSettings: true,
   DismissedReport: true,
   RightsPublicReports: true,
+  RightsRequestDetailCodeChannel: true,
 };
 
 void _contractHolds;

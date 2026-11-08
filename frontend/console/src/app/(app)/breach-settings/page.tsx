@@ -124,12 +124,14 @@ function WhoIsTold({ settings }: { settings: BreachSettings }) {
 /** What every change to the board's list sets going. */
 const TOLD = "The DPO and the Legal PoC are mailed about the change.";
 
-/** Why a change to the list did not happen. The officers are mailed about every
- *  change, so one they cannot be told of is not made; the API client says only
- *  "something went wrong" of a 503, which would leave nobody knowing to wait. */
+/** Why a change to the list did not happen. The API client says only
+ *  "something went wrong" of a 503, which would leave nobody knowing to wait.
+ *  A 503 here has two causes, told apart only by the server's own words, which
+ *  are not for the page: the mail the officers are sent of every change, and
+ *  the key service that seals an address. So the sentence is true of both. */
 function refusal(err: unknown): string {
   if (isApiError(err) && err.status === 503) {
-    return "Not changed: the officers could not be told just now. Try again in a moment.";
+    return "Not changed: a service it needs did not answer just now. Try again in a moment.";
   }
   return messageOf(err, "The server refused.");
 }
@@ -138,6 +140,10 @@ function BoardList({ settings }: { settings: BreachSettings }) {
   const toast = useToast();
   const qc = useQueryClient();
   const stored = (fresh: BreachSettings) => qc.setQueryData(keys.breach.settings(), fresh);
+  // A refusal may say the page is behind the list (gone, already there,
+  // mandatory since it was read): read it again, so what is shown is what the
+  // server refused against.
+  const reread = () => void qc.invalidateQueries({ queryKey: keys.breach.settings() });
   const add = useMutation({
     mutationFn: (person: BoardAddress) =>
       addBoardRecipient({ full_name: person.full_name || null, email: person.email }),
@@ -157,6 +163,7 @@ function BoardList({ settings }: { settings: BreachSettings }) {
       return true;
     } catch (err) {
       toast.error("Not added", refusal(err));
+      reread();
       return false;
     }
   }
@@ -166,14 +173,24 @@ function BoardList({ settings }: { settings: BreachSettings }) {
       toast.success("Removed from the list", TOLD);
     } catch (err) {
       toast.error("Not removed", refusal(err));
+      reread();
     }
   }
   async function toggle(uuid: string, on: boolean) {
+    const before = settings.board_recipients.find((r) => r.recipient_uuid === uuid);
     try {
-      await mark.mutateAsync({ uuid, on });
-      toast.success(on ? "Marked mandatory" : "No longer mandatory", TOLD);
+      const fresh = await mark.mutateAsync({ uuid, on });
+      const after = fresh.board_recipients.find((r) => r.recipient_uuid === uuid);
+      // Unchanged, the server records nothing and tells nobody: the mark the
+      // row carried when this page read it is the mark it still carries.
+      if (before && after && after.mandatory_changed_at === before.mandatory_changed_at) {
+        toast.info(on ? "Already mandatory" : "Already optional", "Nothing changed, so nobody was mailed.");
+      } else {
+        toast.success(on ? "Marked mandatory" : "No longer mandatory", TOLD);
+      }
     } catch (err) {
       toast.error("Not changed", refusal(err));
+      reread();
     }
   }
   return (

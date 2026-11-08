@@ -136,6 +136,35 @@ describe("BoardPicker", () => {
     });
   });
 
+  it("takes no more than twenty addresses for one report, the server's limit, and says so", async () => {
+    const { user } = render(<Harness />);
+    const box = screen.getByLabelText(/^Mail ID/);
+
+    for (let i = 1; i <= 20; i += 1) await user.type(box, `extra${i}@cmp.local{Enter}`);
+
+    const extra = () => (body() as { extra: unknown[] }).extra;
+    expect(extra()).toHaveLength(20);
+    expect(
+      screen.getByText("At most 20 addresses can be added for one report."),
+    ).toBeInTheDocument();
+    expect(box).toBeDisabled();
+    expect(screen.getByLabelText(/^Name/)).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Add for this report" })).toBeDisabled();
+    await user.type(box, "extra21@cmp.local{Enter}");
+    expect(extra()).toHaveLength(20);
+
+    // One taken off makes room again.
+    await user.click(
+      screen.getByRole("button", { name: "Remove extra20@cmp.local from this report" }),
+    );
+    expect(box).toBeEnabled();
+    await user.type(box, "extra21@cmp.local{Enter}");
+    expect(extra()).toHaveLength(20);
+    expect(
+      screen.queryByText("At most 20 addresses can be added for one report."),
+    ).toBeInTheDocument();
+  });
+
   it("asks for an email address when what is typed is not shaped like one", async () => {
     const { user } = render(<Harness />);
 

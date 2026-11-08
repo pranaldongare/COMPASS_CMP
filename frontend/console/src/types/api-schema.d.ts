@@ -12612,6 +12612,8 @@ export interface components {
             /** Default Instruction */
             default_instruction?: string | null;
             public_reports?: components["schemas"]["PublicReportsOut"] | null;
+            /** Code Channel */
+            code_channel?: boolean | null;
         };
         /** RequestOut */
         RequestOut: {

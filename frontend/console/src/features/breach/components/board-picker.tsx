@@ -24,6 +24,12 @@ import type { BreachBoardEntry, BreachDocumentFinalise, Uuid } from "@/types";
 
 export const addressCount = (n: number) => `${n} ${n === 1 ? "address" : "addresses"}`;
 
+/** How many addresses one report may add for itself: the server's own limit
+ *  (`BreachDocumentFinaliseIn.extra`), which it refuses in words no row of
+ *  this picker could carry. */
+export const MOST_EXTRA = 20;
+const TOO_MANY_EXTRA = `At most ${MOST_EXTRA} addresses can be added for one report`;
+
 /** Shaped like an email address: the server checks it properly. */
 function looksLikeEmail(v: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
@@ -42,17 +48,20 @@ export interface BoardAddress {
  * inside the finalise window it can never send the report.
  *
  * `refuse` is a refusal known here before asking anyone; `onAdd` answers
- * whether the fields go back to empty, which a refused add does not.
+ * whether the fields go back to empty, which a refused add does not. `full`
+ * says why nothing more may be added now: the form stands still and says so.
  */
 export function BoardAddressForm({
   submitLabel,
   pending,
   refuse,
+  full,
   onAdd,
 }: {
   submitLabel: string;
   pending?: boolean;
   refuse?: (email: string) => string | null;
+  full?: string | null;
   onAdd: (person: BoardAddress) => boolean | Promise<boolean>;
 }) {
   const [person, setPerson] = React.useState<BoardAddress>({ full_name: "", email: "" });
@@ -90,17 +99,24 @@ export function BoardAddressForm({
             {...p}
             value={person.full_name}
             maxLength={200}
+            disabled={Boolean(full)}
             onChange={(e) => setPerson({ ...person, full_name: e.target.value })}
           />
         )}
       </Field>
-      <Field label="Mail ID" required error={error ?? undefined}>
+      <Field
+        label="Mail ID"
+        required
+        hint={full ? `${full}.` : undefined}
+        error={error ?? undefined}
+      >
         {(p) => (
           <Input
             {...p}
             type="email"
             value={person.email}
             maxLength={255}
+            disabled={Boolean(full)}
             onChange={(e) => {
               setPerson({ ...person, email: e.target.value });
               setError(null);
@@ -113,7 +129,7 @@ export function BoardAddressForm({
         type="submit"
         variant="secondary"
         className="sm:mt-7"
-        disabled={!person.email.trim()}
+        disabled={!person.email.trim() || Boolean(full)}
         loading={pending}
       >
         <UserPlus className="size-4" />
@@ -268,12 +284,15 @@ export function BoardPicker({
       )}
       <BoardAddressForm
         submitLabel="Add for this report"
+        full={pick.extra.length >= MOST_EXTRA ? TOO_MANY_EXTRA : null}
         refuse={(email) =>
-          board.some((e) => same(e.email, email))
-            ? "Already on the board list: tick it above"
-            : pick.extra.some((x) => same(x.email, email))
-              ? "Already added to this report"
-              : null
+          pick.extra.length >= MOST_EXTRA
+            ? TOO_MANY_EXTRA
+            : board.some((e) => same(e.email, email))
+              ? "Already on the board list: tick it above"
+              : pick.extra.some((x) => same(x.email, email))
+                ? "Already added to this report"
+                : null
         }
         onAdd={(person) => {
           onChange({ ...pick, extra: [...pick.extra, person] });

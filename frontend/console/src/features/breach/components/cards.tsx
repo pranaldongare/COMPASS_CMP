@@ -312,9 +312,10 @@ export function DutiesCard({ breach }: { breach: Breach }) {
 /* ------------------------------------------------------------ determination */
 
 /** The duties a yes found already done: set aside by a no, and done now from
- *  the work done meanwhile (the board reached by mail, a regulator's report
- *  filed). The server does it; this only names what changed, by comparing the
- *  breach before the yes with the breach after it. */
+ *  the work done meanwhile (the board reached by mail, a report to the DPDP
+ *  Board recorded as sent; never the notice to the people affected). The
+ *  server does it; this only names what changed, by comparing the breach
+ *  before the yes with the breach after it. */
 function doneWhileAside(before: Breach, after: Breach): string[] {
   const was = new Map(before.obligations.map((d) => [d.duty, d.state]));
   return after.obligations
@@ -370,7 +371,10 @@ export function DeterminationCard({ breach }: { breach: Breach }) {
           A person&apos;s judgement, recorded with its reasoning. The platform never infers it - not from encryption,
           not from anything. The first yes records the incident as a personal data breach, starts the DPDP duties and
           gives 30 minutes to tell the organisation&apos;s board; a later no sets them aside and keeps the breach
-          reference, and a yes after it brings them back, done already where the work was done meanwhile. Every
+          reference, and a yes after it brings them back. That yes finds done only the duty to tell the
+          organisation&apos;s board, if a report to it reached somebody meanwhile, and the initial intimation and the
+          72-hour report to the DPDP Board, if one was recorded as sent meanwhile. The notice to the people affected
+          is not done by it: send it again from People &amp; notices. A no leaves the CERT-In duty as it is. Every
           validation is kept; the latest stands.
         </p>
       </CardHeader>

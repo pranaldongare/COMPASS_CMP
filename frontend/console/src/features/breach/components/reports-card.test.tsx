@@ -234,8 +234,18 @@ describe("ReportsCard", () => {
 
   describe("once CERT-In has been set aside", () => {
     const SET_ASIDE = "CERT-In was set aside as not reportable. Mark it reportable again first";
+    // As the server serves it: the CERT-In duty, which a person set aside.
     const certIn = (versions: BreachDocument[]) =>
-      documents([view({ kind: "cert_in", title: "Report to CERT-In", blocked_by: SET_ASIDE, versions })]);
+      documents([
+        view({
+          kind: "cert_in",
+          title: "Report to CERT-In",
+          duty: "cert_in",
+          duty_state: "not_applicable",
+          blocked_by: SET_ASIDE,
+          versions,
+        }),
+      ]);
 
     it("will not finalise a draft left open, and says why on the row and in the window", async () => {
       serve(certIn([document({ kind: "cert_in", sections: FULL })]));
@@ -294,6 +304,9 @@ describe("ReportsCard", () => {
       expect(screen.getByRole("dialog")).toBe(dialog);
       expect(within(dialog).getByLabelText(/Reference returned/)).toHaveValue("CERT/7");
       expect(within(dialog).getByText(`${SET_ASIDE}.`)).toBeInTheDocument();
+      // Set aside by a person, not a No, and no Yes brings it back.
+      expect(within(dialog).queryByText("This duty is set aside while the No stands")).not.toBeInTheDocument();
+      expect(within(dialog).queryByText(/completes the duty at the next Yes/)).not.toBeInTheDocument();
       expect(record).toBeDisabled();
       expect(later).toBeDisabled();
 
@@ -314,7 +327,7 @@ describe("ReportsCard", () => {
       render(<ReportsCard breach={breach()} />, { queryClient });
       await screen.findByText(`${SET_ASIDE}.`);
 
-      world.now = documents([view({ kind: "cert_in", title: "Report to CERT-In", versions: finalised })]);
+      world.now = documents([view({ kind: "cert_in", title: "Report to CERT-In", duty: "cert_in", versions: finalised })]);
       await polled(queryClient);
 
       expect(await screen.findByRole("button", { name: "Record as sent" })).toBeInTheDocument();
@@ -843,6 +856,72 @@ describe("ReportsCard", () => {
           "It completes the duty at the next Yes, dated when it was sent.",
         ),
       );
+    });
+
+    it("names the version already recorded as sent as the one the yes records, and promises this one nothing", async () => {
+      const v1 = document({
+        ...FINALISED,
+        state: "filed",
+        filed_at: "2026-11-06T10:00:00Z",
+        filed_reference: "DPB/1",
+        filed_by_name: "Priya Menon",
+        evidence: [proofOf("approval"), proofOf("sent_mail")],
+      });
+      const v2 = document({
+        ...FINALISED,
+        report_uuid: NEWER,
+        version: 2,
+        evidence: [proofOf("approval"), proofOf("sent_mail")],
+      });
+      const world = serve(documents([view({ duty_state: "not_applicable", versions: [v2, v1] })]));
+      server.use(http.post(`${API}/breaches/${BREACH}/reports/${NEWER}/file`, () => HttpResponse.json(world.now)));
+      const { user } = render(<ReportsCard breach={breach()} />);
+
+      await user.click(await screen.findByRole("button", { name: "Record as sent" }));
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).getByRole("heading", { name: /version 2$/ })).toBeInTheDocument();
+      expect(within(dialog).getByText("This duty is set aside while the No stands")).toBeInTheDocument();
+      expect(within(dialog).queryByText(/completes the duty at the next Yes/)).not.toBeInTheDocument();
+      expect(
+        within(dialog).getByText(
+          "Version 1 is already recorded as sent, and its filing is the one the next Yes records. What is recorded here is kept as well.",
+        ),
+      ).toBeInTheDocument();
+      await user.type(within(dialog).getByLabelText(/^Sent at/), "2026-11-06T14:00");
+      await user.type(within(dialog).getByLabelText(/reference returned/i), "DPB/2");
+      await user.click(within(dialog).getByRole("button", { name: "Record as sent" }));
+
+      await vi.waitFor(() =>
+        expect(toast.success).toHaveBeenCalledWith(
+          "Recorded as sent",
+          "It is kept. Version 1's filing is the one the next Yes records.",
+        ),
+      );
+    });
+
+    it("names every version already recorded as sent when there are more than one", async () => {
+      const filed = (version: number, uuid: string) =>
+        document({
+          ...FINALISED,
+          report_uuid: uuid,
+          version,
+          state: "filed",
+          filed_at: "2026-11-06T10:00:00Z",
+          filed_reference: `DPB/${version}`,
+        });
+      const v3 = document({ ...FINALISED, report_uuid: crypto.randomUUID(), version: 3 });
+      serve(
+        documents([view({ duty_state: "not_applicable", versions: [v3, filed(2, NEWER), filed(1, REPORT)] })]),
+      );
+      const { user } = render(<ReportsCard breach={breach()} />);
+
+      await user.click(await screen.findByRole("button", { name: "Record as sent" }));
+      const dialog = await screen.findByRole("dialog");
+      expect(
+        within(dialog).getByText(
+          "Versions 1 and 2 are already recorded as sent; the next Yes records the one recorded first. What is recorded here is kept as well.",
+        ),
+      ).toBeInTheDocument();
     });
 
     it("says nothing of it while the duty stands, or on a report that completes no duty", async () => {

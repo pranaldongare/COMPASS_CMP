@@ -254,7 +254,8 @@ async function recordSent(
     buffer: EML,
   });
   await save.click();
-  await expect(page.getByText("Recorded as sent")).toBeVisible();
+  // The toast's title: the Validation card's words say "recorded as sent" too.
+  await expect(page.getByText("Recorded as sent", { exact: true })).toBeVisible();
   if (aside) await expect(page.getByText(/It completes the duty at the next Yes/)).toBeVisible();
   await expect(page.getByTestId(`report-${kind}`).getByText(/^Sent( · version \d+)?$/)).toBeVisible();
 }
@@ -1511,7 +1512,9 @@ test.describe("a dismissed reporter's rights", () => {
     // The reporter asks on the public rights form, with no account, typing the
     // address as they remember it: the code goes to the one kept with the report.
     const open = await request.newContext({ baseURL: API });
+    const dpo = await apiAs("dpo");
     let reference = "";
+    let uuid = "";
     try {
       const before = latestCodeFor(world.junk);
       const made = await open.post("/rights/requests", {
@@ -1525,20 +1528,25 @@ test.describe("a dismissed reporter's rights", () => {
       expect([200, 201]).toContain(made.status());
       reference = ((await made.json()) as { reference: string }).reference;
       const code = await freshCode(world.junk, before);
-      expect((await open.post("/rights/requests/verify", { data: { reference, code } })).status()).toBe(200);
-    } finally {
-      await open.dispose();
-    }
 
-    // The office takes it up and starts it.
-    const dpo = await apiAs("dpo");
-    let uuid = "";
-    try {
+      // Before the code comes back, the office sees a code has somewhere to
+      // go, though no account matches: the address the report came from.
       const listed = (await (await dpo.get(`/requests?q=${reference}`)).json()) as {
         items: Array<{ request_uuid: string; reference: string }>;
       };
       uuid = listed.items.find((r) => r.reference === reference)?.request_uuid ?? "";
       expect(uuid).not.toBe("");
+      await page.goto(`/requests/${uuid}#identity`);
+      await expect(
+        page.getByText(/^Sent to the address a report the requester sent through the public link came from/),
+      ).toBeVisible();
+      await expect(page.getByRole("button", { name: "Send a code" })).toBeVisible();
+      await expect(page.getByLabel(/^Code the requester read back/)).toBeVisible();
+      await expect(page.locator("main")).not.toContainText("there is no stored channel");
+
+      expect((await open.post("/rights/requests/verify", { data: { reference, code } })).status()).toBe(200);
+
+      // The office takes it up and starts it.
       const step = async (path: string, data: Record<string, unknown> = {}) =>
         expect((await dpo.post(`/requests/${uuid}/${path}`, { data })).status(), path).toBeLessThan(300);
       await step("classify", { request_type: "erasure", note: "As stated." });
@@ -1547,9 +1555,13 @@ test.describe("a dismissed reporter's rights", () => {
       if (shown.office === null) await step("claim");
       await step("transition", { to: "in_progress" });
     } finally {
+      await open.dispose();
       await dpo.dispose();
     }
 
+    // Away first: the page is already open on #identity, and a change of
+    // fragment alone would keep the request as it was read before it moved.
+    await page.goto("about:blank");
     await page.goto(`/requests/${uuid}#public-reports`);
     const card = page.locator("#public-reports");
     await expect(card.getByText(world.junkReference)).toBeVisible();

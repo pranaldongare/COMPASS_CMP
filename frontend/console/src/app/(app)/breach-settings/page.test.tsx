@@ -14,7 +14,7 @@ import { render, screen, within } from "@/test/render";
 import { API, server } from "@/test/server";
 import type { BreachBoardRecipient, BreachSettings } from "@/types";
 
-const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), warning: vi.fn() }));
+const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() }));
 vi.mock("@/providers", () => ({ useToast: () => toast }));
 
 const RECIPIENT = "77777777-7777-4777-8777-777777777777";
@@ -38,6 +38,7 @@ const marked: BreachBoardRecipient = {
 };
 
 const OFFICERS_TOLD = "The DPO and the Legal PoC are mailed about the change.";
+const NOT_ANSWERED = "Not changed: a service it needs did not answer just now. Try again in a moment.";
 
 const settings = (over: Partial<BreachSettings> = {}): BreachSettings => ({
   intake_roles: ["dpo", "legal"],
@@ -54,6 +55,18 @@ const settings = (over: Partial<BreachSettings> = {}): BreachSettings => ({
 
 function serve(found: BreachSettings) {
   server.use(http.get(`${API}/breach-settings`, () => HttpResponse.json(found)));
+}
+
+/** The list as the server holds it, which may move after the page has read it. */
+function served(first: BreachSettings) {
+  const world = { now: first, reads: 0 };
+  server.use(
+    http.get(`${API}/breach-settings`, () => {
+      world.reads += 1;
+      return HttpResponse.json(world.now);
+    }),
+  );
+  return world;
 }
 
 beforeEach(() => {
@@ -255,7 +268,115 @@ describe("Breach settings", () => {
     expect(screen.getByText("meera@cmp.local")).toBeInTheDocument();
   });
 
-  it("says when a mark cannot be changed because the officers cannot be told", async () => {
+  it.each([
+    ["Remove", "delete", 409, "recipient_mandatory"],
+    ["Remove", "delete", 404, "not_found"],
+    ["Mandatory", "put", 404, "not_found"],
+  ] as const)(
+    "reads the list again after a refusal that says the page is behind it (%s, %s %i)",
+    async (control, method, status, code) => {
+      // Marked mandatory elsewhere, or taken off, since this page read the list.
+      const world = served(settings());
+      const path =
+        method === "delete"
+          ? `${API}/breach-settings/board-recipients/${RECIPIENT}`
+          : `${API}/breach-settings/board-recipients/${RECIPIENT}/mandatory`;
+      server.use(
+        http[method](path, () => {
+          world.now = status === 404 ? settings({ board_recipients: [] }) : settings({ board_recipients: [marked] });
+          return HttpResponse.json({ error: { code, message: "Refused", request_id: "r" } }, { status });
+        }),
+      );
+      const { user } = render(<BreachSettingsPage />);
+
+      await user.click(
+        await screen.findByRole(control === "Remove" ? "button" : "checkbox", {
+          name: `${control === "Remove" ? "Remove" : "Mandatory:"} meera@cmp.local`,
+        }),
+      );
+
+      await vi.waitFor(() => expect(toast.error).toHaveBeenCalled());
+      if (status === 404) {
+        await vi.waitFor(() => expect(screen.getByText("Nobody is on the list")).toBeInTheDocument());
+      } else {
+        await vi.waitFor(() =>
+          expect(screen.getByRole("checkbox", { name: "Mandatory: meera@cmp.local" })).toBeChecked(),
+        );
+        expect(screen.getByRole("button", { name: "Remove meera@cmp.local" })).toBeDisabled();
+      }
+      expect(world.reads).toBeGreaterThanOrEqual(2);
+    },
+  );
+
+  it("reads the list again when an address it adds is on it already", async () => {
+    const added = { ...person, recipient_uuid: crypto.randomUUID(), full_name: null, email: "chair@cmp.local" };
+    const world = served(settings());
+    server.use(
+      http.post(`${API}/breach-settings/board-recipients`, () => {
+        world.now = settings({ board_recipients: [person, added] });
+        return HttpResponse.json(
+          { error: { code: "recipient_exists", message: "That address is on the list already", request_id: "r" } },
+          { status: 409 },
+        );
+      }),
+    );
+    const { user } = render(<BreachSettingsPage />);
+
+    await screen.findByText("meera@cmp.local");
+    await user.type(screen.getByLabelText(/^Mail ID/), "chair@cmp.local");
+    await user.click(screen.getByRole("button", { name: "Add" }));
+
+    await vi.waitFor(() => expect(toast.error).toHaveBeenCalledWith("Not added", "That address is on the list already"));
+    expect(await screen.findByRole("cell", { name: "chair@cmp.local" })).toBeInTheDocument();
+  });
+
+  it("says a mark the server found already made changed nothing and mailed nobody", async () => {
+    // Made optional at nine; the press finds it marked as asked already, and
+    // the row comes back carrying the same mark it had.
+    const optional = { ...person, mandatory_changed_at: "2026-11-07T09:00:00Z", mandatory_changed_by_name: "Rahul Desai" };
+    serve(settings({ board_recipients: [optional] }));
+    server.use(
+      http.put(`${API}/breach-settings/board-recipients/${RECIPIENT}/mandatory`, () =>
+        HttpResponse.json(settings({ board_recipients: [{ ...optional, mandatory: true }] })),
+      ),
+    );
+    const { user } = render(<BreachSettingsPage />);
+
+    await user.click(await screen.findByRole("checkbox", { name: "Mandatory: meera@cmp.local" }));
+
+    await vi.waitFor(() =>
+      expect(toast.info).toHaveBeenCalledWith("Already mandatory", "Nothing changed, so nobody was mailed."),
+    );
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it("does not blame the officers' mail for a key service that did not answer", async () => {
+    serve(settings());
+    server.use(
+      http.post(`${API}/breach-settings/board-recipients`, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: "service_unavailable",
+              message: "The encryption service is unavailable: timeout",
+              request_id: "r",
+            },
+          },
+          { status: 503 },
+        ),
+      ),
+    );
+    const { user } = render(<BreachSettingsPage />);
+
+    await screen.findByText("meera@cmp.local");
+    await user.type(screen.getByLabelText(/^Mail ID/), "chair@cmp.local");
+    await user.click(screen.getByRole("button", { name: "Add" }));
+
+    await vi.waitFor(() => expect(toast.error).toHaveBeenCalledWith("Not added", NOT_ANSWERED));
+    expect(String(toast.error.mock.calls[0][1])).not.toContain("the officers could not be told");
+  });
+
+  it("says when a mark cannot be changed because a service it needs did not answer", async () => {
     serve(settings());
     server.use(
       http.put(`${API}/breach-settings/board-recipients/${RECIPIENT}/mandatory`, () =>
@@ -271,10 +392,7 @@ describe("Breach settings", () => {
     await user.click(box);
 
     await vi.waitFor(() =>
-      expect(toast.error).toHaveBeenCalledWith(
-        "Not changed",
-        "Not changed: the officers could not be told just now. Try again in a moment.",
-      ),
+      expect(toast.error).toHaveBeenCalledWith("Not changed", NOT_ANSWERED),
     );
     expect(box).not.toBeChecked();
   });

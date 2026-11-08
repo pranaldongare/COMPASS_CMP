@@ -492,6 +492,37 @@ function ProofField({
   );
 }
 
+/** The DPDP Board's two reports: the duties a no sets aside, and a yes after it
+ *  completes from a filing made meanwhile. Not CERT-In's, which a no leaves
+ *  alone: a report to it recorded as sent completes its duty at once. */
+const WAITS_FOR_A_YES: ReadonlySet<BreachDocumentKind> = new Set(["board_intimation", "board_report"]);
+
+/** What the next yes records of a filing made while a no stands. Only the first
+ *  filing recorded completes the duty (`after_yes`), so a later one is kept and
+ *  completes nothing; the page cannot tell which of two earlier filings was
+ *  recorded first, so it names them both. */
+function whatTheYesRecords(filedBefore: BreachDocument[]): { alert: string; toast: string } {
+  if (filedBefore.length === 0) {
+    return {
+      alert: "What is recorded here is kept, and it completes the duty at the next Yes, dated when it was sent.",
+      toast: "It completes the duty at the next Yes, dated when it was sent.",
+    };
+  }
+  if (filedBefore.length === 1) {
+    const [v] = filedBefore;
+    return {
+      alert: `Version ${v.version} is already recorded as sent, and its filing is the one the next Yes records. What is recorded here is kept as well.`,
+      toast: `It is kept. Version ${v.version}'s filing is the one the next Yes records.`,
+    };
+  }
+  const versions = filedBefore.map((v) => v.version).sort((a, b) => a - b);
+  const named = `${versions.slice(0, -1).join(", ")} and ${versions.at(-1)}`;
+  return {
+    alert: `Versions ${named} are already recorded as sent; the next Yes records the one recorded first. What is recorded here is kept as well.`,
+    toast: `It is kept. The next Yes records whichever of versions ${named} was recorded first.`,
+  };
+}
+
 /** A person sent it: keep the proof, and record when and what came back. The
  *  proof may come before the rest is known; recording it still needs it all. */
 function FilingDialog({
@@ -499,15 +530,19 @@ function FilingDialog({
   doc,
   needsReference,
   dutyState,
+  filedBefore,
   blocked,
   onClose,
 }: {
   breach: Breach;
   doc: BreachDocument;
   needsReference: boolean;
-  /** The duty this filing would complete. Set aside by a no, a filing is still
-   *  kept, and a later yes completes the duty from it. */
+  /** The duty this filing would complete. For the DPDP Board's reports, set
+   *  aside by a no, a filing is still kept, and a later yes completes the duty
+   *  from the first one recorded. */
   dutyState: BreachDutyState | null;
+  /** The other versions of this kind already recorded as sent. */
+  filedBefore: BreachDocument[];
   /** Why this may not be recorded now, in the server's words. The window stays,
    *  with what has been typed, and picks up again when the block clears. */
   blocked: string | null;
@@ -522,7 +557,8 @@ function FilingDialog({
   // The server's refusal of the time, under the box it is about.
   const [whenError, setWhenError] = React.useState<string | null>(null);
   const [reference, setReference] = React.useState("");
-  const aside = needsReference && dutyState === "not_applicable";
+  const aside = WAITS_FOR_A_YES.has(doc.kind) && dutyState === "not_applicable";
+  const atTheYes = whatTheYesRecords(filedBefore);
   const at = instant(when);
   const ready =
     (has("approval") || approval !== null) &&
@@ -579,9 +615,7 @@ function FilingDialog({
       await file.mutateAsync();
       toast.success(
         "Recorded as sent",
-        aside
-          ? "It completes the duty at the next Yes, dated when it was sent."
-          : "The report, its proof and the reference are on the record.",
+        aside ? atTheYes.toast : "The report, its proof and the reference are on the record.",
       );
       onClose();
     } catch (err) {
@@ -604,7 +638,7 @@ function FilingDialog({
           )}
           {aside && (
             <Alert tone="info" title="This duty is set aside while the No stands">
-              What is recorded here is kept, and it completes the duty at the next Yes, dated when it was sent.
+              {atTheYes.alert}
             </Alert>
           )}
           <ProofField breach={breach} doc={doc} kind="approval" file={approval} onChange={setApproval} />
@@ -1048,6 +1082,9 @@ function ReportRow({
           doc={filingDoc}
           needsReference={view.duty !== null}
           dutyState={view.duty_state}
+          filedBefore={view.versions.filter(
+            (v) => v.report_uuid !== filingDoc.report_uuid && v.filed_at !== null && Boolean(v.filed_reference),
+          )}
           blocked={view.blocked_by}
           onClose={() => setFiling(null)}
         />
