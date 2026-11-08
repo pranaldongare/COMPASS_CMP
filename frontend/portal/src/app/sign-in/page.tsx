@@ -161,9 +161,12 @@ function SubjectForm() {
   if (sent) {
     return (
       <div className="space-y-4">
+        {/* Said to everybody alike. A wrong code, a spent one and one never
+            sent get the same refusal, so the page says once, for all, that
+            five wrong tries cancel a code (2026-11-08). */}
         <Alert tone="info" title="Check your messages">
           If <strong>{contact}</strong> is registered with us, a six-digit code is on its
-          way. It expires in ten minutes.
+          way. It expires in ten minutes, or after five wrong tries; then ask for another.
         </Alert>
         <SubjectVerifyForm contact={contact} next={params.get("next")} />
         <Button variant="ghost" className="w-full" onClick={() => setSent(false)}>

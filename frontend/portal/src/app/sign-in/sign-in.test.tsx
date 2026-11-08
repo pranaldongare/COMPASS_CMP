@@ -103,4 +103,33 @@ describe("verifying a sign-in code", () => {
       { contact: "Asha@Example.org", code: "654321" },
     ]);
   });
+
+  /**
+   * The server refuses a wrong code, a spent one and one never sent in one
+   * sentence, a fifth wrong try included (2026-11-08): it no longer answers a
+   * registered contact "Too many incorrect attempts. Request a new code.". So
+   * the page says, to everybody alike, that five wrong tries cancel a code.
+   */
+  it("says to everybody that five wrong tries cancel the code, beside the server's one refusal", async () => {
+    server.use(
+      http.post(`${API}/auth/otp/request`, () => HttpResponse.json({ ok: true, message: "" })),
+      http.post(`${API}/auth/otp/verify`, () =>
+        HttpResponse.json(
+          { error: { code: "otp_invalid", message: "Invalid or expired code", request_id: "t" } },
+          { status: 400 },
+        ),
+      ),
+    );
+    const { user } = render(<SignInPage />);
+
+    await ask(user);
+    expect(
+      await screen.findByText(/It expires in ten minutes, or after five wrong tries; then ask for another\./),
+    ).toBeInTheDocument();
+    await user.type(await screen.findByLabelText(/six-digit code/i), "123456");
+    await user.click(screen.getByRole("button", { name: "Verify" }));
+
+    expect(await screen.findByText("Invalid or expired code")).toBeInTheDocument();
+    expect(screen.getByText(/after five wrong tries; then ask for another/)).toBeInTheDocument();
+  });
 });

@@ -137,6 +137,29 @@ describe("the code step", () => {
     expect(sent).toBe(2);
   });
 
+  it("says to everybody that five wrong tries cancel the code, beside the server's one refusal", async () => {
+    // The server answers a wrong code, a spent one and one never sent alike,
+    // a fifth wrong try included (2026-11-08), and never with a 429.
+    server.use(
+      http.get(`${API}/c/${TOKEN}`, () => HttpResponse.json(LINK)),
+      http.post(`${API}/c/${TOKEN}/otp`, () => HttpResponse.json({ ok: true, message: "" })),
+      http.post(`${API}/c/${TOKEN}/otp/verify`, () =>
+        HttpResponse.json(
+          { error: { code: "otp_invalid", message: "Invalid or expired code", request_id: "t" } },
+          { status: 400 },
+        ),
+      ),
+    );
+    const { user } = render(<ConsentPage />);
+    await confirm(user);
+
+    expect(await screen.findByText("Invalid or expired code")).toBeInTheDocument();
+    expect(
+      screen.getByText(/It expires in ten minutes, or after five wrong tries; then send a new one\./),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /send a new code/i })).toBeInTheDocument();
+  });
+
   it("goes back to choose a different contact", async () => {
     server.use(
       http.get(`${API}/c/${TOKEN}`, () => HttpResponse.json(LINK)),

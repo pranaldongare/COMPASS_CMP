@@ -8013,6 +8013,8 @@ export interface components {
             stale: number;
             /** Retryable */
             retryable: number;
+            /** Withheld Because */
+            withheld_because: ("cert_in_set_aside" | "nobody_on_the_list") | null;
             /** Recipients */
             recipients: components["schemas"]["BreachDocumentMailRecipientOut"][];
         };

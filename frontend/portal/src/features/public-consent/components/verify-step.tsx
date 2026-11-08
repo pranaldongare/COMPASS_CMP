@@ -92,9 +92,11 @@ export function VerifyStep({
     <Card>
       <CardHeader>
         <CardTitle>{isEmail ? "Confirm your email" : "Confirm your mobile"}</CardTitle>
+        {/* Said to everybody alike: the server refuses a wrong code, a spent
+            one and one never sent in the same words (2026-11-08). */}
         <p className="mt-1 text-sm text-text-muted">
           We have sent a six-digit code to <strong>{contact}</strong>. It expires in ten
-          minutes.
+          minutes, or after five wrong tries; then send a new one.
         </p>
       </CardHeader>
       <CardBody>
