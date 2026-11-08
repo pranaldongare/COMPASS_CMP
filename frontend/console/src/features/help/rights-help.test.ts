@@ -2,8 +2,9 @@
  * What the manual says a rights request finds of the reports a person sent
  * through the public link (review 2026-11-08). An account's email counts only
  * once a code sent to it has come back - at sign-up, at sign-in or when it was
- * confirmed - and neither the rights form's code nor one read back to an
- * officer stamps anything on the account. With no such address the card says
+ * confirmed - and neither the rights form's code, one read back to an officer,
+ * nor one that accepted a nomination on an account already there stamps
+ * anything on that account. With no such address the card says
  * nothing was looked for. The console alone has this manual's rights pages, so
  * this is not a shared file.
  */
@@ -26,7 +27,7 @@ describe("the rights manual", () => {
     expect(reports).toMatch(/the address a request with no account gave/);
     expect(reports).toMatch(/an account's address once a code sent to it has come back/);
     expect(reports).toMatch(
-      /A code from the rights form, or one read back to an officer, does not count\./,
+      /A code from the rights form, one read back to an officer, or one that accepted a nomination on an account already there, does not count\./,
     );
     expect(reports).toMatch(/With no such address the card says nothing was looked for\./);
   });

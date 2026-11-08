@@ -372,10 +372,10 @@ export function DeterminationCard({ breach }: { breach: Breach }) {
           not from anything. The first yes records the incident as a personal data breach, starts the DPDP duties and
           gives 30 minutes to tell the organisation&apos;s board; a later no sets them aside and keeps the breach
           reference, and a yes after it brings them back. That yes finds done only the duty to tell the
-          organisation&apos;s board, if a report to it reached somebody meanwhile, and the initial intimation and the
-          72-hour report to the DPDP Board, if one was recorded as sent meanwhile. The notice to the people affected
-          is not done by it: send it again from People &amp; notices. A no leaves the CERT-In duty as it is. Every
-          validation is kept; the latest stands.
+          organisation&apos;s board, if a report to it has run its course and reached somebody meanwhile (one still
+          sending is passed over), and the initial intimation and the 72-hour report to the DPDP Board, if one was
+          recorded as sent meanwhile. The notice to the people affected is not done by it: send it again from People
+          &amp; notices. A no leaves the CERT-In duty as it is. Every validation is kept; the latest stands.
         </p>
       </CardHeader>
       <CardBody className="space-y-4">

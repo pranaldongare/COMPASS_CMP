@@ -3,7 +3,10 @@
  * duties-4 and portal-docs-6). It completes the duty to tell the
  * organisation's board and the DPDP Board's two reports from what was done
  * meanwhile, and never the notice to the people affected; a report to CERT-In
- * recorded as sent completes its duty at once, whatever a no says. The console
+ * recorded as sent completes its duty at once, whatever a no says. The board's
+ * duty is completed from the first of its reports to have run its course and
+ * reached somebody: one still sending is passed over (third review). A report
+ * to CERT-In held for the yes goes only as its newest version. The console
  * alone has this manual's breach pages, so this is not a shared file.
  */
 import { describe, expect, it } from "vitest";
@@ -22,8 +25,9 @@ describe("the breach manual", () => {
     const validation = step("Record the [[Validation]]");
 
     expect(validation).not.toMatch(/a duty whose work was done meanwhile/);
+    expect(validation).not.toMatch(/from the first of its reports that reached somebody/);
     expect(validation).toMatch(
-      /the organisation's board's duty, from the first of its reports that reached somebody/,
+      /the organisation's board's duty, from the first of its reports to have run its course and reached somebody \(one still sending is passed over\)/,
     );
     expect(validation).toMatch(
       /initial intimation and the 72-hour report, from the first recorded as sent/,
@@ -51,7 +55,7 @@ describe("the breach manual", () => {
     expect(finalise).not.toMatch(/mailed at the first yes, and never if no yes comes/);
     expect(finalise).toMatch(/less any address taken off the list since/);
     expect(finalise).toMatch(
-      /not at all if CERT-In is set aside then, if nobody it was chosen for is still on the list, or if no yes comes\./,
+      /Only the newest version goes: it is not mailed at all if a later version replaced it before the yes, if CERT-In is set aside then, if nobody it was chosen for is still on the list, or if no yes comes\./,
     );
   });
 });

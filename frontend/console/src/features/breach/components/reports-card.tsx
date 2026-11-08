@@ -12,7 +12,8 @@
  * own report is done when its mail lands, not when it is finalised. A report
  * to CERT-In finalised before the incident is recorded is held: its board mail
  * goes at the first yes to those chosen who are still on the list, and not at
- * all if CERT-In is set aside then, nobody chosen is left, or no yes comes.
+ * all if a later version replaced it, CERT-In is set aside then, nobody chosen
+ * is left, or no yes comes. Why the yes withheld one is the server's to say.
  * What each report may do now is the server's answer; a refusal shows its
  * sentence.
  */
@@ -111,7 +112,8 @@ const newestSent = (view: BreachDocumentKindView) => view.versions.find((v) => v
  *  would queue. A board report that reached somebody and left its duty waiting
  *  queues nothing, but the press re-reads the duty, and nothing else will. That
  *  is only the fallback for a settling that failed: a yes after a no completes
- *  the duty from mail that already landed by itself. */
+ *  the duty by itself from the first version whose mail has run its course and
+ *  reached somebody. */
 function mayTryAgain(view: BreachDocumentKindView, doc: BreachDocument) {
   if (doc.mail.retryable > 0) return true;
   return (
@@ -759,15 +761,16 @@ function NobodyLeftToReach({ listed, went }: { listed: number; went: boolean }) 
  *  waiting for the first yes. Never queued and no longer waiting: replaced by
  *  a later version before the yes, or withheld at it, because everybody it was
  *  chosen for had been taken off the list or because CERT-In was set aside. A
- *  replaced version never goes, so that comes first. The server serves no
- *  reason for a withheld version (the trail's `why`), so it is read from the
- *  addresses as they stand: with every one off the list there was nobody to
- *  send it to, and with any still on it, CERT-In was set aside. An address put
- *  back on the list since the yes reads as the second; only the trail can tell.
- *  Open or closed alike: closing the breach changes none of it. */
+ *  replaced version never goes, so that comes first. Which of the two withheld
+ *  it is the server's `withheld_because`, as the trail recorded it at the yes:
+ *  the list may have changed since, so an address put back on it, or taken off
+ *  it, after the yes says nothing of why. Only where the server names no
+ *  reason (no trail row says one) is it read from the addresses as they stand:
+ *  with every one off the list there was nobody to send it to, and with any
+ *  still on it, CERT-In was set aside. Open or closed alike: closing the
+ *  breach changes none of it. */
 function notGoneBecause(view: BreachDocumentKindView, doc: BreachDocument): string | null {
-  const { recipients } = doc.mail;
-  const nobodyLeft = recipients.length > 0 && recipients.every((r) => r.removed);
+  const { recipients, withheld_because } = doc.mail;
   if (recipients.some((r) => r.status === "held")) {
     if (doc.superseded) return "replaced by a later version; it will not go.";
     if (view.duty_state === "not_applicable") {
@@ -781,6 +784,8 @@ function notGoneBecause(view: BreachDocumentKindView, doc: BreachDocument): stri
   }
   if (recipients.length > 0 && recipients.every((r) => r.attempt === 0)) {
     if (doc.superseded) return "not sent: a later version replaced it.";
+    const nobodyLeft =
+      withheld_because === null ? recipients.every((r) => r.removed) : withheld_because === "nobody_on_the_list";
     return nobodyLeft
       ? "not sent: everybody it was chosen for had been taken off the list."
       : "not sent: CERT-In was set aside when the incident was validated.";

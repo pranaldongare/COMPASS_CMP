@@ -100,7 +100,7 @@ describe("PublicReportsCard", () => {
   describe("with no proved email address to look by", () => {
     const NO_PROVED_EMAIL =
       "No email address proved to be the requester's is held, so nothing was looked for.";
-    const STILL_CARRIES = /still carries this person's email address/;
+    const STILL_CARRIES = /carries an address that was looked for/;
     const notLooked = (over: Partial<RightsPublicReports> = {}) =>
       found({
         looked: false,
@@ -220,32 +220,79 @@ describe("PublicReportsCard", () => {
     ).toBeEnabled();
   });
 
-  it("says when none still carries the address, and no more than the server knows", () => {
-    // The server's answer for a person an earlier request erased: the report
-    // came from them, but nothing on it finds them now.
-    render(
-      <PublicReportsCard
-        request={request(
-          found({
-            items: [],
-            total: 0,
-            may_erase: false,
-            erase_blocked_by:
-              "No report from the public link still carries the requester's name and email.",
-          }),
-        )}
-      />,
-    );
+  describe("with nothing found by the addresses looked for", () => {
+    const EMPTY =
+      "No dismissed report from the public link carries an address that was looked for. An account's email is looked for only once a code sent to it has come back, so the email shown for the requester may not have been.";
+    const none = () =>
+      found({
+        items: [],
+        total: 0,
+        may_erase: false,
+        erase_blocked_by:
+          "No report from the public link still carries the requester's name and email.",
+      });
 
-    expect(
-      screen.getByText(
-        "No dismissed report from the public link still carries this person's email address.",
-      ),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText(/came from this person's email address/),
-    ).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: BUTTON })).not.toBeInTheDocument();
+    it("says no report carries an address looked for, and no more than the server knows", () => {
+      // The server's answer for a person an earlier request erased: the report
+      // came from them, but nothing on it finds them now.
+      render(<PublicReportsCard request={request(none())} />);
+
+      expect(screen.getByText(EMPTY)).toBeInTheDocument();
+      expect(
+        screen.queryByText(/came from this person's email address/),
+      ).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: BUTTON })).not.toBeInTheDocument();
+    });
+
+    it("never says the email shown for an account was looked for", () => {
+      // An account whose own email no code has come back from, beside a second
+      // email that one has: the server looked by the second alone, found
+      // nothing, and serves looked with no items. The request shows the first.
+      render(
+        <PublicReportsCard
+          request={request(none(), {
+            request_type: "access",
+            subject_email: "meera.iyer@example.com",
+          })}
+        />,
+      );
+
+      expect(screen.getByText(EMPTY)).toBeInTheDocument();
+      expect(screen.queryByText(/this person's email/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/meera\.iyer@example\.com/)).not.toBeInTheDocument();
+    });
+  });
+
+  describe("the header", () => {
+    it("calls no address proved, for a request with no account verified by hand", () => {
+      render(
+        <PublicReportsCard
+          request={request(found(), {
+            subject_uuid: null,
+            subject_name: null,
+            verification_method: "manual",
+          })}
+        />,
+      );
+
+      expect(screen.queryByText(/proved/)).not.toBeInTheDocument();
+      expect(
+        screen.getByText(
+          /found by email once identity was verified: the address a request with no account gave, or an account's address once a code sent to it has come back, as at sign-up or sign-in\. A code from the rights form, one read back to an officer, or one that accepted a nomination on an account already there, does not count\./,
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("says only what was looked for, not whose reports they are", () => {
+      render(<PublicReportsCard request={request(found())} />);
+
+      expect(
+        screen.getByText(
+          /^Reports sent through the public link that an office did not take up,/,
+        ),
+      ).toBeInTheDocument();
+      expect(screen.queryByText(/this person sent/)).not.toBeInTheDocument();
+    });
   });
 
   it.each([

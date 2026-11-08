@@ -58,6 +58,7 @@ const mail = (over: Partial<BreachDocumentMail> = {}): BreachDocumentMail => ({
   held: 0,
   stale: 0,
   retryable: 0,
+  withheld_because: null,
   recipients: [],
   ...over,
 });
@@ -1759,7 +1760,7 @@ describe("ReportsCard", () => {
       ],
       [
         "withheld at the yes while CERT-In was set aside",
-        { unsent: 1, recipients: [waiting({ status: "unsent" })] },
+        { unsent: 1, withheld_because: "cert_in_set_aside" as const, recipients: [waiting({ status: "unsent" })] },
         {},
         { holds_mail: false, duty_state: "not_applicable" as const, blocked_by: "CERT-In was set aside as not reportable. Mark it reportable again first" },
         "Organisation's board: not sent: CERT-In was set aside when the incident was validated.",
@@ -1775,7 +1776,10 @@ describe("ReportsCard", () => {
 
     describe("withheld at the yes because everybody it was chosen for had been taken off the list", () => {
       const NOBODY_CHOSEN = "Organisation's board: not sent: everybody it was chosen for had been taken off the list.";
-      const offList = mail({ recipients: [waiting({ status: "unsent", removed: true })] });
+      const offList = mail({
+        withheld_because: "nobody_on_the_list",
+        recipients: [waiting({ status: "unsent", removed: true })],
+      });
 
       it("says so on a closed breach, and never that CERT-In was set aside", async () => {
         // The officer recorded the CERT-In report as sent, so the duty is done
@@ -1819,7 +1823,7 @@ describe("ReportsCard", () => {
       it.each([
         [
           "CERT-In set aside at the yes, with an address still on the list",
-          mail({ unsent: 1, recipients: [waiting({ status: "unsent" })] }),
+          mail({ unsent: 1, withheld_because: "cert_in_set_aside", recipients: [waiting({ status: "unsent" })] }),
           {},
           "Organisation's board: not sent: CERT-In was set aside when the incident was validated.",
         ],
@@ -1837,13 +1841,82 @@ describe("ReportsCard", () => {
       });
     });
 
+    describe("names the reason the yes recorded, whatever the list has become since", () => {
+      const SET_ASIDE = "Organisation's board: not sent: CERT-In was set aside when the incident was validated.";
+      const NOBODY = "Organisation's board: not sent: everybody it was chosen for had been taken off the list.";
+      const SET_ASIDE_KIND = {
+        holds_mail: false,
+        duty_state: "not_applicable" as const,
+        blocked_by: "CERT-In was set aside as not reportable. Mark it reportable again first",
+      };
+      // The yes read the list as it stood then; `removed` is the list now.
+      const withheld = (why: "cert_in_set_aside" | "nobody_on_the_list", removed: boolean) =>
+        mail({
+          unsent: removed ? 0 : 1,
+          retryable: !removed && why === "nobody_on_the_list" ? 1 : 0,
+          withheld_because: why,
+          recipients: [waiting({ status: "unsent", removed }), waiting({ status: "unsent", removed, email: "x@cmp.local" })],
+        });
+
+      it.each([
+        ["set aside, the list as it was", "cert_in_set_aside" as const, false, SET_ASIDE_KIND, SET_ASIDE, /taken off the list/],
+        ["set aside, everybody taken off the list since", "cert_in_set_aside" as const, true, SET_ASIDE_KIND, SET_ASIDE, /taken off the list/],
+        ["nobody left, the list as it was", "nobody_on_the_list" as const, true, { holds_mail: false }, NOBODY, /CERT-In was set aside/],
+        ["nobody left, the addresses put back since", "nobody_on_the_list" as const, false, { holds_mail: false }, NOBODY, /CERT-In was set aside/],
+      ])("%s", async (_, why, removed, kind, line, never) => {
+        for (const status of ["open", "closed"] as const) {
+          serve(certIn([finalisedCertIn(withheld(why, removed))], status === "closed" ? { ...kind, duty_state: "done" } : kind));
+          const { unmount } = render(<ReportsCard breach={breach({ status })} />);
+
+          const row = await screen.findByTestId("report-cert_in");
+          expect(within(row).getByText(line)).toBeInTheDocument();
+          expect(within(row).queryByText(never)).not.toBeInTheDocument();
+          unmount();
+        }
+      });
+
+      it("reads the addresses as they stand only where the server names no reason", async () => {
+        serve(certIn([finalisedCertIn(mail({ recipients: [waiting({ status: "unsent", removed: true })] }))], { holds_mail: false }));
+        const { unmount } = render(<ReportsCard breach={breach({ status: "closed" })} />);
+        expect(within(await screen.findByTestId("report-cert_in")).getByText(NOBODY)).toBeInTheDocument();
+        unmount();
+
+        serve(certIn([finalisedCertIn(mail({ unsent: 1, recipients: [waiting({ status: "unsent" })] }))], SET_ASIDE_KIND));
+        render(<ReportsCard breach={breach({ status: "closed" })} />);
+        expect(within(await screen.findByTestId("report-cert_in")).getByText(SET_ASIDE)).toBeInTheDocument();
+      });
+
+      it("puts a replacement first, whatever the yes recorded", async () => {
+        serve(certIn([finalisedCertIn(withheld("cert_in_set_aside", false), { superseded: true })], { holds_mail: false }));
+        render(<ReportsCard breach={breach()} />);
+
+        const row = await screen.findByTestId("report-cert_in");
+        expect(within(row).getByText("Organisation's board: not sent: a later version replaced it.")).toBeInTheDocument();
+        expect(within(row).queryByText(/CERT-In was set aside/)).not.toBeInTheDocument();
+      });
+    });
+
     it("offers to send it to the board once CERT-In is marked again after a yes that withheld it", async () => {
-      const unsent = mail({ unsent: 1, retryable: 1, recipients: [waiting({ status: "unsent" })] });
+      const unsent = mail({
+        unsent: 1,
+        retryable: 1,
+        withheld_because: "cert_in_set_aside",
+        recipients: [waiting({ status: "unsent" })],
+      });
       const world = serve(certIn([finalisedCertIn(unsent)], { holds_mail: false }));
       server.use(
         http.post(`${API}/breaches/${BREACH}/reports/${REPORT}/resend`, () => {
+          // The yes's reason is kept once it is sent: it is what the yes did.
           world.now = certIn(
-            [finalisedCertIn(mail({ queued: 1, recipients: [address({ status: "queued" })] }))],
+            [
+              finalisedCertIn(
+                mail({
+                  queued: 1,
+                  withheld_because: "cert_in_set_aside",
+                  recipients: [address({ status: "queued" })],
+                }),
+              ),
+            ],
             { holds_mail: false },
           );
           return HttpResponse.json({ ...world.now, queued: 1 });
@@ -1857,6 +1930,8 @@ describe("ReportsCard", () => {
 
       await vi.waitFor(() => expect(toast.success).toHaveBeenCalledWith("Sending to the board", "Mailing 1 address."));
       expect(await screen.findByText(/1 on the way/)).toBeInTheDocument();
+      // Sent now, so the line says where it stands, not why the yes withheld it.
+      expect(screen.queryByText(/not sent/)).not.toBeInTheDocument();
     });
 
     it("looks again at its own pace while the mail waits, and every two seconds once the yes sets it going", async () => {

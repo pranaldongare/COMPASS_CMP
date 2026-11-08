@@ -225,8 +225,9 @@ export const removeHolder = (uuid: Uuid, holderUuid: Uuid) =>
 
 /** Blanks the requester's name and email on every report they sent through
  *  the public link that an office dismissed. The server finds the reports
- *  again by the requester's proved addresses, so no report is named here and
- *  none but theirs can be reached. */
+ *  again by the addresses it looks by - an account's once a code to it came
+ *  back, or the email a request with no account gave - so no report is named
+ *  here and none but those can be reached. */
 export const erasePublicReports = (uuid: Uuid) =>
   apiPost<RightsPublicReports>(action(uuid, "public-reports/erase"), {});
 

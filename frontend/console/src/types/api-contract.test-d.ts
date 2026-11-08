@@ -59,6 +59,7 @@ import type {
   BreachSummary,
   BreachTicket,
   MyBreachTicket,
+  BreachDocumentMail,
   BreachDocuments,
   BreachSettings,
   DismissedReport,
@@ -202,6 +203,13 @@ export type _MyBreachTicket = Covers<"MyBreachTicket", Schemas["MyBreachTicketOu
 // version's addressees, and the board list as Breach settings keeps it.
 export type _BreachDocuments = Covers<"BreachDocuments", Schemas["BreachDocumentsOut"], BreachDocuments>;
 export type _BreachSettings = Covers<"BreachSettings", Schemas["BreachSettingsOut"], BreachSettings>;
+// Why the first yes withheld a held report to CERT-In, as the trail recorded it
+// then (third review): the field alone, so a drift names it and null is checked.
+export type _BreachDocumentMailWithheldBecause = Covers<
+  "BreachDocumentMail.withheld_because",
+  Pick<Schemas["BreachDocumentMailOut"], "withheld_because">,
+  Pick<BreachDocumentMail, "withheld_because">
+>;
 // A dismissed reporter erased under a rights request (0065).
 export type _DismissedReport = Covers<"DismissedReport", Schemas["DismissedReportOut"], DismissedReport>;
 export type _RightsPublicReports = Covers<"RightsPublicReports", Schemas["PublicReportsOut"], RightsPublicReports>;
@@ -250,6 +258,7 @@ const _contractHolds: {
   MyBreachTicket: _MyBreachTicket;
   BreachDocuments: _BreachDocuments;
   BreachSettings: _BreachSettings;
+  BreachDocumentMailWithheldBecause: _BreachDocumentMailWithheldBecause;
   DismissedReport: _DismissedReport;
   RightsPublicReports: _RightsPublicReports;
   RightsRequestDetailCodeChannel: _RightsRequestDetailCodeChannel;
@@ -283,6 +292,7 @@ const _contractHolds: {
   MyBreachTicket: true,
   BreachDocuments: true,
   BreachSettings: true,
+  BreachDocumentMailWithheldBecause: true,
   DismissedReport: true,
   RightsPublicReports: true,
   RightsRequestDetailCodeChannel: true,

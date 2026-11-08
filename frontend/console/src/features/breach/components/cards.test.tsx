@@ -317,6 +317,10 @@ describe("validation", () => {
 
     expect(screen.queryByText(/done already where the work was done meanwhile/)).not.toBeInTheDocument();
     expect(screen.getByText(/That yes finds done only the duty to tell the organisation's board/)).toBeInTheDocument();
+    // From a report that has run its course: one still sending is passed over.
+    expect(
+      screen.getByText(/if a report to it has run its course and reached somebody meanwhile \(one still sending is passed over\)/),
+    ).toBeInTheDocument();
     expect(screen.getByText(/The notice to the people affected is not done by it/)).toBeInTheDocument();
     expect(screen.getByText(/A no leaves the CERT-In duty as it is/)).toBeInTheDocument();
   });

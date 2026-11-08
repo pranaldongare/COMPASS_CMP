@@ -6,11 +6,17 @@
  * A claimed report became an incident, the office's record of what it did, and
  * stays as it is. A dismissed one has nothing behind it, so the person who sent
  * it may see it and have their name and email taken off it. The server finds
- * them by the requester's proved addresses once identity is verified, says
+ * them by email once identity is verified: the address a request with no
+ * account gave, however it was verified, or an account's address once a code
+ * sent to it has come back (never by the rights form's code, an officer's, or
+ * one that accepted a nomination on an account already there). It says
  * whether they may be erased now and why not, and erases them all in one act:
- * this card names no report to the server, and holds no copy of the rule. With
- * no proved address it has not looked, and says so; the reports already erased
- * under the request are listed all the same.
+ * this card names no report to the server, and holds no copy of the rule. It
+ * says only what the server knows. Which of an account's addresses were looked
+ * for is not served, so neither the header nor an empty list claims an address
+ * was proved, or that the email shown for the requester was one of them. With
+ * no address to look by it has not looked, and says so; the reports already
+ * erased under the request are listed all the same.
  *
  * Shown to the DPO and Legal alone (`public_reports` is null for anyone else),
  * and never with the office's reason or who dismissed it.
@@ -89,22 +95,28 @@ export function PublicReportsCard({ request: r }: { request: RightsRequestDetail
       <CardHeader>
         <CardTitle>Reports from the public link</CardTitle>
         <p className="mt-1 text-xs text-text-muted">
-          Reports this person sent through the public link that an office did not take up,
-          found by an email address proved to be theirs once identity was verified. Both
-          offices can read them under Dismissed reports.
+          Reports sent through the public link that an office did not take up, found by
+          email once identity was verified: the address a request with no account gave, or
+          an account&apos;s address once a code sent to it has come back, as at sign-up or
+          sign-in. A code from the rights form, one read back to an officer, or one that
+          accepted a nomination on an account already there, does not count. Both offices
+          can read them under Dismissed reports.
         </p>
       </CardHeader>
       <CardBody className="space-y-4">
-        {/* Not looked for, and why: with no proved address to look by, the
-            reports erased under this request are still listed below it. */}
+        {/* Not looked for, and why: with no address to look by, the reports
+            erased under this request are still listed below it. */}
         {!found.looked && <Alert tone="info">{found.not_looked_because}</Alert>}
         {found.looked && found.items.length === 0 && (
           // Only what the server can see: a report an earlier erasure took the
           // address off is no longer found by it, though it came from them.
-          // Said only once it has looked by an address.
+          // Said only once it has looked by an address, and never that the
+          // email shown for the requester was one: an account's unproved
+          // email is not looked for beside a proved second email.
           <p className="text-sm text-text-muted">
-            No dismissed report from the public link still carries this person&apos;s email
-            address.
+            No dismissed report from the public link carries an address that was looked for.
+            An account&apos;s email is looked for only once a code sent to it has come back,
+            so the email shown for the requester may not have been.
           </p>
         )}
         {found.items.length > 0 && (

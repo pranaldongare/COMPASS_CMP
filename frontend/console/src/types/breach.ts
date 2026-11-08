@@ -632,6 +632,14 @@ export interface BreachDocumentMail {
    *  draft, a held or superseded version, a report that may not go, or a
    *  closed breach. */
   retryable: number;
+  /** Why the first yes did not mail this version of the report to CERT-In it
+   *  was holding, as the trail recorded it then, never read from the list as
+   *  it stands: CERT-In was set aside at the yes, or everybody it was chosen
+   *  for had been taken off the list by then. Null for a version the yes
+   *  mailed, one replaced before it, one never held, and every other kind.
+   *  Kept once a person sends the version with Send to the board, so it says
+   *  why only of a version never queued. */
+  withheld_because: "cert_in_set_aside" | "nobody_on_the_list" | null;
   recipients: BreachDocumentMailRecipient[];
 }
 
