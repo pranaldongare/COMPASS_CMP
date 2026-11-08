@@ -78,7 +78,7 @@ Render the notice - stamps served_at.
 
 - **Who:** public.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** Valid link and contact code(s) required. Completion opens a data_subject session, including for staff account holders.
+- **Rules:** Valid link and contact code(s) required. Completion opens a data_subject session, including for staff account holders. It stamps the contact typed proved - the mobile, the email or the second email - and no other (2026-11-08).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/consent.py#L168), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/consent/service.py#L327), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/consent/service.py#L453).
 
 ## POST /c/{token}/register
@@ -132,5 +132,5 @@ Confirm the mobile; the employee account is created and signed in.
 - **Who:** public.
 - **Route guard:** `Public; no session dependency`.
 - **Resolved gate:** `Public; no session dependency`.
-- **Rules:** The pending cookie, the link's token and the code. Creates the account (`employee`, active, the asserted employee ID, name and address, the confirmed mobile, `registered_via_link_id`), spends one use of the link, and mints a data principal's session. (2026-10-28, ADR 0034)
+- **Rules:** The pending cookie, the link's token and the code. Creates the account (`employee`, active, the asserted employee ID, name and address, the confirmed mobile, `registered_via_link_id`), spends one use of the link, and mints a data principal's session. (2026-10-28, ADR 0034) The mobile is stamped proved by its code, and the asserted address by the identity provider's word.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/consent.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/auth.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/auth/authentication/sso.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/infrastructure/identity/oidc.py), [source 5](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/infrastructure/identity/state.py).

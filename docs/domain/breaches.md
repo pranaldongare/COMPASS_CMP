@@ -194,9 +194,10 @@ could open at once, and every report, the genuine ones with them, showed sealed.
 - **The reporter's rights over a dismissed report** (2026-11-07, 0065,
   [ADR 0037](../decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md#a-dismissed-report-and-the-rights-of-the-person-who-sent-it)).
   A rights request from the reporter finds it by the blind index of their email (an
-  account's only once proved), once identity is verified, and an erasure request
-  blanks their name and email, keeping the number, the words, the reason and who
-  dismissed it ([rights-requests.md](rights-requests.md#reports-from-the-public-link)).
+  account's only once a code to it came back), once identity is verified, and an
+  erasure request blanks their name and email, keeping the number, the words, the
+  reason and who dismissed it
+  ([rights-requests.md](rights-requests.md#reports-from-the-public-link)).
   **Dismissed reports** then shows "erased" and when, and never which request: both
   offices see that list, and a request is one office's.
 
@@ -431,10 +432,10 @@ principals' it does not (below).
   open a name for it, the *yes* stands, the duty stays outstanding and
   `breach.board_duty_unsettled` is logged. **Try again**, on any version of the
   board's report, reads every version again, oldest first, and completes the duty
-  from the first that reached somebody, recorded as a person's press
-  (`by: try_again`, with them as the actor); a key service still away fails the
-  press (503). The worker's re-read after any later outcome reads every version the
-  same way, so a later version that lands first is not the one recorded.
+  from the first that has run its course and reached somebody - a version still
+  sending is passed over - recorded as a person's press (`by: try_again`, with them
+  as the actor); a key service still away fails the press (503). The worker's
+  re-read after any later outcome reads every version the same way.
 - **The initial intimation and the 72-hour report.** A report filed while the duty
   was aside completes it at the *yes*, from when it was sent and the reference that
   came back, recorded as the filer's. Of several, the first filing recorded is the
@@ -684,8 +685,9 @@ on an address nobody will try again.
 
 A press re-reads the board's duty first, whatever follows, and answers how many it
 queued. On any version of the board's own report it reads every finalised version,
-oldest first, as a *yes* does, and completes the duty from the first that reached
-somebody (`by: try_again`, the person pressing as the actor): the version that
+oldest first, as a *yes* does, and completes the duty from the first that has run
+its course and reached somebody, passing over a version still sending
+(`by: try_again`, the person pressing as the actor): the version that
 reached the board may be an older one the console offers no button on. A key
 service that cannot open a name for the duty fails the press (503), and nothing is
 queued. It is refused, and `retryable` is 0, on a report to CERT-In set aside (409
@@ -1077,9 +1079,9 @@ to CERT-In held for a *yes*. Two readings of those answers are settled, not open
 held report to CERT-In survives a *no* and goes at the first *yes*, and never if the
 incident is never validated *yes*; and the earlier work a *yes* counts is the first,
 as it would have counted with no *no* - the first finalised version of the board's
-report that reached somebody, or the first filing ordered by when it was recorded
-and then by version.
-The last four rows are what the review of 2026-11-08 left for an owner.
+report that has run its course and reached somebody, or the first filing ordered by
+when it was recorded and then by version.
+The last five rows are what the two reviews of 2026-11-08 left for an owner.
 
 | Question | Owner |
 |---|---|
@@ -1094,7 +1096,8 @@ The last four rows are what the review of 2026-11-08 left for an owner.
 | A claimed report is not reached by an access or erasure request, a documented exception: it is the incident's record of what the office was told, and may sit in the other office's register ([personal-data.md](personal-data.md#personal-data-breaches)) | Legal and the product owner |
 | A dismissed report's words stay after its reporter is erased, and may name them; once the index is gone a later request cannot reach them | The product owner |
 | The portal's public promise on the report page and in its help, that a person whose report is closed without being taken up can ask for their name and email to be erased from it. Planned as "If your report is closed without being taken up, you can ask for your name and email to be erased from it."; the words to confirm are the page's own (`frontend/portal/src/app/report-incident/page.tsx`) | The product owner, to confirm |
-| The administrator may answer an access or erasure request about the office, and the response package they release and can download (`GET /requests/{uuid}/download`) carries the requester's own dismissed reports - their name, email and words - although the register is hidden from them everywhere else (`public_reports` null, the erase 404; on an erasure, `complete_blocked_by` tells them only the DPO or the Legal office can take the name and email off). Whether that part is answered only by an officer (the response refused to the administrator while such reports are found), or left out of a package the administrator releases ([rights-requests.md](rights-requests.md#reports-from-the-public-link)) | The product owner |
-| `POST /rights/requests/verify` answers every failure in the same words, but not in the same time: a reference with no account costs a key-service call (the contact it gave is opened to look for a dismissed report) that one with an account does not, and a reference a code was issued for costs a Redis call a stranger's does not. So how long a reply takes can still say something about the contact. Not equalised | The engineering lead |
+| The administrator may answer an access or erasure request about the office, and the response package they release and can download (`GET /requests/{uuid}/download`) carries the requester's own dismissed reports - their name, email and words - although the register is hidden from them everywhere else (`public_reports` null, the erase 404; on an erasure, `complete_blocked_by` tells them only the DPO or the Legal office can take the name and email off). Whether that part is answered only by an officer (the response refused to the administrator while such reports are found), or left out of a package the administrator releases ([rights-requests.md](rights-requests.md#reports-from-the-public-link)). The trail still tells them one fact of the register that **Send a code** and **Confirm** no longer do (both answer them 403 `officers_only`, 2026-11-08): on a request from the public form with no account, `rights.verification_code_sent` at submission, with no actor, is there only when the contact sent a dismissed report. The administrator reads it on the request's trail (`GET /requests/{uuid}/trail`, and the linked trail) and on the audit trail, which they read whole (`GET /audit`); hiding it would mean filtering those rows by role | The product owner; the engineering lead for the trail |
+| `POST /rights/requests/verify` answers every failure of a well-formed body in the same words (a malformed one - a code of fewer than four or more than ten digits or not digits, a reference shorter than six or longer than 24 characters - is 422 `validation_failed` for every caller alike), but not in the same time: a reference with no account costs a key-service call (the contact it gave is opened to look for a dismissed report) that one with an account does not, and a reference a code was issued for costs a Redis call a stranger's does not. So how long a reply takes can still say something about the contact. Not equalised | The engineering lead |
 | A request with no account whose contact is a mobile, verified by hand, is answered by text, and a text carries only the headline, never the Privacy Office's words or the digest; with no account to sign in to, that text is the whole answer. Whether it should carry them, or the answer go another way | The product owner |
-| `users.by_contact` takes an account's own email even when it was never proved. A public-form request from the real owner of an address that somebody else's account carries unproved is attached to that account, and its code goes to that address. Since 2026-11-08 such a request finds none of the owner's dismissed reports, which is safer than handing them to the other account but does not serve the owner. A request with no account verified by hand still finds and erases reports by the email it gave, unproved; `code_channel` now steers the officers to a code instead | The engineering lead and the product owner |
+| `users.by_contact` matches an account's primary email even when it was never proved, both to attach a public-form request to the account and for a portal sign-in. Since 2026-11-08 an email counts only once a code to it came back, and the public form's code and an officer's **Confirm** stamp nothing, so a sign-up nobody finished that carries somebody else's address finds nothing by it. A public-form request from the address's owner is still attached to such an account, and its code still goes to the address, but answering it stamps nothing: it finds none of the owner's reports, which stay unattached, and the card says no proved email is held. The path that remains is a sign-in: the owner of an address typed into somebody else's account (a nominee's) can sign in to that account by a code to the address; that sign-in stamps the address, and from then on that account's requests, the owner's and its holder's alike, find the owner's dismissed reports. Closing it needs `users.by_contact` to refuse an unproved primary email, which closes the sign-in path and the attachment together; the matching is behaviour from before 2026-11-08, not changed then. A request with no account verified by hand still finds and erases reports by the email it gave, unproved; `code_channel` now steers the officers to a code instead | The engineering lead |
+| An SSO sign-in to an account already there stamps nothing, though creating an account by SSO stamps the address the identity provider asserted and the confirmed mobile ([authentication.md](../security/authentication.md#what-a-code-proves)). An employee signed in that way finds no dismissed report by their work email until a code to it comes back - a sign-in by a code to it, or confirming it from the account. Whether the assertion should stamp the address, as creation does | The engineering lead and the product owner |

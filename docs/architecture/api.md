@@ -148,12 +148,21 @@ difference would tell a stranger something about who is registered:
   account
 - `POST /auth/otp/request`: identical whether the contact is registered
 - `POST /rights/requests`: a reference is issued either way; a code goes only
-  to a contact on file
+  to a contact on file, and the reply says it went to the contact held, never
+  the one typed (2026-11-08)
 - `POST /rights/requests/verify` and `POST /rights/nominee/start`: the same
   sentence for an unknown reference and a wrong code; on the first, also for a
-  code of the wrong length and a spent budget of tries, which answer 400
-  `otp_invalid`, not 429; only the limit per address answers 429 there
+  code of four to ten digits other than six and a spent budget of tries, which
+  answer 400 `otp_invalid`, not 429; only the limit per address answers 429
+  there. A malformed body (a code of fewer than four or more than ten digits or
+  not digits, a reference shorter than six or longer than 24 characters) is
+  refused by the schema with 422 `validation_failed`, the same for every caller
   (2026-11-08)
+- `POST /auth/otp/verify`: a code typed with another contact of the same
+  account is refused as a wrong code is, 400 `otp_invalid` (2026-11-08)
+- `POST /requests/{uuid}/verification/code` and `/confirm` on a request with no
+  account: 403 `officers_only` to anybody but the DPO and the Legal PoC,
+  whether or not the contact sent a dismissed report (2026-11-08)
 - `GET /rights/nominations/{token}`: every failure is the same 404
 - `/holder-tickets/{token}`: every way a link can fail - unknown, replaced,
   or its ticket not yet issued - is the same 404

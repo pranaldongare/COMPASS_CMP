@@ -1049,8 +1049,9 @@ as a release yet.
 - **A yes finds what was done while a no had set a duty aside** (2026-11-07, ADR
   0037, the product owner's answer). The board's own report that reached it
   completes the board's duty at the *yes*, without Try again, from the first
-  version that reached somebody; a regulator's report filed meanwhile completes
-  its duty from the first filing recorded. Nothing is mailed.
+  version that has run its course and reached somebody; a regulator's report
+  filed meanwhile completes its duty from the first filing recorded. Nothing is
+  mailed.
 - **Taking an address off the board's list, and adding one, mail both officers**
   (2026-11-07, ADR 0037), and are refused while the broker is down (503); a
   mandatory entry cannot be taken off (409 `recipient_mandatory`), and a name
@@ -1304,17 +1305,27 @@ as a release yet.
 ### Fixed
 - **What the review of the six answers' build found** (2026-11-08, 285d077; ADR 0037,
   [breaches.md](docs/domain/breaches.md#open-questions) for what it left open):
-  - An account's own email finds, packages and erases dismissed reports only once proved, or on a row from before proofs were stamped; never beside a mobile proved alone, as a nominee's account is made.
+  - An account's own email finds, packages and erases dismissed reports only once proved; never beside a mobile proved alone, as a nominee's account is made. (Its reading of an account with neither stamp as one from before the stamps is gone since 0923a5b, below.)
   - `incident_report.reporter_erased` carries the rights request's office, so the other office's trail no longer shows the request, its subject and who erased.
   - 0064's way down is refused also once a sender left a listed entry out of a version, which 0063's Try again would have mailed.
   - A held report to CERT-In whose addressees were all taken off the list is recorded withheld (`why: nobody_on_the_list`), not released; the withheld label reads "Report held for the board not sent at the validation".
-  - Try again on any version of the board's report, and the worker after any outcome, read every version oldest first, so the duty is done from the first that reached the board after a key-service failure at the *yes*; Try again's completion is `by: try_again`, with the presser as actor.
+  - Try again on any version of the board's report, and the worker after any outcome, read every version oldest first, so the duty is done from the first that has run its course and reached the board after a key-service failure at the *yes*, a version still sending passed over; Try again's completion is `by: try_again`, with the presser as actor.
   - `GET /requests/{uuid}` serves `code_channel` to the DPO and the Legal PoC: whether a code can go to a channel already held, a dismissed report's address included; never the address.
   - A no-account erasure answered before anybody erased says each report still carries the name and email, and says what is kept only once one was erased.
-  - `POST /rights/requests/verify` answers a spent budget of tries and a code of the wrong length as a wrong code (400 `otp_invalid`), not 429 (the limit per address still is), so tries no longer tell a dismissed reporter from a stranger.
+  - `POST /rights/requests/verify` answers a spent budget of tries and a code of four to ten digits other than six as a wrong code (400 `otp_invalid`), not 429 (the limit per address still is), so tries no longer tell a dismissed reporter from a stranger; a malformed body (fewer than four or more than ten digits, not digits, a reference shorter than six or longer than 24 characters) is 422 `validation_failed` for every caller alike.
   - A legal hold on any account the contact of a no-account request is on stops the erasure of its dismissed reports.
   - `complete_blocked_by` tells the administrator, on a request about the office, that only the DPO or the Legal office can take the name and email off, not to use a card they do not have.
   - A request with no account is answered with no account link, by mail and by text: "this message is our answer"; the `rights_response` text default no longer says "Sign in to read the full response."
+- **What the second review of that build found** (2026-11-08, 0923a5b and ef0f0cc;
+  [authentication.md](docs/security/authentication.md#what-a-code-proves),
+  [breaches.md](docs/domain/breaches.md#open-questions) for what it left open):
+  - An account's email finds, packages and erases dismissed reports only once a code sent to it came back (`email_verified_at`), its second email once its own code did; an account with neither stamp is no longer read as one from before the stamps, a reading anybody could reach by changing the mobile or leaving a sign-up unfinished. Nothing was backfilled, so an account whose email no stamping flow has reached finds nothing by it until one does.
+  - Every code accepted for an account's own contact stamps what it went to and nothing else: a password reset and the staff and breach holder invitations, and the staff second factor, stamp the email; a sign-in by code and a consent link's code stamp the contact typed (a second email, never the first); a nomination on an account already there stamps its own email or mobile only, and nothing when where the code went is unknown.
+  - A sign-in code is bound to the contact it went to: typed with another contact of the same account it is refused as a wrong code is (400 `otp_invalid`), so a code to the mobile no longer proves the email.
+  - A request with no proved address to look by says nothing was looked for ("No email address proved to be the requester's is held, so nothing was looked for."), not that no report carries the email, and its erasure answers 409 `no_proved_email` instead of erasing by nothing.
+  - **Send a code** and **Confirm** on a request with no account are the DPO's and the Legal PoC's: anybody else gets 403 `officers_only`, the same whether or not the contact sent a dismissed report, where Send a code told the administrator 200 or 422, and Confirm's fifth wrong code 429.
+  - The public form's reply says the code went to "the contact we hold for you", not to the contact typed.
+  - The public form's verify and an officer's **Confirm** stamp nothing on the account (ef0f0cc, reversing 0923a5b): the code proves the requester holds the address, and an account carrying somebody else's address, a nominee's, would otherwise have found that person's reports after they answered their own code.
 - **A report sent before a later yes's awareness can be recorded as sent with its
   true date** (2026-11-07, logic-4). Filing was checked against the duty's clock,
   which a *yes* after a *no* starts again at its own awareness, and refused a true

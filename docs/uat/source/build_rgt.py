@@ -162,7 +162,7 @@ case(
         {"action": "In 'Make a request' choose 'Access (s.11)' in 'What are you asking for'. Read the hint under 'The email or mobile you registered with'.",
          "expected": "The hint reads 'We send a verification code to the contact we already hold for you - never to a new one typed here.'"},
         {"action": "Fill in the contact, name and request from the test data and click 'Send the request'.",
-         "expected": "A box titled 'Recorded' reads 'Thank you. Your request has been recorded. If we hold records for the contact you gave, a verification code has been sent to it.' and 'Your reference is RR-.... Quote it if you contact us.' Below it 'Your reference' is already filled in and 'The code we sent' is empty."},
+         "expected": "A box titled 'Recorded' reads 'Thank you. Your request has been recorded. If we hold records for the contact you gave, a verification code has been sent to the contact we hold for you.' and 'Your reference is RR-.... Quote it if you contact us.' Below it 'Your reference' is already filled in and 'The code we sent' is empty."},
         {"action": "Ask the coordinator for the code sent to subject@cmp.local for this reference.",
          "expected": "The coordinator finds a verification code in the outbox addressed to subject@cmp.local."},
         {"action": "Type the code in 'The code we sent' and click 'Confirm it is me'.",

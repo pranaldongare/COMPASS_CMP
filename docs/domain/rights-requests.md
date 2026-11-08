@@ -39,21 +39,40 @@ which is what she quotes on the phone, in the public form, and in a grievance.
 | `staff_logged` | the DPO, from an email or a letter | the DPO's verification note |
 
 The public form is deliberately neutral: it issues a reference whether or not
-the contact is known, and the code goes only to a contact on file. A contact
-with no account that is the address of a report an office dismissed, not yet
-erased, is one: the code goes to the address stored on the report, never to the
-one typed, so the neutral reply stays true for a reporter with no account, and a
-code the office sends (`POST /requests/{uuid}/verification/code`) goes there too.
+the contact is known, and the code goes only to a contact on file - an account's
+email, else its mobile, whichever was typed. The reply says so, the same for
+everybody (2026-11-08): "Thank you. Your request has been recorded. If we hold
+records for the contact you gave, a verification code has been sent to the contact
+we hold for you." A contact with no account that is the address of a report an
+office dismissed, not yet erased, is one: the code goes to the address stored on
+the report, never to the one typed, so the neutral reply stays true for a reporter
+with no account, and a code the office sends
+(`POST /requests/{uuid}/verification/code`) goes there too.
 The request's detail tells the DPO and the Legal PoC whether a code has somewhere to
 go (`code_channel`, 2026-11-08): `true` with an account, or with none when the
 contact is such a report's address; `false` when no channel is held, so the request
 is verified by hand or closed as not verified; `null` for the administrator, for a
 request no longer waiting for its identity or past `awaiting_holders`, and when the
-key service does not answer. It never carries the address. On the form's second
-half (`POST /rights/requests/verify`) a wrong code, a code of the wrong length and a
-spent budget of five tries all answer 400 `otp_invalid`, "Invalid or expired code",
-as a reference no code was sent for does: the fifth wrong try discards the code, and
-only the limit per address (30 an hour) answers 429. An
+key service does not answer. It never carries the address. On a request with no
+account, **Send a code** and **Confirm** are the DPO's and the Legal PoC's alone:
+anybody else - in practice the administrator on a request about the office - gets
+403 `officers_only`, "Only the DPO or the Legal office can send or confirm a code
+for a request with no account.", after the checks on the request's state and
+before anything is opened or a code is checked, so the answer is the same whether
+or not the contact sent a dismissed report (2026-11-08). Before, Send a code
+answered them 200 for a dismissed reporter and 422 for a stranger, and Confirm's
+fifth wrong code answered 429 and spent the reporter's code. A request with an
+account is unchanged. On the form's second half (`POST /rights/requests/verify`) a
+wrong code, a code of four to ten digits other than six and a spent budget of five
+tries all answer 400 `otp_invalid`, "Invalid or expired code", as a reference no
+code was sent for does: the fifth wrong try discards the code, and only the limit
+per address (30 an hour) answers 429. A malformed body - a code of fewer than four
+or more than ten digits or with anything but digits, or a reference shorter than
+six or longer than 24 characters - is refused before anything is looked up, with
+422 `validation_failed`, the same for every caller. Neither that code nor one an
+officer confirms stamps anything on the account: it proves that whoever made the
+request holds the address it went to, not that the account's holder does
+([what a code proves](../security/authentication.md#what-a-code-proves)). An
 unverified request is closed by the nightly sweep after seven days, and a
 stranger who asks after it is told only that it is closed.
 
@@ -342,11 +361,32 @@ reporter's rights reach it (0065,
 
 - **Found by the address**, by its blind index, once identity is verified, on an
   access or erasure request not confined to one consent: the subject account's
-  email once a code to it came back (or, on an account from before each contact's
-  proof was stamped, when neither is), and its second email once proved; for a
-  request with no account, the email it gave. An email never proved beside a mobile
-  that was finds nothing (2026-11-08): a nominee's account is made that way, with
-  the address the principal typed, which may be somebody else's. A report that was
+  email once a code sent to it came back (`email_verified_at`), and its second
+  email once a code to that one came back (`secondary_email_verified_at`); for a
+  request with no account, the email it gave. Nothing else counts (2026-11-08): an
+  account with neither stamp is not read as one from before the stamps, since a
+  changed mobile loses its stamp and a sign-up nobody finished carries none, and a
+  nominee's account carries the address the principal typed, which may be somebody
+  else's, beside a proved mobile. The flows that stamp are a sign-in by code (the
+  contact typed, which the code is bound to), a password reset and the staff and
+  breach holder invitations (the email), the staff second factor (the email), a
+  consent link's code (the contact typed), a nomination accepted (on a new nominee
+  account the medium the code went to; on one already there only its own email or
+  mobile), registration, confirming a contact, and creating an account by SSO
+  ([what a code proves](../security/authentication.md#what-a-code-proves)). The
+  public form's code and an officer's **Confirm** stamp nothing: they prove that
+  whoever made the request holds the address, not that the account's holder does,
+  and the request may be attached to an account carrying somebody else's address.
+  No stamp was backfilled, so an account whose email none of those flows has
+  reached finds nothing by it until one does - an older account, a staff or breach
+  holder account activated before 2026-11-08 until its next second factor, a
+  nominee's account, one whose mobile was changed and not confirmed, a sign-up not
+  yet finished. With no such address to look by, or on a request with no account
+  whose contact is a mobile, nothing is looked for, and the card says so: "No email
+  address proved to be the requester's is held, so nothing was looked for."
+  (`not_looked_because` and `erase_blocked_by`). **Complete** is not held back by
+  reports nobody looked for, and the response names none beyond those already
+  erased under the request. A report that was
   claimed, or is still waiting in the intake, is not reached. The request detail
   serves what was found as `public_reports` - up to 50 unerased reports, oldest
   first, with the total, then those erased under this request - to the DPO and the
@@ -369,9 +409,13 @@ reporter's rights reach it (0065,
   a request with no account, an active hold on any account the contact it gave is on
   stops it - as an email, proved or not, or the mobile, whatever its role - since the
   public form opens such a request for a staff account's address or a second email
-  nobody proved (2026-11-08); if the key service cannot open that contact the card
-  says whether a hold covers the requester could not be checked, and the erasure
-  answers 503. A second press finds nothing and writes nothing. Each report erased is
+  nobody proved (2026-11-08). If the key service cannot open that contact, the card
+  says the reports from the public link could not be looked for, or, should it fail
+  only for the hold check, that whether a legal hold covers the requester could not
+  be checked; the erasure answers 503. With no proved address to look by (above),
+  the erasure is refused with 409 `no_proved_email`, in the card's words, rather
+  than erasing by nothing (2026-11-08). A second press finds nothing and writes
+  nothing. Each report erased is
   `incident_report.reporter_erased` on the trail, with the request's reference and
   the INC: on the request's office's trail, never the other office's, and on the
   person's own when they have an account.
@@ -384,8 +428,9 @@ reporter's rights reach it (0065,
 
 The open questions about these reports are kept with the breach register's
 ([breaches.md](breaches.md#open-questions)): who answers them when the administrator
-handles a request about the office, how long the public form's verify takes, an
-answer sent only by text, and an account email nobody proved.
+handles a request about the office, and what its trail tells them; how long the
+public form's verify takes; an answer sent only by text; an account email nobody
+proved, which a sign-in by it stamps; and an SSO sign-in that stamps nothing.
 
 **Backups are not covered yet.** There are no database backups today (parked,
 P-03), and whether a backup holding an erased item is scrubbed or left to
@@ -440,7 +485,11 @@ linked to it, and a grievance carries the request it disputes.
 A data principal names one nominee, by mobile with an optional email, while
 she is well. The nominee receives a link and must accept it with a code sent
 to the medium they choose; acceptance gives them an account and the reference
-they need to act. Acceptance is due within thirty days. Nominations can be
+they need to act. The contact the code went to is stamped proved on that
+account (on an account already there, only where it is the account's own email
+or mobile), and an email the principal typed that no code went to stays unproved
+until one does, so no dismissed report is found by it (2026-11-08). Acceptance
+is due within thirty days. Nominations can be
 declined, revoked, and are shown to both parties.
 
 When the nominee invokes the nomination they name the **trigger event**,

@@ -5,8 +5,10 @@ and what the review of the work changed, at the end); amended again 2026-11-07
 (the product owner's six answers of that day, which confirmed and widened the
 set-aside, [at the end](#amended-2026-11-07-the-product-owners-answers)); corrected
 in place 2026-11-08, where a review of what the answers built found these words and
-the code apart. Migrations 0058 to 0065: 0058 to 0063 for the product owner's nine
-items of 2026-11-06, 0064 and 0065 for the answers. The answers also reach
+the code apart, and again that day after its second review (an account's email
+counts only once a code to it came back). Migrations 0058 to 0065: 0058 to 0063
+for the product owner's nine items of 2026-11-06, 0064 and 0065 for the answers.
+The answers also reach
 [ADR 0019](0019-erasure-reaches-every-store-but-the-record.md), whose erasure now
 reaches a dismissed report from the public link, and
 [ADR 0026](0026-a-rights-request-is-access-erasure-or-a-grievance-about-everything.md),
@@ -465,10 +467,10 @@ row, and mails nobody.
   service that cannot open a name for the duty leaves the *yes* standing and the
   duty outstanding, with `breach.board_duty_unsettled` in the log. Try again, on any
   version of the board's report, reads every version again, oldest first, and
-  completes the duty from the first that reached somebody (`by: try_again`, the
-  person pressing as the actor); a key service still away fails the press (503). The
-  worker's re-read after any later outcome reads them the same way (`by: delivery`),
-  so a later version that lands first is not the one recorded.
+  completes the duty from the first that has run its course and reached somebody;
+  a version still sending is passed over (`by: try_again`, the person pressing as
+  the actor). A key service still away fails the press (503). The worker's re-read
+  after any later outcome reads them the same way (`by: delivery`).
 - **A regulator's report filed while aside** completes the initial intimation or the
   72-hour report at the *yes*, from when it was sent and the reference that came
   back, recorded as the filer's (`by: filed_report`). If several were filed, the
@@ -508,12 +510,25 @@ dismissed it.
 - **Found by the address's blind index.** 0065 gives `incident_report` the same
   index as `auth_user.email_hash`, written with the report and backfilled through the
   key service. Once identity is verified, an access or erasure request about
-  everything held looks: by the account's email once a code to it came back (or, on
-  an account from before each contact's proof was stamped, when neither is), and its
-  second email once proved, or for a request with no account by the email it gave. An
-  email never proved beside a mobile that was is not looked by: a nominee's account
-  is made that way, with the address the principal typed, which may be somebody
-  else's (2026-11-08). Only the two officers are shown what it finds, on the
+  everything held looks: by the account's email once a code sent to it came back
+  (`email_verified_at`), by its second email once a code to that one came back, or
+  for a request with no account by the email it gave. Nothing else counts
+  (2026-11-08): an account with neither stamp is not read as one from before the
+  stamps, since a changed mobile loses its stamp and a sign-up nobody finished
+  carries none, and a nominee's account carries the address the principal typed,
+  which may be somebody else's. A sign-in by code and a consent link's code stamp
+  the contact typed (a sign-in code is now bound to it); a reset, the staff and
+  breach holder invitations and the staff second factor stamp the email; a
+  nomination, registration, confirming a contact and creating an account by SSO
+  stamp what their codes, or the identity provider, proved (a nomination, on an
+  account already there, only its own email or mobile)
+  ([authentication.md](../security/authentication.md#what-a-code-proves)). The
+  public form's code and an officer's Confirm stamp nothing: they prove that
+  whoever made the request holds the address, not that the account's holder does,
+  and `users.by_contact` may have attached the request to an account carrying
+  somebody else's address. With no proved address the request says nothing was
+  looked for, and its erasure is refused (409 `no_proved_email`). Only the two
+  officers are shown what it finds, on the
   request's **Holders** tab. A response the administrator releases on a request
   about the office still carries the requester's own reports in its package; who
   should answer that part is open ([breaches.md](../domain/breaches.md#open-questions)).
@@ -540,13 +555,24 @@ dismissed it.
   address is sent a code to the address the report came from, so the public form's
   neutral reply stays true for these reporters and the office need not verify them
   by hand. The request's detail tells the officers whether a code has somewhere to
-  go (`code_channel`), never where. On the public form a wrong code, one of the
-  wrong length and a spent budget of tries all answer as a reference no code was
-  sent for does, so tries no longer tell a reporter from a stranger (2026-11-08);
-  how long the reply takes still may ([breaches.md](../domain/breaches.md#open-questions)).
+  go (`code_channel`), never where, and on a request with no account **Send a code**
+  and **Confirm** are theirs alone: anybody else gets 403 `officers_only`, the same
+  whether or not the contact sent a dismissed report (2026-11-08). On the public form
+  a wrong code, one of four to ten digits other than six and a spent budget of tries
+  all answer as a reference no code was sent for does (400 `otp_invalid`), so tries
+  no longer tell a reporter from a stranger (2026-11-08); a malformed body (fewer
+  than four or more than ten digits, anything but digits, a reference shorter than
+  six or longer than 24 characters) answers 422 `validation_failed`, the same for
+  every caller. How long the reply takes still may tell them apart
+  ([breaches.md](../domain/breaches.md#open-questions)).
 
 What it costs: the words stay, may name the reporter, and once the index is gone a
-later request cannot reach them; the reason stays and may name them too. A report
+later request cannot reach them; the reason stays and may name them too. No proof
+of an email was backfilled: an account whose email none of the stamping flows has
+reached since finds nothing by it until one does: a request from an older
+account, a staff or breach holder account not signed in since 2026-11-08, or a
+nominee's account whose code went to the mobile finds none of its own reports, and
+its card says nothing was looked for. A report
 that was claimed is not reached at all: it is the incident's record of what the
 office was told, and it may sit in the other office's register, so neither request
 surfaces it. Nothing expires a dismissed report: it is kept until a rights request

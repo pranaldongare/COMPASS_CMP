@@ -61,6 +61,17 @@ Mobiles are normalised to digits with a leading plus, so "+91 90000 00001" and
 "+919000000001" are one number; that normalised form is what is sealed and
 what is hashed (below).
 
+**A sign-in code is bound to the contact it went to** (2026-11-08). It is issued
+under the account and the contact's keyed hash (`login_code_identity`, so Redis
+holds no address), and it verifies only when that same contact is typed again:
+another contact of the same account answers 400 `otp_invalid`, as a wrong code
+does. Keyed on the account alone, a code sent to the mobile also verified with the
+account's email typed beside it, and stamped that email proved although no code
+had gone there. The portal sends the contact it asked the code for; a code issued
+before the change, within its ten minutes, is refused once. A sign-in stamps the
+contact typed - the mobile, the email or the second email, never another
+([what a code proves](#what-a-code-proves)).
+
 The reasoning: a data subject who could set a password would have an account
 worth phishing, and would reuse a password they use elsewhere. One who receives a
 code per sign-in has nothing worth stealing between sessions.
@@ -115,7 +126,10 @@ and compares it with the `*_hash` column beside the sealed one
   (`users.credentials_by_login`).
 - A code sign-in, a consent link, "is this address taken": `email_hash`,
   `mobile_hash` or `secondary_email_hash` (`users.by_contact`, `medium_of`).
-  An `@` makes a contact an address; anything else is a mobile.
+  An `@` makes a contact an address; anything else is a mobile. The second
+  email is matched only once proved; the email and the mobile are matched
+  proved or not, which is open
+  ([breaches.md](../domain/breaches.md#open-questions)).
 - "That is already the address on your account": the hashes, not the strings.
 
 The normalisation is part of the contract. Emails are stripped and
@@ -165,6 +179,57 @@ integration suite now races eight verifications of one code and expects one.
 Stored as a **keyed hash, scoped to their purpose** — never in plaintext, and a
 code issued for staff MFA cannot be replayed against the consent flow. Whoever
 can read Redis should not thereby be able to complete somebody else's sign-in.
+
+## What a code proves
+
+A code that comes back proves the contact it went to, and the flows below stamp
+that contact proved on the account (`users.mark_contact_verified`, which sets
+`email_verified_at`, `mobile_verified_at` or `secondary_email_verified_at` and
+writes no audit row; each flow keeps its own). A rights request finds a dismissed
+report from the public link by an account's email only once the email carries
+that stamp, and by its second email only once that one does
+([rights-requests.md](../domain/rights-requests.md#reports-from-the-public-link)),
+so which flow stamps what decides what a request finds (2026-11-08). A stamp also
+counts where it always did: a consent receipt, a withdrawal's confirmation and an
+HR activity's request to consent again go to a stamped email before a stamped
+mobile (`consent.receipt_contact`), and the account page shows a stamped contact
+as confirmed.
+
+| Flow | Stamps |
+|---|---|
+| A sign-in by code (`POST /auth/otp/verify`) | The contact typed, which the code is bound to: the mobile, the email or the second email |
+| A password reset, a staff invitation and a breach holder's invitation (`POST /auth/password/reset/confirm`) | The email, where all three send the code |
+| The staff second factor (`POST /auth/mfa/verify`) | The email; the code never goes to the mobile |
+| A consent link's code (`POST /c/{token}/otp/verify`) | The contact typed: the mobile, the email or the second email |
+| A nomination accepted (`POST /rights/nominations/{token}/accept`) | On a new nominee account, the medium the code went to. On an account already there, that contact only where it is the account's own email or mobile: never a second email, never a sign-up not yet finished, and nothing when the record of where the code went is lost |
+| Registration (`POST /auth/register/verify`) | Each medium answered |
+| Confirming a contact from the account (`POST /me/contact/verify`) | That contact |
+| An account created by SSO (`POST /c/{token}/sso/mobile/verify`) | The mobile, by its code, and the address the identity provider asserted |
+
+These stamp nothing:
+
+- **The public rights form's code and an officer's Confirm**
+  (`POST /rights/requests/verify`, `POST /requests/{uuid}/verification/confirm`).
+  The code proves that whoever made the request holds the address it went to, not
+  that the account's holder does. `users.by_contact` attaches a public-form request
+  to an account carrying that address unproved - a nominee's account, whose email
+  the principal typed - so a stamp there would let that account's later requests
+  find the dismissed reports of the address's owner.
+- **An SSO sign-in to an account already there** (`GET /auth/sso/callback`): only
+  creating one stamps. Whether the assertion should stamp the address, as creation
+  does, is open ([breaches.md](../domain/breaches.md#open-questions)).
+- The flows with no account in them: the public link's report code, a holder
+  ticket's code, a nominee's request, declining a nomination, and the development
+  sign-in mock.
+
+Nothing was backfilled. An account whose email none of these flows has reached
+finds no dismissed report by it until one does, and the request's **Reports from
+the public link** card says that no email address proved to be the requester's is
+held: an account from before the stamps (0015) that has not signed in by email
+since, a staff or breach holder account activated before 2026-11-08 until its next
+second factor, a nominee's account whose code went to the mobile, an account whose
+email was never stamped and whose mobile was changed and not confirmed (read until
+2026-11-08 as one from before the stamps), and a sign-up nobody finished.
 
 ## Lockout
 

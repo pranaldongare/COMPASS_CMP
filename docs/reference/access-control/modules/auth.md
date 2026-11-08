@@ -84,7 +84,7 @@ Complete stepped-up sign-in.
 
 - **Who:** `admin`, `data_subject`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder`.
 - **Route guard:** `PartialUser`.
-- **Rules:** A valid session cookie and CSRF token plus the account MFA code are required. PartialUser accepts partial or full sessions; it has no role filter. Successful promotion requires an issued code.
+- **Rules:** A valid session cookie and CSRF token plus the account MFA code are required. PartialUser accepts partial or full sessions; it has no role filter. Successful promotion requires an issued code. It stamps the account's email proved, where the code went; the code never goes to the mobile (2026-11-08).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/auth.py#L181), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/auth/authentication/service.py#L52), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/dependencies/authentication.py#L61).
 
 ## POST /auth/otp/request
@@ -97,7 +97,7 @@ Data-subject sign-in code.
 
 - **Who:** public.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** Public entry point. Codes go to registered contacts; an eligible staff account can also use the portal as a data principal.
+- **Rules:** Public entry point. Codes go to registered contacts; an eligible staff account can also use the portal as a data principal. Each code is issued under the account and the keyed hash of the contact it goes to, so it answers only to that contact (2026-11-08).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/auth.py#L242), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/auth/authentication/service.py#L52), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/dependencies/authentication.py#L61).
 
 ## POST /auth/otp/verify
@@ -110,7 +110,7 @@ Data-subject sign-in.
 
 - **Who:** public.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** A valid contact code opens a session acting as data_subject, even when the underlying account is staff.
+- **Rules:** A valid contact code opens a session acting as data_subject, even when the underlying account is staff. The code verifies only with the contact it was sent to: another contact of the same account answers 400 otp_invalid, as a wrong code does. It stamps that contact proved - the mobile, the email or the second email typed - and no other (2026-11-08).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/auth.py#L279), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/auth/authentication/service.py#L52), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/dependencies/authentication.py#L61).
 
 ## POST /auth/password/change
@@ -136,7 +136,7 @@ Password Reset Confirm.
 
 - **Who:** public.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** Public entry point; an account-specific reset/invitation code is required. This activates a pending invited account.
+- **Rules:** Public entry point; an account-specific reset/invitation code is required. This activates a pending invited account. It stamps the account's email proved: a reset, a staff invitation and a breach holder's invitation all send this code there (2026-11-08).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/auth.py#L345), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/auth/authentication/service.py#L52), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/dependencies/authentication.py#L61).
 
 ## POST /auth/password/reset/request
@@ -214,5 +214,5 @@ Where the organisation's identity provider returns (ADR 0034).
 - **Who:** public.
 - **Route guard:** `Public; no session dependency`.
 - **Resolved gate:** `Public; no session dependency`.
-- **Rules:** The state the start issued is the credential, taken once: unknown or used is a 404. Exchanges the code, validates the ID token, matches the employee ID, and redirects (303) to the link with `?sso=` ok, mobile, conflict, invalid, unavailable or cancelled; sets a data principal's session on a match, or the pending cookie for a new employee. Never records a claim. (2026-10-28, ADR 0034)
+- **Rules:** The state the start issued is the credential, taken once: unknown or used is a 404. Exchanges the code, validates the ID token, matches the employee ID, and redirects (303) to the link with `?sso=` ok, mobile, conflict, invalid, unavailable or cancelled; sets a data principal's session on a match, or the pending cookie for a new employee. Never records a claim. (2026-10-28, ADR 0034) A sign-in to an account already there stamps no contact proved; only creating one does. Whether the assertion should stamp the address there too is open (breaches.md, 2026-11-08).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/consent.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/auth.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/auth/authentication/sso.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/infrastructure/identity/oidc.py), [source 5](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/infrastructure/identity/state.py).

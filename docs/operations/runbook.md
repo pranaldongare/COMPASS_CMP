@@ -495,8 +495,9 @@ shows has the report, so pressing it twice sends nothing twice.
   a *no* stood, and the key service could not open a name for the duty at the
   *yes*. Press **Try again** on any version of the board's report, the newest
   included: it reads every version, oldest first, and completes the duty from the
-  first that reached the board. If the key service is still away the press fails
-  (503); bring it back and press again.
+  first that has run its course and reached the board; a version still sending is
+  passed over. If the key service is still away the press fails (503); bring it
+  back and press again.
 - **Nobody it went to can be reached any more**: every address it was sent to has
   been taken off the list since. **Try again** has nobody to try. Write a new
   version, which offers the list as it now stands.

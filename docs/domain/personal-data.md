@@ -84,7 +84,7 @@ than deleting it.
 | `role` | user_role | Staff role, or `data_subject` |
 | `status` | user_status | pending / active / suspended / deactivated |
 | `password_hash` | varchar(255) | Argon2. Staff only; a data principal has none and never gets one |
-| `email_verified_at`, `mobile_verified_at`, `secondary_email_verified_at` | timestamptz | When a code sent to that contact came back. NULL means the contact signs nobody in |
+| `email_verified_at`, `mobile_verified_at`, `secondary_email_verified_at` | timestamptz | When a code sent to that contact came back, in a flow that stamps it ([what a code proves](../security/authentication.md#what-a-code-proves)); the public rights form's code stamps nothing. A second email with none signs nobody in; the email and the mobile are found by a sign-in proved or not, and a sign-in that succeeds stamps the one typed. A rights request finds a dismissed report by an email only once it is stamped |
 | `registered_via_link_id` | integer | The consent link the account was created from, where it was |
 
 **`person_type_history`** — `auth_user_id`, `from_type`, `to_type`, `reason`
@@ -302,11 +302,16 @@ no duty or accountability record stands on it, and the product owner's answer of
 
 - **Found by the blind index of the address**, once identity is verified, on an
   access or erasure request that is not confined to one consent: the account's
-  primary email once a code to it came back (or, on an account from before each
-  contact's proof was stamped, when neither is), its second email once proved, or
-  for a request with no account the email it gave. An email never proved beside a
-  mobile that was finds nothing: a nominee's account is made that way, carrying the
-  address the principal typed, which may be somebody else's (2026-11-08). Only the
+  primary email once a code sent to it came back (`email_verified_at`), its second
+  email once a code to that one came back, or for a request with no account the
+  email it gave. Nothing else counts (2026-11-08): an account with neither stamp is
+  no longer read as one from before the stamps, and a nominee's account carries the
+  address the principal typed, which may be somebody else's. Which flows stamp
+  what is in [authentication.md](../security/authentication.md#what-a-code-proves); the public
+  rights form's code and an officer's Confirm stamp nothing, since they prove only
+  that the requester holds the address. Nothing was backfilled, so an account whose
+  email no such flow has reached finds nothing by it until one does, and the card
+  says no email address proved to be the requester's is held. Only the
   two officers are shown what was found, on the request's **Holders** tab; the
   administrator on a request about the office is shown nothing there and cannot
   erase (404). A response the administrator releases on such a request still
@@ -898,7 +903,7 @@ the same token and are protected the same way.
 | `POST /auth/register/verify` | Carries codes | `mobile`, `email_code`, `mobile_code` | Five attempts, ten minutes, one atomic check-and-consume |
 | `POST /auth/login` | Carries the password | `login`, `password` | Five failures locks the account for 30 minutes; the reply does not distinguish a wrong password from an unknown login |
 | `POST /auth/otp/request` | Yes | `contact` | **The reply is the same sentence whether or not the contact is registered**, so it cannot be used to ask whether a number is on the register |
-| `POST /auth/otp/verify` | Carries the code | `contact`, `code` | Ten minutes, five attempts, one atomic check-and-consume; a verified code mints a `data_subject` session **whatever role the account holds** |
+| `POST /auth/otp/verify` | Carries the code | `contact`, `code` | Ten minutes, five attempts, one atomic check-and-consume; the code answers only to the contact it was sent to, and another contact of the same account is refused as a wrong code is (2026-11-08); a verified code mints a `data_subject` session **whatever role the account holds** |
 | `POST /auth/password/reset/request` | Yes | `email` | Neutral reply, rate-limited |
 | `POST /auth/password/reset/confirm` | Carries the code | `email`, `code`, `new_password` | Single-use code |
 | `GET /c/{token}` | Link token | the token | Returns the project, the site and the languages available, and **no personal data**; an invalid link renders no notice content. The response sets `Referrer-Policy: no-referrer`, so the token cannot leak through a referer header, and it is rate-limited per address |
@@ -908,7 +913,7 @@ the same token and are protected the same way.
 | `POST /c/{token}/register` | Link token | `full_name`, `email`, `mobile`, `dob`, `organization_id`, `person_type` | Creates the account the link will then authenticate; a date of birth under eighteen creates nothing |
 | `POST /c/{token}/consent` | Link token, and a session it minted | `grants`, `action_type`, `served_at` | `served_at` in the body is **ignored**: the moment comes from the server's own record of showing her the notice |
 | `POST /rights/requests` | Carries a verification code | `contact`, `request_text` | Rate-limited; verification happens before anything is answered |
-| `POST /rights/requests/verify` | Carries the code | `code` | Five attempts, ten minutes |
+| `POST /rights/requests/verify` | Carries the code | `code` | Five attempts, ten minutes; every failure of a well-formed body is the same 400 `otp_invalid`, and a malformed one the same 422 for everybody (2026-11-08) |
 | `POST /incident-reports/code` | Yes | `email` | Rate-limited per contact and address; the reply is the same sentence for any address; nothing is stored |
 | `POST /incident-reports` | Carries the code | `name`, `email`, `code`, `title`, what happened | Rate-limited per address; a wrong code takes nothing; the reply is a number and a sentence, and nothing that is in a report can be read back through it. It starts no clock and no duty |
 | `GET /rights/nominations/{token}` | Nomination token | — | Returns `principal_name` and `nominee_name` — **the one anonymous read that returns two people's names**, and the token is single-purpose, expiring and hashed at rest |

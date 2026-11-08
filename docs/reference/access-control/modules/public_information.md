@@ -74,7 +74,7 @@ Accept a nomination.
 
 - **Who:** public.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** Valid nomination token plus contact code required to accept.
+- **Rules:** Valid nomination token plus contact code required to accept. It stamps the contact the code went to: on a new nominee account, that medium; on an account already there, only where it is that account's own email or mobile, never a second email and never a sign-up not yet finished; nothing when the record of where the code went is lost (2026-11-08).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/rights.py#L300), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/service.py#L1).
 
 ## POST /rights/nominations/{token}/code
@@ -139,7 +139,7 @@ Make a request without an account.
 
 - **Who:** public.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** Anyone may submit without an account. Contact verification and subsequent office checks govern processing; submission is not access to another person’s records. A contact with no account that is the address of a report an office dismissed, not yet erased, is sent a code at the address stored on the report, never the one typed; the reply is the same neutral sentence either way (0065).
+- **Rules:** Anyone may submit without an account. Contact verification and subsequent office checks govern processing; submission is not access to another person’s records. A contact with no account that is the address of a report an office dismissed, not yet erased, is sent a code at the address stored on the report, never the one typed; the reply is the same neutral sentence either way (0065): "Thank you. Your request has been recorded. If we hold records for the contact you gave, a verification code has been sent to the contact we hold for you." An account's code goes to its email, else its mobile, whichever contact was typed (2026-11-08).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/rights.py#L212), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/service.py#L1).
 
 ## POST /rights/requests/verify
@@ -152,7 +152,7 @@ Confirm the code.
 
 - **Who:** public.
 - **Route guard:** `Public; no session dependency`.
-- **Rules:** The request reference/contact verification code must match; no session required. Accepts, for a request with no account, the code sent to a dismissed reporter's stored address (0065). Every failure answers 400 otp_invalid "Invalid or expired code": an unknown reference, one no code was sent for, a wrong code, a code of the wrong length and a spent budget of five tries, after which the code is discarded; the tries never answer 429, only the limit of 30 an hour per address does (2026-11-08).
+- **Rules:** The request reference/contact verification code must match; no session required. Accepts, for a request with no account, the code sent to a dismissed reporter's stored address (0065). Every failure of a well-formed body answers 400 otp_invalid "Invalid or expired code": an unknown reference, one no code was sent for, a wrong code, a code of four to ten digits other than six and a spent budget of five tries, after which the code is discarded; the tries never answer 429, only the limit of 30 an hour per address does. A malformed body - a code of fewer than four or more than ten digits or not digits, or a reference shorter than six or longer than 24 characters - answers 422 validation_failed before anything is looked up, the same for every caller. Verifying stamps nothing on the account: it proves that whoever made the request holds the address it went to, not that the account's holder does, and `users.by_contact` may have attached the request to an account carrying somebody else's address unproved (2026-11-08).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/public/rights.py#L235), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/service.py#L1).
 
 ## GET /holder-tickets/{token}
