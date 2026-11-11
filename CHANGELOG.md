@@ -8,6 +8,19 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Codes are given, not typed; record pages carry their actions; Knox; dates
+  bounded; "Assign"** (2026-11-11). A new purpose is numbered `PUR-0001` and a
+  new data source `SRC-0001` by the platform (migration 0068): the console no
+  longer asks for a code, and a hand-made code cannot take that shape. A
+  purpose's page now offers Edit, Activate and Retire; a data source's and a
+  processor's, Suspend (asked first); an account's, Change role, Reset MFA,
+  Resend invitation and End access or Reactivate - the same actions as each
+  register's row menu. An approval can be of type Knox, and cannot be dated
+  in the future (checked on the server, which now reads "today" as today
+  anywhere, so an Indian morning is not refused). Every date and time input
+  offers only what makes sense: records of what happened up to now, deadlines
+  and expiries from now on. The DCO admin's site assignment says "Assign", as
+  do the other screens that gave someone a thing to own.
 - **A consented list for the Data Collection Tool** (2026-11-11): a project's
   **Generate an export** now offers the list the DCT loads, to its data
   contract v1 - ten fixed columns, one row per person whose latest consent on

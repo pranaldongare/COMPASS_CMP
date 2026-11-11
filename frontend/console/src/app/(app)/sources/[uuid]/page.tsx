@@ -44,6 +44,7 @@ import { SourceForm } from "@/features/registry/components/forms";
 import { SourceOwner } from "@/features/registry/components/source-owner";
 import { useSource } from "@/features/registry";
 import { formatDateTime, humanise } from "@/lib/format";
+import { SuspendRecord } from "@/features/registry/components/suspend-record";
 import { useAuth } from "@/providers";
 
 export default function SourceDetailPage() {
@@ -93,10 +94,16 @@ export default function SourceDetailPage() {
         }
         actions={
           canEdit && (
-            <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
-              <Pencil className="size-4" />
-              Edit
-            </Button>
+            <>
+              <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+                <Pencil className="size-4" />
+                Edit
+              </Button>
+              {/* The register's Suspend, here too (2026-11-11). */}
+              {s.status === "active" && (
+                <SuspendRecord kind="source" uuid={s.source_uuid} name={s.name} />
+              )}
+            </>
           )
         }
         facts={[

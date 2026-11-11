@@ -192,14 +192,14 @@ export default function SourcesPage() {
         />
 
         {/* The gap, as a filter rather than a constraint.
-            "No processor named" is a legitimate state for a source the
+            "No processor assigned" is a legitimate state for a source the
             organisation runs itself, and an error for one a third party
             operates - and only a person can tell those apart. So the system
             makes the set reviewable instead of guessing. */}
         {/* Never theirs to see: a source with no processor is no processor's. */}
         {!collector && (
           <FilterToggle
-            label="No processor named"
+            label="No processor assigned"
             checked={unmapped}
             onChange={(on) => {
               setUnmapped(on);

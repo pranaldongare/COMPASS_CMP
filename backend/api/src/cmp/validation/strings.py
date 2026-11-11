@@ -13,6 +13,7 @@ wins and this file is wrong.
 
 from __future__ import annotations
 
+import re
 from typing import Annotated
 
 from pydantic import StringConstraints
@@ -38,6 +39,19 @@ CodeText = Annotated[
     str,
     StringConstraints(min_length=1, max_length=80, pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]*$"),
 ]
+
+
+def not_a_given_number(code: str | None, prefix: str) -> str | None:
+    """A code typed by hand may not take the shape the platform numbers in
+    (`PUR-0001`, `SRC-0001`, 0068): the sequence would issue it again later,
+    and the second one would be refused for a code nobody chose."""
+    if code is not None and re.fullmatch(rf"{prefix}-[0-9]+", code, flags=re.IGNORECASE):
+        raise ValueError(
+            f"Codes like {prefix}-0001 are given by the platform. Leave the code out to get "
+            "the next one, or choose a code of another shape"
+        )
+    return code
+
 
 #: A contract reference, a manifest reference — external strings we echo back
 #: but never parse.

@@ -105,6 +105,8 @@ class ApprovalType(StrEnum):
     SECURITY = "security"
     LEGAL = "legal"
     OTHER = "other"
+    #: 0068. Last because `ALTER TYPE ... ADD VALUE` appends.
+    KNOX = "knox"
 
 
 # =============================================================== registry ====

@@ -23,6 +23,8 @@
 
 import { z } from "zod";
 
+import { todayLocal } from "@/lib/dates";
+
 /* ------------------------------------------------------------------ text */
 
 /**
@@ -155,14 +157,14 @@ export const dateOnly = (field: string) =>
 /** A date that cannot be in the future — an approval date, a collection date. */
 export const pastOrToday = (field: string) =>
   dateOnly(field).refine(
-    (value) => value <= new Date().toISOString().slice(0, 10),
+    (value) => value <= todayLocal(),
     `${field} cannot be in the future`,
   );
 
 /** A date that must be in the future — a retention deadline, a review date. */
 export const future = (field: string) =>
   dateOnly(field).refine(
-    (value) => value > new Date().toISOString().slice(0, 10),
+    (value) => value > todayLocal(),
     `${field} has to be later than today`,
   );
 

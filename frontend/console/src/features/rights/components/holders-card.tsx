@@ -89,6 +89,7 @@ import type {
   TicketState,
 } from "@/types";
 import { RETURN_OUTCOME_COPY } from "@/types";
+import { todayLocal } from "@/lib/dates";
 
 function messageOf(err: unknown, fallback: string): string {
   return err && typeof err === "object" && "userMessage" in err
@@ -448,7 +449,7 @@ function SendTickets({ request: r, count }: { request: RightsRequestDetail; coun
             label="Answer by"
             hint={`Halfway to the response date (${formatDate(r.clock.halfway_at)}) unless you choose a day - early on purpose, so a late answer can still be chased in time.`}
           >
-            {(p) => <Input {...p} type="date" value={dueOn} onChange={(e) => setDueOn(e.target.value)} />}
+            {(p) => <Input {...p} type="date" value={dueOn} min={todayLocal()} onChange={(e) => setDueOn(e.target.value)} />}
           </Field>
           <div className="flex gap-2">
             <Button
@@ -1061,7 +1062,7 @@ function SendBackForm({ request: r, holder: h, onDone }: { request: RightsReques
           {(p) => <Textarea {...p} rows={3} maxLength={2000} value={reason} onChange={(e) => setReason(e.target.value)} />}
         </Field>
         <Field label="Answer again by" hint={h.due_at ? `Leave empty to keep ${formatDate(h.due_at)}.` : undefined}>
-          {(p) => <Input {...p} type="date" value={date} onChange={(e) => setDate(e.target.value)} />}
+          {(p) => <Input {...p} type="date" value={date} min={todayLocal()} onChange={(e) => setDate(e.target.value)} />}
         </Field>
       </div>
       <FormButtons pending={sendBack.isPending} disabled={!reason.trim()} label="Send it back" onCancel={onDone} />
@@ -1126,7 +1127,7 @@ function ReopenForm({ request: r, holder: h, onDone }: { request: RightsRequestD
       <div className="space-y-3">
         {error && <Alert tone="danger">{error}</Alert>}
         <Field label="Answer by" required>
-          {(p) => <Input {...p} type="date" value={date} onChange={(e) => setDate(e.target.value)} />}
+          {(p) => <Input {...p} type="date" value={date} min={todayLocal()} onChange={(e) => setDate(e.target.value)} />}
         </Field>
       </div>
       <FormButtons pending={reopen.isPending} disabled={!date} label="Reopen" onCancel={onDone} />

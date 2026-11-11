@@ -45,7 +45,7 @@ async def create_purpose(
         event=Event.PURPOSE_CREATED,
         entity_type="purpose",
         entity_id=purpose["purpose_id"],
-        detail={"purpose_code": fields["purpose_code"], "lawful_basis": fields["lawful_basis"]},
+        detail={"purpose_code": purpose["purpose_code"], "lawful_basis": fields["lawful_basis"]},
     )
     return purpose
 
@@ -327,7 +327,7 @@ async def create_source(
     *,
     role: Any,
     user_id: int,
-    source_code: str,
+    source_code: str | None,
     name: str,
     source_role: str,
     exchange_mode: str,
@@ -402,7 +402,7 @@ async def create_source(
         event=Event.SOURCE_CREATED,
         entity_type="data_source",
         entity_id=source["source_id"],
-        detail={"source_code": source_code, "authoritative_for": is_authoritative_for},
+        detail={"source_code": source["source_code"], "authoritative_for": is_authoritative_for},
     )
     return source
 

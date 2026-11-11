@@ -181,6 +181,12 @@ per key - as configuration: the set is replaced when the office changes it,
 and each change is on the trail. Which emails may be copied at all is the
 catalogue's (`COPYABLE`), not the table's.
 
+**Codes the platform gives, since 0068.** `purpose.purpose_code` and
+`data_source.source_code` default to `PUR-`/`SRC-` and the next value of their
+sequence, padded to four digits (`cmp_next_number`, as `TPL-` codes are). The
+column stays `NOT NULL UNIQUE`; a code given by hand is kept, and the API
+refuses one in the numbered shape so the sequence never meets it.
+
 **A breach's people from a list, since 0045.** `breach_upload` records each
 list taken - kind (`contacts` or `assets`, by CHECK; since 0066 also `typed`,
 mail IDs and mobile numbers typed in, with no file), sealed file name, hash

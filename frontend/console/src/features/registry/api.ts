@@ -103,7 +103,8 @@ export const listAllSources = () => everyPage(listSources, "name");
 /* ---------------------------------------------------------------- writes */
 
 export interface PurposeInput {
-  purpose_code: string;
+  /** Given by the platform when left out (`PUR-0001`), as the console does. */
+  purpose_code?: string;
   name: string;
   description: string;
   uses: string;
@@ -127,7 +128,8 @@ export interface ProcessorInput {
 }
 
 export interface SourceInput {
-  source_code: string;
+  /** Given by the platform when left out (`SRC-0001`), as the console does. */
+  source_code?: string;
   name: string;
   source_role: string;
   exchange_mode: string;

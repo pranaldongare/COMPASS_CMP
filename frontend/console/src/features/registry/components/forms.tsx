@@ -28,6 +28,7 @@ import { useDataCategories, useEnums } from "@/features/meta";
 import { useProcessors } from "@/features/registry";
 import type { DataSource, Processor } from "@/types";
 import { useAuth, useToast } from "@/providers";
+import { todayLocal } from "@/lib/dates";
 import {
   processorSchema,
   sourceSchema,
@@ -128,7 +129,9 @@ export function ProcessorForm({
           error={form.formState.errors.security_confirmed_at?.message}
           required
         >
-          {(p) => <Input {...p} type="date" {...form.register("security_confirmed_at")} />}
+          {(p) => (
+            <Input {...p} type="date" max={todayLocal()} {...form.register("security_confirmed_at")} />
+          )}
         </Field>
 
         {/* Its own control rather than a value of `type`, because it answers a
@@ -195,7 +198,6 @@ export function SourceForm({ source, onDone }: { source?: DataSource; onDone: ()
   const update = useUpdateSource(source?.source_uuid ?? "");
 
   const form = useApiForm(sourceSchema, {
-    source_code: source?.source_code ?? "",
     name: source?.name ?? "",
     source_role: source?.source_role ?? "collection",
     exchange_mode: source?.exchange_mode ?? "file_import",
@@ -243,21 +245,13 @@ export function SourceForm({ source, onDone }: { source?: DataSource; onDone: ()
       <FormError message={form.formError} />
 
       <div className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field
-            label="Code"
-            error={form.formState.errors.source_code?.message}
-            required
-          >
-            {(p) => (
-              <Input
-                {...p}
-                {...form.register("source_code")}
-                placeholder="SRC-PUNE-01"
-                disabled={Boolean(source)}
-              />
-            )}
-          </Field>
+        <div className={source ? "grid gap-4 sm:grid-cols-2" : undefined}>
+          {/* Given by the platform when the source is registered, and fixed. */}
+          {source && (
+            <Field label="Code" hint="Given by the platform.">
+              {(p) => <Input {...p} value={source.source_code} readOnly disabled />}
+            </Field>
+          )}
 
           <Field label="Name" error={form.formState.errors.name?.message} required>
             {(p) => (

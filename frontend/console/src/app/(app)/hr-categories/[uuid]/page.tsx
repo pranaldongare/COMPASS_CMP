@@ -378,8 +378,8 @@ function Processors({
         ) : c.processors.length === 0 ? (
           <EmptyState
             icon={<Building2 />}
-            title="No processors named"
-            description="Name the HR system, databases and vendors that will hold this category's data."
+            title="No processors assigned"
+            description="Assign the HR system, databases and vendors that will hold this category's data."
           />
         ) : (
           <Table>

@@ -67,6 +67,7 @@ import { formatDate, formatDateTime } from "@/lib/format";
 import { canSee } from "@/lib/permissions";
 import { keys } from "@/lib/query";
 import { useAuth, useToast } from "@/providers";
+import { todayLocal } from "@/lib/dates";
 import type {
   AuditLookupHit,
   Breach,
@@ -495,6 +496,7 @@ function ProjectChoice({
               {...p}
               type="date"
               value={draft.from}
+              max={draft.until || todayLocal()}
               onChange={(e) => onChange({ ...draft, from: e.target.value })}
             />
           )}
@@ -509,6 +511,8 @@ function ProjectChoice({
               {...p}
               type="date"
               value={draft.until}
+              min={draft.from || undefined}
+              max={todayLocal()}
               onChange={(e) => onChange({ ...draft, until: e.target.value })}
             />
           )}

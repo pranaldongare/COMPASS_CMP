@@ -51,6 +51,7 @@ import { ProcessorForm } from "@/features/registry/components/forms";
 import { RespondentsPanel } from "@/features/registry/components/respondents";
 import { useProcessor, useSources } from "@/features/registry";
 import { formatDate, formatDateTime, humanise } from "@/lib/format";
+import { SuspendRecord } from "@/features/registry/components/suspend-record";
 import { useAuth } from "@/providers";
 
 const TABS = ["overview", "sources", "respondents"] as const;
@@ -106,10 +107,16 @@ export default function ProcessorDetailPage() {
         }
         actions={
           canEdit && (
-            <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
-              <Pencil className="size-4" />
-              Edit
-            </Button>
+            <>
+              <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+                <Pencil className="size-4" />
+                Edit
+              </Button>
+              {/* The register's Suspend, here too (2026-11-11). */}
+              {p.status === "active" && (
+                <SuspendRecord kind="processor" uuid={p.processor_uuid} name={p.legal_name} />
+              )}
+            </>
           )
         }
         facts={[

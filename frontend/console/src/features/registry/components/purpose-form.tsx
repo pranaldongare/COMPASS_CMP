@@ -29,13 +29,9 @@ import { type PurposeInput, useCreatePurpose, useUpdatePurpose } from "@/feature
 import type { Purpose } from "@/types";
 import { useToast } from "@/providers";
 
+// No code: the platform gives each new purpose the next `PUR-0001` (2026-11-11).
 const schema = z
   .object({
-    purpose_code: z
-      .string()
-      .min(1, "A code is required")
-      .max(80)
-      .regex(/^[A-Za-z0-9][A-Za-z0-9._-]*$/, "Letters, digits, dot, dash and underscore only"),
     name: z.string().min(1, "A name is required").max(200),
     description: z.string().min(1, "Describe what this purpose is"),
     uses: z.string().min(1, "State what this purpose lets you actually do"),
@@ -77,7 +73,6 @@ export function PurposeForm({
   const update = useUpdatePurpose(purpose?.purpose_uuid ?? "");
 
   const form = useApiForm(schema, {
-    purpose_code: purpose?.purpose_code ?? "",
     name: purpose?.name ?? "",
     description: purpose?.description ?? "",
     uses: purpose?.uses ?? "",
@@ -109,8 +104,8 @@ export function PurposeForm({
       await update.mutateAsync(payload);
       toast.success("Purpose updated");
     } else {
-      await create.mutateAsync(payload);
-      toast.success("Purpose created", "It must be activated before a notice can use it.");
+      const made = await create.mutateAsync(payload);
+      toast.success(`Purpose ${made.purpose_code} created`, "It must be activated before a notice can use it.");
     }
     onDone();
   });
@@ -120,22 +115,13 @@ export function PurposeForm({
       <FormError message={form.formError} />
 
       <div className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field
-            label="Code"
-            hint="Stable identifier. Appears in exports."
-            error={form.formState.errors.purpose_code?.message}
-            required
-          >
-            {(p) => (
-              <Input
-                {...p}
-                {...form.register("purpose_code")}
-                placeholder="PUR-GAIT-TRAIN"
-                disabled={Boolean(purpose)}
-              />
-            )}
-          </Field>
+        <div className={purpose ? "grid gap-4 sm:grid-cols-2" : undefined}>
+          {/* Given by the platform when the purpose is created, and fixed. */}
+          {purpose && (
+            <Field label="Code" hint="Given by the platform. Appears in exports.">
+              {(p) => <Input {...p} value={purpose.purpose_code} readOnly disabled />}
+            </Field>
+          )}
 
           <Field label="Name" error={form.formState.errors.name?.message} required>
             {(p) => (

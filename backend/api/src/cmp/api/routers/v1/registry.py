@@ -6,7 +6,7 @@ collection that named it, and "who processed this?" stops having an answer.
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, timedelta
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -41,7 +41,9 @@ from cmp.schemas.common import (
     ShortText,
 )
 from cmp.validation import Email
+from cmp.validation.common import not_in_the_future
 from cmp.validation.files import SPREADSHEET, check_upload
+from cmp.validation.strings import not_a_given_number
 
 router = APIRouter(tags=["registry"])
 
@@ -87,7 +89,9 @@ class PurposeOut(Out):
 
 
 class PurposeIn(Schema):
-    purpose_code: CodeText
+    #: Given by the platform when left out (`PUR-0001`, 0068), as the console
+    #: always leaves it. A code of that shape cannot be chosen by hand.
+    purpose_code: CodeText | None = None
     name: ShortText
     description: LongText
     uses: LongText
@@ -113,6 +117,11 @@ class PurposeIn(Schema):
         if len(set(cleaned)) != len(cleaned):
             raise ValueError("Data categories must be distinct")
         return cleaned
+
+    @field_validator("purpose_code")
+    @classmethod
+    def _not_numbered(cls, v: str | None) -> str | None:
+        return not_a_given_number(v, "PUR")
 
     @model_validator(mode="after")
     def _s7_coherence(self) -> PurposeIn:
@@ -271,11 +280,9 @@ class ProcessorIn(Schema):
     @classmethod
     def _not_future(cls, v: date) -> date:
         # Rule 6(1)(f): the confirmation is a thing that happened, not a plan.
-        # UTC rather than the server's local date: otherwise the same value is
-        # accepted or rejected depending on which side of midnight the server is.
-        if v > datetime.now(UTC).date():
-            raise ValueError("Security confirmation cannot be dated in the future")
-        return v
+        # Today anywhere, not the server's date or UTC's: otherwise "today" in
+        # India before 05:30 read as tomorrow (`latest_today`).
+        return not_in_the_future(v, what="Security confirmation")
 
 
 class RespondentOut(Out):
@@ -566,7 +573,9 @@ class SourceOut(Out):
 
 
 class SourceIn(Schema):
-    source_code: CodeText
+    #: Given by the platform when left out (`SRC-0001`, 0068), as the console
+    #: always leaves it. A code of that shape cannot be chosen by hand.
+    source_code: CodeText | None = None
     name: ShortText
     source_role: str
     exchange_mode: str
@@ -574,6 +583,11 @@ class SourceIn(Schema):
     processor_uuid: UUID | None = None
     site_uuid: UUID | None = None
     is_authoritative_for: list[str] = Field(default_factory=list)
+
+    @field_validator("source_code")
+    @classmethod
+    def _not_numbered(cls, v: str | None) -> str | None:
+        return not_a_given_number(v, "SRC")
 
 
 class SourceUpdate(Schema):

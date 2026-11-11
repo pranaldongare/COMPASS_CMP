@@ -36,6 +36,7 @@ from cmp.db.repositories import registry as repo
 from cmp.db.sql import Conn
 from cmp.domain.registry import service
 from cmp.infrastructure.spreadsheets import Column, SheetSpec, build_workbook, read_rows
+from cmp.validation.common import latest_today
 
 _CODE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 _COUNTRY = re.compile(r"^[A-Z]{2}$")
@@ -106,7 +107,8 @@ SOURCE_COLUMNS: tuple[Column, ...] = (
         required=True,
         width=20,
         help="A short unique code: letters, digits, '.', '_' or '-', starting with a letter "
-        "or digit. Up to 80 characters. A code already in the registry is skipped.",
+        "or digit. Up to 80 characters. A code already in the registry is skipped. Not "
+        "SRC- and a number: the platform gives those to sources made in the console.",
         aliases=("code",),
     ),
     Column(
@@ -293,7 +295,7 @@ class _Row:
         if value is None:
             self.fail(key, f"'{raw}' is not a date; write it as YYYY-MM-DD")
             return None
-        if value > datetime.now(UTC).date():
+        if value > latest_today():
             self.fail(key, "Cannot be dated in the future")
             return None
         return value
@@ -462,6 +464,10 @@ async def sources(conn: Conn, *, payload: bytes, apply: bool, user_id: int) -> d
                 "source_code",
                 "Use letters, digits, '.', '_' or '-', starting with a letter or digit",
             )
+        elif code and re.fullmatch(r"SRC-[0-9]+", code, flags=re.IGNORECASE):
+            # The shape the platform numbers new sources in (0068): the
+            # sequence would issue it again.
+            row.fail("source_code", "Codes like SRC-0001 are given by the platform; choose another")
         name = row.text("name", required=True)
         source_role = row.choice("source_role", SourceRole)
         exchange_mode = row.choice("exchange_mode", ExchangeMode)

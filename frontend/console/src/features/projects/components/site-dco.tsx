@@ -37,7 +37,7 @@ export function OverrideBadge({ site }: { site: SiteWithOwner }) {
       title={[
         site.source_owner_name
           ? `Runs this site instead of ${site.source_owner_name}, who owns the data source`
-          : "Named for this site directly",
+          : "Assigned for this site directly",
         site.override_by_name ? `Set by ${site.override_by_name}` : null,
         site.override_at ? formatDate(site.override_at) : null,
       ]
@@ -45,7 +45,7 @@ export function OverrideBadge({ site }: { site: SiteWithOwner }) {
         .join(" · ")}
     >
       <UserRoundCog className="size-2.5" aria-hidden="true" />
-      named here
+      assigned here
     </span>
   );
 }
@@ -94,7 +94,7 @@ function AssignSiteDcoBody({
         ownerUserUuid: selected || null,
       });
       toast[result.project_moved ? "warning" : "success"](
-        selected ? "Site owner named" : "Back to the source's owner",
+        selected ? "Site owner assigned" : "Back to the source's owner",
         result.project_moved
           ? "This project has moved. The data source is unchanged, so no other project has."
           : "The project's owner is unchanged.",
@@ -139,7 +139,7 @@ function AssignSiteDcoBody({
                     ) : (
                       <>Nobody owns {site.source_code ?? "this data source"} yet.</>
                     )}{" "}
-                    Naming somebody here changes this site on this project only — the data
+                    Assigning somebody here changes this site on this project only — the data
                     source keeps its owner, and every other project collecting from it is
                     untouched.
                   </span>
@@ -180,7 +180,7 @@ function AssignSiteDcoBody({
               {changing && !site.is_primary && (
                 <Alert tone="info">
                   The project stays with its current owner. This site is not the one it
-                  follows, so whoever you name will be able to see the project and work this
+                  follows, so whoever you assign will be able to see the project and work this
                   site only.
                 </Alert>
               )}
@@ -197,7 +197,7 @@ function AssignSiteDcoBody({
               loading={assign.isPending}
               disabled={!changing || !site.source_uuid}
             >
-              {selected ? "Name them" : "Clear the exception"}
+              {selected ? "Assign" : "Clear the exception"}
             </Button>
           </div>
         </form>

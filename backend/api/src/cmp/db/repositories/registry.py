@@ -252,7 +252,7 @@ async def source_by_code(conn: Conn, source_code: str) -> Row | None:
 async def create_source(
     conn: Conn,
     *,
-    source_code: str,
+    source_code: str | None,
     name: str,
     source_role: str,
     exchange_mode: str,
@@ -261,17 +261,19 @@ async def create_source(
     site_id: int | None,
     is_authoritative_for: list[str],
 ) -> Row:
+    # No code: the column's own default numbers it (`SRC-0001`, 0068).
+    code = "%s" if source_code else "DEFAULT"
     row = await fetch_one(
         conn,
-        """
+        f"""
         INSERT INTO data_source (source_code, name, source_role, exchange_mode, id_scheme,
                                  processor_id, site_id, is_authoritative_for)
-        VALUES (%s, %s, %s::source_role, %s::exchange_mode, %s, %s, %s, %s)
+        VALUES ({code}, %s, %s::source_role, %s::exchange_mode, %s, %s, %s, %s)
         RETURNING source_id, source_uuid, source_code, name, source_role, exchange_mode,
                   id_scheme, is_authoritative_for, status, created_at
         """,
         (
-            source_code,
+            *([source_code] if source_code else []),
             name,
             source_role,
             exchange_mode,
@@ -464,6 +466,8 @@ async def purpose_by_id(conn: Conn, purpose_id: int) -> Row | None:
 
 
 async def create_purpose(conn: Conn, *, created_by: int, office: str, **f: Any) -> Row:
+    # No code: the column's own default numbers it (`PUR-0001`, 0068).
+    code = "%(purpose_code)s" if f.get("purpose_code") else "DEFAULT"
     row = await fetch_one(
         conn,
         f"""
@@ -471,7 +475,7 @@ async def create_purpose(conn: Conn, *, created_by: int, office: str, **f: Any) 
                              data_categories, retention_period, retention_basis,
                              erasure_trigger, consent_validity_period, cross_border_permitted,
                              permitted_for_minors, lapse_behaviour, created_by, office_id)
-        VALUES (%(purpose_code)s, %(name)s, %(description)s, %(uses)s,
+        VALUES ({code}, %(name)s, %(description)s, %(uses)s,
                 %(lawful_basis)s::lawful_basis, %(s7_clause)s::s7_clause,
                 %(data_categories)s, %(retention_period)s::interval,
                 %(retention_basis)s::retention_basis, %(erasure_trigger)s::erasure_trigger,

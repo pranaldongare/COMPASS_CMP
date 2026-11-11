@@ -14,14 +14,17 @@
 
 import {
   ArrowLeft,
+  CheckCircle2,
   Hash,
   History as HistoryIcon,
   Hourglass,
   LayoutGrid,
   Lock,
+  Pencil,
   Scale,
   ScrollText,
   Target,
+  XCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -29,10 +32,12 @@ import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
 import { RecordHeader } from "@/components/layout/record-header";
+import { ConfirmDialog, Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmptyRecords } from "@/components/ui/graphics";
 import {
   Alert,
   Badge,
+  Button,
   Card,
   CardBody,
   CardHeader,
@@ -48,13 +53,34 @@ import {
 } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { Tab, TabList, TabPanel, Tabs, useHashTab } from "@/components/ui/tabs";
-import { usePurpose, usePurposeUsage, usePurposeVersions } from "@/features/registry";
+import {
+  useActivatePurpose,
+  usePurpose,
+  usePurposeUsage,
+  usePurposeVersions,
+  useRetirePurpose,
+} from "@/features/registry";
+import { PurposeForm } from "@/features/registry/components/purpose-form";
 import { formatDateTime, formatDuration, humanise } from "@/lib/format";
+import { useAuth, useToast } from "@/providers";
 
 const TABS = ["overview", "notices", "history"] as const;
 
+/** What a failed call says, in words. */
+function said(err: unknown, fallback: string): string {
+  return err && typeof err === "object" && "userMessage" in err
+    ? (err as { userMessage: () => string }).userMessage()
+    : fallback;
+}
+
 export default function PurposeDetailPage() {
   const { uuid } = useParams<{ uuid: string }>();
+  const { me } = useAuth();
+  const toast = useToast();
+  const activate = useActivatePurpose();
+  const retire = useRetirePurpose();
+  const [editing, setEditing] = React.useState(false);
+  const [retiring, setRetiring] = React.useState(false);
 
   const purpose = usePurpose(uuid);
   const usage = usePurposeUsage(uuid);
@@ -94,6 +120,18 @@ export default function PurposeDetailPage() {
   // A hash naming the history tab when it is not drawn falls back to Overview.
   const tab = selected === "history" && !showHistory ? "overview" : selected;
   const published = usageItems.filter((item) => item.status === "published").length;
+  // The register's own actions, here too (2026-11-11): edit and activate a
+  // draft, retire an active purpose no published notice still offers.
+  const canWrite = me?.writes.includes("purpose") ?? false;
+
+  async function onActivate() {
+    try {
+      await activate.mutateAsync(record.purpose_uuid);
+      toast.success("Purpose activated", "Notices can now use it.");
+    } catch (err) {
+      toast.error("Could not activate", said(err, "Please try again."));
+    }
+  }
 
   return (
     <>
@@ -112,6 +150,27 @@ export default function PurposeDetailPage() {
             <StatusBadge kind="purpose" value={record.status} />
             <span>{record.purpose_code}</span>
           </>
+        }
+        actions={
+          canWrite && (record.status === "draft" || record.status === "active") ? (
+            record.status === "draft" ? (
+              <>
+                <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+                  <Pencil className="size-4" />
+                  Edit
+                </Button>
+                <Button variant="primary" size="sm" loading={activate.isPending} onClick={onActivate}>
+                  <CheckCircle2 className="size-4" />
+                  Activate
+                </Button>
+              </>
+            ) : retirable !== false ? (
+              <Button variant="danger" size="sm" onClick={() => setRetiring(true)}>
+                <XCircle className="size-4" />
+                Retire
+              </Button>
+            ) : null
+          ) : null
         }
         facts={[
           {
@@ -334,6 +393,37 @@ export default function PurposeDetailPage() {
           </TabPanel>
         )}
       </Tabs>
+
+      <Dialog open={editing} onOpenChange={(o) => !o && setEditing(false)}>
+        <DialogContent title="Edit purpose" description="Drafts only." size="lg">
+          {editing && <PurposeForm purpose={record} onDone={() => setEditing(false)} />}
+        </DialogContent>
+      </Dialog>
+
+      <ConfirmDialog
+        open={retiring}
+        onOpenChange={(o) => !o && setRetiring(false)}
+        title={`Retire ${record.name}?`}
+        confirmLabel="Retire purpose"
+        loading={retire.isPending}
+        consequence={
+          <p>
+            It can no longer be attached to a notice. Existing notices that already carry it
+            are unaffected — and if any published notice references it, the server will
+            refuse, because retiring it would leave a live notice offering something the
+            registry says no longer exists.
+          </p>
+        }
+        onConfirm={async () => {
+          try {
+            await retire.mutateAsync(record.purpose_uuid);
+            toast.success("Purpose retired");
+            setRetiring(false);
+          } catch (err) {
+            toast.error("Could not retire", said(err, "Please try again."));
+          }
+        }}
+      />
     </>
   );
 }

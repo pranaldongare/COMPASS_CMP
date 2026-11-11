@@ -27,7 +27,8 @@ const MAX_RETENTION_DAYS = 36_500;
 
 export const purposeSchema = z
   .object({
-    purpose_code: codeText("A purpose code"),
+    // Given by the platform (`PUR-0001`, 2026-11-11); the console never sends one.
+    purpose_code: codeText("A purpose code").optional(),
     name: shortText("A purpose name"),
     description: longText("A description of what this purpose is"),
     // Distinct from `description` on purpose. The description says what the
@@ -123,16 +124,6 @@ export type ProcessorValues = z.infer<typeof processorSchema>;
 /* ----------------------------------------------------------- data source */
 
 export const sourceSchema = z.object({
-  // 60 rather than CodeText's 80: this is the `varchar(60)` the column holds.
-  source_code: z
-    .string()
-    .trim()
-    .min(1, "A source code is required")
-    .max(60, "A source code has to fit in 60 characters")
-    .regex(
-      /^[A-Za-z0-9][A-Za-z0-9._-]*$/,
-      "Letters, digits, dot, dash and underscore, starting with a letter or digit",
-    ),
   name: shortText("A source name"),
   source_role: z.string().min(1, "Choose a source role"),
   exchange_mode: z.string().min(1, "Choose an exchange mode"),

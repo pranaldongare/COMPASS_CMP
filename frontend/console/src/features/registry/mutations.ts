@@ -35,6 +35,8 @@ export function useActivatePurpose() {
     mutationFn: activatePurpose,
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["purposes"] });
+      // The purpose's own page, which offers it too (2026-11-11).
+      void qc.invalidateQueries({ queryKey: ["purpose"] });
       // Every notice carrying it, because activating a purpose is what clears a
       // line from a publication checklist. Without this the officer activates
       // from the notice page and the list beside it still says the purpose is a
@@ -49,7 +51,10 @@ export function useRetirePurpose() {
   const qc = useQueryClient();
   return useMutation<Acknowledged, ApiError, Uuid>({
     mutationFn: retirePurpose,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["purposes"] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["purposes"] });
+      void qc.invalidateQueries({ queryKey: ["purpose"] });
+    },
   });
 }
 

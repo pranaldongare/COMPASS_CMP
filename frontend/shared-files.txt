@@ -72,6 +72,8 @@ src/lib/browser/browser.test.ts
 src/lib/browser/index.ts
 src/lib/config/deployment.test.ts
 src/lib/config/deployment.ts
+src/lib/dates/dates.test.ts
+src/lib/dates/index.ts
 src/lib/dev/dev-client.ts
 src/lib/dkms/api.ts
 src/lib/dkms/deep.test.ts

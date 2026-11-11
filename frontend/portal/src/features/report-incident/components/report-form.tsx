@@ -23,6 +23,7 @@ import * as React from "react";
 
 import { FormError, useApiForm } from "@/components/forms";
 import { Alert, Button, Field, Input, Textarea } from "@/components/ui/primitives";
+import { nowLocal } from "@/lib/dates";
 import {
   requestReportCode,
   submitIncidentReport,
@@ -212,7 +213,7 @@ export function ReportForm({ onDone }: { onDone: (receipt: IncidentReportReceipt
         hint="If you can say. An estimate is fine."
         error={errors.noticed_at?.message}
       >
-        {(p) => <Input {...p} type="datetime-local" {...form.register("noticed_at")} />}
+        {(p) => <Input {...p} type="datetime-local" max={nowLocal()} {...form.register("noticed_at")} />}
       </Field>
 
       <details

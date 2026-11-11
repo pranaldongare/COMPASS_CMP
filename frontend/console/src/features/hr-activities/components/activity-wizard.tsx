@@ -18,6 +18,7 @@ import { useCreateHrActivity } from "@/features/hr-activities/mutations";
 import { useActivityOptions } from "@/features/hr-activities/queries";
 import { useToast } from "@/providers";
 import type { ActivityOptionVersion, HrActivityCreated } from "@/types";
+import { todayLocal } from "@/lib/dates";
 
 const STEPS = ["What", "Purposes", "Description", "Link"] as const;
 
@@ -331,7 +332,7 @@ export function ActivityWizard({ onDone }: { onDone: () => void }) {
                 {...p}
                 type="date"
                 value={expires}
-                min={new Date().toISOString().slice(0, 10)}
+                min={todayLocal()}
                 onChange={(e) => setExpires(e.target.value)}
               />
             )}

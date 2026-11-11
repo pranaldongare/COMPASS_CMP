@@ -197,10 +197,10 @@ export const SECTIONS: HelpSection[] = [
         title: "Create and activate a purpose",
         items: [
           "Click [[Purposes]] under Governance, then [[New purpose]].",
-          "Fill in [[Code]], [[Name]], [[Description]], [[What this allows]], tick the [[Data collected]], and choose the [[Lawful basis]], [[Retention (days)]], [[Retention basis]] and [[Erasure trigger]].",
+          "Fill in [[Name]], [[Description]], [[What this allows]], tick the [[Data collected]], and choose the [[Lawful basis]], [[Retention (days)]], [[Retention basis]] and [[Erasure trigger]]. There is no code to type: the platform gives each purpose the next one, such as PUR-0012.",
           "Tick [[Transfer outside India is permitted for this purpose]] only if it is; exports abroad are refused otherwise. Leave [[May be used for data of children]] unticked unless it truly applies.",
           "Click [[Create purpose]]. It starts as [[Draft]] and can be edited; the code cannot.",
-          "Open the row's [[⋯]] menu and choose [[Activate]]. Only an active purpose can appear on a notice.",
+          "Click [[Activate]] on the purpose's page, or in the row's [[⋯]] menu. Only an active purpose can appear on a notice. [[Edit]] and [[Retire]] are in both places too.",
         ],
       },
       {
@@ -229,7 +229,7 @@ export const SECTIONS: HelpSection[] = [
       {
         kind: "list",
         items: [
-          "Everything a row can do is in its [[⋯]] menu; click the name to open the processor.",
+          "Everything a row can do is in its [[⋯]] menu, and on the processor's own page; click the name to open it.",
           "[[Respondents]] names the people at a processor who answer rights tickets.",
           "[[Edit]] changes the details, including the country; [[Suspend]] stops new work with the processor.",
         ],
@@ -256,7 +256,7 @@ export const SECTIONS: HelpSection[] = [
         kind: "steps",
         items: [
           "Click [[Data sources]] under Registry, then [[Register source]].",
-          "Enter [[Code]], [[Name]], [[Role]], [[Exchange mode]], [[Identifier scheme]], choose [[Operated by]] and tick what it is [[Authoritative for]]. A DCO or an RCO chooses only among the processors they collect for; with one, it is chosen for them.",
+          "Enter [[Name]], [[Role]], [[Exchange mode]], [[Identifier scheme]], choose [[Operated by]] and tick what it is [[Authoritative for]]. A DCO or an RCO chooses only among the processors they collect for; with one, it is chosen for them. The platform gives the source its code, such as SRC-0004.",
           "Click [[Register source]]. Tick the filter [[Nobody accountable]] to find sources without an owner.",
           "Open the row's [[⋯]] menu, choose [[Assign]] and pick who is accountable: a DCO for a third party's source, an RCO for an in-house one.",
         ],
@@ -347,7 +347,7 @@ export const SECTIONS: HelpSection[] = [
         kind: "steps",
         title: "Submit (R&D User)",
         items: [
-          "Click [[Upload approval]]. Choose the [[Type]], enter the [[Reference number]] and [[Approved on]] date, attach the [[Proof document]] and click [[Upload approval]]. An approval without a proof file does not count.",
+          "Click [[Upload approval]]. Choose the [[Type]] - security, legal, Knox or other - enter the [[Reference number]] and the [[Approved on]] date, which cannot be later than today, attach the [[Proof document]] and click [[Upload approval]]. An approval without a proof file does not count.",
           "In [[What happens next]], click [[Pending Approval]]. The DPO is told.",
         ],
       },
@@ -817,7 +817,7 @@ export const SECTIONS: HelpSection[] = [
       {
         kind: "list",
         items: [
-          "Each account's actions are in its row's [[⋯]] menu; click the name to open the account.",
+          "Each account's actions are in its row's [[⋯]] menu, and as buttons on the account's own page; click the name to open it.",
           "[[Resend invitation]] sends a fresh code to a pending account.",
           "Open a DCO's or an RCO's account and click [[Change processors]] to change whom they collect for. They see those processors' data sources and no others. A processor is not taken away while they are accountable for one of its sources: reassign the source first.",
           "[[Change role]] changes a role and signs the person out; [[Reset MFA]] clears their second factor.",

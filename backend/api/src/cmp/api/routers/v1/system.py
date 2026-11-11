@@ -258,7 +258,8 @@ _ENUMS: dict[str, list[str]] = {
     ],
     "processor_type": ["lab", "tool", "other"],
     "record_status": ["active", "suspended", "terminated"],
-    "approval_type": ["security", "legal", "other"],
+    # Knox (0068) before Other, which reads as the last resort.
+    "approval_type": ["security", "legal", "knox", "other"],
     "link_status": ["active", "expired", "revoked"],
     "action_type": ["checkbox_click", "button_press", "signature"],
     # The project's export, and the consented list the DCT loads (0067).

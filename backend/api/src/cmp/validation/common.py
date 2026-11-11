@@ -17,10 +17,28 @@ one schema and would otherwise be copy-pasted.
 
 from __future__ import annotations
 
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 from cmp.core.errors import ValidationFailed
+
+
+def latest_today() -> date:
+    """The latest date that is already today somewhere (UTC+14).
+
+    A day a person picks as "today" is their own calendar's. Compared with the
+    UTC date, a date chosen in India between midnight and 05:30 read as
+    tomorrow and was refused; this admits it, and refuses only a day that has
+    not begun anywhere.
+    """
+    return (datetime.now(UTC) + timedelta(hours=14)).date()
+
+
+def not_in_the_future(value: date, *, what: str) -> date:
+    """A date that records something done: never a day not yet begun."""
+    if value > latest_today():
+        raise ValueError(f"{what} cannot be in the future")
+    return value
 
 
 def require_aware(value: datetime, *, field: str) -> datetime:

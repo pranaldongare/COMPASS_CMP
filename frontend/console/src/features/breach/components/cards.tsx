@@ -48,6 +48,7 @@ import { NotifyBoardButton } from "@/features/breach/components/reports-card";
 import { cn, formatDateTime } from "@/lib/format";
 import { keys } from "@/lib/query";
 import { useToast } from "@/providers";
+import { nowLocal } from "@/lib/dates";
 import type {
   Breach,
   BreachAssessmentFacts,
@@ -100,10 +101,10 @@ function ExtensionDialog({ breach, onClose }: { breach: Breach; onClose: () => v
       >
         <div className="space-y-3">
           <Field label="Asked for at" required>
-            {(p) => <Input {...p} type="datetime-local" value={asked} onChange={(e) => setAsked(e.target.value)} />}
+            {(p) => <Input {...p} type="datetime-local" value={asked} max={nowLocal()} onChange={(e) => setAsked(e.target.value)} />}
           </Field>
           <Field label="Allowed until" required>
-            {(p) => <Input {...p} type="datetime-local" value={until} onChange={(e) => setUntil(e.target.value)} />}
+            {(p) => <Input {...p} type="datetime-local" value={until} min={asked || undefined} onChange={(e) => setUntil(e.target.value)} />}
           </Field>
           <Field label="The Board's reference" hint="Optional">
             {(p) => <Input {...p} value={reference} maxLength={200} onChange={(e) => setReference(e.target.value)} />}
@@ -418,7 +419,7 @@ export function DeterminationCard({ breach }: { breach: Breach }) {
               </Field>
               {outcome === "yes" && (
                 <Field label="Became aware at" hint="Starts every DPDP clock" required>
-                  {(p) => <Input {...p} type="datetime-local" value={aware} onChange={(e) => setAware(e.target.value)} />}
+                  {(p) => <Input {...p} type="datetime-local" value={aware} max={nowLocal()} onChange={(e) => setAware(e.target.value)} />}
                 </Field>
               )}
             </div>
@@ -588,7 +589,7 @@ export function AssessmentCard({ breach }: { breach: Breach }) {
         {editing && (
           <div className="space-y-3">
             <Field label="Began" hint="If now known. Leave empty to keep what is recorded">
-              {(p) => <Input {...p} type="datetime-local" value={began} onChange={(e) => setBegan(e.target.value)} />}
+              {(p) => <Input {...p} type="datetime-local" value={began} max={nowLocal()} onChange={(e) => setBegan(e.target.value)} />}
             </Field>
             {FACTS.map((f) => (
               <Field key={f.key} label={`${f.label} · ${f.basis}`} hint={f.sealed ? "Sealed; it may name an employee" : undefined}>

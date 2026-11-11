@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict dxjFU5NXxKkiUFco5zzIAQn27qZRpWH8k0NHnSxg6ZMH8vaHHB7fE2QmenBVhBZ
+\restrict 9H1VbZuKlc1VAurHqCZKV2d7KOEEg32ADYK6Y2GHrUgeffVvZjvIguSaOBAzp1Q
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -50,7 +50,8 @@ CREATE TYPE public.action_type AS ENUM (
 CREATE TYPE public.approval_type AS ENUM (
     'security',
     'legal',
-    'other'
+    'other',
+    'knox'
 );
 
 
@@ -3807,6 +3808,25 @@ COMMENT ON COLUMN public.data_source.owner_user_id IS 'The DCO or RCO accountabl
 
 
 --
+-- Name: data_source_code_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.data_source_code_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: data_source_code_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.data_source_code_seq OWNED BY public.data_source.source_code;
+
+
+--
 -- Name: data_source_source_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -5257,6 +5277,25 @@ ALTER TABLE ONLY public.purpose FORCE ROW LEVEL SECURITY;
 
 
 --
+-- Name: purpose_code_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.purpose_code_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: purpose_code_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.purpose_code_seq OWNED BY public.purpose.purpose_code;
+
+
+--
 -- Name: purpose_purpose_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -6237,6 +6276,13 @@ ALTER TABLE ONLY public.data_source ALTER COLUMN source_id SET DEFAULT nextval('
 
 
 --
+-- Name: data_source source_code; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.data_source ALTER COLUMN source_code SET DEFAULT ('SRC-'::text || public.cmp_next_number('public.data_source_code_seq'::regclass));
+
+
+--
 -- Name: delegation delegation_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6430,6 +6476,13 @@ ALTER TABLE ONLY public.project_status_history ALTER COLUMN history_id SET DEFAU
 --
 
 ALTER TABLE ONLY public.purpose ALTER COLUMN purpose_id SET DEFAULT nextval('public.purpose_purpose_id_seq'::regclass);
+
+
+--
+-- Name: purpose purpose_code; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.purpose ALTER COLUMN purpose_code SET DEFAULT ('PUR-'::text || public.cmp_next_number('public.purpose_code_seq'::regclass));
 
 
 --
@@ -12062,5 +12115,5 @@ ALTER TABLE public.template_version_purpose ENABLE ROW LEVEL SECURITY;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict dxjFU5NXxKkiUFco5zzIAQn27qZRpWH8k0NHnSxg6ZMH8vaHHB7fE2QmenBVhBZ
+\unrestrict 9H1VbZuKlc1VAurHqCZKV2d7KOEEg32ADYK6Y2GHrUgeffVvZjvIguSaOBAzp1Q
 

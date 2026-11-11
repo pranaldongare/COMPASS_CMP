@@ -402,7 +402,7 @@ cases.append(case(
         s("Look at 'Details' at the top right.",
           "'Data Collection Owner' now reads 'Arun Shetty'."),
         s("Click 'Who runs it' on the CIT row.",
-          "A dialog 'Who runs CIT?' opens: 'Only on this project. The data source keeps its own owner.' It explains 'Arun Shetty owns SRC-SEED-CIT and runs this site by default... every other project collecting from it is untouched.' The field is labelled 'Data Collection Owner' with the default 'No exception — Arun Shetty runs it'. The 'Name them'/'Clear the exception' button is disabled until the choice changes."),
+          "A dialog 'Who runs CIT?' opens: 'Only on this project. The data source keeps its own owner.' It explains 'Arun Shetty owns SRC-SEED-CIT and runs this site by default... every other project collecting from it is untouched.' The field is labelled 'Data Collection Owner' with the default 'No exception — Arun Shetty runs it'. The 'Assign'/'Clear the exception' button is disabled until the choice changes."),
         s("Click 'Cancel'.",
           "The dialog closes with nothing changed."),
     ],

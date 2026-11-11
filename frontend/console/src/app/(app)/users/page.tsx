@@ -12,7 +12,7 @@
  */
 "use client";
 
-import { Eye, KeyRound, Pencil, Plus, Send, ShieldEllipsis, UserCheck, UserX } from "lucide-react";
+import { Eye, Pencil, Plus } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 
@@ -25,22 +25,21 @@ import {
   SearchBox,
   useCursorStack,
 } from "@/components/data-display/resource-list";
-import { RoleChangeForm, UserForm } from "@/features/users/components/forms";
-import { ConfirmDialog, Dialog, DialogContent } from "@/components/ui/dialog";
+import { useAccountActions } from "@/features/users/components/account-actions";
+import { UserForm } from "@/features/users/components/forms";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmptyRecords } from "@/components/ui/graphics";
 import { RowActions } from "@/components/ui/overlay";
 import { Alert, Button, Td, Tr, Skeleton, PersonCell } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { useEnums } from "@/features/meta";
-import { useDeactivateUser, useReactivateUser, useUsers } from "@/features/users";
-import { useForceLogout, useResendInvitation, useResetMfa } from "@/features/users";
+import { useUsers } from "@/features/users";
 import type { User } from "@/types";
 import { formatDate, humanise } from "@/lib/format";
-import { useAuth, useToast } from "@/providers";
+import { useAuth } from "@/providers";
 
 function UsersPageView() {
   const { me } = useAuth();
-  const toast = useToast();
   const stack = useCursorStack();
   // In the address, so a link from the dashboard ("accounts awaiting
   // activation") opens the register already filtered.
@@ -51,16 +50,12 @@ function UsersPageView() {
   // rights request - it opens them, not the whole register (UX review).
   const [person, setPerson] = useFilterParam("person");
 
-  const deactivate = useDeactivateUser();
-  const reactivate = useReactivateUser();
-  const resetMfa = useResetMfa();
-  const forceLogout = useForceLogout();
-  const resendInvitation = useResendInvitation();
+  // Change role, reset MFA, invitations and access: shared with the
+  // account's own page (2026-11-11).
+  const account = useAccountActions();
 
   const [creating, setCreating] = React.useState(false);
   const [editing, setEditing] = React.useState<User | null>(null);
-  const [changingRole, setChangingRole] = React.useState<User | null>(null);
-  const [resettingMfa, setResettingMfa] = React.useState<User | null>(null);
 
   const { data: enums } = useEnums();
   const query = useUsers({
@@ -74,49 +69,6 @@ function UsersPageView() {
 
   // The DPO reads this register; only an administrator provisions.
   const isAdmin = me?.role === "admin";
-
-  async function toggle(user: User) {
-    const active = user.status === "active";
-    try {
-      if (active) {
-        const result = await deactivate.mutateAsync(user.uuid);
-        // Different acts behind one button, and the server's message says
-        // which: a member of staff loses the role and keeps their account as a
-        // data principal; a data principal's account is switched off; a
-        // temporary ticket holder's breach-only login ends (S3-09).
-        toast.success(
-          user.role === "data_subject"
-            ? "Account deactivated"
-            : user.role === "breach_holder"
-              ? "Temporary access ended"
-              : "Staff access ended",
-          result.message ?? "Every session was terminated immediately.",
-        );
-      } else {
-        await reactivate.mutateAsync(user.uuid);
-        toast.success("Account reactivated", `${user.full_name} can sign in again.`);
-      }
-    } catch (err) {
-      const message =
-        err && typeof err === "object" && "userMessage" in err
-          ? (err as { userMessage: () => string }).userMessage()
-          : "The change could not be applied.";
-      toast.error("Could not update the account", message);
-    }
-  }
-
-  async function invite(user: User) {
-    try {
-      const result = await resendInvitation.mutateAsync(user.uuid);
-      toast.success("Invitation sent", result.message ?? undefined);
-    } catch (err) {
-      const message =
-        err && typeof err === "object" && "userMessage" in err
-          ? (err as { userMessage: () => string }).userMessage()
-          : "The invitation could not be sent.";
-      toast.error("Could not send the invitation", message);
-    }
-  }
 
   return (
     <>
@@ -220,71 +172,15 @@ function UsersPageView() {
             <Td className="whitespace-nowrap text-text-muted">
               {formatDate(u.created_at)}
             </Td>
-            {/* Everything a row can do, in one menu (2026-10-10). Acting on
-                your own row is how an organisation ends up with no
-                administrator, so those items are absent there; resending an
-                invitation is only while it is pending - once somebody has a
-                password the way back in is theirs. */}
+            {/* Everything a row can do, in one menu (2026-10-10); the guards
+                are `useAccountActions`', shared with the account's page. */}
             <Td className="w-12 text-right">
               <RowActions
                 label={`Actions for ${u.full_name}`}
                 actions={[
                   { label: "View", icon: Eye, href: `/users/${u.uuid}` },
-                  ...(isAdmin
-                    ? [
-                        { label: "Edit", icon: Pencil, onSelect: () => setEditing(u) },
-                        ...(u.uuid !== me?.uuid && u.role !== "data_subject"
-                          ? [
-                              {
-                                label: "Change role",
-                                icon: ShieldEllipsis,
-                                onSelect: () => setChangingRole(u),
-                              },
-                              {
-                                label: "Reset MFA",
-                                icon: KeyRound,
-                                onSelect: () => setResettingMfa(u),
-                              },
-                            ]
-                          : []),
-                        ...(u.status === "pending" && u.role !== "data_subject"
-                          ? [
-                              {
-                                label: "Resend invitation",
-                                icon: Send,
-                                disabled: resendInvitation.isPending,
-                                onSelect: () => invite(u),
-                              },
-                            ]
-                          : []),
-                        ...(u.status === "deactivated"
-                          ? [
-                              {
-                                label: "Reactivate",
-                                icon: UserCheck,
-                                disabled: reactivate.isPending,
-                                onSelect: () => toggle(u),
-                              },
-                            ]
-                          : []),
-                        ...(u.uuid !== me?.uuid && u.status !== "deactivated"
-                          ? [
-                              {
-                                label:
-                                  u.role === "data_subject"
-                                    ? "Deactivate"
-                                    : u.role === "breach_holder"
-                                      ? "End temporary access"
-                                      : "End staff access",
-                                icon: UserX,
-                                destructive: true,
-                                disabled: deactivate.isPending,
-                                onSelect: () => toggle(u),
-                              },
-                            ]
-                          : []),
-                      ]
-                    : []),
+                  ...(isAdmin ? [{ label: "Edit", icon: Pencil, onSelect: () => setEditing(u) }] : []),
+                  ...account.actionsFor(u),
                 ]}
               />
             </Td>
@@ -308,51 +204,7 @@ function UsersPageView() {
         </DialogContent>
       </Dialog>
 
-      <Dialog
-        open={Boolean(changingRole)}
-        onOpenChange={(o) => !o && setChangingRole(null)}
-      >
-        <DialogContent
-          title="Change role"
-          description="Audited, and it ends every session."
-        >
-          {changingRole && (
-            <RoleChangeForm user={changingRole} onDone={() => setChangingRole(null)} />
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <ConfirmDialog
-        open={Boolean(resettingMfa)}
-        onOpenChange={(o) => !o && setResettingMfa(null)}
-        title={`Reset MFA for ${resettingMfa?.full_name ?? ""}?`}
-        confirmLabel="Reset MFA"
-        loading={resetMfa.isPending}
-        tone="primary"
-        consequence={
-          <p>
-            Their outstanding verification code is discarded and every session ends. They
-            will be asked for a fresh code the next time they sign in. Use this when
-            somebody has lost access to their email, not as routine maintenance.
-          </p>
-        }
-        onConfirm={async () => {
-          if (!resettingMfa) return;
-          try {
-            await resetMfa.mutateAsync(resettingMfa.uuid);
-            await forceLogout.mutateAsync(resettingMfa.uuid);
-            toast.success("MFA reset", "They must sign in again.");
-            setResettingMfa(null);
-          } catch (err) {
-            toast.error(
-              "Could not reset MFA",
-              err && typeof err === "object" && "userMessage" in err
-                ? (err as { userMessage: () => string }).userMessage()
-                : "Please try again.",
-            );
-          }
-        }}
-      />
+      {account.dialogs}
     </>
   );
 }

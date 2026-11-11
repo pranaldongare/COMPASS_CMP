@@ -1,6 +1,6 @@
 {
-  "commit": "2e28836d4eabc80c367007ae41b3916de1d4278d",
-  "migration_head": "0067",
+  "commit": "db40786e8ba7fd349b32241313dbc6f5f57951f7",
+  "migration_head": "0068",
   "migrations": [
     {
       "revision": "0001",
@@ -265,6 +265,10 @@
     {
       "revision": "0067",
       "source": "backend/api/migrations/versions/0067_dct_consented_list.py"
+    },
+    {
+      "revision": "0068",
+      "source": "backend/api/migrations/versions/0068_codes_given_and_knox.py"
     }
   ],
   "postgres_version": "16.15",
@@ -4059,7 +4063,7 @@
       "position": 3,
       "type": "character varying(60)",
       "not_null": true,
-      "default_value": null,
+      "default_value": "('SRC-'::text || cmp_next_number('data_source_code_seq'::regclass))",
       "comment": null
     },
     {
@@ -6777,7 +6781,7 @@
       "position": 3,
       "type": "character varying(80)",
       "not_null": true,
-      "default_value": null,
+      "default_value": "('PUR-'::text || cmp_next_number('purpose_code_seq'::regclass))",
       "comment": null
     },
     {
@@ -18761,7 +18765,8 @@
       "values": [
         "security",
         "legal",
-        "other"
+        "other",
+        "knox"
       ]
     },
     {
@@ -19640,6 +19645,9 @@
       "name": "data_asset_asset_id_seq"
     },
     {
+      "name": "data_source_code_seq"
+    },
+    {
       "name": "data_source_source_id_seq"
     },
     {
@@ -19722,6 +19730,9 @@
     },
     {
       "name": "project_status_history_history_id_seq"
+    },
+    {
+      "name": "purpose_code_seq"
     },
     {
       "name": "purpose_purpose_id_seq"

@@ -26,6 +26,7 @@ from cmp.domain.projects.state_machine import (
     creation_requirements,
     validate,
 )
+from cmp.validation.common import latest_today
 
 log = get_logger("cmp.projects")
 
@@ -673,6 +674,9 @@ async def add_approval(
     project = await repo.require(conn, project_uuid, role=role, user_id=actor_id, write=True)
     if not proof_file_ref or not proof_file_hash:
         raise ValidationFailed("A proof file is mandatory", field="proof")
+    # A record of an approval given, not one promised (2026-11-11).
+    if approved_on > latest_today():
+        raise ValidationFailed("The approval date cannot be in the future", field="approved_on")
 
     # Draft is where an approval is attached now: submitting for review requires
     # one, so it has to be possible to add it before submitting. Still allowed

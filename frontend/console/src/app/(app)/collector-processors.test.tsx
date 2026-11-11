@@ -75,7 +75,7 @@ describe("Data sources, for a collection owner", () => {
         "Acme Labs",
       ]),
     );
-    expect(screen.queryByText("No processor named")).not.toBeInTheDocument();
+    expect(screen.queryByText("No processor assigned")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /register source/i })).toBeInTheDocument();
   });
 

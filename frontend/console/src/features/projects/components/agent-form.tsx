@@ -18,6 +18,7 @@ import { type MintedLink, useAssignAgent } from "@/features/projects";
 import { useToast } from "@/providers";
 import { agentSchema } from "@/features/projects/schemas";
 import { copyText } from "@/lib/browser";
+import { nowLocal } from "@/lib/dates";
 
 export function AgentForm({ siteUuid, onDone }: { siteUuid: string; onDone: () => void }) {
   const toast = useToast();
@@ -56,7 +57,7 @@ export function AgentForm({ siteUuid, onDone }: { siteUuid: string; onDone: () =
           error={form.formState.errors.expires_at?.message}
           required
         >
-          {(p) => <Input {...p} type="datetime-local" {...form.register("expires_at")} />}
+          {(p) => <Input {...p} type="datetime-local" min={nowLocal()} {...form.register("expires_at")} />}
         </Field>
 
         <div className="grid gap-4 sm:grid-cols-2">

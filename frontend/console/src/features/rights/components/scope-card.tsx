@@ -44,6 +44,7 @@ import {
 } from "@/features/rights/mutations";
 import { formatDate } from "@/lib/format";
 import { useToast } from "@/providers";
+import { todayLocal } from "@/lib/dates";
 import type {
   RightsItemExecution,
   RightsRequestDetail,
@@ -342,7 +343,7 @@ function ItemRow({ request: r, item, canWork }: { request: RightsRequestDetail; 
           </Field>
           {decision === "retain" ? (
             <Field label="Until" required>
-              {(p) => <Input {...p} type="date" value={until} onChange={(e) => setUntil(e.target.value)} />}
+              {(p) => <Input {...p} type="date" value={until} min={todayLocal()} onChange={(e) => setUntil(e.target.value)} />}
             </Field>
           ) : (
             <div />

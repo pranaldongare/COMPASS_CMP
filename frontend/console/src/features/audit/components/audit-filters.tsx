@@ -23,6 +23,7 @@ import { Button, Field, Input, Select } from "@/components/ui/primitives";
 import { useAuditLookup } from "@/features/audit/queries";
 import { humanise } from "@/lib/format";
 import type { AuditLookupHit, AuditVocabulary } from "@/types";
+import { todayLocal } from "@/lib/dates";
 
 /** Everything the page carries in its URL. Strings, because that is what a
  *  query string is; empty means "not set". */
@@ -186,7 +187,7 @@ export function AuditFilters({
               {...p}
               type="date"
               value={value.from}
-              max={value.to || undefined}
+              max={value.to || todayLocal()}
               onChange={(e) => onChange({ from: e.target.value })}
             />
           )}
@@ -198,6 +199,7 @@ export function AuditFilters({
               type="date"
               value={value.to}
               min={value.from || undefined}
+              max={todayLocal()}
               onChange={(e) => onChange({ to: e.target.value })}
             />
           )}

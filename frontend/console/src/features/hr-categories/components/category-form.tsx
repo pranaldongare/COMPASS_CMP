@@ -95,7 +95,7 @@ export function CategoryForm({
     });
     toast.success(
       `${saved.category_code} created`,
-      "Name the processors that hold its data, then write its templates.",
+      "Assign the processors that hold its data, then write its templates.",
     );
     onDone(saved);
   });

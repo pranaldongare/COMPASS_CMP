@@ -4,8 +4,9 @@
  * The register only offered Edit, so reading an account meant opening a form
  * that could change it. This is the account as it stands - name, contacts,
  * role, person type, status - and how its person type has changed. An
- * administrator edits from here; role changes, deactivation and the rest stay
- * on the register, where they are made with the list in view.
+ * administrator edits from here, and since 2026-11-11 does everything else the
+ * register's row menu offers too - change the role, reset MFA, resend an
+ * invitation, end or restore access - through the same `useAccountActions`.
  *
  * Laid out as the other record pages (2026-10-10): a summary card over
  * underline tabs - the account, whom a collection owner collects for (their
@@ -53,6 +54,7 @@ import {
 import { StatusBadge, statusLabel } from "@/components/ui/status";
 import { Tab, TabList, TabPanel, Tabs, useHashTab } from "@/components/ui/tabs";
 import { UserCategoriesForm } from "@/features/hr-categories/components/user-categories";
+import { useAccountActions } from "@/features/users/components/account-actions";
 import { UserForm } from "@/features/users/components/forms";
 import { ProcessorsForm } from "@/features/users/components/processors";
 import { usePersonTypeHistory, useUser } from "@/features/users";
@@ -71,6 +73,7 @@ export default function UserDetailPage() {
   const [settingCategories, setSettingCategories] = React.useState(false);
   const [tab, setTab] = useHashTab(TABS, "overview");
   const isAdmin = me?.role === "admin";
+  const account = useAccountActions();
 
   if (user.error) {
     return (
@@ -123,10 +126,27 @@ export default function UserDetailPage() {
         }
         actions={
           isAdmin && (
-            <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
-              <Pencil className="size-4" />
-              Edit
-            </Button>
+            <>
+              <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+                <Pencil className="size-4" />
+                Edit
+              </Button>
+              {/* The register's row menu, as buttons; the destructive one last. */}
+              {[...account.actionsFor(u)]
+                .sort((a, b) => Number(Boolean(a.destructive)) - Number(Boolean(b.destructive)))
+                .map((a) => (
+                  <Button
+                    key={a.label}
+                    variant={a.destructive ? "danger" : "secondary"}
+                    size="sm"
+                    disabled={a.disabled}
+                    onClick={a.onSelect}
+                  >
+                    {a.icon && <a.icon className="size-4" />}
+                    {a.label}
+                  </Button>
+                ))}
+            </>
           )
         }
         facts={[
@@ -224,16 +244,6 @@ export default function UserDetailPage() {
                   {formatDateTime(u.updated_at)}
                 </DescriptionItem>
               </DescriptionList>
-              {isAdmin && (
-                <p className="mt-4 text-xs text-text-muted">
-                  Changing the role, ending access, resending an invitation and resetting
-                  the second factor are on the{" "}
-                  <Link href="/users" className="text-accent-text hover:underline">
-                    register
-                  </Link>
-                  .
-                </p>
-              )}
             </CardBody>
           </Card>
         </TabPanel>
@@ -399,6 +409,7 @@ export default function UserDetailPage() {
           {editing && <UserForm user={u} onDone={() => setEditing(false)} />}
         </DialogContent>
       </Dialog>
+      {account.dialogs}
     </>
   );
 }

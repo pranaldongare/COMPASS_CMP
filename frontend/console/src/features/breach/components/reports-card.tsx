@@ -82,6 +82,7 @@ import { copyText } from "@/lib/browser";
 import { keys } from "@/lib/query";
 import { useToast } from "@/providers";
 import { useOptionalAuth } from "@/providers/auth-provider";
+import { nowLocal } from "@/lib/dates";
 import type {
   Breach,
   BreachDocument,
@@ -664,6 +665,7 @@ function FilingDialog({
                 {...p}
                 type="datetime-local"
                 value={when}
+                max={nowLocal()}
                 onChange={(e) => {
                   setWhen(e.target.value);
                   setWhenError(null);

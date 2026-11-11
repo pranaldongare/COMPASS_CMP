@@ -7,7 +7,7 @@
 | Type | Values |
 | --- | --- |
 | `action_type` | `checkbox_click`, `button_press`, `signature` |
-| `approval_type` | `security`, `legal`, `other` |
+| `approval_type` | `security`, `legal`, `other`, `knox` |
 | `asset_type` | `image`, `video`, `audio`, `sensor`, `document`, `other` |
 | `batch_status` | `received`, `validating`, `accepted`, `partial`, `rejected` |
 | `change_class` | `material`, `superficial` |

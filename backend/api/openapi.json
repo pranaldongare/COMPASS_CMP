@@ -36399,10 +36399,17 @@
       "PurposeIn": {
         "properties": {
           "purpose_code": {
-            "type": "string",
-            "maxLength": 80,
-            "minLength": 1,
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Purpose Code"
           },
           "name": {
@@ -36493,7 +36500,6 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "purpose_code",
           "name",
           "description",
           "uses",
@@ -39455,10 +39461,17 @@
       "SourceIn": {
         "properties": {
           "source_code": {
-            "type": "string",
-            "maxLength": 80,
-            "minLength": 1,
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Source Code"
           },
           "name": {
@@ -39522,7 +39535,6 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "source_code",
           "name",
           "source_role",
           "exchange_mode"

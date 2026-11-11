@@ -23,6 +23,7 @@ import { canSee } from "@/lib/permissions";
 import { keys } from "@/lib/query";
 import { useAuth, useToast } from "@/providers";
 import type { BreachCyberAttack, BreachLocationKind, BreachLogged } from "@/types";
+import { nowLocal } from "@/lib/dates";
 
 /** A `datetime-local` value as an instant, or null when empty. */
 export function instant(local: string): string | null {
@@ -209,11 +210,11 @@ export function RecordBreachForm({ onDone }: { onDone: () => void }) {
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="First noticed" hint="When it was detected. Starts the CERT-In clock" required>
           {(p) => (
-            <Input {...p} type="datetime-local" value={detected} onChange={(e) => setDetected(e.target.value)} />
+            <Input {...p} type="datetime-local" value={detected} max={nowLocal()} onChange={(e) => setDetected(e.target.value)} />
           )}
         </Field>
         <Field label="Began" hint="If known. An assessment can revise it">
-          {(p) => <Input {...p} type="datetime-local" value={began} onChange={(e) => setBegan(e.target.value)} />}
+          {(p) => <Input {...p} type="datetime-local" value={began} max={detected || nowLocal()} onChange={(e) => setBegan(e.target.value)} />}
         </Field>
       </div>
       <Field label="Where it occurred" required>

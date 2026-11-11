@@ -28,6 +28,7 @@ import { useUploadApproval } from "@/features/projects";
 import { useEnums } from "@/features/meta";
 import { useToast } from "@/providers";
 import { approvalSchema } from "@/features/projects/schemas";
+import { todayLocal } from "@/lib/dates";
 
 /** Mirrors the server's `validation.files.PROOF`. Checked here so a 25 MB
  *  scan is refused before it is uploaded over a hotel connection. */
@@ -98,7 +99,8 @@ export function ApprovalForm({
           error={form.formState.errors.approved_on?.message}
           required
         >
-          {(p) => <Input {...p} type="date" {...form.register("approved_on")} />}
+          {/* A record of an approval given: never a day still to come (2026-11-11). */}
+          {(p) => <Input {...p} type="date" max={todayLocal()} {...form.register("approved_on")} />}
         </Field>
 
         <FileInput

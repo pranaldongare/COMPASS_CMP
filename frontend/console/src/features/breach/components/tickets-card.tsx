@@ -344,7 +344,7 @@ function AssignDialog({ breach, onClose }: { breach: Breach; onClose: () => void
             {(p) => <Textarea {...p} rows={4} value={instruction} onChange={(e) => setInstruction(e.target.value)} />}
           </Field>
           <Field label="Resolve by" hint="Optional. Shown to both of you, and counted on your dashboard once passed">
-            {(p) => <Input {...p} type="date" value={answerBy} onChange={(e) => setAnswerBy(e.target.value)} />}
+            {(p) => <Input {...p} type="date" value={answerBy} min={today()} onChange={(e) => setAnswerBy(e.target.value)} />}
           </Field>
           <FileInput
             label="Attach a document"

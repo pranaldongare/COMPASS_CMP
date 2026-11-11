@@ -12330,7 +12330,7 @@ export interface components {
         /** PurposeIn */
         PurposeIn: {
             /** Purpose Code */
-            purpose_code: string;
+            purpose_code?: string | null;
             /** Name */
             name: string;
             /** Description */
@@ -13224,7 +13224,7 @@ export interface components {
         /** SourceIn */
         SourceIn: {
             /** Source Code */
-            source_code: string;
+            source_code?: string | null;
             /** Name */
             name: string;
             /** Source Role */

@@ -2167,7 +2167,7 @@ For state changes whose only interesting output is that they happened.
 
 | Field | Type | Required | Validation | Description |
 |---|---|---:|---|---|
-| `purpose_code` | `string` | Yes | min length: `1`; max length: `80`; pattern: `^[A-Za-z0-9][A-Za-z0-9._-]*$` | — |
+| `purpose_code` | `string` or `null` | No | min length: `1`; max length: `80`; pattern: `^[A-Za-z0-9][A-Za-z0-9._-]*$` | — |
 | `name` | `string` | Yes | min length: `1`; max length: `200` | — |
 | `description` | `string` | Yes | min length: `1`; max length: `20000` | — |
 | `uses` | `string` | Yes | min length: `1`; max length: `20000` | — |
@@ -2255,7 +2255,7 @@ Who answers a rights-request ticket for a processor.
 
 | Field | Type | Required | Validation | Description |
 |---|---|---:|---|---|
-| `source_code` | `string` | Yes | min length: `1`; max length: `80`; pattern: `^[A-Za-z0-9][A-Za-z0-9._-]*$` | — |
+| `source_code` | `string` or `null` | No | min length: `1`; max length: `80`; pattern: `^[A-Za-z0-9][A-Za-z0-9._-]*$` | — |
 | `name` | `string` | Yes | min length: `1`; max length: `200` | — |
 | `source_role` | `string` | Yes | — | — |
 | `exchange_mode` | `string` | Yes | — | — |
