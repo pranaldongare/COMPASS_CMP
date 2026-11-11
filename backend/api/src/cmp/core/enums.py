@@ -282,9 +282,12 @@ class ExportType(StrEnum):
     #: one table that exists to be trusted. Neither is reachable.
     COLLECTION_PACK = "collection_pack"
     CONSENTED_LIST = "consented_list"
-    #: The only reachable value. Last because `ALTER TYPE ... ADD VALUE` appends,
-    #: and the parity test holds this file to the database's own order.
+    #: The project's own export, every consent with its context.
     PROJECT_EXPORT = "project_export"
+    #: The list the Data Collection Tool loads (0067): fully consented people
+    #: only, to its fixed data contract. Last because `ALTER TYPE ... ADD VALUE`
+    #: appends, and the parity test holds this file to the database's own order.
+    DCT_CONSENTED_LIST = "dct_consented_list"
 
 
 class BatchStatus(StrEnum):

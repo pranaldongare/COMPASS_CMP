@@ -261,8 +261,8 @@ _ENUMS: dict[str, list[str]] = {
     "approval_type": ["security", "legal", "other"],
     "link_status": ["active", "expired", "revoked"],
     "action_type": ["checkbox_click", "button_press", "signature"],
-    # One kind, so the picker that used to offer a choice has nothing to ask.
-    "export_type": ["project_export"],
+    # The project's export, and the consented list the DCT loads (0067).
+    "export_type": ["project_export", "dct_consented_list"],
     "source_role": ["identity", "collection", "both"],
     "exchange_mode": ["file_export", "file_import", "manual_upload", "api"],
     "batch_status": ["received", "validating", "accepted", "partial", "rejected"],

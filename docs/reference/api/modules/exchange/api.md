@@ -1,6 +1,6 @@
 # Exchange API
 
-Generated from `backend/api/openapi.json`. **19 operations.**
+Generated from `backend/api/openapi.json`. **20 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -10,21 +10,22 @@ For each operation the information is deliberately ordered as **API → Validati
 2. [`GET /collections`](#2_get_collections)
 3. [`GET /projects/{project_uuid}/exports`](#3_get_projects_project_uuid_exports)
 4. [`POST /projects/{project_uuid}/exports`](#4_post_projects_project_uuid_exports)
-5. [`GET /exports/{export_uuid}`](#5_get_exports_export_uuid)
-6. [`GET /exports/{export_uuid}/download`](#6_get_exports_export_uuid_download)
-7. [`GET /exports/{export_uuid}/lines`](#7_get_exports_export_uuid_lines)
-8. [`GET /imports/template`](#8_get_imports_template)
-9. [`POST /imports/validate`](#9_post_imports_validate)
-10. [`GET /imports`](#10_get_imports)
-11. [`POST /imports`](#11_post_imports)
-12. [`GET /imports/{batch_uuid}`](#12_get_imports_batch_uuid)
-13. [`GET /imports/{batch_uuid}/errors`](#13_get_imports_batch_uuid_errors)
-14. [`GET /projects/{project_uuid}/collections`](#14_get_projects_project_uuid_collections)
-15. [`GET /collections/{collection_uuid}`](#15_get_collections_collection_uuid)
-16. [`GET /collections/{collection_uuid}/assets`](#16_get_collections_collection_uuid_assets)
-17. [`GET /collections/{collection_uuid}/exceptions`](#17_get_collections_collection_uuid_exceptions)
-18. [`GET /assets/{asset_uuid}`](#18_get_assets_asset_uuid)
-19. [`GET /assets/{asset_uuid}/subjects`](#19_get_assets_asset_uuid_subjects)
+5. [`POST /projects/{project_uuid}/exports/dct-consented-list`](#5_post_projects_project_uuid_exports_dct_consented_list)
+6. [`GET /exports/{export_uuid}`](#6_get_exports_export_uuid)
+7. [`GET /exports/{export_uuid}/download`](#7_get_exports_export_uuid_download)
+8. [`GET /exports/{export_uuid}/lines`](#8_get_exports_export_uuid_lines)
+9. [`GET /imports/template`](#9_get_imports_template)
+10. [`POST /imports/validate`](#10_post_imports_validate)
+11. [`GET /imports`](#11_get_imports)
+12. [`POST /imports`](#12_post_imports)
+13. [`GET /imports/{batch_uuid}`](#13_get_imports_batch_uuid)
+14. [`GET /imports/{batch_uuid}/errors`](#14_get_imports_batch_uuid_errors)
+15. [`GET /projects/{project_uuid}/collections`](#15_get_projects_project_uuid_collections)
+16. [`GET /collections/{collection_uuid}`](#16_get_collections_collection_uuid)
+17. [`GET /collections/{collection_uuid}/assets`](#17_get_collections_collection_uuid_assets)
+18. [`GET /collections/{collection_uuid}/exceptions`](#18_get_collections_collection_uuid_exceptions)
+19. [`GET /assets/{asset_uuid}`](#19_get_assets_asset_uuid)
+20. [`GET /assets/{asset_uuid}/subjects`](#20_get_assets_asset_uuid_subjects)
 
 <a id="1_get_exports"></a>
 ## 1. `GET /exports` — The disclosure register
@@ -75,6 +76,7 @@ No request body.
       "site_label": "…",
       "exported_by_name": "…",
       "transfer_basis": "…",
+      "left_out": "…",
       "project_uuid": "00000000-0000-4000-8000-000000000000",
       "project_name": "string"
     }
@@ -220,7 +222,8 @@ No request body.
     "site_uuid": "00000000-0000-4000-8000-000000000000",
     "site_label": "string",
     "exported_by_name": "string",
-    "transfer_basis": {}
+    "transfer_basis": {},
+    "left_out": {}
   }
 ]
 ```
@@ -297,7 +300,8 @@ No request body.
   "site_uuid": "00000000-0000-4000-8000-000000000000",
   "site_label": "string",
   "exported_by_name": "string",
-  "transfer_basis": {}
+  "transfer_basis": {},
+  "left_out": {}
 }
 ```
 
@@ -319,8 +323,78 @@ No request body.
 }
 ```
 
-<a id="5_get_exports_export_uuid"></a>
-## 5. `GET /exports/{export_uuid}` — Get Export
+<a id="5_post_projects_project_uuid_exports_dct_consented_list"></a>
+## 5. `POST /projects/{project_uuid}/exports/dct-consented-list` — The consented list the Data Collection Tool loads, to its data contract
+
+### API
+
+- **Operation ID:** `generate_dct_list_projects__project_uuid__exports_dct_consented_list_post`
+- **Access:** Role-controlled `exchange` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+One row per person whose latest consent on the project is fully in force:
+the DCT's ten columns and nothing else (`cmp.domain.exchange.dct`).
+
+Scoped, recorded and checked under s.16 as the project export is, and kept
+as generated: a download is these bytes, never a rebuild, because the list
+carries when it was made and until when it may be used. 409
+`nobody_consented` when nobody qualifies - the DCT cannot load an empty
+list. `left_out` counts who was not put on it, and why.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `project_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `201` | Successful Response | `application/json` | [`ExportOut`](#schema-exportout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `201` `application/json` response:**
+
+```json
+{
+  "export_uuid": "00000000-0000-4000-8000-000000000000",
+  "export_type": "string",
+  "exported_at": "2026-09-17T12:00:00Z",
+  "row_count": 1,
+  "file_hash": "string",
+  "line_count": 1,
+  "site_uuid": "00000000-0000-4000-8000-000000000000",
+  "site_label": "string",
+  "exported_by_name": "string",
+  "transfer_basis": {},
+  "left_out": {}
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="6_get_exports_export_uuid"></a>
+## 6. `GET /exports/{export_uuid}` — Get Export
 
 ### API
 
@@ -357,7 +431,8 @@ No request body.
   "site_uuid": "00000000-0000-4000-8000-000000000000",
   "site_label": "string",
   "exported_by_name": "string",
-  "transfer_basis": {}
+  "transfer_basis": {},
+  "left_out": {}
 }
 ```
 
@@ -379,8 +454,8 @@ No request body.
 }
 ```
 
-<a id="6_get_exports_export_uuid_download"></a>
-## 6. `GET /exports/{export_uuid}/download` — Download Export
+<a id="7_get_exports_export_uuid_download"></a>
+## 7. `GET /exports/{export_uuid}/download` — Download Export
 
 ### API
 
@@ -434,8 +509,8 @@ No request body.
 }
 ```
 
-<a id="7_get_exports_export_uuid_lines"></a>
-## 7. `GET /exports/{export_uuid}/lines` — Who was in this file (s.11(1)(b))
+<a id="8_get_exports_export_uuid_lines"></a>
+## 8. `GET /exports/{export_uuid}/lines` — Who was in this file (s.11(1)(b))
 
 ### API
 
@@ -485,8 +560,8 @@ No request body.
 }
 ```
 
-<a id="8_get_imports_template"></a>
-## 8. `GET /imports/template` — A manifest file to fill in
+<a id="9_get_imports_template"></a>
+## 9. `GET /imports/template` — A manifest file to fill in
 
 ### API
 
@@ -523,8 +598,8 @@ No request body.
 "string"
 ```
 
-<a id="9_post_imports_validate"></a>
-## 9. `POST /imports/validate` — Dry run - nothing is written
+<a id="10_post_imports_validate"></a>
+## 10. `POST /imports/validate` — Dry run - nothing is written
 
 ### API
 
@@ -586,8 +661,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="10_get_imports"></a>
-## 10. `GET /imports` — List Imports
+<a id="11_get_imports"></a>
+## 11. `GET /imports` — List Imports
 
 ### API
 
@@ -639,8 +714,8 @@ No request body.
 }
 ```
 
-<a id="11_post_imports"></a>
-## 11. `POST /imports` — Create Import
+<a id="12_post_imports"></a>
+## 12. `POST /imports` — Create Import
 
 ### API
 
@@ -699,8 +774,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="12_get_imports_batch_uuid"></a>
-## 12. `GET /imports/{batch_uuid}` — Get Import
+<a id="13_get_imports_batch_uuid"></a>
+## 13. `GET /imports/{batch_uuid}` — Get Import
 
 ### API
 
@@ -764,8 +839,8 @@ No request body.
 }
 ```
 
-<a id="13_get_imports_batch_uuid_errors"></a>
-## 13. `GET /imports/{batch_uuid}/errors` — Import Errors
+<a id="14_get_imports_batch_uuid_errors"></a>
+## 14. `GET /imports/{batch_uuid}/errors` — Import Errors
 
 ### API
 
@@ -813,8 +888,8 @@ No request body.
 }
 ```
 
-<a id="14_get_projects_project_uuid_collections"></a>
-## 14. `GET /projects/{project_uuid}/collections` — List Collections
+<a id="15_get_projects_project_uuid_collections"></a>
+## 15. `GET /projects/{project_uuid}/collections` — List Collections
 
 ### API
 
@@ -865,8 +940,8 @@ No request body.
 }
 ```
 
-<a id="15_get_collections_collection_uuid"></a>
-## 15. `GET /collections/{collection_uuid}` — Get Collection
+<a id="16_get_collections_collection_uuid"></a>
+## 16. `GET /collections/{collection_uuid}` — Get Collection
 
 ### API
 
@@ -931,8 +1006,8 @@ No request body.
 }
 ```
 
-<a id="16_get_collections_collection_uuid_assets"></a>
-## 16. `GET /collections/{collection_uuid}/assets` — Collection Assets
+<a id="17_get_collections_collection_uuid_assets"></a>
+## 17. `GET /collections/{collection_uuid}/assets` — Collection Assets
 
 ### API
 
@@ -991,8 +1066,8 @@ No request body.
 }
 ```
 
-<a id="17_get_collections_collection_uuid_exceptions"></a>
-## 17. `GET /collections/{collection_uuid}/exceptions` — Declared against mapped - the control that makes direct collection workable
+<a id="18_get_collections_collection_uuid_exceptions"></a>
+## 18. `GET /collections/{collection_uuid}/exceptions` — Declared against mapped - the control that makes direct collection workable
 
 ### API
 
@@ -1045,8 +1120,8 @@ No request body.
 }
 ```
 
-<a id="18_get_assets_asset_uuid"></a>
-## 18. `GET /assets/{asset_uuid}` — Get Asset
+<a id="19_get_assets_asset_uuid"></a>
+## 19. `GET /assets/{asset_uuid}` — Get Asset
 
 ### API
 
@@ -1094,8 +1169,8 @@ No request body.
 }
 ```
 
-<a id="19_get_assets_asset_uuid_subjects"></a>
-## 19. `GET /assets/{asset_uuid}/subjects` — One row per subject, bystanders included
+<a id="20_get_assets_asset_uuid_subjects"></a>
+## 20. `GET /assets/{asset_uuid}/subjects` — One row per subject, bystanders included
 
 ### API
 
@@ -1214,6 +1289,7 @@ key has no business on the wire.
 | `site_label` | `string` or `null` | No | — | — |
 | `exported_by_name` | `string` or `null` | No | — | — |
 | `transfer_basis` | `object` or `null` | No | — | — |
+| `left_out` | `object` or `null` | No | — | — |
 
 <a id="schema-httpvalidationerror"></a>
 #### `HTTPValidationError`
@@ -1308,5 +1384,6 @@ key has no business on the wire.
 | `site_label` | `string` or `null` | No | — | — |
 | `exported_by_name` | `string` or `null` | No | — | — |
 | `transfer_basis` | `object` or `null` | No | — | — |
+| `left_out` | `object` or `null` | No | — | — |
 | `project_uuid` | `string` | Yes | format: `uuid` | — |
 | `project_name` | `string` | Yes | — | — |

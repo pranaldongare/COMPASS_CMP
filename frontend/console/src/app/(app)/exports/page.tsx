@@ -28,7 +28,7 @@ import {
 } from "@/components/data-display/resource-list";
 import { EmptyRecords } from "@/components/ui/graphics";
 import { Badge, Button, Mono, Td, Tr } from "@/components/ui/primitives";
-import { downloadExport, useAllExports } from "@/features/exchange";
+import { EXPORT_TYPES, downloadExport, useAllExports } from "@/features/exchange";
 import type { ExportListRow } from "@/types";
 import { formatDateTime, humanise, saveBlob, shortHash } from "@/lib/format";
 import { useToast } from "@/providers";
@@ -38,18 +38,10 @@ import { useToast } from "@/providers";
  * there. An export is a disclosure record: the two old kinds stopped being
  * generated, they did not stop having happened.
  */
-const TYPE_OPTIONS = [
-  { value: "project_export", label: "Project export (CSV, personal data)" },
-  { value: "consented_list", label: "Consented list (historical)" },
-  { value: "collection_pack", label: "Collection pack (historical)" },
-];
+const TYPE_OPTIONS = Object.entries(EXPORT_TYPES).map(([value, t]) => ({ value, label: t.filter }));
 
 /** How each kind reads in the table. */
-const TYPE_LABEL: Record<string, { label: string; tone: "neutral" | "warning" }> = {
-  project_export: { label: "Project export", tone: "warning" },
-  consented_list: { label: "Consented list", tone: "warning" },
-  collection_pack: { label: "Collection pack", tone: "neutral" },
-};
+const TYPE_LABEL = EXPORT_TYPES;
 
 export default function ExportsPage() {
   const stack = useCursorStack();
@@ -98,7 +90,7 @@ export default function ExportsPage() {
     <>
       <PageHeader
         title="Exports"
-        description="What has left the platform, to which site, and who was in it. Downloads are repeatable and do not create a new disclosure record."
+        description="What has left the platform, to which site, and who was in it, including the consented lists for the Data Collection Tool. Downloads are repeatable and do not create a new disclosure record."
       />
 
       <FilterBar>
@@ -124,7 +116,7 @@ export default function ExportsPage() {
           illustration: <EmptyRecords />,
           title: type ? "No exports match" : "Nothing has been exported",
           description:
-            "Generate an export from a project to hand a collection pack or a consented list to a site.",
+            "Generate an export from a project: the project export for a site, or the consented list the Data Collection Tool loads.",
         }}
         row={(e) => (
           <Tr>

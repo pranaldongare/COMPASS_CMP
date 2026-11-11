@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 397,
-  "registered_business_and_system_operations": 400,
+  "documented_operations": 398,
+  "registered_business_and_system_operations": 401,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -2376,6 +2376,51 @@
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/exchange.py#L174",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/exchange.py#L23",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/exchange/service.py#L49"
+      ]
+    },
+    {
+      "module": "exchange",
+      "method": "POST",
+      "path": "/projects/{project_uuid}/exports/dct-consented-list",
+      "summary": "The consented list the Data Collection Tool loads, to its data contract",
+      "function": "generate_dct_list",
+      "operation_id": "generate_dct_list_projects__project_uuid__exports_dct_consented_list_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "ExportActor",
+      "resolved_gate": "RequireResource(export, write=True)",
+      "route_roles": [
+        "dco",
+        "dco_admin",
+        "dpo",
+        "rco"
+      ],
+      "inline_role_checks": [],
+      "resource": "export",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "SCOPED",
+        "dco_admin": "SCOPED",
+        "rco": "SCOPED",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "SCOPED"
+      },
+      "conditions": [
+        "Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading.",
+        "Source consent rows for a new export are selected using the caller’s site scope.",
+        "Each row's destination - the processor running its site - is checked under s.16 first (S2-04): an unknown location, a restricted country, or a granted purpose not permitted cross-border refuses the whole list with 422 transfer_refused, recorded in its own transaction.",
+        "The DCT's data contract v1 (2026-11-11, 0067): ten fixed columns; one row per person whose latest current consent on the project is fully in force (not withdrawn, not partial, not lapsed by the shortest granted consent_validity_period); `person_id` is the account uuid; `is_minor` is `cmp_is_minor(minor_until)` with an unknown age written true; no email, full mobile, link, notice, site or source. The bytes are kept and served on download, never rebuilt; storage that will not keep them refuses the list (503). 409 `nobody_consented` when nobody qualifies. `left_out` counts who was not listed, by reason; the trail records counts, never a name."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/exchange.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/exchange/dct.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/exchange.py"
       ]
     },
     {
@@ -16763,6 +16808,11 @@
       "on": "2026-11-11",
       "commit": "People typed in",
       "note": "Two operations added: POST /breaches/{breach_uuid}/affected/typed/check and POST /breaches/{breach_uuid}/affected/typed (dpo, legal; BreachWriter). Mail IDs and mobile numbers typed in, comma-separated, taken as a people list is: an account's lists that account, anybody else is kept as the breach's contact (breach_upload.kind `typed`, 0066)."
+    },
+    {
+      "on": "2026-11-11",
+      "commit": "DCT consented list",
+      "note": "One operation added: POST /projects/{project_uuid}/exports/dct-consented-list (dpo, legal; dco, dco_admin, rco and hr_user scoped; ExportActor), the consented list the Data Collection Tool loads, to its data contract v1. export_type gains dct_consented_list (0067); downloads go through GET /exports/{export_uuid}/download, which names the file consented_list_<project_id>_<YYYYMMDD>.csv."
     }
   ]
 }

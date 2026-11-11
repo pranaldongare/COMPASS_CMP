@@ -11982,6 +11982,50 @@
         }
       }
     },
+    "/projects/{project_uuid}/exports/dct-consented-list": {
+      "post": {
+        "tags": [
+          "exchange"
+        ],
+        "summary": "The consented list the Data Collection Tool loads, to its data contract",
+        "description": "One row per person whose latest consent on the project is fully in force:\nthe DCT's ten columns and nothing else (`cmp.domain.exchange.dct`).\n\nScoped, recorded and checked under s.16 as the project export is, and kept\nas generated: a download is these bytes, never a rebuild, because the list\ncarries when it was made and until when it may be used. 409\n`nobody_consented` when nobody qualifies - the DCT cannot load an empty\nlist. `left_out` counts who was not put on it, and why.",
+        "operationId": "generate_dct_list_projects__project_uuid__exports_dct_consented_list_post",
+        "parameters": [
+          {
+            "name": "project_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/exports/{export_uuid}": {
       "get": {
         "tags": [
@@ -30131,6 +30175,20 @@
             ],
             "title": "Transfer Basis"
           },
+          "left_out": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Left Out"
+          },
           "project_uuid": {
             "type": "string",
             "format": "uuid",
@@ -30233,6 +30291,20 @@
               }
             ],
             "title": "Transfer Basis"
+          },
+          "left_out": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "integer"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Left Out"
           }
         },
         "type": "object",

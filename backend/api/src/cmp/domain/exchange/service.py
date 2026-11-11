@@ -32,7 +32,14 @@ from datetime import UTC, date, datetime
 from typing import Any
 
 from cmp.core.csv_safety import text_cell
-from cmp.core.errors import Conflict, ImportRejected, NotFound, ValidationFailed
+from cmp.core.enums import ExportType
+from cmp.core.errors import (
+    Conflict,
+    ImportRejected,
+    NotFound,
+    ServiceUnavailable,
+    ValidationFailed,
+)
 from cmp.core.logging import get_logger
 from cmp.core.security import file_hash, unseal_token
 from cmp.db.repositories import consent as consent_repo
@@ -43,7 +50,7 @@ from cmp.db.sql import Conn
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.domain.consent.service import link_path as consent_link_path
-from cmp.domain.exchange import transfer
+from cmp.domain.exchange import dct, transfer
 from cmp.infrastructure.dkms import unseal_many
 
 log = get_logger("cmp.exchange")
@@ -58,8 +65,12 @@ async def generate(
     project_uuid: str,
     actor_id: int,
     role: str,
+    export_type: str = ExportType.PROJECT_EXPORT,
 ) -> dict[str, Any]:
     """Generate this project's export and record what it disclosed.
+
+    Two kinds since 2026-11-11: the project export, and the consented list the
+    Data Collection Tool loads (`dct`). Both are recorded alike.
 
     No type and no site. The type is gone because there is one; the site is gone
     because a project is the thing people talk about and which of its sites a
@@ -74,20 +85,35 @@ async def generate(
 
     # Refused before anything is written: a transfer the s.16 check fails is
     # not a disclosure the record should hold (S2-04, `transfer`).
-    payload, rows, lines, basis = await _project_export(conn, project, role=role, user_id=actor_id)
+    extra: dict[str, Any] = {}
+    if export_type == ExportType.DCT_CONSENTED_LIST:
+        payload, rows, lines, basis, extra = await _dct_list(
+            conn, project, role=role, user_id=actor_id
+        )
+    elif export_type == ExportType.PROJECT_EXPORT:
+        payload, rows, lines, basis = await _project_export(
+            conn, project, role=role, user_id=actor_id
+        )
+    else:
+        raise ValidationFailed("Unknown export type", field="export_type")
     raw = payload.encode("utf-8")
     digest = file_hash(raw)
     # Keep the bytes. The disclosure record is what left the building, and a
     # download that re-rendered from live rows would hand out a file nobody
     # was ever given once a name or a label changed.
     file_ref = _keep_export_file(raw, digest)
+    if file_ref is None and export_type == ExportType.DCT_CONSENTED_LIST:
+        # The DCT's list carries the moment it was made and how long it may be
+        # used; rebuilt at download it would be a different list. Not kept,
+        # not given out.
+        raise ServiceUnavailable("The list could not be stored. Try again in a minute")
     export = await repo.create_export(
         conn,
         project_id=project["project_id"],
         # No single site: the export covers every one the exporter could see,
         # and each row names its own.
         site_id=None,
-        export_type="project_export",
+        export_type=str(export_type),
         exported_by=actor_id,
         row_count=rows,
         file_hash=digest,
@@ -103,7 +129,7 @@ async def generate(
         entity_id=export["export_id"],
         detail={
             "project": project_uuid,
-            "type": "project_export",
+            "type": str(export_type),
             "row_count": rows,
             "lines": written,
             "sha256": digest,
@@ -111,10 +137,11 @@ async def generate(
                 {"country": d["country"], "basis": d["basis"], "rows": d["rows"]}
                 for d in basis["destinations"]
             ],
+            **extra,
         },
     )
     log.info("export.generated", project=project_uuid, rows=rows, lines=written)
-    return {**export, "project_uuid": project_uuid, "line_count": written}
+    return {**export, "project_uuid": project_uuid, "line_count": written, **extra}
 
 
 EXPORTS_SUBDIR = "exports"
@@ -277,6 +304,35 @@ async def _project_export(
     return payload, len(consents), lines, basis
 
 
+async def _dct_list(
+    conn: Conn, project: dict[str, Any], *, role: str, user_id: int
+) -> tuple[str, int, list[tuple[int, int, int | None, str | None]], dict[str, Any], dict[str, Any]]:
+    """The DCT's consented list, its disclosure lines, the transfer decision, and
+    who was left out (`dct`).
+
+    Made at the transaction's own time, which is also the export's
+    `exported_at`, so the file's date, `list_generated_at` and the record agree.
+    The s.16 check runs over the people in the file, as for the project export.
+    """
+    generated_at = (await repo.transaction_time(conn)).replace(microsecond=0)
+    consents = await repo.dct_consents(
+        conn, project_id=project["project_id"], role=role, user_id=user_id
+    )
+    people, left_out = await dct.choose(consents, now=generated_at)
+    payload = dct.write(project, people, generated_at=generated_at)
+    basis = await transfer.assess(conn, people)
+    lines = [
+        (
+            c["auth_user_id"],
+            c["consent_id"],
+            c.get("destination_processor_id"),
+            c.get("destination_country"),
+        )
+        for c in people
+    ]
+    return payload, len(people), lines, basis, {"left_out": left_out}
+
+
 async def render(conn: Conn, export: dict[str, Any]) -> tuple[str, str, str]:
     """Re-render a generated export for download.
 
@@ -295,6 +351,11 @@ async def render(conn: Conn, export: dict[str, Any]) -> tuple[str, str, str]:
         from cmp.infrastructure.storage.service import storage
 
         return storage().read(export["file_ref"]).decode("utf-8"), "text/csv", "csv"
+
+    if export["export_type"] == ExportType.DCT_CONSENTED_LIST:
+        # Never rebuilt: its times would change. Generation refuses to record
+        # one it could not keep, so this is a file lost from storage.
+        raise NotFound("Export file")
 
     project = await project_repo.by_uuid(conn, str(export["project_uuid"]), role="dpo", user_id=0)
     if not project:

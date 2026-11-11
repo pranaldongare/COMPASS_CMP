@@ -256,6 +256,12 @@ class Settings(BaseSettings):
     # How long a nominee has to accept a nomination before the link lapses.
     nomination_accept_ttl_days: int = 30
 
+    # ------------------------------------------------------------------ exports
+    # How long a consented list for the Data Collection Tool may be used after
+    # it is generated: `list_valid_until` on every row, and the DCT tags nothing
+    # captured after it. Short, because withdrawals since are not in the file.
+    dct_list_valid_days: int = Field(default=7, ge=1, le=90)
+
     # ----------------------------------------------------------------- breach
     # The internal target for a duty Rule 7 says is due "without delay" - the
     # Board's initial intimation and the notices to principals - in hours from

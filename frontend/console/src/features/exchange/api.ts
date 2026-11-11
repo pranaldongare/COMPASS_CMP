@@ -76,9 +76,27 @@ export function getCollectionExceptions(uuid: Uuid): Promise<CollectionException
 
 /* ---------------------------------------------------------------- writes */
 
+/** The two exports a project can generate (2026-11-11). */
+export type ExportKind = "project_export" | "dct_consented_list";
+
+/** How each kind of export reads, the historical ones included: an export is a
+ *  disclosure record, and the kinds no longer generated still happened. */
+export const EXPORT_TYPES: Record<string, { label: string; filter: string; tone: "neutral" | "warning" }> = {
+  project_export: { label: "Project export", filter: "Project export (CSV, personal data)", tone: "warning" },
+  dct_consented_list: {
+    label: "DCT consented list",
+    filter: "DCT consented list (CSV, personal data)",
+    tone: "warning",
+  },
+  consented_list: { label: "Consented list", filter: "Consented list (historical)", tone: "warning" },
+  collection_pack: { label: "Collection pack", filter: "Collection pack (historical)", tone: "neutral" },
+};
+
 export interface ExportCreated {
   export_uuid: Uuid;
   row_count: number;
+  /** The DCT's list only: who was left off it, and why. */
+  left_out?: { withdrawn: number; partial: number; lapsed: number; no_name: number } | null;
 }
 
 export interface ManifestUpload {
@@ -95,11 +113,13 @@ export interface ImportSubmitted {
 }
 
 /**
- * Generate the project's export. No body: there is one kind and it covers the
- * project. What it contains follows the caller's own scope, decided server-side.
+ * Generate one of the project's exports: the project export, or the consented
+ * list the Data Collection Tool loads. What either contains follows the
+ * caller's own scope, decided server-side.
  */
-export function createExport(projectUuid: Uuid): Promise<ExportCreated> {
-  return apiPost<ExportCreated>(`/projects/${projectUuid}/exports`, {});
+export function createExport(projectUuid: Uuid, kind: ExportKind = "project_export"): Promise<ExportCreated> {
+  const path = kind === "dct_consented_list" ? "/exports/dct-consented-list" : "/exports";
+  return apiPost<ExportCreated>(`/projects/${projectUuid}${path}`, {});
 }
 
 /**

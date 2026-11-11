@@ -4100,6 +4100,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/projects/{project_uuid}/exports/dct-consented-list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * The consented list the Data Collection Tool loads, to its data contract
+         * @description One row per person whose latest consent on the project is fully in force:
+         *     the DCT's ten columns and nothing else (`cmp.domain.exchange.dct`).
+         *
+         *     Scoped, recorded and checked under s.16 as the project export is, and kept
+         *     as generated: a download is these bytes, never a rebuild, because the list
+         *     carries when it was made and until when it may be used. 409
+         *     `nobody_consented` when nobody qualifies - the DCT cannot load an empty
+         *     list. `left_out` counts who was not put on it, and why.
+         */
+        post: operations["generate_dct_list_projects__project_uuid__exports_dct_consented_list_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/exports/{export_uuid}": {
         parameters: {
             query?: never;
@@ -10210,6 +10237,10 @@ export interface components {
             transfer_basis?: {
                 [key: string]: unknown;
             } | null;
+            /** Left Out */
+            left_out?: {
+                [key: string]: number;
+            } | null;
             /**
              * Project Uuid
              * Format: uuid
@@ -10247,6 +10278,10 @@ export interface components {
             /** Transfer Basis */
             transfer_basis?: {
                 [key: string]: unknown;
+            } | null;
+            /** Left Out */
+            left_out?: {
+                [key: string]: number;
             } | null;
         };
         /** GrantOut */
@@ -21926,6 +21961,37 @@ export interface operations {
         };
     };
     generate_export_projects__project_uuid__exports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                project_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_dct_list_projects__project_uuid__exports_dct_consented_list_post: {
         parameters: {
             query?: never;
             header?: never;

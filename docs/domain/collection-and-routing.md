@@ -142,6 +142,34 @@ the platform in the clear, and the file kept under the uploads directory
 holds it that way; [personal-data.md](personal-data.md#files-on-disk) lists
 what is in it.
 
+**The consented list for the Data Collection Tool, since 0067 (2026-11-11).**
+A second export beside the project's, for the DCT, which tags the consented
+people who appear in each captured file. Its columns are the DCT's data
+contract, version 1, and the DCT checks them before it tags anything, so they
+are fixed: `project_id`, `project_name`, `person_id` (the account's uuid, the
+same in every list), `consent_id`, `display_name`, `contact_hint` (the last two
+digits of the mobile, `…42`), `consent_expires_at`, `is_minor`,
+`list_generated_at` and `list_valid_until` (seven days later,
+`DCT_LIST_VALID_DAYS`). Every time is UTC with a `Z`, whole seconds. The file is
+`consented_list_<project_id>_<YYYYMMDD>.csv` (`cmp.domain.exchange.dct`).
+
+| Rule | Why |
+|---|---|
+| One row per person: their **latest** current consent on the project, and only if it is fully in force | The DCT takes one consent per person and refuses a list naming anyone twice. The newest is what the person last said, so a newer withdrawal or refusal leaves an older consent off too |
+| **Partial** consents are left out | A person who refused any purpose may have refused this very collection; the list cannot say which purpose a file is collected under |
+| A consent past its validity is left out; one still running carries `consent_expires_at` | The rule `apply_retention_lapse` acts on: `affirmative_action_at` plus the shortest `consent_validity_period` among the purposes granted. Empty when none has one |
+| `is_minor` is `cmp_is_minor(minor_until)`, and an **unknown age is `true`** | The DCT never lets a person marked `true` be tagged, and the platform's rule is that an unknown age is not an adult |
+| A person with no name is left out | The DCT refuses the whole file over an empty `display_name`, and an agent cannot recognise nobody |
+| **Nobody to list is refused** (409 `nobody_consented`), not written | The DCT rejects a list with no rows (its rule L02) |
+| No email, full mobile, link, notice, site or source | It is copied onto collection laptops |
+
+It is recorded as the project export is - `export_log` (`dct_consented_list`),
+one `export_line` per person, the s.16 check below, the audit event with
+counts of who was left out and why - and its bytes are kept and served on every
+download, never rebuilt, because it carries when it was made and until when it
+may be used. Storage that will not keep it refuses the list. Generate it from
+the project's **Generate an export**; download it from **Exports**.
+
 **Where an export goes, and whether it may (s.16).** Each row is a consent
 given at a site, and a site is run by a processor: that processor is the row's
 **destination**, and its `location_country` is where the row goes. Before

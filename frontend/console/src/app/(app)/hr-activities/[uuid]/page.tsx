@@ -214,7 +214,7 @@ export default function HrActivityPage() {
       <Dialog open={exporting} onOpenChange={setExporting}>
         <DialogContent title="Export the consented list">
           {exporting && (
-            <ExportForm projectUuid={a.activity_uuid} onDone={() => setExporting(false)} />
+            <ExportForm projectUuid={a.activity_uuid} onDone={() => setExporting(false)} dct={false} />
           )}
         </DialogContent>
       </Dialog>

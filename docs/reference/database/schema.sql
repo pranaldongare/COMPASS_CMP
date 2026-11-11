@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 1YwZGmvI8jIqZWIidRt4ICRaxNsprcSrgexyuBdODEjayZf755CQ10WWFlqXaA9
+\restrict dxjFU5NXxKkiUFco5zzIAQn27qZRpWH8k0NHnSxg6ZMH8vaHHB7fE2QmenBVhBZ
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -134,7 +134,8 @@ CREATE TYPE public.exchange_mode AS ENUM (
 CREATE TYPE public.export_type AS ENUM (
     'collection_pack',
     'consented_list',
-    'project_export'
+    'project_export',
+    'dct_consented_list'
 );
 
 
@@ -12061,5 +12062,5 @@ ALTER TABLE public.template_version_purpose ENABLE ROW LEVEL SECURITY;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 1YwZGmvI8jIqZWIidRt4ICRaxNsprcSrgexyuBdODEjayZf755CQ10WWFlqXaA9
+\unrestrict dxjFU5NXxKkiUFco5zzIAQn27qZRpWH8k0NHnSxg6ZMH8vaHHB7fE2QmenBVhBZ
 

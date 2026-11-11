@@ -1,4 +1,4 @@
-"""Exports (5), imports (5), collections and assets (6).
+"""Exports (6), imports (5), collections and assets (6).
 
 Exports are two steps: generating writes the log and the line rows; downloading
 is separate and repeatable. Regenerating to re-download would write duplicate
@@ -15,14 +15,15 @@ from fastapi import APIRouter, Depends, File, Form, Query, Request, Response, Up
 
 from cmp.api.dependencies import CurrentUser, Paging, RequireResource, reject_unknown_filters
 from cmp.core.config import settings
+from cmp.core.enums import ExportType
 from cmp.core.errors import BadRequest, Forbidden, NotFound, ValidationFailed
 from cmp.core.pagination import PageRequest
 from cmp.core.permissions import Role
 from cmp.db.pool import connection, transaction
 from cmp.db.repositories import exchange as repo
 from cmp.db.repositories import projects as project_repo
+from cmp.domain.exchange import dct, transfer
 from cmp.domain.exchange import service as service
-from cmp.domain.exchange import transfer
 from cmp.schemas.common import Out, Page
 
 router = APIRouter(tags=["exchange"])
@@ -49,6 +50,9 @@ class ExportOut(Out):
     #: Each destination, its country and the ground the transfer went on (S2-04).
     #: Null on exports from before the check existed.
     transfer_basis: dict[str, Any] | None = None
+    #: The DCT's consented list only, on the answer to generating it: how many
+    #: people were left off it, by why - withdrawn, partial, lapsed, no_name.
+    left_out: dict[str, int] | None = None
 
 
 export_paging = Paging(repo.EXPORT_SORTS, "-exported_at")
@@ -192,6 +196,29 @@ async def generate_export(project_uuid: UUID, principal: ExportActor) -> dict[st
     transaction of its own before the 422 goes back - a refused transfer is
     evidence too.
     """
+    return await _generate(project_uuid, principal, ExportType.PROJECT_EXPORT)
+
+
+@router.post(
+    "/projects/{project_uuid}/exports/dct-consented-list",
+    response_model=ExportOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="The consented list the Data Collection Tool loads, to its data contract",
+)
+async def generate_dct_list(project_uuid: UUID, principal: ExportActor) -> dict[str, Any]:
+    """One row per person whose latest consent on the project is fully in force:
+    the DCT's ten columns and nothing else (`cmp.domain.exchange.dct`).
+
+    Scoped, recorded and checked under s.16 as the project export is, and kept
+    as generated: a download is these bytes, never a rebuild, because the list
+    carries when it was made and until when it may be used. 409
+    `nobody_consented` when nobody qualifies - the DCT cannot load an empty
+    list. `left_out` counts who was not put on it, and why.
+    """
+    return await _generate(project_uuid, principal, ExportType.DCT_CONSENTED_LIST)
+
+
+async def _generate(project_uuid: UUID, principal: Any, export_type: ExportType) -> dict[str, Any]:
     try:
         async with transaction() as conn:
             return await service.generate(
@@ -199,6 +226,7 @@ async def generate_export(project_uuid: UUID, principal: ExportActor) -> dict[st
                 project_uuid=str(project_uuid),
                 actor_id=principal.user_id,
                 role=principal.role,
+                export_type=export_type,
             )
     except transfer.TransferRefused as refused:
         async with transaction() as conn:
@@ -248,7 +276,11 @@ async def download_export(export_uuid: UUID, principal: ExportReader) -> Respons
 
     generated_at = export["exported_at"]
     age_days = (datetime.now(generated_at.tzinfo) - generated_at).days
-    filename = f"{export['export_type']}-{export['export_uuid']}.{ext}"
+    if export["export_type"] == ExportType.DCT_CONSENTED_LIST:
+        # The name the DCT's contract gives the file.
+        filename = dct.file_name(export["project_uuid"], generated_at)
+    else:
+        filename = f"{export['export_type']}-{export['export_uuid']}.{ext}"
 
     return Response(
         content=payload,

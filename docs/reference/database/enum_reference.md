@@ -14,7 +14,7 @@
 | `disposition` | `active`, `redacted`, `erased`, `quarantined` |
 | `erasure_trigger` | `withdrawal`, `purpose_served`, `period_elapsed`, `inactivity` |
 | `exchange_mode` | `file_export`, `file_import`, `manual_upload`, `api` |
-| `export_type` | `collection_pack`, `consented_list`, `project_export` |
+| `export_type` | `collection_pack`, `consented_list`, `project_export`, `dct_consented_list` |
 | `language_code` | `english`, `hindi`, `marathi`, `tamil`, `telugu`, `kannada`, `bengali`, `gujarati` |
 | `lapse_behaviour` | `quarantine`, `erase`, `none` |
 | `lawful_basis` | `consent_s6`, `legitimate_use_s7` |

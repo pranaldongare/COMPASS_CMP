@@ -415,7 +415,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-285 of 397 operations accept or return personal data. Each table gives the
+286 of 398 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 
@@ -702,7 +702,7 @@ selected.
 
 ### Exports, imports, collections and assets
 
-10 operations carry personal data.
+11 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
@@ -716,6 +716,7 @@ selected.
 | GET | `/imports/{batch_uuid}` | any signed-in session, conditionally | — | `file_name`, `imported_by_name`, `imported_by_uuid` |
 | GET | `/projects/{project_uuid}/exports` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, Legal PoC every row, HR PoC rows in scope | — | `exported_by_name` |
 | POST | `/projects/{project_uuid}/exports` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, Legal PoC every row, HR PoC rows in scope | — | `exported_by_name` |
+| POST | `/projects/{project_uuid}/exports/dct-consented-list` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, Legal PoC every row, HR PoC rows in scope | — | `exported_by_name` |
 
 ### The staff register — `/users/*`
 
@@ -892,7 +893,7 @@ selected.
 | GET | `/holder-tickets/{token}/ticket` | **public** — the request carries its own credential (password, link token, one-time code) | `token` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | POST | `/holder-tickets/{token}/verify` | **public** — the request carries its own credential (password, link token, one-time code) | `code`, `token` | — |
 
-<!-- 285 of 397 operations carry personal data; 34 of them need no session. -->
+<!-- 286 of 398 operations carry personal data; 34 of them need no session. -->
 
 ## The public surface
 

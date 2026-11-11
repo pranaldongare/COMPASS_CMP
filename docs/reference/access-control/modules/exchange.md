@@ -2,7 +2,7 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-19 operations; 19 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
+20 operations; 20 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
@@ -25,6 +25,7 @@
 | GET | `/projects/{project_uuid}/collections` | `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
 | GET | `/projects/{project_uuid}/exports` | `dco`, `dco_admin`, `dpo`, `rco` | Full session; anonymous NO |
 | POST | `/projects/{project_uuid}/exports` | `dco`, `dco_admin`, `dpo`, `rco` | Full session; anonymous NO |
+| POST | `/projects/{project_uuid}/exports/dct-consented-list` | `dco`, `dco_admin`, `dpo`, `rco` | Full session; anonymous NO |
 
 ## GET /assets/{asset_uuid}
 
@@ -295,3 +296,18 @@ Generate Export.
 - **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading. Each row's destination - the processor running its site - is checked under s.16 first (S2-04): an unknown location, a restricted country, or a granted purpose not permitted cross-border refuses the whole export with 422 `transfer_refused`, recorded in its own transaction.
 - Source consent rows for a new export are selected using the caller’s site scope.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/exchange.py#L174), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/exchange.py#L23), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/exchange/service.py#L49).
+
+## POST /projects/{project_uuid}/exports/dct-consented-list
+
+The consented list the Data Collection Tool loads, to its data contract.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | SCOPED | SCOPED | SCOPED | NO | NO | NO | ALL | SCOPED |
+
+- **Who:** `dco`, `dco_admin`, `dpo`, `rco`.
+- **Route guard:** `ExportActor`.
+- **Resolved gate:** `RequireResource(export, write=True)`.
+- **Rules:** Exports/collections/assets use repository scope: DPO all; collection roles permitted projects; R&D own-created projects where its resource grant allows reading. Each row's destination - the processor running its site - is checked under s.16 first (S2-04): an unknown location, a restricted country, or a granted purpose not permitted cross-border refuses the whole list with 422 transfer_refused, recorded in its own transaction. The DCT's data contract v1 (2026-11-11, 0067): ten fixed columns; one row per person whose latest current consent on the project is fully in force (not withdrawn, not partial, not lapsed by the shortest granted consent_validity_period); `person_id` is the account uuid; `is_minor` is `cmp_is_minor(minor_until)` with an unknown age written true; no email, full mobile, link, notice, site or source. The bytes are kept and served on download, never rebuilt; storage that will not keep them refuses the list (503). 409 `nobody_consented` when nobody qualifies. `left_out` counts who was not listed, by reason; the trail records counts, never a name.
+- Source consent rows for a new export are selected using the caller’s site scope.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/exchange.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/exchange/dct.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/db/repositories/exchange.py).

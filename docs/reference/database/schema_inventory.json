@@ -1,6 +1,6 @@
 {
-  "commit": "07e47ed953802a30afb77c3ad88bf58f0ac1e06d",
-  "migration_head": "0066",
+  "commit": "2e28836d4eabc80c367007ae41b3916de1d4278d",
+  "migration_head": "0067",
   "migrations": [
     {
       "revision": "0001",
@@ -261,6 +261,10 @@
     {
       "revision": "0066",
       "source": "backend/api/migrations/versions/0066_people_typed_in.py"
+    },
+    {
+      "revision": "0067",
+      "source": "backend/api/migrations/versions/0067_dct_consented_list.py"
     }
   ],
   "postgres_version": "16.15",
@@ -18820,7 +18824,8 @@
       "values": [
         "collection_pack",
         "consented_list",
-        "project_export"
+        "project_export",
+        "dct_consented_list"
       ]
     },
     {

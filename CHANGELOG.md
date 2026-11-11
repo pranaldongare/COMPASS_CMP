@@ -8,6 +8,14 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **A consented list for the Data Collection Tool** (2026-11-11): a project's
+  **Generate an export** now offers the list the DCT loads, to its data
+  contract v1 - ten fixed columns, one row per person whose latest consent on
+  the project is fully in force, a child or an unknown age marked as a minor,
+  times in UTC with `Z`, valid for seven days, and no email, full mobile, link
+  or notice. Recorded like the project export and downloaded as made, named
+  `consented_list_<project_id>_<YYYYMMDD>.csv`
+  (`POST /projects/{uuid}/exports/dct-consented-list`; migration 0067).
 - **Add many people at once, on the platform or not** (2026-11-11): on a
   breach's **People & notices**, *Add people* > **Add by mail ID or mobile**
   (formerly *Add one person*) takes mail IDs and mobile numbers typed in,

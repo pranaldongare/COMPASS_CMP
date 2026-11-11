@@ -128,3 +128,51 @@ async def test_an_export_to_a_restricted_country_is_refused(
         template="/restricted-countries/{country_uuid}/lift",
         session=world.dpo,
     )
+
+
+async def test_the_dct_consented_list_is_its_contract_and_downloads_as_made(
+    world: World, http: httpx.AsyncClient
+) -> None:
+    """The Data Collection Tool's list (2026-11-11): its ten columns, named as its
+    contract names the file, the principal on it by her account's uuid and her
+    contacts not, and the same bytes on every download."""
+    made = await call(
+        http,
+        "POST",
+        f"/projects/{world.project_uuid}/exports/dct-consented-list",
+        template="/projects/{project_uuid}/exports/dct-consented-list",
+        session=world.dco,
+        expect=201,
+    )
+    body = made.json()
+    assert body["export_type"] == "dct_consented_list" and body["row_count"] >= 1
+    assert set(body["left_out"]) == {"withdrawn", "partial", "lapsed", "no_name"}
+
+    first = await call(
+        http,
+        "GET",
+        f"/exports/{body['export_uuid']}/download",
+        template="/exports/{export_uuid}/download",
+        session=world.dco,
+        check_sealed=False,
+    )
+    assert first.content.split(b"\n", 1)[0] == (
+        b"project_id,project_name,person_id,consent_id,display_name,contact_hint,"
+        b"consent_expires_at,is_minor,list_generated_at,list_valid_until"
+    )
+    disposition = first.headers["Content-Disposition"]
+    assert f'filename="consented_list_{world.project_uuid}_' in disposition
+    text = first.text
+    assert world.principal.uuid in text and world.consent_uuid in text
+    assert world.principal_email not in text and world.principal_mobile not in text
+    assert "SE::" not in text
+
+    again = await call(
+        http,
+        "GET",
+        f"/exports/{body['export_uuid']}/download",
+        template="/exports/{export_uuid}/download",
+        session=world.dco,
+        check_sealed=False,
+    )
+    assert again.content == first.content

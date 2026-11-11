@@ -12,14 +12,14 @@ reports zero, which is what makes at-least-once delivery safe.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 
 from psycopg.types.json import Jsonb
 
 from cmp.core.pagination import PageRequest, build_page
 from cmp.core.permissions import Role, Scope, scope_of
-from cmp.db.sql import Conn, Row, fetch_all, fetch_one, keyset_clause
+from cmp.db.sql import Conn, Row, fetch_all, fetch_one, fetch_val, keyset_clause
 from cmp.infrastructure.dkms import seal
 
 
@@ -258,6 +258,63 @@ async def project_consents(
         HAVING ca.is_withdrawal OR count(*) FILTER (WHERE g.granted) > 0
          -- Not by name: the name is sealed. The service sorts once it is open.
          ORDER BY u.id, ca.affirmative_action_at
+        """,
+        [project_id, *params],
+    )
+
+
+async def transaction_time(conn: Conn) -> datetime:
+    """`now()`: when this transaction began, and so the `exported_at` an export
+    written in it will carry."""
+    moment: datetime = await fetch_val(conn, "SELECT now()")
+    return moment
+
+
+async def dct_consents(conn: Conn, *, project_id: int, role: Role | str, user_id: int) -> list[Row]:
+    """Every current consent on a project this caller may see, for the DCT's list.
+
+    Scoped as `project_consents` is, by site, and over the same rows, so the two
+    exports cannot disagree about who consented. What differs is what is read:
+    the person's uuid, whether they are a child (`cmp_is_minor`, NULL when
+    nobody knows), and when the consent lapses - the earliest
+    `affirmative_action_at + consent_validity_period` among the purposes
+    granted, the moment `apply_retention_lapse` acts on - and not their email,
+    the link or the notice. Withdrawn rows come too: the service keeps each
+    person's latest consent, and a latest one withdrawn leaves them out.
+    """
+    from cmp.db.repositories.projects import site_scope_predicate
+
+    pred, params = site_scope_predicate(role, user_id, alias="s")
+
+    return await fetch_all(
+        conn,
+        f"""
+        SELECT u.id AS auth_user_id, u.uuid AS person_uuid, u.full_name, u.mobile,
+               cmp_is_minor(u.minor_until) AS is_minor,
+               ca.consent_id, ca.consent_uuid, ca.affirmative_action_at, ca.is_withdrawal,
+               s.processor_id AS destination_processor_id,
+               dp.location_country AS destination_country,
+               count(*) FILTER (WHERE g.granted)     AS granted_count,
+               count(*) FILTER (WHERE NOT g.granted) AS refused_count,
+               min(ca.affirmative_action_at + p.consent_validity_period)
+                 FILTER (WHERE g.granted) AS consent_expires_at,
+               array_agg(p.purpose_code ORDER BY p.purpose_code)
+                 FILTER (WHERE g.granted AND NOT p.cross_border_permitted)
+                 AS granted_not_cross_border
+          FROM v_current_consent ca
+          JOIN notice n        ON n.notice_id = ca.notice_id
+          JOIN consent_link cl ON cl.link_id = ca.link_id
+          JOIN project_site s  ON s.site_id = cl.site_id
+          LEFT JOIN processor dp ON dp.processor_id = s.processor_id
+          JOIN auth_user u     ON u.id = ca.auth_user_id
+          LEFT JOIN consent_purpose_grant g ON g.consent_id = ca.consent_id
+          LEFT JOIN purpose p  ON p.purpose_id = g.purpose_id
+         WHERE n.project_id = %s AND ({pred})
+         GROUP BY u.id, u.uuid, u.full_name, u.mobile, u.minor_until,
+                  ca.consent_id, ca.consent_uuid, ca.affirmative_action_at, ca.is_withdrawal,
+                  s.processor_id, dp.location_country
+        HAVING ca.is_withdrawal OR count(*) FILTER (WHERE g.granted) > 0
+         ORDER BY u.id, ca.affirmative_action_at, ca.consent_id
         """,
         [project_id, *params],
     )

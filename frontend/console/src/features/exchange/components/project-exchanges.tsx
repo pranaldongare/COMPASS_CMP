@@ -22,6 +22,7 @@ import {
   EmptyState,
   Skeleton,
 } from "@/components/ui/primitives";
+import { EXPORT_TYPES } from "@/features/exchange/api";
 import { useCollections, useExports } from "@/features/exchange/queries";
 import { formatDate, formatDateTime, humanise } from "@/lib/format";
 import { withFrom } from "@/lib/navigation/return-to";
@@ -142,7 +143,7 @@ export function ProjectExportsCard({
             {items.map((e) => (
               <li key={e.export_uuid} className="px-5 py-3">
                 <p className="text-sm font-medium">
-                  {humanise(e.export_type)}
+                  {EXPORT_TYPES[e.export_type]?.label ?? humanise(e.export_type)}
                   <span className="ml-1.5 font-normal text-text-muted">
                     {e.site_label ?? "Whole project"}
                   </span>
