@@ -182,7 +182,8 @@ and each change is on the trail. Which emails may be copied at all is the
 catalogue's (`COPYABLE`), not the table's.
 
 **A breach's people from a list, since 0045.** `breach_upload` records each
-list taken - kind (`contacts` or `assets`, by CHECK), sealed file name, hash
+list taken - kind (`contacts` or `assets`, by CHECK; since 0066 also `typed`,
+mail IDs and mobile numbers typed in, with no file), sealed file name, hash
 and counts (each ≥ 0) - and `breach_contact` each person it named who has no
 account: name, email and mobile sealed, `email_hash`/`mobile_hash` blind
 indexes unique per breach, at least one contact by CHECK. Both append-only by

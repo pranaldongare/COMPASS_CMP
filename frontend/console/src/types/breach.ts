@@ -323,9 +323,24 @@ export interface BreachPerson {
 /** A list of the people a breach affected, or of its assets (2026-10-07). */
 export type BreachListKind = "contacts" | "assets";
 
-/** What a list comes to: checked (nothing written), or taken. */
+/** How people came in apart from the records: a list of either kind, or mail
+ *  IDs and mobile numbers typed in (2026-11-11). */
+export type BreachUploadKind = BreachListKind | "typed";
+
+/** Mail IDs and mobile numbers typed in, and anybody on the platform found by
+ *  name. Each mail ID and each mobile number is one person. */
+export interface BreachTyped {
+  /** Separated by commas, semicolons or new lines; "Name <mail ID>" keeps the name. */
+  mail_ids: string;
+  /** Separated likewise, each with its country code. */
+  mobiles: string;
+  people: Uuid[];
+  note?: string | null;
+}
+
+/** What a list, or what was typed, comes to: checked (nothing written), or taken. */
 export interface BreachListReport {
-  kind: BreachListKind;
+  kind: BreachUploadKind;
   rows_read: number;
   /** People with an account the file matched, not yet listed. */
   matched_people: number;
@@ -351,12 +366,12 @@ export interface BreachContact {
   mobile: string | null;
   added_at: Timestamp;
   upload_uuid: Uuid;
-  upload_kind: BreachListKind;
+  upload_kind: BreachUploadKind;
 }
 
 export interface BreachUpload {
   upload_uuid: Uuid;
-  kind: BreachListKind;
+  kind: BreachUploadKind;
   file_name: string;
   sha256: string;
   rows_read: number;

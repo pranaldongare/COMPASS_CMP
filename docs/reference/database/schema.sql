@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict Sh94pKUq6058YGSUDirYcgDIS6U5VkeT6rHZGvpqfs3hkEreF9ef0bFcqyhPNyZ
+\restrict 1YwZGmvI8jIqZWIidRt4ICRaxNsprcSrgexyuBdODEjayZf755CQ10WWFlqXaA9
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -3421,7 +3421,7 @@ CREATE TABLE public.breach_upload (
     added_by integer NOT NULL,
     added_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT breach_upload_counts CHECK (((rows_read >= 0) AND (matched_people >= 0) AND (new_contacts >= 0) AND (already_listed >= 0) AND (unreadable >= 0) AND (untraceable >= 0))),
-    CONSTRAINT breach_upload_kind CHECK (((kind)::text = ANY ((ARRAY['contacts'::character varying, 'assets'::character varying])::text[])))
+    CONSTRAINT breach_upload_kind CHECK (((kind)::text = ANY ((ARRAY['contacts'::character varying, 'assets'::character varying, 'typed'::character varying])::text[])))
 );
 
 ALTER TABLE ONLY public.breach_upload FORCE ROW LEVEL SECURITY;
@@ -12061,5 +12061,5 @@ ALTER TABLE public.template_version_purpose ENABLE ROW LEVEL SECURITY;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict Sh94pKUq6058YGSUDirYcgDIS6U5VkeT6rHZGvpqfs3hkEreF9ef0bFcqyhPNyZ
+\unrestrict 1YwZGmvI8jIqZWIidRt4ICRaxNsprcSrgexyuBdODEjayZf755CQ10WWFlqXaA9
 

@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 395,
-  "registered_business_and_system_operations": 398,
+  "documented_operations": 397,
+  "registered_business_and_system_operations": 400,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -13048,6 +13048,90 @@
     },
     {
       "module": "breaches",
+      "method": "POST",
+      "path": "/breaches/{breach_uuid}/affected/typed/check",
+      "summary": "What typed mail IDs and mobile numbers would add - nothing is written",
+      "function": "check_typed",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachWriter",
+      "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "JSON `mail_ids` and `mobiles`, each separated by commas, semicolons or new lines ('Name <mail ID>' keeps the name), and `people` (uuids found by name); at most 1,000 entries, and each mobile must carry its country code. Counts what would be added and names each entry that cannot be used. Writes nothing. (2026-11-11)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/lists.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "breaches",
+      "method": "POST",
+      "path": "/breaches/{breach_uuid}/affected/typed",
+      "summary": "Add the people typed in by mail ID or mobile number, on the platform or not",
+      "function": "take_typed",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachWriter",
+      "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "Refused on a closed breach. Taken as a people list is: a mail ID or mobile number that is an account's lists that account, added by hand (`found_by` dpo), as is anybody picked by name; any other is kept as a contact of this breach, name/email/mobile sealed, deduplicated by blind index, recorded as a list of kind `typed` (0066) with a hash of what was typed, never the text. A revision is written with the note. The trail records counts, never a name or contact. 409 `nothing_new` when everybody is already listed; 422 when no entry can be used. (2026-11-11)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/lists.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "breaches",
       "method": "GET",
       "path": "/breaches/{breach_uuid}/affected/contacts",
       "summary": "People affected who have no account, and the lists they came in",
@@ -16674,6 +16758,11 @@
       "on": "2026-11-11",
       "commit": "The mail to the organisation's board as an email",
       "note": "One operation added: GET /breaches/{breach_uuid}/reports/{report_uuid}/email (dpo, legal; BreachReader), the mail the organisation's board gets for a version, word for word, for an officer to copy into their own mailbox. Both board mails (breach_board_report, breach_report_finalised) are now a letter: a greeting, what it is, the report, and a signature naming who finalised it and their role."
+    },
+    {
+      "on": "2026-11-11",
+      "commit": "People typed in",
+      "note": "Two operations added: POST /breaches/{breach_uuid}/affected/typed/check and POST /breaches/{breach_uuid}/affected/typed (dpo, legal; BreachWriter). Mail IDs and mobile numbers typed in, comma-separated, taken as a people list is: an account's lists that account, anybody else is kept as the breach's contact (breach_upload.kind `typed`, 0066)."
     }
   ]
 }

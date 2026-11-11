@@ -2,7 +2,7 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-54 operations; 54 appear in the existing OpenAPI/API docs. Added with S3-01 to S3-04; evidence links point at `HEAD`.
+56 operations; 56 appear in the existing OpenAPI/API docs. Added with S3-01 to S3-04; evidence links point at `HEAD`.
 
 An incident is logged first (`POST /breaches`); the first validation of *yes* records it as a breach ([ADR 0022](../../../decisions/0022-an-incident-first-and-a-breach-on-a-yes.md)). Every route is the DPO's and **hidden**: any other role - staff or principal - is answered **404**, on the register, on a breach that exists and on a write alike, where other DPO-only modules answer 403. That a breach is being handled is itself withheld.
 
@@ -44,6 +44,8 @@ An incident is logged first (`POST /breaches`); the first validation of *yes* re
 | GET | `/breaches/{breach_uuid}/affected/upload/template` | `dpo`, `legal` | Full session; anonymous NO |
 | POST | `/breaches/{breach_uuid}/affected/upload/check` | `dpo`, `legal` | Full session; anonymous NO |
 | POST | `/breaches/{breach_uuid}/affected/upload` | `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/breaches/{breach_uuid}/affected/typed/check` | `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/breaches/{breach_uuid}/affected/typed` | `dpo`, `legal` | Full session; anonymous NO |
 | GET | `/breaches/{breach_uuid}/affected/contacts` | `dpo`, `legal` | Full session; anonymous NO |
 | GET | `/breaches/intake` | `dpo`, `legal` | Full session; anonymous NO |
 | GET | `/breaches/intake/dismissed` | `dpo`, `legal` | Full session; anonymous NO |
@@ -565,6 +567,34 @@ Add the people a list names, or the people in the assets it names.
 - **Route guard:** `BreachWriter`.
 - **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
 - **Rules:** Refused on a closed breach. A person whose email or mobile is an account's is listed as that account (`found_by` upload); anybody else is kept as a contact of this breach, name/email/mobile sealed, deduplicated by blind index. Assets: matched by platform asset ID or by `source_asset_ref` (with `source_code` when two sources share it); their consented people are listed, untraceable subjects counted. The file is not kept, only its sealed name, hash and counts. The trail records counts, never a name or contact. 409 `nothing_new` when everybody is already listed. (2026-10-07) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/lists.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /breaches/{breach_uuid}/affected/typed/check
+
+What typed mail IDs and mobile numbers would add - nothing is written.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `BreachWriter`.
+- **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
+- **Rules:** JSON `mail_ids` and `mobiles`, each separated by commas, semicolons or new lines ('Name <mail ID>' keeps the name), and `people` (uuids found by name); at most 1,000 entries, and each mobile must carry its country code. Counts what would be added and names each entry that cannot be used. Writes nothing. (2026-11-11) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/lists.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
+
+## POST /breaches/{breach_uuid}/affected/typed
+
+Add the people typed in by mail ID or mobile number, on the platform or not.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `dpo`, `legal`.
+- **Route guard:** `BreachWriter`.
+- **Resolved gate:** `RequireResource(breach, write=True, hidden=True)`.
+- **Rules:** Refused on a closed breach. Taken as a people list is: a mail ID or mobile number that is an account's lists that account, added by hand (`found_by` dpo), as is anybody picked by name; any other is kept as a contact of this breach, name/email/mobile sealed, deduplicated by blind index, recorded as a list of kind `typed` (0066) with a hash of what was typed, never the text. A revision is written with the note. The trail records counts, never a name or contact. 409 `nothing_new` when everybody is already listed; 422 when no entry can be used. (2026-11-11) Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/lists.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py), [source 4](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py).
 
 ## GET /breaches/{breach_uuid}/affected/contacts

@@ -4,7 +4,8 @@
  * Rule 7(1) asks for a notice to each affected principal, to the best of the
  * fiduciary's knowledge. Whoever runs a breach knows what it reached in the
  * words of the work, so that is what this asks: a project or activity, a
- * vendor, a data source, a list from outside, or one person. Database tables
+ * vendor, a data source, a list from outside, or people typed in by mail ID
+ * or mobile number, on the platform or not (2026-11-11). Database tables
  * are no longer a way to look: nobody running a breach could say which ones
  * it reached. The server finds the people; the office reads who was found,
  * unticks anyone wrong, and adds the rest. Each addition is a revision
@@ -26,6 +27,7 @@ import {
 } from "lucide-react";
 import * as React from "react";
 
+import { FormError } from "@/components/forms";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   Alert,
@@ -47,12 +49,14 @@ import {
 import { lookupAudit } from "@/features/audit/api";
 import {
   affectedOptions,
+  checkBreachTyped,
   confirmAffected,
   listAffected,
   listBreachContacts,
   previewAffected,
+  takeBreachTyped,
 } from "@/features/breach/api";
-import { BreachContacts, NEXT_STEP, UploadList } from "@/features/breach/components/breach-lists";
+import { BreachContacts, Counts, NEXT_STEP, UploadList } from "@/features/breach/components/breach-lists";
 import {
   ProcessorPicker,
   SourcePicker,
@@ -68,10 +72,12 @@ import type {
   Breach,
   BreachAffected,
   BreachAffectedRevision,
+  BreachListReport,
   BreachPerson,
   BreachPreview,
   BreachScope,
   BreachScopeKind,
+  BreachTyped,
 } from "@/types";
 
 const FOUND_BY: Record<BreachPerson["found_by"], string> = {
@@ -83,7 +89,7 @@ const FOUND_BY: Record<BreachPerson["found_by"], string> = {
   platform: "From the platform's records",
 };
 
-type Way = BreachScopeKind | "upload" | "one";
+type Way = BreachScopeKind | "upload" | "typed";
 
 const WAYS: { way: Way; label: string; hint?: string; icon: LucideIcon }[] = [
   {
@@ -95,7 +101,12 @@ const WAYS: { way: Way; label: string; hint?: string; icon: LucideIcon }[] = [
   { way: "processor", label: "From a vendor", hint: "Everyone whose data we sent to them.", icon: Building2 },
   { way: "data_source", label: "From a data source", hint: "Everyone recorded in its files.", icon: Database },
   { way: "upload", label: "Upload an Excel list", hint: "Name, Mail ID, Mobile number.", icon: FileSpreadsheet },
-  { way: "one", label: "Add one person", icon: UserPlus },
+  {
+    way: "typed",
+    label: "Add by mail ID or mobile number",
+    hint: "Many at once, separated by commas, on the platform or not. Or find someone on the platform by name.",
+    icon: UserPlus,
+  },
 ];
 
 const headcount = (n: number) => `${n} ${n === 1 ? "person" : "people"}`;
@@ -148,6 +159,7 @@ function placeOf(scope: Record<string, unknown>): string {
     case "data_source":
       return `In ${String(scope.source_name ?? "a data source")}`;
     case "upload":
+      if (scope.file === "typed") return "Typed in by mail ID or mobile number";
       return scope.file === "assets" ? "From a list of asset IDs" : "From a list of people";
     default:
       // Listed when tables were still a way to look. Their names mean
@@ -210,7 +222,7 @@ function AddByHand({ added, onAdd }: { added: AuditLookupHit[]; onAdd: (hit: Aud
       </div>
       {hits?.length === 0 && (
         <p className="text-sm text-text-muted">
-          Nobody found. Someone who is not on the platform can be added with an Excel list.
+          Nobody on the platform found. Someone who is not on it is added by their mail ID or mobile number above.
         </p>
       )}
       {hits && hits.length > 0 && (
@@ -238,16 +250,117 @@ function AddByHand({ added, onAdd }: { added: AuditLookupHit[]; onAdd: (hit: Aud
   );
 }
 
-function AddOne({ breach, onBack, onDone }: { breach: Breach; onBack: () => void; onDone: () => void }) {
-  const save = useAddToList(breach, onDone);
-  const [added, setAdded] = React.useState<AuditLookupHit[]>([]);
+/** Mail IDs and mobile numbers typed in, many at once and on the platform or
+ *  not (2026-11-11), and anybody on the platform found by name. Checked
+ *  first, as a list is: nothing is written until it is added. */
+function AddTyped({ breach, onBack, onDone }: { breach: Breach; onBack: () => void; onDone: () => void }) {
+  const toast = useToast();
+  const qc = useQueryClient();
+  const [mailIds, setMailIds] = React.useState("");
+  const [mobiles, setMobiles] = React.useState("");
+  const [picked, setPicked] = React.useState<AuditLookupHit[]>([]);
   const [note, setNote] = React.useState("");
+  const [report, setReport] = React.useState<BreachListReport | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
+  const [busy, setBusy] = React.useState<"check" | "take" | null>(null);
+  const body = (): BreachTyped => ({
+    mail_ids: mailIds,
+    mobiles,
+    people: picked.map((p) => p.uuid),
+    note: note.trim() || null,
+  });
+  const anything = mailIds.trim() !== "" || mobiles.trim() !== "" || picked.length > 0;
+
+  // What is added is what was checked: any change asks for a fresh check.
+  function changed() {
+    setReport(null);
+    setError(null);
+  }
+
+  async function check() {
+    setBusy("check");
+    changed();
+    try {
+      setReport(await checkBreachTyped(breach.breach_uuid, body()));
+    } catch (err) {
+      setError(messageOf(err, "These could not be checked."));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function take() {
+    setBusy("take");
+    setError(null);
+    try {
+      const taken = await takeBreachTyped(breach.breach_uuid, body());
+      toast.success(`${headcount(taken.matched_people + taken.new_contacts)} added to the list`, NEXT_STEP);
+      void qc.invalidateQueries({ queryKey: keys.breach.affected(breach.breach_uuid) });
+      void qc.invalidateQueries({ queryKey: keys.breach.notices(breach.breach_uuid) });
+      void qc.invalidateQueries({ queryKey: keys.breach.detail(breach.breach_uuid) });
+      onDone();
+    } catch (err) {
+      setError(messageOf(err, "They were not added."));
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
     <div className="space-y-4">
-      <AddByHand added={added} onAdd={(h) => setAdded([...added, h])} />
-      {added.length > 0 && (
+      <div>
+        <p className="text-sm font-medium">Add by mail ID or mobile number</p>
+        <p className="mt-0.5 text-xs text-text-muted">
+          Each mail ID and each mobile number is one person. Someone on the platform is matched and listed as
+          themselves; anyone else is kept as a contact of this breach and told by email or SMS.
+        </p>
+      </div>
+      <Field
+        label="Mail IDs"
+        hint="Separated by commas. Pasting from Outlook works too: Meera Nair <meera@example.com>; …"
+      >
+        {(p) => (
+          <Textarea
+            {...p}
+            rows={3}
+            value={mailIds}
+            onChange={(e) => {
+              setMailIds(e.target.value);
+              changed();
+            }}
+          />
+        )}
+      </Field>
+      <Field label="Mobile numbers" hint="Separated by commas, each with its country code: +91 98765 43210">
+        {(p) => (
+          <Textarea
+            {...p}
+            rows={2}
+            value={mobiles}
+            onChange={(e) => {
+              setMobiles(e.target.value);
+              changed();
+            }}
+          />
+        )}
+      </Field>
+      <details open={picked.length > 0}>
+        <summary className="cursor-pointer text-xs text-text-muted">
+          Know only their name? Find them on the platform
+        </summary>
+        <div className="mt-2">
+          <AddByHand
+            added={picked}
+            onAdd={(h) => {
+              setPicked([...picked, h]);
+              changed();
+            }}
+          />
+        </div>
+      </details>
+      {picked.length > 0 && (
         <ul className="flex flex-wrap gap-2">
-          {added.map((a) => (
+          {picked.map((a) => (
             <li key={a.uuid}>
               <Badge tone="accent">
                 {a.label}
@@ -255,7 +368,10 @@ function AddOne({ breach, onBack, onDone }: { breach: Breach; onBack: () => void
                   type="button"
                   className="ml-1"
                   aria-label={`Remove ${a.label}`}
-                  onClick={() => setAdded(added.filter((x) => x.uuid !== a.uuid))}
+                  onClick={() => {
+                    setPicked(picked.filter((x) => x.uuid !== a.uuid));
+                    changed();
+                  }}
                 >
                   ×
                 </button>
@@ -267,19 +383,55 @@ function AddOne({ breach, onBack, onDone }: { breach: Breach; onBack: () => void
       <Field label="Note" hint="Optional: why they are being added">
         {(p) => <Textarea {...p} value={note} onChange={(e) => setNote(e.target.value)} />}
       </Field>
+
+      <FormError message={error} />
+
+      {report && (
+        <div className="space-y-3 rounded-md bg-bg-inset p-3">
+          <Counts report={report} taken={false} />
+          {report.errors.length > 0 && (
+            <div>
+              <p className="text-sm font-medium text-warning-text">Could not be used ({report.unreadable})</p>
+              <ul className="mt-1 max-h-48 space-y-0.5 overflow-y-auto text-xs">
+                {report.errors.map((e) => (
+                  <li key={`${e.row}:${e.message}`}>{e.message}</li>
+                ))}
+                {report.more_errors > 0 && <li>…and {report.more_errors} more</li>}
+              </ul>
+            </div>
+          )}
+          {report.would_add === 0 ? (
+            <Alert tone="warning">
+              <p className="text-sm">
+                Nobody here would be added
+                {report.already_listed ? ": everybody is already listed." : "."}
+              </p>
+            </Alert>
+          ) : (
+            report.unreadable > 0 && (
+              <p className="text-xs text-text-muted">
+                Adding takes the ones that can be used. Correct the others and add them after.
+              </p>
+            )
+          )}
+        </div>
+      )}
+
       <div className="flex justify-end gap-2">
         <Button variant="ghost" onClick={onBack}>
           Back
         </Button>
+        <Button variant="secondary" disabled={!anything} loading={busy === "check"} onClick={check}>
+          Check
+        </Button>
         <Button
           variant="primary"
-          disabled={added.length === 0}
-          loading={save.isPending}
-          onClick={() =>
-            save.mutate({ scopes: [], exclude: [], add: added.map((a) => a.uuid), note: note.trim() || null })
-          }
+          disabled={!report || report.would_add === 0}
+          loading={busy === "take"}
+          onClick={take}
         >
-          {added.length > 1 ? `Add ${headcount(added.length)}` : "Add this person"}
+          <UserPlus className="size-4" />
+          {report && report.would_add > 0 ? `Add ${headcount(report.would_add)}` : "Add to the list"}
         </Button>
       </div>
     </div>
@@ -513,8 +665,8 @@ function AddPeople({ breach, onClose }: { breach: Breach; onClose: () => void })
           </div>
         ) : way === "upload" ? (
           <UploadList breach={breach} onBack={() => setWay(null)} onDone={onClose} />
-        ) : way === "one" ? (
-          <AddOne breach={breach} onBack={() => setWay(null)} onDone={onClose} />
+        ) : way === "typed" ? (
+          <AddTyped breach={breach} onBack={() => setWay(null)} onDone={onClose} />
         ) : found ? (
           <Review
             breach={breach}

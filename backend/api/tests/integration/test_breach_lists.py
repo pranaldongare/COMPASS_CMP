@@ -26,7 +26,7 @@ from openpyxl import Workbook, load_workbook
 from cmp.core.errors import Conflict, ValidationFailed
 from cmp.db.repositories import breach_lists as lists_repo
 from cmp.db.sql import fetch_all, fetch_one
-from cmp.domain.breach import lists, notices, service
+from cmp.domain.breach import affected, lists, notices, service
 from cmp.tasks import dispatch as dispatch_mod
 from tests.conftest import plain
 from tests.integration.test_breach_affected import _breach, _person
@@ -532,4 +532,156 @@ async def test_the_trail_counts_and_never_names(conn: Any, seeded: dict[str, Any
         (uuid,),
     )
     assert row["detail_json"]["new_contacts"] == 1 and row["detail_json"]["kind"] == "contacts"
+    assert "asha" not in str(row["detail_json"]).lower()
+
+
+# ------------------------------------------------------- typed in (2026-11-11)
+
+
+def test_typed_entries_split_as_outlook_copies_them() -> None:
+    assert lists.split_entries(" a@x.org, b@x.org;c@x.org\n\nd@x.org ,") == [
+        "a@x.org",
+        "b@x.org",
+        "c@x.org",
+        "d@x.org",
+    ]
+    assert lists.split_entries('"Nair, Meera" <meera@x.org>; Ravi <ravi@x.org>') == [
+        '"Nair, Meera" <meera@x.org>',
+        "Ravi <ravi@x.org>",
+    ]
+    assert lists.split_entries("+91 98765 43210, +91-90000-11111") == [
+        "+91 98765 43210",
+        "+91-90000-11111",
+    ]
+    assert lists.split_entries(" , ;\n") == []
+
+
+def test_each_mail_id_and_mobile_typed_is_one_person() -> None:
+    reading = lists.read_typed(
+        '"Nair, Meera" <Meera@X.org>, ravi@x.org', "+91 98765 43210, 98765 43211"
+    )
+    assert reading.rows == [
+        (1, {"name": "Nair, Meera", "email": "Meera@X.org"}),
+        (2, {"email": "ravi@x.org"}),
+        (3, {"mobile": "+91 98765 43210"}),
+    ]
+    # No country code is assumed: the person typing it can add one.
+    assert reading.errors == [
+        {
+            "row": 4,
+            "message": "98765 43211: give the mobile number with its country code, "
+            "as +91 98765 43210",
+        }
+    ]
+    with pytest.raises(ValidationFailed):
+        lists.read_typed(" , ", "")
+    with pytest.raises(ValidationFailed):
+        lists.read_typed(",".join(f"p{i}@x.org" for i in range(lists.MAX_TYPED + 1)), "")
+
+
+async def test_typed_people_are_matched_or_kept_as_contacts_and_named_in_the_history(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    uuid = await _recorded(conn, seeded)
+    dpo = int(seeded["users"]["dpo"]["id"])
+    by_mobile = await _person(conn, seeded, "typed-mobile")
+    by_name = await _person(conn, seeded, "typed-name")
+    mobile = plain(
+        (await fetch_one(conn, "SELECT mobile FROM auth_user WHERE id = %s", (by_mobile[0],)))[
+            "mobile"
+        ]
+    )
+    typed = {
+        "mail_ids": 'Asha Rao <ASHA.typed@example.org>, "Kumar, Ravi" <ravi.typed@example.org>;'
+        " asha.typed@example.org, not-an-email",
+        "mobiles": f"{mobile}, +91 90000 22222, 90000 33333",
+        "people": [by_name[1]],
+    }
+    checked = await lists.check_typed(conn, breach_uuid=uuid, **typed)
+    assert checked["kind"] == "typed"
+    assert (
+        checked["rows_read"],
+        checked["matched_people"],
+        checked["new_contacts"],
+        checked["already_listed"],
+        checked["unreadable"],
+    ) == (8, 2, 3, 1, 2)
+    assert [e["message"] for e in checked["errors"]] == [
+        "Not an email address: not-an-email",
+        "90000 33333: give the mobile number with its country code, as +91 98765 43210",
+    ]
+    # A check writes nothing.
+    assert (await lists.contacts(conn, breach_uuid=uuid, after=None))["total"] == 0
+
+    taken = await lists.take_typed(
+        conn, breach_uuid=uuid, note="From the vendor's email of 10 Nov", actor_id=dpo, **typed
+    )
+    assert (taken["matched_people"], taken["new_contacts"]) == (2, 3)
+    shown = await lists.contacts(conn, breach_uuid=uuid, after=None)
+    assert {
+        (plain(c["full_name"]), plain(c["email"]), plain(c["mobile"]), c["upload_kind"])
+        for c in shown["contacts"]
+    } == {
+        ("Asha Rao", "asha.typed@example.org", None, "typed"),
+        ("Kumar, Ravi", "ravi.typed@example.org", None, "typed"),
+        (None, None, "+919000022222", "typed"),
+    }
+    [upload] = shown["uploads"]
+    assert upload["kind"] == "typed" and plain(upload["file_name"]) == lists.TYPED_NAME
+
+    listed = await fetch_all(
+        conn,
+        """SELECT a.auth_user_id, a.found_by FROM breach_affected a JOIN breach b USING (breach_id)
+            WHERE b.breach_uuid = %s ORDER BY a.auth_user_id""",
+        (uuid,),
+    )
+    assert [(r["auth_user_id"], r["found_by"]) for r in listed] == sorted(
+        [(by_mobile[0], "dpo"), (by_name[0], "dpo")]
+    )
+    [revision] = (await affected.listing(conn, breach_uuid=uuid, after=None))["revisions"]
+    assert revision["scopes"][0]["file"] == "typed" and revision["added_by_hand"] == 2
+    assert plain(revision["note"]) == "From the vendor's email of 10 Nov"
+
+    # Typed again, it adds nothing.
+    with pytest.raises(Conflict) as refused:
+        await lists.take_typed(conn, breach_uuid=uuid, note=None, actor_id=dpo, **typed)
+    assert refused.value.code == "nothing_new"
+
+
+async def test_typed_entries_none_of_which_can_be_used_are_refused(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    uuid = await _recorded(conn, seeded)
+    with pytest.raises(ValidationFailed):
+        await lists.take_typed(
+            conn,
+            breach_uuid=uuid,
+            mail_ids="nobody",
+            mobiles="12345",
+            people=[],
+            note=None,
+            actor_id=int(seeded["users"]["dpo"]["id"]),
+        )
+
+
+async def test_a_typed_list_on_the_trail_counts_and_never_names(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    uuid = await _recorded(conn, seeded)
+    await lists.take_typed(
+        conn,
+        breach_uuid=uuid,
+        mail_ids="Asha Rao <asha.trail@example.org>",
+        mobiles="",
+        people=[],
+        note=None,
+        actor_id=int(seeded["users"]["dpo"]["id"]),
+    )
+    [row] = await fetch_all(
+        conn,
+        """SELECT l.detail_json FROM audit_log l JOIN breach b ON b.breach_id = l.entity_id
+            WHERE l.event_type = 'breach.affected_uploaded' AND b.breach_uuid = %s""",
+        (uuid,),
+    )
+    assert row["detail_json"]["kind"] == "typed" and row["detail_json"]["new_contacts"] == 1
     assert "asha" not in str(row["detail_json"]).lower()

@@ -15,6 +15,7 @@ import type {
   BreachContacts,
   BreachListKind,
   BreachListReport,
+  BreachTyped,
   BreachAssessment,
   BreachAssessmentInput,
   BreachBoardList,
@@ -199,6 +200,17 @@ export function takeBreachList(
   file: File,
 ): Promise<BreachListReport> {
   return apiPost<BreachListReport>(`/breaches/${uuid}/affected/upload`, listForm(kind, file));
+}
+
+/** What typed mail IDs and mobile numbers would add, and each one that cannot
+ *  be used. Writes nothing. */
+export function checkBreachTyped(uuid: Uuid, body: BreachTyped): Promise<BreachListReport> {
+  return apiPost<BreachListReport>(`/breaches/${uuid}/affected/typed/check`, body);
+}
+
+/** Add the people typed in, on the platform or not. */
+export function takeBreachTyped(uuid: Uuid, body: BreachTyped): Promise<BreachListReport> {
+  return apiPost<BreachListReport>(`/breaches/${uuid}/affected/typed`, body);
 }
 
 /** People affected who have no account, and the lists they came in. */

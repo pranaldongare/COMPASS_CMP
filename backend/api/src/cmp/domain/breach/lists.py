@@ -17,6 +17,10 @@ A file is checked first - nothing written, everything it would do counted,
 every row that cannot be read named by its row number - and then taken. A
 row already on the list, or repeated, is skipped rather than refused, so a
 corrected file can be sent again. The file itself is not kept.
+
+People are also **typed in** (2026-11-11): mail IDs and mobile numbers, comma-
+separated, and anybody on the platform found by name. They are checked and
+taken as a people list is, and recorded as a list with no file (`typed`).
 """
 
 from __future__ import annotations
@@ -32,10 +36,11 @@ from typing import Any, Final
 
 from pydantic import TypeAdapter, ValidationError
 
-from cmp.core.errors import Conflict, ValidationFailed
+from cmp.core.errors import Conflict, NotFound, ValidationFailed
 from cmp.core.security import file_hash
 from cmp.db.repositories import breach_lists as repo
 from cmp.db.repositories import breaches as breach_repo
+from cmp.db.repositories import users as user_repo
 from cmp.db.sql import Conn
 from cmp.domain.audit.service import Event
 from cmp.domain.breach import notices, service
@@ -592,6 +597,178 @@ async def take(
         Event.BREACH_AFFECTED_UPLOADED,
         actor_id=actor_id,
         detail={"upload": upload_uuid, "kind": kind, **counts, "new_contacts": added},
+    )
+    await notices.reopen_if_done(
+        conn, breach, newly_listed=len(plan.people) + added, actor_id=actor_id
+    )
+    return {**_report(plan), "new_contacts": added, "upload_uuid": upload_uuid}
+
+
+# ------------------------------------------------------- typed in (2026-11-11)
+
+#: Entries one form may carry, mail IDs and mobile numbers together. More is a
+#: list to upload.
+MAX_TYPED: Final = 1_000
+
+#: How a typed list is named where the lists taken are shown. There is no file.
+TYPED_NAME: Final = "Typed in"
+
+#: 'Meera Nair <meera@example.com>', as Outlook copies an address with its name.
+_NAMED: Final = re.compile(r'^"?(?P<name>[^"<>]*?)"?\s*<(?P<email>[^<>]*)>$')
+
+
+def split_entries(text: str) -> list[str]:
+    """Entries separated by commas, semicolons or new lines, as Outlook copies
+    them. A separator inside quotes or angle brackets is left alone, so
+    '"Nair, Meera" <meera@example.com>' stays one entry."""
+    entries: list[str] = []
+    current: list[str] = []
+    quoted = angled = False
+    for ch in text:
+        if ch == '"':
+            quoted = not quoted
+        elif ch == "<" and not quoted:
+            angled = True
+        elif ch == ">" and not quoted:
+            angled = False
+        if ch in ",;\r\n" and not quoted and not angled:
+            entries.append("".join(current))
+            current = []
+        else:
+            current.append(ch)
+    entries.append("".join(current))
+    return [e.strip() for e in entries if e.strip()]
+
+
+def read_typed(mail_ids: str, mobiles: str) -> Reading:
+    """What was typed, as the rows of a people list: one person to each mail ID
+    and each mobile number, numbered in the order typed. A mobile must carry
+    its country code: a person typing it can add one, and without it the
+    number would match no account."""
+    mails, phones = split_entries(mail_ids), split_entries(mobiles)
+    if not mails and not phones:
+        raise ValidationFailed("Type a mail ID or a mobile number", field="mail_ids")
+    if len(mails) + len(phones) > MAX_TYPED:
+        raise ValidationFailed(
+            f"At most {MAX_TYPED:,} at a time. Upload an Excel list for more", field="mail_ids"
+        )
+    out = Reading()
+    for number, entry in enumerate(mails, start=1):
+        named = _NAMED.match(entry)
+        if named:
+            out.rows.append(
+                (number, {"name": named["name"].strip(), "email": named["email"].strip()})
+            )
+        else:
+            out.rows.append((number, {"email": entry}))
+    for number, entry in enumerate(phones, start=len(mails) + 1):
+        if not entry.lstrip("(").startswith("+"):
+            out.refuse(
+                number,
+                f"{entry[:30]}: give the mobile number with its country code, as +91 98765 43210",
+            )
+        else:
+            out.rows.append((number, {"mobile": entry}))
+    return out
+
+
+async def _plan_typed(
+    conn: Conn, breach_id: int, *, mail_ids: str, mobiles: str, people: list[str]
+) -> Plan:
+    """A people list from what was typed, with anybody picked by name on top."""
+    plan = await _plan_contacts(conn, breach_id, read_typed(mail_ids, mobiles))
+    plan.kind = "typed"
+    # In the order typed: a mobile is refused on reading, a mail ID on planning.
+    plan.errors.sort(key=lambda e: int(e["row"]))
+    if people:
+        listed = await breach_repo.listed_person_ids(conn, breach_id)
+        for uuid in dict.fromkeys(people):
+            person = await user_repo.by_uuid(conn, uuid)
+            if not person:
+                raise NotFound("Person")
+            plan.rows_read += 1
+            pid = int(person["id"])
+            if pid in listed or pid in plan.people:
+                plan.already_listed += 1
+            else:
+                plan.people[pid] = {}
+    return plan
+
+
+async def check_typed(
+    conn: Conn, *, breach_uuid: str, mail_ids: str, mobiles: str, people: list[str]
+) -> Row:
+    """What the typed entries would add, and each one that cannot be used.
+    Writes nothing."""
+    breach = await service.require(conn, breach_uuid)
+    return _report(
+        await _plan_typed(
+            conn, int(breach["breach_id"]), mail_ids=mail_ids, mobiles=mobiles, people=people
+        )
+    )
+
+
+async def take_typed(
+    conn: Conn,
+    *,
+    breach_uuid: str,
+    mail_ids: str,
+    mobiles: str,
+    people: list[str],
+    note: str | None,
+    actor_id: int,
+) -> Row:
+    """Add the typed entries to the breach's list, as a people list is added:
+    an account's mail ID or mobile number lists that account, added by hand;
+    any other is kept as this breach's contact. Entries that cannot be used are
+    left out and reported. The revision is written even when it lists nobody
+    with an account, so the note and the entry stay in how the list was built."""
+    breach = await service.locked_open(conn, breach_uuid)
+    breach_id = int(breach["breach_id"])
+    plan = await _plan_typed(conn, breach_id, mail_ids=mail_ids, mobiles=mobiles, people=people)
+    if not plan.people and not plan.contacts:
+        if plan.errors and not plan.already_listed:
+            raise ValidationFailed(
+                "None of these could be used. Check them to see why", field="mail_ids"
+            )
+        raise Conflict("Everybody here is already on the list", code="nothing_new")
+
+    counts = plan.counts()
+    upload = await repo.add_upload(
+        conn,
+        breach_id,
+        kind="typed",
+        file_name=TYPED_NAME,
+        sha256=file_hash(f"{mail_ids}\n{mobiles}\n{','.join(people)}".encode()),
+        counts=counts,
+        added_by=actor_id,
+    )
+    upload_uuid = str(upload["upload_uuid"])
+    await breach_repo.add_affected_revision(
+        conn,
+        breach_id,
+        scopes=[
+            {
+                "kind": "upload",
+                "upload_uuid": upload_uuid,
+                "file": "typed",
+                "found": len(plan.people),
+            }
+        ],
+        derived=0,
+        added_by_hand=len(plan.people),
+        excluded=0,
+        people=[(pid, "dpo", {"uploads": [upload_uuid]}) for pid in plan.people],
+        note=(note or "").strip() or None,
+        confirmed_by=actor_id,
+    )
+    added = await repo.add_contacts(conn, breach_id, int(upload["upload_id"]), plan.contacts)
+    await service.record_event(
+        conn,
+        breach,
+        Event.BREACH_AFFECTED_UPLOADED,
+        actor_id=actor_id,
+        detail={"upload": upload_uuid, "kind": "typed", **counts, "new_contacts": added},
     )
     await notices.reopen_if_done(
         conn, breach, newly_listed=len(plan.people) + added, actor_id=actor_id

@@ -8,6 +8,15 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Add many people at once, on the platform or not** (2026-11-11): on a
+  breach's **People & notices**, *Add people* > **Add by mail ID or mobile**
+  (formerly *Add one person*) takes mail IDs and mobile numbers typed in,
+  separated by commas, semicolons or new lines, as Outlook copies them, and
+  still finds anybody on the platform by name. Each is checked first; an
+  account's mail ID or mobile lists that account, and anybody else is kept as a
+  contact of the breach and told by email or SMS, as an Excel list's people are
+  (`POST /breaches/{uuid}/affected/typed/check` and `.../affected/typed`, DPO
+  and Legal PoC; migration 0066).
 - **The mail to the organisation's board is an email** (2026-11-11): both board
   mails, a report to the board and word that a report for a regulator was
   finalised, now read as a letter - a greeting, what it is, the report, a

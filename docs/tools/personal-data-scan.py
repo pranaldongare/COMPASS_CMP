@@ -77,6 +77,8 @@ CONTACT = {
     "address", "addresses",
     # Who answers for a processor on an HR category (0052).
     "respondent_email",
+    # The people a breach affected, typed in rather than uploaded (0066).
+    "mail_ids", "mobiles",
     # The address a reporter proved by a code (0058).
     "reporter_email",
     # Not a contact, but the state of one: when a reporter's name and address

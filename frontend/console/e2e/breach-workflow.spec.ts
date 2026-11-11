@@ -771,7 +771,7 @@ test.describe("the DPO's office", () => {
       /^From a vendor/,
       /^From a data source/,
       /^Upload an Excel list/,
-      /^Add one person/,
+      /^Add by mail ID or mobile number/,
     ]) {
       await expect(dialog.getByRole("button", { name: way })).toBeVisible();
     }

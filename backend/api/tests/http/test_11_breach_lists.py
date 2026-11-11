@@ -2,7 +2,8 @@
 
 The DPO downloads the template, checks a filled-in file (nothing written),
 takes it, and reads back the contacts with no account - name, email and
-mobile sealed - and the upload, whose file name is sealed too. A workbook that
+mobile sealed - and the upload, whose file name is sealed too. Mail IDs and
+mobile numbers typed in are checked and taken the same way (2026-11-11). A workbook that
 cannot be read is refused with how to save it. Every other role is told the
 breach is not there.
 """
@@ -129,6 +130,58 @@ class TestBreachLists:
         )
         assert notices.json()["listed"] == 2 and notices.json()["contacts"] == 2
 
+    async def test_the_dpo_types_in_mail_ids_and_mobile_numbers(
+        self, http: httpx.AsyncClient, world: World
+    ) -> None:
+        uuid = await _breach(http, world)
+        typed = {
+            "mail_ids": "Asha Rao <asha.typed@example.org>, ravi.typed@example.org",
+            "mobiles": "+91 98765 40003, 98765 40004",
+        }
+        checked = await call(
+            http,
+            "POST",
+            f"/breaches/{uuid}/affected/typed/check",
+            template=f"{B}/affected/typed/check",
+            session=world.dpo,
+            json=typed,
+        )
+        assert checked.json()["kind"] == "typed"
+        assert checked.json()["new_contacts"] == 3 and checked.json()["unreadable"] == 1
+
+        taken = await call(
+            http,
+            "POST",
+            f"/breaches/{uuid}/affected/typed",
+            template=f"{B}/affected/typed",
+            session=world.dpo,
+            expect=201,
+            json={**typed, "note": "From the vendor's email"},
+        )
+        assert taken.json()["new_contacts"] == 3
+
+        listed = await call(
+            http,
+            "GET",
+            f"/breaches/{uuid}/affected/contacts",
+            template=f"{B}/affected/contacts",
+            session=world.dpo,
+        )
+        body = listed.json()
+        assert body["total"] == 3 and {c["upload_kind"] for c in body["contacts"]} == {"typed"}
+        assert plain(body["contacts"][0]["full_name"]) == "Asha Rao"
+
+        refused = await call(
+            http,
+            "POST",
+            f"/breaches/{uuid}/affected/typed",
+            template=f"{B}/affected/typed",
+            session=world.dpo,
+            expect=409,
+            json=typed,
+        )
+        assert "already on the list" in refused.text
+
     async def test_a_broken_workbook_is_refused_with_how_to_save_it(
         self, http: httpx.AsyncClient, world: World
     ) -> None:
@@ -165,6 +218,15 @@ class TestBreachLists:
                 expect=404,
                 data={"kind": "contacts"},
                 files={"file": ("people.csv", PEOPLE, "text/csv")},
+            )
+            await call(
+                http,
+                "POST",
+                f"/breaches/{uuid}/affected/typed",
+                template=f"{B}/affected/typed",
+                session=session,
+                expect=404,
+                json={"mail_ids": "asha.typed@example.org"},
             )
             await call(
                 http,

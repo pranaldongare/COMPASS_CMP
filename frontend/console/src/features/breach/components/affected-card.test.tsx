@@ -1,7 +1,7 @@
 /**
  * Finding a breach's people in the words of the work (2026-11-06): a project
- * or activity, a vendor, a data source, an Excel list or one person, never a
- * database table. Whoever was found is read before anyone is added, and anyone
+ * or activity, a vendor, a data source, an Excel list, or mail IDs and mobile
+ * numbers typed in (2026-11-11), never a database table. Whoever was found is read before anyone is added, and anyone
  * wrong can be unticked.
  */
 import { HttpResponse, http } from "msw";
@@ -11,7 +11,7 @@ import { AffectedCard } from "@/features/breach/components/affected-card";
 import { makeMe } from "@/test/fixtures";
 import { render, screen, waitFor, within } from "@/test/render";
 import { API, errorResponse, server } from "@/test/server";
-import type { Breach, BreachAffected, BreachCandidate, BreachPreview } from "@/types";
+import type { Breach, BreachAffected, BreachCandidate, BreachListReport, BreachPreview } from "@/types";
 
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn() }));
 const nav = vi.hoisted(() => ({ current: ["breaches", "processors", "sources"] }));
@@ -203,7 +203,7 @@ describe("AffectedCard", () => {
         "From a vendorEveryone whose data we sent to them.",
         "From a data sourceEveryone recorded in its files.",
         "Upload an Excel listName, Mail ID, Mobile number.",
-        "Add one person",
+        "Add by mail ID or mobile numberMany at once, separated by commas, on the platform or not. Or find someone on the platform by name.",
       ]),
     );
     first.unmount();
@@ -340,9 +340,78 @@ describe("AffectedCard", () => {
     expect(within(dialog).getByRole("button", { name: "Find the people" })).toBeInTheDocument();
   });
 
-  it("adds one person by search, with nothing looked up", async () => {
+  /** What the typed entries come to, and what was sent to check and to take. */
+  function typed(report: Partial<BreachListReport> = {}) {
+    const sent: { check?: unknown; take?: unknown } = {};
+    const answer: BreachListReport = {
+      kind: "typed",
+      rows_read: 4,
+      matched_people: 1,
+      new_contacts: 2,
+      already_listed: 0,
+      unreadable: 1,
+      untraceable: 0,
+      would_add: 3,
+      errors: [{ row: 4, message: "98765 43211: give the mobile number with its country code, as +91 98765 43210" }],
+      more_errors: 0,
+      ...report,
+    };
+    server.use(
+      http.post(`${API}/breaches/${UUID}/affected/typed/check`, async ({ request }) => {
+        sent.check = await request.json();
+        return HttpResponse.json(answer);
+      }),
+      http.post(`${API}/breaches/${UUID}/affected/typed`, async ({ request }) => {
+        sent.take = await request.json();
+        return HttpResponse.json({ ...answer, upload_uuid: MEERA }, { status: 201 });
+      }),
+    );
+    return sent;
+  }
+
+  it("adds many by mail ID and mobile number, checked first, on the platform or not", async () => {
     serve();
-    const sent = look({ scopes: [], derived: 0, already_listed: 0, would_add: 0, people: [] });
+    const sent = typed();
+    const { user } = render(<AffectedCard breach={breach()} />);
+    const dialog = await open(user);
+    await user.click(within(dialog).getByRole("button", { name: /^Add by mail ID or mobile number/ }));
+
+    const add = within(dialog).getByRole("button", { name: "Add to the list" });
+    expect(add).toBeDisabled();
+    expect(within(dialog).getByRole("button", { name: "Check" })).toBeDisabled();
+    await user.type(within(dialog).getByLabelText(/^Mail IDs/), "asha@example.org, ravi@example.org");
+    await user.type(within(dialog).getByLabelText(/^Mobile numbers/), "+91 98765 43210, 98765 43211");
+    await user.click(within(dialog).getByRole("button", { name: "Check" }));
+
+    expect(await within(dialog).findByText("Entries read")).toBeInTheDocument();
+    expect(within(dialog).getByText(/98765 43211: give the mobile number with its country code/)).toBeInTheDocument();
+    expect(sent.check).toEqual({
+      mail_ids: "asha@example.org, ravi@example.org",
+      mobiles: "+91 98765 43210, 98765 43211",
+      people: [],
+      note: null,
+    });
+
+    // A change asks for a fresh check before anything is added.
+    await user.type(within(dialog).getByLabelText(/^Mobile numbers/), " ");
+    expect(within(dialog).queryByText("Entries read")).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Add to the list" })).toBeDisabled();
+    await user.click(within(dialog).getByRole("button", { name: "Check" }));
+    await user.click(await within(dialog).findByRole("button", { name: "Add 3 people" }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(sent.take).toEqual({
+      mail_ids: "asha@example.org, ravi@example.org",
+      mobiles: "+91 98765 43210, 98765 43211 ",
+      people: [],
+      note: null,
+    });
+    expect(toast.success).toHaveBeenCalledWith("3 people added to the list", expect.any(String));
+  });
+
+  it("finds someone on the platform by name in the same step", async () => {
+    serve();
+    const sent = typed({ rows_read: 1, matched_people: 1, new_contacts: 0, unreadable: 0, would_add: 1, errors: [] });
     server.use(
       http.get(`${API}/audit/lookup`, ({ request }) =>
         HttpResponse.json(
@@ -363,28 +432,42 @@ describe("AffectedCard", () => {
     );
     const { user } = render(<AffectedCard breach={breach()} />);
     const dialog = await open(user);
-    await user.click(within(dialog).getByRole("button", { name: "Add one person" }));
-
-    const add = within(dialog).getByRole("button", { name: "Add this person" });
-    expect(add).toBeDisabled();
+    await user.click(within(dialog).getByRole("button", { name: /^Add by mail ID or mobile number/ }));
+    await user.click(within(dialog).getByText("Know only their name? Find them on the platform"));
     await user.type(within(dialog).getByLabelText(/^Find the person/), "asha");
     await user.click(within(dialog).getByRole("button", { name: "Find" }));
     await user.click(await within(dialog).findByRole("button", { name: "Add" }));
-    await user.click(add);
+    expect(within(dialog).getByRole("button", { name: "Remove Asha Rao" })).toBeInTheDocument();
+    await user.type(within(dialog).getByLabelText(/^Note/), "Named in the vendor's email");
+    await user.click(within(dialog).getByRole("button", { name: "Check" }));
+    await user.click(await within(dialog).findByRole("button", { name: "Add 1 person" }));
 
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    expect(sent.confirm).toEqual({ scopes: [], exclude: [], add: [ASHA], note: null });
+    expect(sent.take).toEqual({ mail_ids: "", mobiles: "", people: [ASHA], note: "Named in the vendor's email" });
   });
 
-  it("says when a search finds nobody", async () => {
+  it("says when a search finds nobody, and how to add them anyway", async () => {
     serve();
     server.use(http.get(`${API}/audit/lookup`, () => HttpResponse.json([])));
     const { user } = render(<AffectedCard breach={breach()} />);
     const dialog = await open(user);
-    await user.click(within(dialog).getByRole("button", { name: "Add one person" }));
+    await user.click(within(dialog).getByRole("button", { name: /^Add by mail ID or mobile number/ }));
+    await user.click(within(dialog).getByText("Know only their name? Find them on the platform"));
     await user.type(within(dialog).getByLabelText(/^Find the person/), "nobody");
     await user.click(within(dialog).getByRole("button", { name: "Find" }));
-    expect(await within(dialog).findByText(/Nobody found/)).toBeInTheDocument();
+    expect(await within(dialog).findByText(/added by their mail ID or mobile number above/)).toBeInTheDocument();
+  });
+
+  it("says when nobody typed would be added", async () => {
+    serve();
+    typed({ matched_people: 0, new_contacts: 0, already_listed: 2, unreadable: 0, would_add: 0, errors: [] });
+    const { user } = render(<AffectedCard breach={breach()} />);
+    const dialog = await open(user);
+    await user.click(within(dialog).getByRole("button", { name: /^Add by mail ID or mobile number/ }));
+    await user.type(within(dialog).getByLabelText(/^Mail IDs/), "asha@example.org");
+    await user.click(within(dialog).getByRole("button", { name: "Check" }));
+    expect(await within(dialog).findByText(/everybody is already listed/)).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Add to the list" })).toBeDisabled();
   });
 
   it("takes an Excel list as a step, with a way back", async () => {

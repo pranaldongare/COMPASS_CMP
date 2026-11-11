@@ -1,6 +1,6 @@
 {
-  "commit": "bfbee4bc113d13094d91bcf4ec9b2ed2ced4ea44",
-  "migration_head": "0065",
+  "commit": "07e47ed953802a30afb77c3ad88bf58f0ac1e06d",
+  "migration_head": "0066",
   "migrations": [
     {
       "revision": "0001",
@@ -257,6 +257,10 @@
     {
       "revision": "0065",
       "source": "backend/api/migrations/versions/0065_a_dismissed_reporter_is_found_and_erased.py"
+    },
+    {
+      "revision": "0066",
+      "source": "backend/api/migrations/versions/0066_people_typed_in.py"
     }
   ],
   "postgres_version": "16.15",
@@ -11942,7 +11946,7 @@
       "table_name": "breach_upload",
       "name": "breach_upload_kind",
       "kind": "c",
-      "definition": "CHECK (((kind)::text = ANY ((ARRAY['contacts'::character varying, 'assets'::character varying])::text[])))",
+      "definition": "CHECK (((kind)::text = ANY ((ARRAY['contacts'::character varying, 'assets'::character varying, 'typed'::character varying])::text[])))",
       "columns": [
         "kind"
       ],

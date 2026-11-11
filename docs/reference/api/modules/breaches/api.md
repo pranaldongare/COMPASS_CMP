@@ -1,6 +1,6 @@
 # Breaches API
 
-Generated from `backend/api/openapi.json`. **54 operations.**
+Generated from `backend/api/openapi.json`. **56 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -31,35 +31,37 @@ For each operation the information is deliberately ordered as **API → Validati
 23. [`GET /breaches/{breach_uuid}/affected/upload/template`](#23_get_breaches_breach_uuid_affected_upload_template)
 24. [`POST /breaches/{breach_uuid}/affected/upload/check`](#24_post_breaches_breach_uuid_affected_upload_check)
 25. [`POST /breaches/{breach_uuid}/affected/upload`](#25_post_breaches_breach_uuid_affected_upload)
-26. [`GET /breaches/{breach_uuid}/affected/contacts`](#26_get_breaches_breach_uuid_affected_contacts)
-27. [`GET /breaches/{breach_uuid}/notices`](#27_get_breaches_breach_uuid_notices)
-28. [`POST /breaches/{breach_uuid}/notices`](#28_post_breaches_breach_uuid_notices)
-29. [`PUT /breaches/{breach_uuid}/notices/{notice_uuid}`](#29_put_breaches_breach_uuid_notices_notice_uuid)
-30. [`POST /breaches/{breach_uuid}/notices/{notice_uuid}/approve`](#30_post_breaches_breach_uuid_notices_notice_uuid_approve)
-31. [`POST /breaches/{breach_uuid}/notices/send`](#31_post_breaches_breach_uuid_notices_send)
-32. [`GET /breaches/{breach_uuid}/board/intimation`](#32_get_breaches_breach_uuid_board_intimation)
-33. [`GET /breaches/{breach_uuid}/board/report`](#33_get_breaches_breach_uuid_board_report)
-34. [`GET /breaches/{breach_uuid}/org-board/brief`](#34_get_breaches_breach_uuid_org_board_brief)
-35. [`GET /breaches/{breach_uuid}/reports/recipients`](#35_get_breaches_breach_uuid_reports_recipients)
-36. [`GET /breaches/{breach_uuid}/reports`](#36_get_breaches_breach_uuid_reports)
-37. [`POST /breaches/{breach_uuid}/reports`](#37_post_breaches_breach_uuid_reports)
-38. [`PUT /breaches/{breach_uuid}/reports/{report_uuid}`](#38_put_breaches_breach_uuid_reports_report_uuid)
-39. [`POST /breaches/{breach_uuid}/reports/{report_uuid}/finalise`](#39_post_breaches_breach_uuid_reports_report_uuid_finalise)
-40. [`POST /breaches/{breach_uuid}/reports/{report_uuid}/resend`](#40_post_breaches_breach_uuid_reports_report_uuid_resend)
-41. [`POST /breaches/{breach_uuid}/reports/{report_uuid}/evidence`](#41_post_breaches_breach_uuid_reports_report_uuid_evidence)
-42. [`POST /breaches/{breach_uuid}/reports/{report_uuid}/file`](#42_post_breaches_breach_uuid_reports_report_uuid_file)
-43. [`GET /breaches/{breach_uuid}/reports/{report_uuid}/pdf`](#43_get_breaches_breach_uuid_reports_report_uuid_pdf)
-44. [`GET /breaches/{breach_uuid}/reports/{report_uuid}/email`](#44_get_breaches_breach_uuid_reports_report_uuid_email)
-45. [`GET /breaches/{breach_uuid}/tickets`](#45_get_breaches_breach_uuid_tickets)
-46. [`POST /breaches/{breach_uuid}/tickets`](#46_post_breaches_breach_uuid_tickets)
-47. [`GET /breaches/{breach_uuid}/tickets/{ticket_uuid}`](#47_get_breaches_breach_uuid_tickets_ticket_uuid)
-48. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/messages`](#48_post_breaches_breach_uuid_tickets_ticket_uuid_messages)
-49. [`GET /breaches/{breach_uuid}/tickets/{ticket_uuid}/messages/{message_uuid}/evidence`](#49_get_breaches_breach_uuid_tickets_ticket_uuid_messages_message_uuid_evidence)
-50. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/resolve-by`](#50_post_breaches_breach_uuid_tickets_ticket_uuid_resolve_by)
-51. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/send-back`](#51_post_breaches_breach_uuid_tickets_ticket_uuid_send_back)
-52. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/close`](#52_post_breaches_breach_uuid_tickets_ticket_uuid_close)
-53. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/withdraw`](#53_post_breaches_breach_uuid_tickets_ticket_uuid_withdraw)
-54. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/reopen`](#54_post_breaches_breach_uuid_tickets_ticket_uuid_reopen)
+26. [`POST /breaches/{breach_uuid}/affected/typed/check`](#26_post_breaches_breach_uuid_affected_typed_check)
+27. [`POST /breaches/{breach_uuid}/affected/typed`](#27_post_breaches_breach_uuid_affected_typed)
+28. [`GET /breaches/{breach_uuid}/affected/contacts`](#28_get_breaches_breach_uuid_affected_contacts)
+29. [`GET /breaches/{breach_uuid}/notices`](#29_get_breaches_breach_uuid_notices)
+30. [`POST /breaches/{breach_uuid}/notices`](#30_post_breaches_breach_uuid_notices)
+31. [`PUT /breaches/{breach_uuid}/notices/{notice_uuid}`](#31_put_breaches_breach_uuid_notices_notice_uuid)
+32. [`POST /breaches/{breach_uuid}/notices/{notice_uuid}/approve`](#32_post_breaches_breach_uuid_notices_notice_uuid_approve)
+33. [`POST /breaches/{breach_uuid}/notices/send`](#33_post_breaches_breach_uuid_notices_send)
+34. [`GET /breaches/{breach_uuid}/board/intimation`](#34_get_breaches_breach_uuid_board_intimation)
+35. [`GET /breaches/{breach_uuid}/board/report`](#35_get_breaches_breach_uuid_board_report)
+36. [`GET /breaches/{breach_uuid}/org-board/brief`](#36_get_breaches_breach_uuid_org_board_brief)
+37. [`GET /breaches/{breach_uuid}/reports/recipients`](#37_get_breaches_breach_uuid_reports_recipients)
+38. [`GET /breaches/{breach_uuid}/reports`](#38_get_breaches_breach_uuid_reports)
+39. [`POST /breaches/{breach_uuid}/reports`](#39_post_breaches_breach_uuid_reports)
+40. [`PUT /breaches/{breach_uuid}/reports/{report_uuid}`](#40_put_breaches_breach_uuid_reports_report_uuid)
+41. [`POST /breaches/{breach_uuid}/reports/{report_uuid}/finalise`](#41_post_breaches_breach_uuid_reports_report_uuid_finalise)
+42. [`POST /breaches/{breach_uuid}/reports/{report_uuid}/resend`](#42_post_breaches_breach_uuid_reports_report_uuid_resend)
+43. [`POST /breaches/{breach_uuid}/reports/{report_uuid}/evidence`](#43_post_breaches_breach_uuid_reports_report_uuid_evidence)
+44. [`POST /breaches/{breach_uuid}/reports/{report_uuid}/file`](#44_post_breaches_breach_uuid_reports_report_uuid_file)
+45. [`GET /breaches/{breach_uuid}/reports/{report_uuid}/pdf`](#45_get_breaches_breach_uuid_reports_report_uuid_pdf)
+46. [`GET /breaches/{breach_uuid}/reports/{report_uuid}/email`](#46_get_breaches_breach_uuid_reports_report_uuid_email)
+47. [`GET /breaches/{breach_uuid}/tickets`](#47_get_breaches_breach_uuid_tickets)
+48. [`POST /breaches/{breach_uuid}/tickets`](#48_post_breaches_breach_uuid_tickets)
+49. [`GET /breaches/{breach_uuid}/tickets/{ticket_uuid}`](#49_get_breaches_breach_uuid_tickets_ticket_uuid)
+50. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/messages`](#50_post_breaches_breach_uuid_tickets_ticket_uuid_messages)
+51. [`GET /breaches/{breach_uuid}/tickets/{ticket_uuid}/messages/{message_uuid}/evidence`](#51_get_breaches_breach_uuid_tickets_ticket_uuid_messages_message_uuid_evidence)
+52. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/resolve-by`](#52_post_breaches_breach_uuid_tickets_ticket_uuid_resolve_by)
+53. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/send-back`](#53_post_breaches_breach_uuid_tickets_ticket_uuid_send_back)
+54. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/close`](#54_post_breaches_breach_uuid_tickets_ticket_uuid_close)
+55. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/withdraw`](#55_post_breaches_breach_uuid_tickets_ticket_uuid_withdraw)
+56. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/reopen`](#56_post_breaches_breach_uuid_tickets_ticket_uuid_reopen)
 
 <a id="1_get_breaches"></a>
 ## 1. `GET /breaches` — Every incident and breach, open first
@@ -2997,8 +2999,173 @@ Request body required: **yes**.
 }
 ```
 
-<a id="26_get_breaches_breach_uuid_affected_contacts"></a>
-## 26. `GET /breaches/{breach_uuid}/affected/contacts` — People affected who have no account, and the lists they came in
+<a id="26_post_breaches_breach_uuid_affected_typed_check"></a>
+## 26. `POST /breaches/{breach_uuid}/affected/typed/check` — What typed mail IDs and mobile numbers would add - nothing is written
+
+### API
+
+- **Operation ID:** `check_typed_breaches__breach_uuid__affected_typed_check_post`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`BreachTypedIn`](#schema-breachtypedin)
+
+```json
+{
+  "mail_ids": "",
+  "mobiles": "",
+  "people": [
+    "00000000-0000-4000-8000-000000000000"
+  ],
+  "note": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`BreachListReportOut`](#schema-breachlistreportout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "kind": "string",
+  "rows_read": 1,
+  "matched_people": 1,
+  "new_contacts": 1,
+  "already_listed": 1,
+  "unreadable": 1,
+  "untraceable": 1,
+  "would_add": 1,
+  "errors": [
+    {
+      "row": 1,
+      "message": "string"
+    }
+  ],
+  "more_errors": 1,
+  "upload_uuid": "00000000-0000-4000-8000-000000000000"
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="27_post_breaches_breach_uuid_affected_typed"></a>
+## 27. `POST /breaches/{breach_uuid}/affected/typed` — Add the people typed in by mail ID or mobile number, on the platform or not
+
+### API
+
+- **Operation ID:** `take_typed_breaches__breach_uuid__affected_typed_post`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+Taken as a people list is: a mail ID or mobile number that is an
+account's lists that account; any other is kept, sealed, as a contact of
+this breach alone, and is sent the notice by email or SMS. Entries that
+cannot be used are left out and reported.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`BreachTypedIn`](#schema-breachtypedin)
+
+```json
+{
+  "mail_ids": "",
+  "mobiles": "",
+  "people": [
+    "00000000-0000-4000-8000-000000000000"
+  ],
+  "note": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `201` | Successful Response | `application/json` | [`BreachListReportOut`](#schema-breachlistreportout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `201` `application/json` response:**
+
+```json
+{
+  "kind": "string",
+  "rows_read": 1,
+  "matched_people": 1,
+  "new_contacts": 1,
+  "already_listed": 1,
+  "unreadable": 1,
+  "untraceable": 1,
+  "would_add": 1,
+  "errors": [
+    {
+      "row": 1,
+      "message": "string"
+    }
+  ],
+  "more_errors": 1,
+  "upload_uuid": "00000000-0000-4000-8000-000000000000"
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="28_get_breaches_breach_uuid_affected_contacts"></a>
+## 28. `GET /breaches/{breach_uuid}/affected/contacts` — People affected who have no account, and the lists they came in
 
 ### API
 
@@ -3077,8 +3244,8 @@ No request body.
 }
 ```
 
-<a id="27_get_breaches_breach_uuid_notices"></a>
-## 27. `GET /breaches/{breach_uuid}/notices` — Every version of the notice, and the account of who received which
+<a id="29_get_breaches_breach_uuid_notices"></a>
+## 29. `GET /breaches/{breach_uuid}/notices` — Every version of the notice, and the account of who received which
 
 ### API
 
@@ -3177,8 +3344,8 @@ No request body.
 }
 ```
 
-<a id="28_post_breaches_breach_uuid_notices"></a>
-## 28. `POST /breaches/{breach_uuid}/notices` — Start the next version of the notice, as a draft
+<a id="30_post_breaches_breach_uuid_notices"></a>
+## 30. `POST /breaches/{breach_uuid}/notices` — Start the next version of the notice, as a draft
 
 ### API
 
@@ -3290,8 +3457,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="29_put_breaches_breach_uuid_notices_notice_uuid"></a>
-## 29. `PUT /breaches/{breach_uuid}/notices/{notice_uuid}` — Edit a draft notice
+<a id="31_put_breaches_breach_uuid_notices_notice_uuid"></a>
+## 31. `PUT /breaches/{breach_uuid}/notices/{notice_uuid}` — Edit a draft notice
 
 ### API
 
@@ -3404,8 +3571,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="30_post_breaches_breach_uuid_notices_notice_uuid_approve"></a>
-## 30. `POST /breaches/{breach_uuid}/notices/{notice_uuid}/approve` — Approve the words; refused while any of the five is empty
+<a id="32_post_breaches_breach_uuid_notices_notice_uuid_approve"></a>
+## 32. `POST /breaches/{breach_uuid}/notices/{notice_uuid}/approve` — Approve the words; refused while any of the five is empty
 
 ### API
 
@@ -3505,8 +3672,8 @@ No request body.
 }
 ```
 
-<a id="31_post_breaches_breach_uuid_notices_send"></a>
-## 31. `POST /breaches/{breach_uuid}/notices/send` — Send the approved notice to everyone listed who lacks it; never twice, never before the breach is recorded
+<a id="33_post_breaches_breach_uuid_notices_send"></a>
+## 33. `POST /breaches/{breach_uuid}/notices/send` — Send the approved notice to everyone listed who lacks it; never twice, never before the breach is recorded
 
 ### API
 
@@ -3605,8 +3772,8 @@ No request body.
 }
 ```
 
-<a id="32_get_breaches_breach_uuid_board_intimation"></a>
-## 32. `GET /breaches/{breach_uuid}/board/intimation` — Draft the Board's initial intimation (Rule 7(2)(a)) from the register
+<a id="34_get_breaches_breach_uuid_board_intimation"></a>
+## 34. `GET /breaches/{breach_uuid}/board/intimation` — Draft the Board's initial intimation (Rule 7(2)(a)) from the register
 
 ### API
 
@@ -3699,8 +3866,8 @@ No request body.
 }
 ```
 
-<a id="33_get_breaches_breach_uuid_board_report"></a>
-## 33. `GET /breaches/{breach_uuid}/board/report` — Draft the Board's detailed report (Rule 7(2)(b)), all six items
+<a id="35_get_breaches_breach_uuid_board_report"></a>
+## 35. `GET /breaches/{breach_uuid}/board/report` — Draft the Board's detailed report (Rule 7(2)(b)), all six items
 
 ### API
 
@@ -3857,8 +4024,8 @@ No request body.
 }
 ```
 
-<a id="34_get_breaches_breach_uuid_org_board_brief"></a>
-## 34. `GET /breaches/{breach_uuid}/org-board/brief` — Draft the brief for the organisation's board from the register
+<a id="36_get_breaches_breach_uuid_org_board_brief"></a>
+## 36. `GET /breaches/{breach_uuid}/org-board/brief` — Draft the brief for the organisation's board from the register
 
 ### API
 
@@ -3956,8 +4123,8 @@ No request body.
 }
 ```
 
-<a id="35_get_breaches_breach_uuid_reports_recipients"></a>
-## 35. `GET /breaches/{breach_uuid}/reports/recipients` — The organisation's board list, as the finalise window offers it
+<a id="37_get_breaches_breach_uuid_reports_recipients"></a>
+## 37. `GET /breaches/{breach_uuid}/reports/recipients` — The organisation's board list, as the finalise window offers it
 
 ### API
 
@@ -4014,8 +4181,8 @@ No request body.
 }
 ```
 
-<a id="36_get_breaches_breach_uuid_reports"></a>
-## 36. `GET /breaches/{breach_uuid}/reports` — Every kind of report on a breach, and where each stands
+<a id="38_get_breaches_breach_uuid_reports"></a>
+## 38. `GET /breaches/{breach_uuid}/reports` — Every kind of report on a breach, and where each stands
 
 ### API
 
@@ -4086,8 +4253,8 @@ No request body.
 }
 ```
 
-<a id="37_post_breaches_breach_uuid_reports"></a>
-## 37. `POST /breaches/{breach_uuid}/reports` — Start the next version of a report, drafted from the register
+<a id="39_post_breaches_breach_uuid_reports"></a>
+## 39. `POST /breaches/{breach_uuid}/reports` — Start the next version of a report, drafted from the register
 
 ### API
 
@@ -4167,8 +4334,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="38_put_breaches_breach_uuid_reports_report_uuid"></a>
-## 38. `PUT /breaches/{breach_uuid}/reports/{report_uuid}` — Edit a draft report
+<a id="40_put_breaches_breach_uuid_reports_report_uuid"></a>
+## 40. `PUT /breaches/{breach_uuid}/reports/{report_uuid}` — Edit a draft report
 
 ### API
 
@@ -4249,8 +4416,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="39_post_breaches_breach_uuid_reports_report_uuid_finalise"></a>
-## 39. `POST /breaches/{breach_uuid}/reports/{report_uuid}/finalise` — Freeze a report and mail the addresses chosen; a CERT-In report before a yes waits for it; never a regulator
+<a id="41_post_breaches_breach_uuid_reports_report_uuid_finalise"></a>
+## 41. `POST /breaches/{breach_uuid}/reports/{report_uuid}/finalise` — Freeze a report and mail the addresses chosen; a CERT-In report before a yes waits for it; never a regulator
 
 ### API
 
@@ -4339,8 +4506,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="40_post_breaches_breach_uuid_reports_report_uuid_resend"></a>
-## 40. `POST /breaches/{breach_uuid}/reports/{report_uuid}/resend` — Mail the report again to the addresses it was sent to that it has not reached
+<a id="42_post_breaches_breach_uuid_reports_report_uuid_resend"></a>
+## 42. `POST /breaches/{breach_uuid}/reports/{report_uuid}/resend` — Mail the report again to the addresses it was sent to that it has not reached
 
 ### API
 
@@ -4413,8 +4580,8 @@ No request body.
 }
 ```
 
-<a id="41_post_breaches_breach_uuid_reports_report_uuid_evidence"></a>
-## 41. `POST /breaches/{breach_uuid}/reports/{report_uuid}/evidence` — Keep the proof of internal approval, or of the mail sent to the regulator
+<a id="43_post_breaches_breach_uuid_reports_report_uuid_evidence"></a>
+## 43. `POST /breaches/{breach_uuid}/reports/{report_uuid}/evidence` — Keep the proof of internal approval, or of the mail sent to the regulator
 
 ### API
 
@@ -4497,8 +4664,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="42_post_breaches_breach_uuid_reports_report_uuid_file"></a>
-## 42. `POST /breaches/{breach_uuid}/reports/{report_uuid}/file` — Record that a person sent it to the regulator; needs both proofs
+<a id="44_post_breaches_breach_uuid_reports_report_uuid_file"></a>
+## 44. `POST /breaches/{breach_uuid}/reports/{report_uuid}/file` — Record that a person sent it to the regulator; needs both proofs
 
 ### API
 
@@ -4580,8 +4747,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="43_get_breaches_breach_uuid_reports_report_uuid_pdf"></a>
-## 43. `GET /breaches/{breach_uuid}/reports/{report_uuid}/pdf` — The report as a PDF; every read is audited
+<a id="45_get_breaches_breach_uuid_reports_report_uuid_pdf"></a>
+## 45. `GET /breaches/{breach_uuid}/reports/{report_uuid}/pdf` — The report as a PDF; every read is audited
 
 ### API
 
@@ -4630,8 +4797,8 @@ No request body.
 }
 ```
 
-<a id="44_get_breaches_breach_uuid_reports_report_uuid_email"></a>
-## 44. `GET /breaches/{breach_uuid}/reports/{report_uuid}/email` — The mail the organisation's board gets for this version; every read is audited
+<a id="46_get_breaches_breach_uuid_reports_report_uuid_email"></a>
+## 46. `GET /breaches/{breach_uuid}/reports/{report_uuid}/email` — The mail the organisation's board gets for this version; every read is audited
 
 ### API
 
@@ -4684,8 +4851,8 @@ No request body.
 }
 ```
 
-<a id="45_get_breaches_breach_uuid_tickets"></a>
-## 45. `GET /breaches/{breach_uuid}/tickets` — Every ticket on a breach: holder, state, answer-by, unread, who added whom
+<a id="47_get_breaches_breach_uuid_tickets"></a>
+## 47. `GET /breaches/{breach_uuid}/tickets` — Every ticket on a breach: holder, state, answer-by, unread, who added whom
 
 ### API
 
@@ -4770,8 +4937,8 @@ No request body.
 }
 ```
 
-<a id="46_post_breaches_breach_uuid_tickets"></a>
-## 46. `POST /breaches/{breach_uuid}/tickets` — Assign a ticket to a member of staff; only on a recorded breach
+<a id="48_post_breaches_breach_uuid_tickets"></a>
+## 48. `POST /breaches/{breach_uuid}/tickets` — Assign a ticket to a member of staff; only on a recorded breach
 
 ### API
 
@@ -4870,8 +5037,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="47_get_breaches_breach_uuid_tickets_ticket_uuid"></a>
-## 47. `GET /breaches/{breach_uuid}/tickets/{ticket_uuid}` — One ticket, its thread, and the moves the server allows
+<a id="49_get_breaches_breach_uuid_tickets_ticket_uuid"></a>
+## 49. `GET /breaches/{breach_uuid}/tickets/{ticket_uuid}` — One ticket, its thread, and the moves the server allows
 
 ### API
 
@@ -4959,8 +5126,8 @@ No request body.
 }
 ```
 
-<a id="48_post_breaches_breach_uuid_tickets_ticket_uuid_messages"></a>
-## 48. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/messages` — Write to the holder on the ticket, with a file if it helps
+<a id="50_post_breaches_breach_uuid_tickets_ticket_uuid_messages"></a>
+## 50. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/messages` — Write to the holder on the ticket, with a file if it helps
 
 ### API
 
@@ -5056,8 +5223,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="49_get_breaches_breach_uuid_tickets_ticket_uuid_messages_message_uuid_evidence"></a>
-## 49. `GET /breaches/{breach_uuid}/tickets/{ticket_uuid}/messages/{message_uuid}/evidence` — Download a file attached to a message on the ticket
+<a id="51_get_breaches_breach_uuid_tickets_ticket_uuid_messages_message_uuid_evidence"></a>
+## 51. `GET /breaches/{breach_uuid}/tickets/{ticket_uuid}/messages/{message_uuid}/evidence` — Download a file attached to a message on the ticket
 
 ### API
 
@@ -5107,8 +5274,8 @@ No request body.
 }
 ```
 
-<a id="50_post_breaches_breach_uuid_tickets_ticket_uuid_resolve_by"></a>
-## 50. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/resolve-by` — Change the date to resolve the ticket by, saying why
+<a id="52_post_breaches_breach_uuid_tickets_ticket_uuid_resolve_by"></a>
+## 52. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/resolve-by` — Change the date to resolve the ticket by, saying why
 
 ### API
 
@@ -5204,8 +5371,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="51_post_breaches_breach_uuid_tickets_ticket_uuid_send_back"></a>
-## 51. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/send-back` — Send a returned ticket back to its holder, saying why
+<a id="53_post_breaches_breach_uuid_tickets_ticket_uuid_send_back"></a>
+## 53. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/send-back` — Send a returned ticket back to its holder, saying why
 
 ### API
 
@@ -5300,8 +5467,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="52_post_breaches_breach_uuid_tickets_ticket_uuid_close"></a>
-## 52. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/close` — Close a returned ticket: the DPO's alone
+<a id="54_post_breaches_breach_uuid_tickets_ticket_uuid_close"></a>
+## 54. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/close` — Close a returned ticket: the DPO's alone
 
 ### API
 
@@ -5387,8 +5554,8 @@ No request body.
 }
 ```
 
-<a id="53_post_breaches_breach_uuid_tickets_ticket_uuid_withdraw"></a>
-## 53. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/withdraw` — Withdraw a ticket, saying why
+<a id="55_post_breaches_breach_uuid_tickets_ticket_uuid_withdraw"></a>
+## 55. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/withdraw` — Withdraw a ticket, saying why
 
 ### API
 
@@ -5483,8 +5650,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="54_post_breaches_breach_uuid_tickets_ticket_uuid_reopen"></a>
-## 54. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/reopen` — Reopen a closed or withdrawn ticket, saying why
+<a id="56_post_breaches_breach_uuid_tickets_ticket_uuid_reopen"></a>
+## 56. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/reopen` — Reopen a closed or withdrawn ticket, saying why
 
 ### API
 
@@ -5814,7 +5981,8 @@ Rule 7(2)(a), drafted from the register. The platform never submits it.
 <a id="schema-breachlistreportout"></a>
 #### `BreachListReportOut`
 
-What a file comes to: checked (nothing written) or taken.
+What a file, or what was typed, comes to: checked (nothing written) or
+taken.
 
 | Field | Type | Required | Validation | Description |
 |---|---|---:|---|---|
@@ -6005,6 +6173,19 @@ breach-only login if they have no console account.
 |---|---|---:|---|---|
 | `current` | `string` | Yes | — | — |
 | `available` | array of [`BreachTransitionOut`](#schema-breachtransitionout) | Yes | — | — |
+
+<a id="schema-breachtypedin"></a>
+#### `BreachTypedIn`
+
+People typed in rather than uploaded (2026-11-11). Each mail ID and each
+mobile number is one person.
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `mail_ids` | `string` | No | max length: `100000`; default: `` | — |
+| `mobiles` | `string` | No | max length: `40000`; default: `` | — |
+| `people` | array of `string` | No | — | — |
+| `note` | `string` or `null` | No | max length: `8000` | — |
 
 <a id="schema-certinsetasidein"></a>
 #### `CertInSetAsideIn`

@@ -53,9 +53,9 @@ const KINDS: Record<BreachListKind, { label: string; hint: string }> = {
 /** What comes after adding people, however they were added. */
 export const NEXT_STEP = "Next: draft and approve the notice below, then send it.";
 
-function Counts({ report, taken }: { report: BreachListReport; taken: boolean }) {
+export function Counts({ report, taken }: { report: BreachListReport; taken: boolean }) {
   const rows: [string, number][] = [
-    ["Rows read", report.rows_read],
+    [report.kind === "typed" ? "Entries read" : "Rows read", report.rows_read],
     [taken ? "On the platform, now listed" : "On the platform, to be listed", report.matched_people],
     [taken ? "Not on the platform, now listed" : "Not on the platform, to be listed", report.new_contacts],
     ["Already listed or repeated - skipped", report.already_listed],
@@ -339,7 +339,9 @@ export function BreachContacts({ breach }: { breach: Breach }) {
                 <Td className="text-sm break-all">{c.email ?? "—"}</Td>
                 <Td className="text-sm whitespace-nowrap">{c.mobile ?? "—"}</Td>
                 <Td className="text-sm">
-                  <Badge tone="neutral">{c.upload_kind === "assets" ? "Asset list" : "People list"}</Badge>
+                  <Badge tone="neutral">
+                    {c.upload_kind === "assets" ? "Asset list" : c.upload_kind === "typed" ? "Typed in" : "People list"}
+                  </Badge>
                 </Td>
               </Tr>
             ))}
@@ -359,7 +361,7 @@ export function BreachContacts({ breach }: { breach: Breach }) {
           <ul className="mt-2 space-y-1 text-xs text-text-muted">
             {data.uploads.map((u) => (
               <li key={u.upload_uuid}>
-                {formatDateTime(u.added_at)} · {u.file_name} · {u.added_by_name ?? "unknown"}: {u.rows_read} rows,{" "}
+                {formatDateTime(u.added_at)} · {u.file_name} · {u.added_by_name ?? "unknown"}: {u.rows_read} {u.kind === "typed" ? "entries" : "rows"},{" "}
                 {u.matched_people} on the platform, {u.new_contacts} not, {u.already_listed} skipped,{" "}
                 {u.unreadable} unreadable
                 {u.kind === "assets" && `, ${u.untraceable} untraceable`}

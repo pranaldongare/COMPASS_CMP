@@ -470,7 +470,7 @@ five ways to add to it, and the office uses as many as it needs.
 | **From a vendor** | Everyone in files exported to that processor (`export_line`, to the line's destination processor), and everyone standing in an HR activity whose category names it. Only those the office can see: the registry is shared, a breach is one office's |
 | **From a data source** | Everyone captured in its assets and not yet erased from them (`asset_consent`). Bystanders - people in frame who never consented - have no account and are not listed |
 | **Upload an Excel list** | [Below](#people-the-records-cannot-show-a-list-sent-to-us): name, mail ID and mobile number |
-| **Add one person** | Somebody the records cannot show, found by their contact or part of their name |
+| **Add by mail ID or mobile** | [Below](#typed-in-mail-ids-and-mobile-numbers): mail IDs and mobile numbers typed in, comma-separated, on the platform or not; and anybody on the platform found by part of their name |
 
 The vendor and the data source read the same relation a rights request reads to
 find a person's holders (`db/repositories/holdings.py`), from the other end. A
@@ -532,6 +532,34 @@ taken):
   contacts alike; a contact is sent the email and the SMS (never an account
   they do not have), and each outcome counts toward the duty exactly as an
   account's does. Contacts added after the duty completed reopen it.
+
+### Typed in: mail IDs and mobile numbers
+
+The decision: the product owner, 2026-11-11 (migration 0066).
+
+A handful of people is usually a handful of addresses in an email, not a
+spreadsheet. **Add by mail ID or mobile** takes them typed in, many at once:
+
+- **Mail IDs**, separated by commas, semicolons or new lines - as Outlook copies
+  them, so `Meera Nair <meera@example.com>; Ravi <ravi@example.com>` keeps each
+  name, and `"Nair, Meera" <meera@example.com>` stays one person.
+- **Mobile numbers**, separated likewise, each with its country code
+  (`+91 98765 43210`). One without is refused, not guessed: the person typing
+  it can add one, and without it the number would match no account.
+- **Each mail ID and each mobile number is one person.** The two boxes cannot
+  say that a mail ID and a mobile are the same person's; for that, the Excel
+  list's row carries both.
+- **Anybody on the platform found by name** can be added in the same step, as
+  before.
+
+They are taken exactly as a people list is: *Check* writes nothing and names
+each entry that cannot be used; *Add N* takes the rest. A mail ID or mobile
+number that is an account's lists that account, *Added by hand*; anybody else is
+kept as a **contact of this breach alone**, sealed, and told by email or SMS.
+What was typed is recorded as a list with no file - kind `typed`, named *Typed
+in*, with the counts and a hash, never the text - and as a revision carrying
+the note, so *How the list was built* says it. At most 1,000 entries at a
+time; more is an Excel list.
 
 ## Telling the people affected
 

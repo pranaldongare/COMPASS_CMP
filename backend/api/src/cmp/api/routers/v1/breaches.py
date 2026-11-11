@@ -877,8 +877,10 @@ class BreachListErrorOut(Out):
 
 
 class BreachListReportOut(Out):
-    """What a file comes to: checked (nothing written) or taken."""
+    """What a file, or what was typed, comes to: checked (nothing written) or
+    taken."""
 
+    #: contacts, assets, or typed (mail IDs and mobile numbers typed in).
     kind: str
     rows_read: int
     #: People with an account the file matched, not yet listed.
@@ -906,6 +908,7 @@ class BreachContactOut(Out):
     mobile: str | None
     added_at: datetime
     upload_uuid: UUID
+    #: contacts, assets or typed.
     upload_kind: str
 
 
@@ -992,6 +995,64 @@ async def take_list(
             kind=kind,
             payload=payload,
             file_name=uploads.safe_name(file.filename) or "list.xlsx",
+            actor_id=principal.user_id,
+        )
+
+
+class BreachTypedIn(Schema):
+    """People typed in rather than uploaded (2026-11-11). Each mail ID and each
+    mobile number is one person."""
+
+    #: Separated by commas, semicolons or new lines. 'Name <mail ID>', as
+    #: Outlook copies it, keeps the name.
+    mail_ids: Annotated[str, Field(max_length=100_000)] = ""
+    #: Separated likewise, each with its country code: +91 98765 43210.
+    mobiles: Annotated[str, Field(max_length=40_000)] = ""
+    #: Anybody on the platform found by name, by uuid.
+    people: Annotated[list[UUID], Field(max_length=500)] = Field(default_factory=list)
+    #: Kept with the revision. Ignored by the check.
+    note: _Text | None = None
+
+
+@router.post(
+    "/{breach_uuid}/affected/typed/check",
+    response_model=BreachListReportOut,
+    summary="What typed mail IDs and mobile numbers would add - nothing is written",
+)
+async def check_typed(
+    breach_uuid: UUID, body: BreachTypedIn, principal: BreachWriter
+) -> dict[str, Any]:
+    async with connection() as conn:
+        return await lists.check_typed(
+            conn,
+            breach_uuid=str(breach_uuid),
+            mail_ids=body.mail_ids,
+            mobiles=body.mobiles,
+            people=[str(u) for u in body.people],
+        )
+
+
+@router.post(
+    "/{breach_uuid}/affected/typed",
+    response_model=BreachListReportOut,
+    status_code=status.HTTP_201_CREATED,
+    summary="Add the people typed in by mail ID or mobile number, on the platform or not",
+)
+async def take_typed(
+    breach_uuid: UUID, body: BreachTypedIn, principal: BreachWriter
+) -> dict[str, Any]:
+    """Taken as a people list is: a mail ID or mobile number that is an
+    account's lists that account; any other is kept, sealed, as a contact of
+    this breach alone, and is sent the notice by email or SMS. Entries that
+    cannot be used are left out and reported."""
+    async with transaction() as conn:
+        return await lists.take_typed(
+            conn,
+            breach_uuid=str(breach_uuid),
+            mail_ids=body.mail_ids,
+            mobiles=body.mobiles,
+            people=[str(u) for u in body.people],
+            note=body.note,
             actor_id=principal.user_id,
         )
 

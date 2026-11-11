@@ -17125,6 +17125,113 @@
         }
       }
     },
+    "/breaches/{breach_uuid}/affected/typed/check": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "What typed mail IDs and mobile numbers would add - nothing is written",
+        "operationId": "check_typed_breaches__breach_uuid__affected_typed_check_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachTypedIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachListReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/affected/typed": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Add the people typed in by mail ID or mobile number, on the platform or not",
+        "description": "Taken as a people list is: a mail ID or mobile number that is an\naccount's lists that account; any other is kept, sealed, as a contact of\nthis breach alone, and is sent the notice by email or SMS. Entries that\ncannot be used are left out and reported.",
+        "operationId": "take_typed_breaches__breach_uuid__affected_typed_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachTypedIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachListReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/breaches/{breach_uuid}/affected/contacts": {
       "get": {
         "tags": [
@@ -25152,7 +25259,7 @@
           "more_errors"
         ],
         "title": "BreachListReportOut",
-        "description": "What a file comes to: checked (nothing written) or taken."
+        "description": "What a file, or what was typed, comes to: checked (nothing written) or\ntaken."
       },
       "BreachLocationOut": {
         "properties": {
@@ -27157,6 +27264,47 @@
           "available"
         ],
         "title": "BreachTransitionsOut"
+      },
+      "BreachTypedIn": {
+        "properties": {
+          "mail_ids": {
+            "type": "string",
+            "maxLength": 100000,
+            "title": "Mail Ids",
+            "default": ""
+          },
+          "mobiles": {
+            "type": "string",
+            "maxLength": 40000,
+            "title": "Mobiles",
+            "default": ""
+          },
+          "people": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 500,
+            "title": "People"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 8000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "BreachTypedIn",
+        "description": "People typed in rather than uploaded (2026-11-11). Each mail ID and each\nmobile number is one person."
       },
       "BreachUploadOut": {
         "properties": {

@@ -5777,6 +5777,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/breaches/{breach_uuid}/affected/typed/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** What typed mail IDs and mobile numbers would add - nothing is written */
+        post: operations["check_typed_breaches__breach_uuid__affected_typed_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/affected/typed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add the people typed in by mail ID or mobile number, on the platform or not
+         * @description Taken as a people list is: a mail ID or mobile number that is an
+         *     account's lists that account; any other is kept, sealed, as a contact of
+         *     this breach alone, and is sent the notice by email or SMS. Entries that
+         *     cannot be used are left out and reported.
+         */
+        post: operations["take_typed_breaches__breach_uuid__affected_typed_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/breaches/{breach_uuid}/affected/contacts": {
         parameters: {
             query?: never;
@@ -8356,7 +8396,8 @@ export interface components {
         };
         /**
          * BreachListReportOut
-         * @description What a file comes to: checked (nothing written) or taken.
+         * @description What a file, or what was typed, comes to: checked (nothing written) or
+         *     taken.
          */
         BreachListReportOut: {
             /** Kind */
@@ -8991,6 +9032,27 @@ export interface components {
             current: string;
             /** Available */
             available: components["schemas"]["BreachTransitionOut"][];
+        };
+        /**
+         * BreachTypedIn
+         * @description People typed in rather than uploaded (2026-11-11). Each mail ID and each
+         *     mobile number is one person.
+         */
+        BreachTypedIn: {
+            /**
+             * Mail Ids
+             * @default
+             */
+            mail_ids: string;
+            /**
+             * Mobiles
+             * @default
+             */
+            mobiles: string;
+            /** People */
+            people?: string[];
+            /** Note */
+            note?: string | null;
         };
         /** BreachUploadOut */
         BreachUploadOut: {
@@ -25134,6 +25196,76 @@ export interface operations {
         requestBody: {
             content: {
                 "multipart/form-data": components["schemas"]["Body_take_list_breaches__breach_uuid__affected_upload_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachListReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_typed_breaches__breach_uuid__affected_typed_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreachTypedIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachListReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    take_typed_breaches__breach_uuid__affected_typed_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreachTypedIn"];
             };
         };
         responses: {

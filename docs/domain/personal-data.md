@@ -415,7 +415,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-283 of 395 operations accept or return personal data. Each table gives the
+285 of 397 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 
@@ -576,7 +576,7 @@ selected.
 
 ### Personal data breaches — `/breaches/*`
 
-46 operations carry personal data.
+48 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
@@ -592,6 +592,8 @@ selected.
 | POST | `/breaches/{breach_uuid}/affected` | DPO every row, Legal PoC every row | — | `confirmed_by_name`, `evidence`, `full_name`, `has_email`, `has_mobile`, `person_uuid`, `role` |
 | GET | `/breaches/{breach_uuid}/affected/contacts` | DPO every row, Legal PoC every row | — | `added_by_name`, `contact_uuid`, `email`, `file_name`, `full_name`, `mobile` |
 | POST | `/breaches/{breach_uuid}/affected/preview` | DPO every row, Legal PoC every row | — | `evidence`, `full_name`, `has_email`, `has_mobile`, `person_uuid`, `role` |
+| POST | `/breaches/{breach_uuid}/affected/typed` | DPO every row, Legal PoC every row | `mail_ids`, `mobiles` | — |
+| POST | `/breaches/{breach_uuid}/affected/typed/check` | DPO every row, Legal PoC every row | `mail_ids`, `mobiles` | — |
 | GET | `/breaches/{breach_uuid}/assessments` | DPO every row, Legal PoC every row | — | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `remedial_measures`, `revised_by_name` |
 | POST | `/breaches/{breach_uuid}/assessments` | DPO every row, Legal PoC every row | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `remedial_measures` | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `reporter_email`, `reporter_name`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
 | POST | `/breaches/{breach_uuid}/attachments` | DPO every row, Legal PoC every row | — | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `reporter_email`, `reporter_name`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
@@ -890,7 +892,7 @@ selected.
 | GET | `/holder-tickets/{token}/ticket` | **public** — the request carries its own credential (password, link token, one-time code) | `token` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | POST | `/holder-tickets/{token}/verify` | **public** — the request carries its own credential (password, link token, one-time code) | `code`, `token` | — |
 
-<!-- 283 of 395 operations carry personal data; 34 of them need no session. -->
+<!-- 285 of 397 operations carry personal data; 34 of them need no session. -->
 
 ## The public surface
 

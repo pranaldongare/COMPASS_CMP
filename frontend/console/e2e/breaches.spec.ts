@@ -97,17 +97,17 @@ test.describe("the DPO", () => {
     // And after the yes: validation neither allows it nor stands in its way.
     await expect(certIn.getByRole("button", { name: "Not reportable to CERT-In" })).toBeVisible();
 
-    // The seeded principal, added by hand: one person, and nobody else from the
-    // dev database, however many of them a project or a vendor would find.
+    // The seeded principal, added by hand by her mail ID: one person, and nobody
+    // else from the dev database, however many of them a project or a vendor
+    // would find. Her account is matched, so she is listed as herself.
     await openTab(page, "People & notices");
     await expect(page.getByText("Nobody is listed yet.")).toBeVisible();
     await page.getByRole("button", { name: "Add people" }).click();
     const adding = page.getByRole("dialog");
-    await adding.getByRole("button", { name: /^Add one person/ }).click();
-    await adding.getByLabel(/^Find the person/).fill("subject@cmp.local");
-    await adding.getByRole("button", { name: "Find" }).click();
-    await adding.getByRole("button", { name: "Add", exact: true }).first().click();
-    await adding.getByRole("button", { name: "Add this person" }).click();
+    await adding.getByRole("button", { name: /^Add by mail ID or mobile number/ }).click();
+    await adding.getByLabel(/^Mail IDs/).fill("subject@cmp.local");
+    await adding.getByRole("button", { name: "Check" }).click();
+    await adding.getByRole("button", { name: "Add 1 person" }).click();
     await expect(page.getByText("1 person added to the list")).toBeVisible();
     await expect(page.locator("#affected").getByRole("cell", { name: "Added by hand" })).toBeVisible();
 
