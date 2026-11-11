@@ -22,6 +22,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CheckCircle2,
+  Copy,
   Download,
   FilePlus2,
   FileText,
@@ -53,6 +54,7 @@ import {
   addBreachDocumentProof,
   breachAttachmentUrl,
   breachDocumentPdf,
+  getBreachReportEmail,
   draftBreachDocument,
   editBreachDocument,
   fileBreachDocument,
@@ -76,6 +78,7 @@ import {
 import { instant, messageOf } from "@/features/breach/components/record-breach";
 import { isApiError } from "@/lib/errors";
 import { formatDateTime, saveBlob } from "@/lib/format";
+import { copyText } from "@/lib/browser";
 import { keys } from "@/lib/query";
 import { useToast } from "@/providers";
 import { useOptionalAuth } from "@/providers/auth-provider";
@@ -390,6 +393,9 @@ function ReportEditor({
             <Skeleton className="h-24" />
           )}
           <div className="flex flex-wrap justify-end gap-2">
+            <span className="mr-auto">
+              <EmailButton breach={breach} doc={doc} unsaved={dirty} />
+            </span>
             <Button variant="ghost" onClick={onClose}>
               Cancel
             </Button>
@@ -925,6 +931,114 @@ function PdfButton({ breach, doc }: { breach: Breach; doc: BreachDocument }) {
   );
 }
 
+/** The mail the organisation's board gets for a version, word for word, for an
+ *  officer to send the same from their own mailbox (Outlook or any other):
+ *  the subject, the body and the PDF it carries. Read from the server, so it is
+ *  the office's own words for that message if it set them. */
+function EmailButton({
+  breach,
+  doc,
+  unsaved = false,
+}: {
+  breach: Breach;
+  doc: BreachDocument;
+  /** The editor holds changes not yet saved, which the mail does not show. */
+  unsaved?: boolean;
+}) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <>
+      <Button variant="ghost" size="sm" onClick={() => setOpen(true)}>
+        <Mail className="size-4" />
+        Email
+      </Button>
+      {open && <EmailDialog breach={breach} doc={doc} unsaved={unsaved} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
+function EmailDialog({
+  breach,
+  doc,
+  unsaved,
+  onClose,
+}: {
+  breach: Breach;
+  doc: BreachDocument;
+  unsaved: boolean;
+  onClose: () => void;
+}) {
+  const toast = useToast();
+  const email = useQuery({
+    queryKey: keys.breach.reportEmail(breach.breach_uuid, doc.report_uuid),
+    queryFn: () => getBreachReportEmail(breach.breach_uuid, doc.report_uuid),
+    staleTime: 0,
+  });
+  const got = email.data;
+  async function copy(text: string, what: string) {
+    if (await copyText(text)) toast.success("Copied", `${what} is on the clipboard.`);
+    else toast.error("Not copied", "The browser refused. Select the text and copy it instead.");
+  }
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent
+        size="lg"
+        title={`Email to the organisation's board · version ${doc.version}`}
+        description={
+          doc.state === "draft"
+            ? "What the organisation's board will be mailed once this version is finalised, signed by you. Copy it to send the same from your own mailbox."
+            : "What the organisation's board is mailed for this version, word for word. Copy it to send the same from your own mailbox."
+        }
+      >
+        <div className="space-y-3">
+          {unsaved && (
+            <Alert tone="info" title="This is the draft as last saved">
+              Save the draft to see your latest changes in the email.
+            </Alert>
+          )}
+          {email.error ? (
+            <Alert tone="danger" title="The email could not be read">
+              {messageOf(email.error, "The server refused.")}
+            </Alert>
+          ) : !got ? (
+            <Skeleton className="h-64" />
+          ) : (
+            <>
+              <Field label="Subject">{(p) => <Input {...p} readOnly value={got.subject} />}</Field>
+              <Field label="Body">
+                {(p) => <Textarea {...p} readOnly rows={16} value={got.body} className="font-mono text-xs" />}
+              </Field>
+              <p className="text-xs text-text-muted">
+                Sending it yourself? Attach the report&apos;s PDF ({got.attachment_name}), which the platform&apos;s
+                mail carries.
+              </p>
+              <div className="flex flex-wrap justify-end gap-2">
+                <PdfButton breach={breach} doc={doc} />
+                <Button variant="secondary" size="sm" onClick={() => copy(got.subject, "The subject")}>
+                  <Copy className="size-4" />
+                  Copy subject
+                </Button>
+                <Button variant="secondary" size="sm" onClick={() => copy(got.body, "The body")}>
+                  <Copy className="size-4" />
+                  Copy body
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => copy(`Subject: ${got.subject}\n\n${got.body}`, "The whole email")}
+                >
+                  <Copy className="size-4" />
+                  Copy all
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 /** What became of one finalised version: when, its mail, its proof, its PDF. */
 function VersionRecord({
   breach,
@@ -957,6 +1071,7 @@ function VersionRecord({
       <ProofLinks breach={breach} proofs={doc.evidence} />
       <div className="flex flex-wrap items-center gap-2">
         <PdfButton breach={breach} doc={doc} />
+        <EmailButton breach={breach} doc={doc} />
         {onFile && (
           <Button variant="secondary" size="sm" onClick={onFile}>
             <CheckCircle2 className="size-4" />

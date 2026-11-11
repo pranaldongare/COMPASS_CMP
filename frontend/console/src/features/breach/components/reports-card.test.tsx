@@ -2225,3 +2225,74 @@ describe("NotifyBoardButton", () => {
     });
   });
 });
+
+describe("the mail to the board, to copy", () => {
+  const EMAIL = {
+    subject: "COMPASS: BR-2026-0007 - Report to the organisation's board",
+    body: "Dear members of the Board,\n\nI am writing on behalf of the COMPASS Privacy Office.\n\nRegards,\nPriya Menon\nData Protection Officer, COMPASS Privacy Office\n",
+    attachment_name: "BR-2026-0007-org_board-v1.pdf",
+  };
+
+  function serveEmail(answer: () => Response = () => HttpResponse.json(EMAIL)) {
+    const reads = { count: 0 };
+    server.use(
+      http.get(`${API}/breaches/${BREACH}/reports/${REPORT}/email`, () => {
+        reads.count += 1;
+        return answer();
+      }),
+    );
+    return reads;
+  }
+
+  it("shows a finalised version's mail word for word, and copies it", async () => {
+    serve(documents([boardView({ versions: [document({ kind: "org_board", title: "Report", ...FINALISED })] })]));
+    const reads = serveEmail();
+    const { user } = render(<ReportsCard breach={breach()} />);
+
+    await user.click(await screen.findByRole("button", { name: "Email" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(await within(dialog).findByLabelText("Subject")).toHaveValue(EMAIL.subject);
+    expect(within(dialog).getByLabelText("Body")).toHaveValue(EMAIL.body);
+    expect(within(dialog).getByText(/BR-2026-0007-org_board-v1\.pdf/)).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "PDF" })).toBeInTheDocument();
+    expect(reads.count).toBe(1);
+
+    await user.click(within(dialog).getByRole("button", { name: "Copy all" }));
+    expect(await navigator.clipboard.readText()).toBe(`Subject: ${EMAIL.subject}\n\n${EMAIL.body}`);
+    await user.click(within(dialog).getByRole("button", { name: "Copy body" }));
+    expect(await navigator.clipboard.readText()).toBe(EMAIL.body);
+    await user.click(within(dialog).getByRole("button", { name: "Copy subject" }));
+    expect(await navigator.clipboard.readText()).toBe(EMAIL.subject);
+    expect(toast.success).toHaveBeenCalledWith("Copied", "The subject is on the clipboard.");
+  });
+
+  it("offers a draft's mail from the editor, and says unsaved changes are not in it", async () => {
+    serve(documents([view({ versions: [document()] })]));
+    serveEmail();
+    const { user } = render(<ReportsCard breach={breach()} />);
+
+    await user.click(await screen.findByRole("button", { name: "Continue the draft" }));
+    const editor = await screen.findByRole("dialog");
+    await user.type(within(editor).getByLabelText(/likely impact/i), "Some");
+    await user.click(within(editor).getByRole("button", { name: "Email" }));
+
+    const dialogs = await screen.findAllByRole("dialog");
+    const mail = dialogs[dialogs.length - 1];
+    expect(within(mail).getByText("This is the draft as last saved")).toBeInTheDocument();
+    expect(within(mail).getByText(/once this version is finalised, signed by you/)).toBeInTheDocument();
+    expect(await within(mail).findByLabelText("Body")).toHaveValue(EMAIL.body);
+  });
+
+  it("says so when the mail cannot be read", async () => {
+    serve(documents([boardView({ versions: [document({ kind: "org_board", title: "Report", ...FINALISED })] })]));
+    serveEmail(() =>
+      HttpResponse.json({ error: { code: "service_unavailable", message: "Down", request_id: "r" } }, { status: 503 }),
+    );
+    const { user } = render(<ReportsCard breach={breach()} />);
+
+    await user.click(await screen.findByRole("button", { name: "Email" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(await within(dialog).findByText("The email could not be read")).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: "Copy all" })).not.toBeInTheDocument();
+  });
+});

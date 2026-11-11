@@ -6051,6 +6051,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/breaches/{breach_uuid}/reports/{report_uuid}/email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The mail the organisation's board gets for this version; every read is audited */
+        get: operations["report_email_breaches__breach_uuid__reports__report_uuid__email_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/breaches/{breach_uuid}/tickets": {
         parameters: {
             query?: never;
@@ -8619,6 +8636,19 @@ export interface components {
             kind: string;
             /** Label */
             label: string;
+        };
+        /**
+         * BreachReportEmailOut
+         * @description The mail the organisation's board gets for a version, word for word,
+         *     so an officer can send the same from their own mailbox.
+         */
+        BreachReportEmailOut: {
+            /** Subject */
+            subject: string;
+            /** Body */
+            body: string;
+            /** Attachment Name */
+            attachment_name: string;
         };
         /** BreachReportFactOut */
         BreachReportFactOut: {
@@ -25710,6 +25740,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    report_email_breaches__breach_uuid__reports__report_uuid__email_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+                report_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachReportEmailOut"];
                 };
             };
             /** @description Validation Error */

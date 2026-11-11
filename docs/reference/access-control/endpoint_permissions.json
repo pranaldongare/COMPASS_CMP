@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 394,
-  "registered_business_and_system_operations": 397,
+  "documented_operations": 395,
+  "registered_business_and_system_operations": 398,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -13730,6 +13730,49 @@
     },
     {
       "module": "breaches",
+      "method": "GET",
+      "path": "/breaches/{breach_uuid}/reports/{report_uuid}/email",
+      "summary": "The mail the organisation's board gets for this version; every read is audited",
+      "function": "report_email",
+      "operation_id": "report_email_breaches__breach_uuid__reports__report_uuid__email_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachReader",
+      "resolved_gate": "RequireResource(breach, hidden=True)",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "The officers' alone - the DPO's and the Legal PoC's, each on its own office's records (resource `breach`, S3-01). Hidden from every other role: `RequireResource(breach, hidden=True)` answers 404, not 403, so a caller cannot tell a breach from a uuid that was never one.",
+        "Any version, draft or finalised: the mail the organisation's board gets for it, word for word - the office's own words for that message if it set them, else the catalogue's - with the report in it, signed by whoever finalised it (for a draft, by the reader), and the name of the PDF it carries. No automatic footer. Every read is `breach.report_read` on the trail, with `as: email`. Nothing is sent. (2026-11-11, ADR 0037)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/reports.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "breaches",
       "method": "POST",
       "path": "/breaches/{breach_uuid}/tickets/{ticket_uuid}/resolve-by",
       "summary": "Change the date to resolve the ticket by, saying why",
@@ -16626,6 +16669,11 @@
       "on": "2026-11-08",
       "commit": "The sixth review of that build, at 384b426; no product code changed",
       "note": "No operation added or removed, and no code changed. Rules corrected to say what the code does: POST /auth/register still tells a data principal's unfinished sign-up from a new mobile, since the email is looked up only when the mobile matches nobody (202 against 409 contact_taken on email, with an email on another account) and a resumed sign-up's codes go to the contacts it was first given, so an email typed now, or added to a sign-up begun with a mobile alone, gets none. Evidence links unchanged."
+    },
+    {
+      "on": "2026-11-11",
+      "commit": "The mail to the organisation's board as an email",
+      "note": "One operation added: GET /breaches/{breach_uuid}/reports/{report_uuid}/email (dpo, legal; BreachReader), the mail the organisation's board gets for a version, word for word, for an officer to copy into their own mailbox. Both board mails (breach_board_report, breach_report_finalised) are now a letter: a greeting, what it is, the report, and a signature naming who finalised it and their role."
     }
   ]
 }

@@ -22,6 +22,7 @@ import type {
   BreachDocumentKind,
   BreachDocuments,
   BreachDocumentsResent,
+  BreachReportEmail,
   BreachInput,
   BreachNoticeWords,
   BreachNotices,
@@ -302,6 +303,11 @@ export function fileBreachDocument(
 
 export function breachDocumentPdf(uuid: Uuid, reportUuid: Uuid) {
   return apiDownload(`${reports(uuid)}/${reportUuid}/pdf`);
+}
+
+/** The mail the organisation's board gets for this version, word for word. */
+export function getBreachReportEmail(uuid: Uuid, reportUuid: Uuid): Promise<BreachReportEmail> {
+  return apiGet<BreachReportEmail>(`${reports(uuid)}/${reportUuid}/email`);
 }
 
 /* -------------------------------------------------- breach tickets (S3-08) */

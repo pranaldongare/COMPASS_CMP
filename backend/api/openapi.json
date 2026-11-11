@@ -18060,6 +18060,59 @@
         }
       }
     },
+    "/breaches/{breach_uuid}/reports/{report_uuid}/email": {
+      "get": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "The mail the organisation's board gets for this version; every read is audited",
+        "operationId": "report_email_breaches__breach_uuid__reports__report_uuid__email_get",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          },
+          {
+            "name": "report_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachReportEmailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/breaches/{breach_uuid}/tickets": {
       "get": {
         "tags": [
@@ -25995,6 +26048,31 @@
           "label"
         ],
         "title": "BreachProofKindOut"
+      },
+      "BreachReportEmailOut": {
+        "properties": {
+          "subject": {
+            "type": "string",
+            "title": "Subject"
+          },
+          "body": {
+            "type": "string",
+            "title": "Body"
+          },
+          "attachment_name": {
+            "type": "string",
+            "title": "Attachment Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "subject",
+          "body",
+          "attachment_name"
+        ],
+        "title": "BreachReportEmailOut",
+        "description": "The mail the organisation's board gets for a version, word for word,\nso an officer can send the same from their own mailbox."
       },
       "BreachReportFactOut": {
         "properties": {

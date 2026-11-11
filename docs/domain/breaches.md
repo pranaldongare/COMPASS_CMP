@@ -628,6 +628,26 @@ The words are quoted in the mail: they are somebody's words, so a link or a code
 in them stays text and becomes no button. A finalised report is corrected by a
 new version, which mails the board again.
 
+**The mail is an email** (2026-11-11). The board does not get a document dumped
+into a mail but a letter: "Dear members of the Board", a sentence on what it is
+(a report on a personal data breach, or, for a report for a regulator, word that
+it was finalised and has not gone to the regulator), the report itself, a line
+asking the board to treat it as confidential, and "Regards" signed with the name
+and role of whoever finalised the version. The same report goes as a PDF. The
+words are the office's own if it changed those two messages under **Messages**,
+and the catalogue's otherwise.
+
+**Copying it.** Every version, draft or finalised, has an **Email** button, and so
+does the editor. It shows the subject and the body exactly as the board gets them,
+with **Copy subject**, **Copy body** and **Copy all**, and the PDF to attach, so an
+officer can send the same from Outlook or any other mailbox. A finalised version's
+mail is signed by whoever finalised it; a draft's by whoever is reading it, who
+would be the one to finalise it, and it shows the draft as last saved. It sends
+nothing. Reading it is `breach.report_read` on the trail, with `as: email`, as a
+PDF's read is (`GET /breaches/{uuid}/reports/{report_uuid}/email`). A mail an
+officer sends themselves is not on the record: only the platform's own delivery
+completes the board's duty.
+
 **Who it goes to** (2026-11-07, 0064,
 [ADR 0037](../decisions/0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md#who-a-report-goes-to)).
 The window that finalises a report lists every name and address on the board's

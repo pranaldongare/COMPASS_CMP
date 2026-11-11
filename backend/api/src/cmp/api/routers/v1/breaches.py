@@ -1680,6 +1680,35 @@ async def report_pdf(breach_uuid: UUID, report_uuid: UUID, principal: BreachRead
     return uploads.generated(payload, name, "application/pdf")
 
 
+class BreachReportEmailOut(Schema):
+    """The mail the organisation's board gets for a version, word for word,
+    so an officer can send the same from their own mailbox."""
+
+    subject: str
+    #: Plain text, with the report quoted in it and signed by whoever finalised
+    #: it (for a draft, by the reader). No automatic footer.
+    body: str
+    #: The name of the PDF the mail carries; GET .../pdf gives the file itself.
+    attachment_name: str
+
+
+@router.get(
+    f"{_REPORT}/email",
+    response_model=BreachReportEmailOut,
+    summary="The mail the organisation's board gets for this version; every read is audited",
+)
+async def report_email(
+    breach_uuid: UUID, report_uuid: UUID, principal: BreachReader
+) -> dict[str, str]:
+    async with transaction() as conn:
+        return await reports.email(
+            conn,
+            breach_uuid=str(breach_uuid),
+            report_uuid=str(report_uuid),
+            actor_id=principal.user_id,
+        )
+
+
 # ------------------------------------------------------------ breach tickets (S3-08)
 
 

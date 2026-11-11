@@ -265,18 +265,26 @@ Key `breach_board_report` · channels: email
 | To | The addresses chosen when the report was finalised: the organisation's board list under Breach settings, less any the sender left out (never a mandatory one), with any added for that report alone. |
 | CC | Never - a report on a breach goes to the addresses on the organisation's board's list and nobody else, and it may name a person; a copy would take it off that list. |
 | Attachment | The report as a PDF. |
-| Sent by | `cmp.notifications.send_breach_report` (`backend/api/src/cmp/tasks/notifications/breach_reports.py:146`) |
-| Queued from | `backend/api/src/cmp/domain/breach/reports.py:1376`, `backend/api/src/cmp/domain/breach/reports.py:573`, `backend/api/src/cmp/domain/breach/reports.py:668` |
-| Variables | `breach_reference` (The breach's reference.), `report_title` (What the report is.), `report_text` (The report, as the office wrote it.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
+| Sent by | `cmp.notifications.send_breach_report` (`backend/api/src/cmp/tasks/notifications/breach_reports.py:148`) |
+| Queued from | `backend/api/src/cmp/domain/breach/reports.py:1448`, `backend/api/src/cmp/domain/breach/reports.py:577`, `backend/api/src/cmp/domain/breach/reports.py:672` |
+| Variables | `breach_reference` (The breach's reference.), `report_title` (What the report is.), `report_text` (The report, as the office wrote it.), `sender_name` (Who finalised the report, and so signs it.), `sender_role` (Their role.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{organisation}: {breach_reference} - {report_title}`
 
 **Body:**
 
 ```text
-{report_title} on {breach_reference}, from the {organisation} Privacy Office. It is attached as a PDF.
+Dear members of the Board,
+
+I am writing on behalf of the {organisation} Privacy Office about a personal data breach, {breach_reference}. Our report is set out below, and the same report is attached as a PDF for your records.
 
 {report_text}
+
+Please treat this email and its attachment as confidential. If you have any questions, please contact the Privacy Office.
+
+Regards,
+{sender_name}
+{sender_role}, {organisation} Privacy Office
 
 If you were not expecting this message, please tell the Privacy Office at {organisation}.
 ```
@@ -292,20 +300,28 @@ Key `breach_report_finalised` · channels: email
 | To | The addresses chosen when the report was finalised: the organisation's board list under Breach settings, less any the sender left out (never a mandatory one), with any added for that report alone. |
 | CC | Never - a report on a breach goes to the addresses on the organisation's board's list and nobody else, and it may name a person; a copy would take it off that list. |
 | Attachment | The report as a PDF. |
-| Sent by | `cmp.notifications.send_breach_report` (`backend/api/src/cmp/tasks/notifications/breach_reports.py:148`) |
-| Queued from | `backend/api/src/cmp/domain/breach/reports.py:1376`, `backend/api/src/cmp/domain/breach/reports.py:573`, `backend/api/src/cmp/domain/breach/reports.py:668` |
-| Variables | `breach_reference` (The breach's reference.), `report_title` (What the report is.), `report_text` (The report, as the office wrote it.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
+| Sent by | `cmp.notifications.send_breach_report` (`backend/api/src/cmp/tasks/notifications/breach_reports.py:150`) |
+| Queued from | `backend/api/src/cmp/domain/breach/reports.py:1448`, `backend/api/src/cmp/domain/breach/reports.py:577`, `backend/api/src/cmp/domain/breach/reports.py:672` |
+| Variables | `breach_reference` (The breach's reference.), `report_title` (What the report is.), `report_text` (The report, as the office wrote it.), `sender_name` (Who finalised the report, and so signs it.), `sender_role` (Their role.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{organisation}: {breach_reference} - {report_title} finalised`
 
 **Body:**
 
 ```text
-The {organisation} Privacy Office has finalised the {report_title} on {breach_reference}. It is attached as a PDF.
+Dear members of the Board,
+
+I am writing on behalf of the {organisation} Privacy Office to let you know that we have finalised the {report_title} on {breach_reference}. It is set out below, and attached as a PDF.
 
 This is for your information. It has not been sent to the regulator: the Privacy Office does that once it has been approved.
 
 {report_text}
+
+If you have any questions, please contact the Privacy Office.
+
+Regards,
+{sender_name}
+{sender_role}, {organisation} Privacy Office
 
 If you were not expecting this message, please tell the Privacy Office at {organisation}.
 ```

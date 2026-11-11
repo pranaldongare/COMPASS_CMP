@@ -8,6 +8,15 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **The mail to the organisation's board is an email** (2026-11-11): both board
+  mails, a report to the board and word that a report for a regulator was
+  finalised, now read as a letter - a greeting, what it is, the report, a
+  request for confidence, and a signature with the name and role of whoever
+  finalised the version - with the report still attached as a PDF. Each version,
+  and the editor, has an **Email** button showing that mail word for word, with
+  **Copy subject**, **Copy body** and **Copy all**, so an officer can send it
+  from Outlook or any mailbox (`GET /breaches/{uuid}/reports/{report_uuid}/email`,
+  DPO and Legal PoC; every read on the trail; nothing is sent).
 - **The breach workflow of 2026-11-06** (ADR 0037): anybody may report an
   incident through one public link, `/report-incident`, with a name and an email
   proved by a code. The report takes its `INC-` number and waits in a shared

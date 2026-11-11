@@ -1,6 +1,6 @@
 # Breaches API
 
-Generated from `backend/api/openapi.json`. **53 operations.**
+Generated from `backend/api/openapi.json`. **54 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -49,16 +49,17 @@ For each operation the information is deliberately ordered as **API → Validati
 41. [`POST /breaches/{breach_uuid}/reports/{report_uuid}/evidence`](#41_post_breaches_breach_uuid_reports_report_uuid_evidence)
 42. [`POST /breaches/{breach_uuid}/reports/{report_uuid}/file`](#42_post_breaches_breach_uuid_reports_report_uuid_file)
 43. [`GET /breaches/{breach_uuid}/reports/{report_uuid}/pdf`](#43_get_breaches_breach_uuid_reports_report_uuid_pdf)
-44. [`GET /breaches/{breach_uuid}/tickets`](#44_get_breaches_breach_uuid_tickets)
-45. [`POST /breaches/{breach_uuid}/tickets`](#45_post_breaches_breach_uuid_tickets)
-46. [`GET /breaches/{breach_uuid}/tickets/{ticket_uuid}`](#46_get_breaches_breach_uuid_tickets_ticket_uuid)
-47. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/messages`](#47_post_breaches_breach_uuid_tickets_ticket_uuid_messages)
-48. [`GET /breaches/{breach_uuid}/tickets/{ticket_uuid}/messages/{message_uuid}/evidence`](#48_get_breaches_breach_uuid_tickets_ticket_uuid_messages_message_uuid_evidence)
-49. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/resolve-by`](#49_post_breaches_breach_uuid_tickets_ticket_uuid_resolve_by)
-50. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/send-back`](#50_post_breaches_breach_uuid_tickets_ticket_uuid_send_back)
-51. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/close`](#51_post_breaches_breach_uuid_tickets_ticket_uuid_close)
-52. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/withdraw`](#52_post_breaches_breach_uuid_tickets_ticket_uuid_withdraw)
-53. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/reopen`](#53_post_breaches_breach_uuid_tickets_ticket_uuid_reopen)
+44. [`GET /breaches/{breach_uuid}/reports/{report_uuid}/email`](#44_get_breaches_breach_uuid_reports_report_uuid_email)
+45. [`GET /breaches/{breach_uuid}/tickets`](#45_get_breaches_breach_uuid_tickets)
+46. [`POST /breaches/{breach_uuid}/tickets`](#46_post_breaches_breach_uuid_tickets)
+47. [`GET /breaches/{breach_uuid}/tickets/{ticket_uuid}`](#47_get_breaches_breach_uuid_tickets_ticket_uuid)
+48. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/messages`](#48_post_breaches_breach_uuid_tickets_ticket_uuid_messages)
+49. [`GET /breaches/{breach_uuid}/tickets/{ticket_uuid}/messages/{message_uuid}/evidence`](#49_get_breaches_breach_uuid_tickets_ticket_uuid_messages_message_uuid_evidence)
+50. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/resolve-by`](#50_post_breaches_breach_uuid_tickets_ticket_uuid_resolve_by)
+51. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/send-back`](#51_post_breaches_breach_uuid_tickets_ticket_uuid_send_back)
+52. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/close`](#52_post_breaches_breach_uuid_tickets_ticket_uuid_close)
+53. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/withdraw`](#53_post_breaches_breach_uuid_tickets_ticket_uuid_withdraw)
+54. [`POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/reopen`](#54_post_breaches_breach_uuid_tickets_ticket_uuid_reopen)
 
 <a id="1_get_breaches"></a>
 ## 1. `GET /breaches` — Every incident and breach, open first
@@ -4629,8 +4630,62 @@ No request body.
 }
 ```
 
-<a id="44_get_breaches_breach_uuid_tickets"></a>
-## 44. `GET /breaches/{breach_uuid}/tickets` — Every ticket on a breach: holder, state, answer-by, unread, who added whom
+<a id="44_get_breaches_breach_uuid_reports_report_uuid_email"></a>
+## 44. `GET /breaches/{breach_uuid}/reports/{report_uuid}/email` — The mail the organisation's board gets for this version; every read is audited
+
+### API
+
+- **Operation ID:** `report_email_breaches__breach_uuid__reports__report_uuid__email_get`
+- **Access:** Role-controlled `breaches` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `breach_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `report_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`BreachReportEmailOut`](#schema-breachreportemailout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "subject": "string",
+  "body": "string",
+  "attachment_name": "string"
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="45_get_breaches_breach_uuid_tickets"></a>
+## 45. `GET /breaches/{breach_uuid}/tickets` — Every ticket on a breach: holder, state, answer-by, unread, who added whom
 
 ### API
 
@@ -4715,8 +4770,8 @@ No request body.
 }
 ```
 
-<a id="45_post_breaches_breach_uuid_tickets"></a>
-## 45. `POST /breaches/{breach_uuid}/tickets` — Assign a ticket to a member of staff; only on a recorded breach
+<a id="46_post_breaches_breach_uuid_tickets"></a>
+## 46. `POST /breaches/{breach_uuid}/tickets` — Assign a ticket to a member of staff; only on a recorded breach
 
 ### API
 
@@ -4815,8 +4870,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="46_get_breaches_breach_uuid_tickets_ticket_uuid"></a>
-## 46. `GET /breaches/{breach_uuid}/tickets/{ticket_uuid}` — One ticket, its thread, and the moves the server allows
+<a id="47_get_breaches_breach_uuid_tickets_ticket_uuid"></a>
+## 47. `GET /breaches/{breach_uuid}/tickets/{ticket_uuid}` — One ticket, its thread, and the moves the server allows
 
 ### API
 
@@ -4904,8 +4959,8 @@ No request body.
 }
 ```
 
-<a id="47_post_breaches_breach_uuid_tickets_ticket_uuid_messages"></a>
-## 47. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/messages` — Write to the holder on the ticket, with a file if it helps
+<a id="48_post_breaches_breach_uuid_tickets_ticket_uuid_messages"></a>
+## 48. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/messages` — Write to the holder on the ticket, with a file if it helps
 
 ### API
 
@@ -5001,8 +5056,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="48_get_breaches_breach_uuid_tickets_ticket_uuid_messages_message_uuid_evidence"></a>
-## 48. `GET /breaches/{breach_uuid}/tickets/{ticket_uuid}/messages/{message_uuid}/evidence` — Download a file attached to a message on the ticket
+<a id="49_get_breaches_breach_uuid_tickets_ticket_uuid_messages_message_uuid_evidence"></a>
+## 49. `GET /breaches/{breach_uuid}/tickets/{ticket_uuid}/messages/{message_uuid}/evidence` — Download a file attached to a message on the ticket
 
 ### API
 
@@ -5052,8 +5107,8 @@ No request body.
 }
 ```
 
-<a id="49_post_breaches_breach_uuid_tickets_ticket_uuid_resolve_by"></a>
-## 49. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/resolve-by` — Change the date to resolve the ticket by, saying why
+<a id="50_post_breaches_breach_uuid_tickets_ticket_uuid_resolve_by"></a>
+## 50. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/resolve-by` — Change the date to resolve the ticket by, saying why
 
 ### API
 
@@ -5149,8 +5204,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="50_post_breaches_breach_uuid_tickets_ticket_uuid_send_back"></a>
-## 50. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/send-back` — Send a returned ticket back to its holder, saying why
+<a id="51_post_breaches_breach_uuid_tickets_ticket_uuid_send_back"></a>
+## 51. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/send-back` — Send a returned ticket back to its holder, saying why
 
 ### API
 
@@ -5245,8 +5300,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="51_post_breaches_breach_uuid_tickets_ticket_uuid_close"></a>
-## 51. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/close` — Close a returned ticket: the DPO's alone
+<a id="52_post_breaches_breach_uuid_tickets_ticket_uuid_close"></a>
+## 52. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/close` — Close a returned ticket: the DPO's alone
 
 ### API
 
@@ -5332,8 +5387,8 @@ No request body.
 }
 ```
 
-<a id="52_post_breaches_breach_uuid_tickets_ticket_uuid_withdraw"></a>
-## 52. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/withdraw` — Withdraw a ticket, saying why
+<a id="53_post_breaches_breach_uuid_tickets_ticket_uuid_withdraw"></a>
+## 53. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/withdraw` — Withdraw a ticket, saying why
 
 ### API
 
@@ -5428,8 +5483,8 @@ Request body required: **yes**.
 }
 ```
 
-<a id="53_post_breaches_breach_uuid_tickets_ticket_uuid_reopen"></a>
-## 53. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/reopen` — Reopen a closed or withdrawn ticket, saying why
+<a id="54_post_breaches_breach_uuid_tickets_ticket_uuid_reopen"></a>
+## 54. `POST /breaches/{breach_uuid}/tickets/{ticket_uuid}/reopen` — Reopen a closed or withdrawn ticket, saying why
 
 ### API
 
@@ -5854,6 +5909,18 @@ approval may not. Written to be sent to everyone listed: name nobody.
 | `already_listed` | `integer` | Yes | — | — |
 | `would_add` | `integer` | Yes | — | — |
 | `people` | array of [`BreachCandidateOut`](#schema-breachcandidateout) | Yes | — | — |
+
+<a id="schema-breachreportemailout"></a>
+#### `BreachReportEmailOut`
+
+The mail the organisation's board gets for a version, word for word,
+so an officer can send the same from their own mailbox.
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `subject` | `string` | Yes | — | — |
+| `body` | `string` | Yes | — | — |
+| `attachment_name` | `string` | Yes | — | — |
 
 <a id="schema-breachreportout"></a>
 #### `BreachReportOut`

@@ -23,7 +23,7 @@ Row = dict[str, Any]
 _REPORT = """
   r.report_id, r.report_uuid, r.breach_id, r.kind, r.version, r.created_at, r.updated_at,
   r.finalised_at, r.filed_at, r.filed_reference, r.filed_recorded_at, r.filed_by,
-  cu.full_name AS created_by_name, fu.full_name AS finalised_by_name,
+  cu.full_name AS created_by_name, fu.full_name AS finalised_by_name, fu.role AS finalised_by_role,
   su.full_name AS filed_by_name
   FROM breach_report r
   JOIN auth_user cu      ON cu.id = r.created_by

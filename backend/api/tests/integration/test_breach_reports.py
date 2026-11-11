@@ -24,7 +24,8 @@ from cmp.core.messages import Message
 from cmp.db.repositories import breach_reports as repo
 from cmp.db.repositories import breaches as breach_repo
 from cmp.db.repositories import incident_reports as recipients_repo
-from cmp.db.sql import execute, fetch_all
+from cmp.db.repositories import messages as message_repo
+from cmp.db.sql import execute, fetch_all, fetch_one
 from cmp.domain.breach import reports, service
 from cmp.domain.breach import settings as breach_settings
 from cmp.domain.breach.clock import EventKind
@@ -2317,6 +2318,119 @@ async def test_a_pdf_is_rendered_off_the_event_loop(
         conn, breach_uuid=uuid, report_uuid=str(doc["report_uuid"]), actor_id=_dpo(seeded)
     )
     assert len(threads) == 1 and threads[0] is not threading.current_thread()
+
+
+class TestTheMailToTheBoardIsALetter:
+    """A report reaches the organisation's board as an email - a greeting, what
+    it is, the report, and who sent it - and the console shows that same mail
+    so an officer may copy it into their own mailbox (2026-11-11)."""
+
+    @staticmethod
+    async def _name(conn: Any, user_id: int) -> str:
+        row = await fetch_one(conn, "SELECT full_name FROM auth_user WHERE id = %s", (user_id,))
+        assert row is not None
+        return plain(row["full_name"])
+
+    async def test_a_report_to_the_board_reads_as_a_letter_signed_by_who_sent_it(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str], request_context: Any
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        doc = await _finalise(conn, seeded, uuid, "org_board")
+        got = await reports.email(
+            conn, breach_uuid=uuid, report_uuid=str(doc["report_uuid"]), actor_id=_dpo(seeded)
+        )
+        reference = (await service.require(conn, uuid))["reference"]
+        assert got["subject"] == (
+            f"{settings.organisation_name}: {reference} - Report to the organisation's board"
+        )
+        body = got["body"]
+        assert body.startswith("Dear members of the Board,\n\n")
+        assert f"about a personal data breach, {reference}" in body
+        assert "unencrypted" in body, "the report is in the mail"
+        sender = await self._name(conn, _dpo(seeded))
+        assert (
+            f"Regards,\n{sender}\nData Protection Officer, "
+            f"{settings.organisation_name} Privacy Office"
+        ) in body
+        assert "SE::" not in body and "\x02" not in body and "\x03" not in body
+        assert got["attachment_name"] == f"{reference}-org_board-v1.pdf"
+        [read] = await _trail(conn, uuid, "breach.report_read")
+        assert read["detail_json"]["as"] == "email"
+
+    async def test_the_worker_mails_the_same_signature(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str]
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        await _finalise(conn, seeded, uuid, "org_board")
+        [delivery] = mailed
+        job = await reports.job(conn, delivery)
+        assert job is not None
+        assert plain(job["sender_name"]) == await self._name(conn, _dpo(seeded))
+        assert job["sender_role"] == "Data Protection Officer"
+        _subject, body = messaging.render(
+            Message.BREACH_BOARD_REPORT,
+            "email",
+            {
+                "breach_reference": job["reference"],
+                "report_title": job["report_title"],
+                "report_text": job["report_text"],
+                "sender_name": plain(job["sender_name"]),
+                "sender_role": job["sender_role"],
+            },
+            overrides={},
+        )
+        assert body.startswith("Dear members of the Board,")
+        assert f"Regards,\n{plain(job['sender_name'])}\nData Protection Officer" in body
+
+    async def test_a_finalised_report_is_signed_by_who_finalised_it_whoever_reads_it(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str], request_context: Any
+    ) -> None:
+        await _board(conn, seeded, "chair@example.org")
+        uuid = await _breach(conn, seeded)
+        doc = await _finalise(conn, seeded, uuid, "board_intimation")
+        admin = int(seeded["users"]["admin"]["id"])
+        got = await reports.email(
+            conn, breach_uuid=uuid, report_uuid=str(doc["report_uuid"]), actor_id=admin
+        )
+        assert f"Regards,\n{await self._name(conn, _dpo(seeded))}\n" in got["body"]
+        # A report for a regulator: the board is told it is for its information.
+        assert got["subject"].endswith("Initial intimation to the DPDP Board finalised")
+        assert "It has not been sent to the regulator" in got["body"]
+
+    async def test_a_draft_is_signed_by_whoever_reads_it_who_would_send_it(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str], request_context: Any
+    ) -> None:
+        uuid = await _breach(conn, seeded)
+        doc = await _draft(conn, seeded, uuid, "org_board")
+        admin = int(seeded["users"]["admin"]["id"])
+        got = await reports.email(
+            conn, breach_uuid=uuid, report_uuid=str(doc["report_uuid"]), actor_id=admin
+        )
+        assert f"Regards,\n{await self._name(conn, admin)}\nAdministrator, " in got["body"]
+        assert mailed == [], "showing the mail sends nothing"
+
+    async def test_the_office_s_own_words_are_the_ones_shown(
+        self, conn: Any, seeded: dict[str, Any], mailed: list[str], request_context: Any
+    ) -> None:
+        await message_repo.upsert(
+            conn,
+            key=Message.BREACH_BOARD_REPORT.value,
+            channel="email",
+            subject="Board notice {breach_reference}",
+            body="Hello Board,\n\n{report_text}\n\nThanks,\n{sender_name}",
+            updated_by=_dpo(seeded),
+        )
+        uuid = await _breach(conn, seeded)
+        doc = await _draft(conn, seeded, uuid, "org_board")
+        got = await reports.email(
+            conn, breach_uuid=uuid, report_uuid=str(doc["report_uuid"]), actor_id=_dpo(seeded)
+        )
+        reference = (await service.require(conn, uuid))["reference"]
+        assert got["subject"] == f"Board notice {reference}"
+        assert got["body"].startswith("Hello Board,\n\n")
+        assert got["body"].rstrip().endswith(await self._name(conn, _dpo(seeded)))
 
 
 class TestWhoItGoesTo:

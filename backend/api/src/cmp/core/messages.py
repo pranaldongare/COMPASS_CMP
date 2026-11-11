@@ -171,6 +171,12 @@ MINUTES = Variable("minutes", "How many minutes the code is valid for.", "10")
 HOURS = Variable("hours", "How many hours the code is valid for.", "48")
 REFERENCE = Variable("reference", "The rights request reference.", "RR-2026-000042")
 
+#: Who signs a report to the organisation's board: whoever finalised it.
+SENDER_NAME: Final = Variable(
+    "sender_name", "Who finalised the report, and so signs it.", "Dee Pee"
+)
+SENDER_ROLE: Final = Variable("sender_role", "Their role.", "Data Protection Officer")
+
 _SIGN_OFF_EMAIL = (
     "\n\nIf you were not expecting this message, please tell the Privacy Office at {organisation}."
 )
@@ -1616,12 +1622,24 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             Variable("breach_reference", "The breach's reference.", "BR-2026-0003"),
             Variable("report_title", "What the report is.", "Report to the organisation's board"),
             Variable("report_text", "The report, as the office wrote it.", "What happened: ..."),
+            SENDER_NAME,
+            SENDER_ROLE,
             ORGANISATION,
         ),
         email_subject="{organisation}: {breach_reference} - {report_title}",
+        # A letter to the board, not a document: a greeting, what this is, the
+        # report, and who sent it. The console shows it with copy buttons, so
+        # an officer may send the same words from their own mailbox.
         email_body=(
-            "{report_title} on {breach_reference}, from the {organisation} Privacy Office. "
-            "It is attached as a PDF.\n\n{report_text}" + _SIGN_OFF_EMAIL
+            "Dear members of the Board,\n\n"
+            "I am writing on behalf of the {organisation} Privacy Office about a personal data "
+            "breach, {breach_reference}. Our report is set out below, and the same report is "
+            "attached as a PDF for your records.\n\n"
+            "{report_text}\n\n"
+            "Please treat this email and its attachment as confidential. If you have any "
+            "questions, please contact the Privacy Office.\n\n"
+            "Regards,\n{sender_name}\n{sender_role}, {organisation} Privacy Office"
+            + _SIGN_OFF_EMAIL
         ),
         sms_body=None,
         to=(
@@ -1647,14 +1665,22 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             Variable("breach_reference", "The breach's reference.", "BR-2026-0003"),
             Variable("report_title", "What the report is.", "72-hour report to the DPDP Board"),
             Variable("report_text", "The report, as the office wrote it.", "What happened: ..."),
+            SENDER_NAME,
+            SENDER_ROLE,
             ORGANISATION,
         ),
         email_subject="{organisation}: {breach_reference} - {report_title} finalised",
         email_body=(
-            "The {organisation} Privacy Office has finalised the {report_title} on "
-            "{breach_reference}. It is attached as a PDF.\n\n"
+            "Dear members of the Board,\n\n"
+            "I am writing on behalf of the {organisation} Privacy Office to let you know that we "
+            "have finalised the {report_title} on {breach_reference}. It is set out below, and "
+            "attached as a PDF.\n\n"
             "This is for your information. It has not been sent to the regulator: the Privacy "
-            "Office does that once it has been approved.\n\n{report_text}" + _SIGN_OFF_EMAIL
+            "Office does that once it has been approved.\n\n"
+            "{report_text}\n\n"
+            "If you have any questions, please contact the Privacy Office.\n\n"
+            "Regards,\n{sender_name}\n{sender_role}, {organisation} Privacy Office"
+            + _SIGN_OFF_EMAIL
         ),
         sms_body=None,
         to=(

@@ -469,6 +469,18 @@ class TestTheOrganisationsBoard:
             session=world.dpo,
         )
         assert pdf.content.startswith(b"%PDF")
+        # The same mail as the board gets, word for word, for an officer to copy.
+        email = await call(
+            http,
+            "GET",
+            f"{report}/email",
+            template=f"{B}/reports/{{report_uuid}}/email",
+            session=world.dpo,
+        )
+        letter = email.json()
+        assert letter["body"].startswith("Dear members of the Board,")
+        assert "Regards,\n" in letter["body"] and "SE::" not in letter["body"]
+        assert letter["attachment_name"].endswith("-org_board-v1.pdf")
         # Queued is not told: the duty waits for the worker's outcomes.
         one = await call(http, "GET", path, template=B, session=world.dpo)
         [told] = [d for d in one.json()["obligations"] if d["duty"] == "org_board"]

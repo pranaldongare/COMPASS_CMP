@@ -214,6 +214,10 @@ export const keys = {
     /** The board list the finalise window offers: read while it is open, and
      *  again after any write on the breach, which this sits under. */
     boardList: (uuid: Uuid) => ["breach", uuid, "board-list"] as const,
+    /** The mail to the board for one version: read each time its window opens,
+     *  so the words follow any edit, and the office's own words if it set them. */
+    reportEmail: (uuid: Uuid, reportUuid: Uuid) =>
+      ["breach", uuid, "reports", reportUuid, "email"] as const,
     affectedOptions: (uuid: Uuid) => ["breach", uuid, "affected", "options"] as const,
     intake: () => ["breach-intake"] as const,
     intakePage: (offset: number) => ["breach-intake", "waiting", offset] as const,

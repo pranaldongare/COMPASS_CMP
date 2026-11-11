@@ -415,7 +415,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-282 of 394 operations accept or return personal data. Each table gives the
+283 of 395 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 
@@ -576,7 +576,7 @@ selected.
 
 ### Personal data breaches — `/breaches/*`
 
-45 operations carry personal data.
+46 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
@@ -611,6 +611,7 @@ selected.
 | POST | `/breaches/{breach_uuid}/reports` | DPO every row, Legal PoC every row | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
 | GET | `/breaches/{breach_uuid}/reports/recipients` | DPO every row, Legal PoC every row | — | `email`, `full_name` |
 | PUT | `/breaches/{breach_uuid}/reports/{report_uuid}` | DPO every row, Legal PoC every row | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
+| GET | `/breaches/{breach_uuid}/reports/{report_uuid}/email` | DPO every row, Legal PoC every row | — | `body` |
 | POST | `/breaches/{breach_uuid}/reports/{report_uuid}/evidence` | DPO every row, Legal PoC every row | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
 | POST | `/breaches/{breach_uuid}/reports/{report_uuid}/file` | DPO every row, Legal PoC every row | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
 | POST | `/breaches/{breach_uuid}/reports/{report_uuid}/finalise` | DPO every row, Legal PoC every row | `email`, `full_name` | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
@@ -889,7 +890,7 @@ selected.
 | GET | `/holder-tickets/{token}/ticket` | **public** — the request carries its own credential (password, link token, one-time code) | `token` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | POST | `/holder-tickets/{token}/verify` | **public** — the request carries its own credential (password, link token, one-time code) | `code`, `token` | — |
 
-<!-- 282 of 394 operations carry personal data; 34 of them need no session. -->
+<!-- 283 of 395 operations carry personal data; 34 of them need no session. -->
 
 ## The public surface
 

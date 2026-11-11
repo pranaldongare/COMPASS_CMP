@@ -59,12 +59,16 @@ from pydantic import TypeAdapter, ValidationError
 from cmp.core.config import settings
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
 from cmp.core.logging import get_logger
+from cmp.core.messages import Channel, Message, junction, render_text
+from cmp.core.permissions import ROLE_TITLES
 from cmp.db.pool import across_offices
 from cmp.db.redis import K_LOCK
 from cmp.db.redis import key as rkey
 from cmp.db.repositories import breach_reports as repo
 from cmp.db.repositories import breaches as breach_repo
 from cmp.db.repositories import incident_reports as recipients_repo
+from cmp.db.repositories import messages as message_repo
+from cmp.db.repositories import users as user_repo
 from cmp.db.sql import Conn
 from cmp.domain.audit.service import Event
 from cmp.domain.breach import notices, service
@@ -1130,7 +1134,7 @@ async def pdf(
     )
     # Off the event loop: the words may be a stranger's, and long.
     payload = await asyncio.to_thread(render, document)
-    return payload, f"{breach['reference']}-{report['kind']}-v{report['version']}.pdf"
+    return payload, _file_name(breach, report)
 
 
 # ------------------------------------------------------------------ the worker
@@ -1169,8 +1173,76 @@ async def job(conn: Conn, delivery_uuid: str) -> Row | None:
         "reference": breach["reference"],
         "report_title": title,
         "report_text": text,
+        # Sealed as stored: `deliver` opens every variable it is handed.
+        "sender_name": report.get("finalised_by_name") or "",
+        "sender_role": _role_title(report.get("finalised_by_role")),
         "pdf": render(document),
-        "file_name": f"{breach['reference']}-{report['kind']}-v{report['version']}.pdf",
+        "file_name": _file_name(breach, report),
+    }
+
+
+def _file_name(breach: Row, report: Row) -> str:
+    return f"{breach['reference']}-{report['kind']}-v{report['version']}.pdf"
+
+
+def _role_title(role: str | None) -> str:
+    return ROLE_TITLES.get(str(role), "Privacy Office") if role else "Privacy Office"
+
+
+def message_for(kind: Kind) -> Message:
+    """The mail the organisation's board gets for a report of this kind: its own
+    report, or word that one for a regulator was finalised."""
+    if kind == Kind.ORG_BOARD:
+        return Message.BREACH_BOARD_REPORT
+    return Message.BREACH_REPORT_FINALISED
+
+
+async def email(conn: Conn, *, breach_uuid: str, report_uuid: str, actor_id: int) -> dict[str, str]:
+    """The mail the organisation's board gets for this version, as it gets it:
+    the office's own words for that message if it has set them, the report
+    quoted in it, signed by whoever finalised it - or, for a draft, by whoever
+    reads it now, who would be the one to finalise it. The words are given so
+    an officer can send the same mail from their own mailbox; the PDF it
+    carries is the report's PDF. Every read is on the trail, as the PDF's is."""
+    breach = await service.require(conn, breach_uuid)
+    report = await _report(conn, breach, report_uuid)
+    _, text, title = await _document(conn, report, reference=str(breach["reference"]))
+    if report["finalised_at"]:
+        name, role = report.get("finalised_by_name"), report.get("finalised_by_role")
+    else:
+        me = await user_repo.by_id(conn, actor_id)
+        name, role = (me or {}).get("full_name"), (me or {}).get("role")
+    opened = await unseal_strings([str(name)] if name else [])
+    sender = opened.get(str(name), str(name)) if name else ""
+    await service.record_event(
+        conn,
+        breach,
+        Event.BREACH_REPORT_READ,
+        actor_id=actor_id,
+        detail={"kind": report["kind"], "version": int(report["version"]), "as": "email"},
+    )
+    variables = {
+        "organisation": settings.organisation_name,
+        "portal_url": settings.public_base_url.rstrip("/"),
+        "console_url": settings.console_base_url.rstrip("/"),
+        "breach_reference": breach["reference"],
+        "report_title": title,
+        "report_text": text,
+        "sender_name": sender,
+        "sender_role": _role_title(role),
+    }
+    # The words in force, as `deliver` picks them: the office's own if it set
+    # them, else the catalogue's. Read here, not through the messaging layer,
+    # because nothing that handles a breach may import a way to send anything.
+    key = message_for(Kind(report["kind"]))
+    subject, body = junction(key).default(Channel.EMAIL)
+    stored = await message_repo.get(conn, key=key.value, channel=Channel.EMAIL.value)
+    if stored and stored.get("body"):
+        subject, body = stored.get("subject"), str(stored["body"])
+    return {
+        "subject": render_text(subject, variables) if subject else "",
+        "body": render_text(body, variables).rstrip() + "\n",
+        "attachment_name": _file_name(breach, report),
     }
 
 

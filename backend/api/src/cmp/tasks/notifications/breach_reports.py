@@ -141,6 +141,8 @@ def send_breach_report(self: Any, delivery_uuid: str) -> dict[str, Any]:
             "breach_reference": job["reference"],
             "report_title": job["report_title"],
             "report_text": quoted(job["report_text"]),
+            "sender_name": job["sender_name"],
+            "sender_role": job["sender_role"],
         }
         if job["kind"] == Kind.ORG_BOARD:
             deliver(Message.BREACH_BOARD_REPORT, **words)

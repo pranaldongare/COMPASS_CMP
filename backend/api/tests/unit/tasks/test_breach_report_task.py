@@ -33,6 +33,9 @@ JOB = {
     "reference": "BR-2026-0001",
     "report_title": "Report to the organisation's board",
     "report_text": "What happened\nA list went astray",
+    # Sealed as stored: `deliver` opens it, as it opens the address.
+    "sender_name": "SE::sealed-name",
+    "sender_role": "Data Protection Officer",
     "pdf": b"%PDF-1.7",
     "file_name": "BR-2026-0001-org_board-v1.pdf",
 }
@@ -158,6 +161,18 @@ def test_the_reports_words_go_marked_as_quoted(
     monkeypatch.setattr(task, "deliver", lambda key, to, **v: sent.append(v))
     _run()
     assert sent[0]["report_text"] == quoted(str(JOB["report_text"]))
+
+
+def test_the_mail_is_signed_by_whoever_finalised_the_report(
+    monkeypatch: pytest.MonkeyPatch, recorded: list[Any]
+) -> None:
+    sent: list[dict[str, Any]] = []
+    monkeypatch.setattr(task, "deliver", lambda key, to, **v: sent.append(v))
+    _run()
+    assert (sent[0]["sender_name"], sent[0]["sender_role"]) == (
+        "SE::sealed-name",
+        "Data Protection Officer",
+    )
 
 
 class TestOneSendAtATime:

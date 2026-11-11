@@ -214,6 +214,7 @@ NOT_PERSONAL = {
     # Who each finalised version went to (0064): the row's own key. The person
     # is the list entry it points at, already listed under its own columns.
     "addressee_id": "the key of one row of who a report version went to, never an address",
+    "attachment_name": "a breach report PDF's file name: the breach reference, the kind and the version, never a name",
 }
 
 #: Shapes that suggest a person. Anything matching and unclassified is reported.

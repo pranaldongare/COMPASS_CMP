@@ -135,6 +135,14 @@ PLAIN_BY_DESIGN: frozenset[tuple[str, str]] = frozenset(
             )
             for field in ("body", "subject")
         ),
+        # The mail to the organisation's board for one report version, rendered
+        # as the board gets it, for an officer to copy into their own mailbox:
+        # a document made from the report, as its PDF is, and read by the same
+        # officers, each read on the trail (2026-11-11).
+        *(
+            ("/breaches/{breach_uuid}/reports/{report_uuid}/email", field)
+            for field in ("body", "subject")
+        ),
     }
 )
 

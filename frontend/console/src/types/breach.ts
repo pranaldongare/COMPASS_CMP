@@ -695,6 +695,17 @@ export interface BreachDocumentFinalise {
   extra: { full_name: string | null; email: string }[];
 }
 
+/** The mail the organisation's board gets for a version, word for word, so an
+ *  officer can send the same from their own mailbox. Signed by whoever
+ *  finalised it; a draft's by the reader. */
+export interface BreachReportEmail {
+  subject: string;
+  /** Plain text, with no automatic footer. */
+  body: string;
+  /** The PDF the mail carries; the PDF button downloads it. */
+  attachment_name: string;
+}
+
 /** What a press of Try again answers: the reports, and how many it queued. */
 export interface BreachDocumentsResent extends BreachDocuments {
   queued: number;
