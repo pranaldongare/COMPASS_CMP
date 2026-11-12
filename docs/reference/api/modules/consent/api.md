@@ -148,6 +148,9 @@ No request body.
   "items": [
     {
       "consent_uuid": "00000000-0000-4000-8000-000000000000",
+      "consent_no": 1,
+      "person_no": 1,
+      "project_no": 1,
       "subject_uuid": "00000000-0000-4000-8000-000000000000",
       "subject_name": "string",
       "subject_email": "…",
@@ -714,6 +717,9 @@ No request body.
   "items": [
     {
       "consent_uuid": "00000000-0000-4000-8000-000000000000",
+      "consent_no": 1,
+      "person_no": 1,
+      "project_no": 1,
       "subject_uuid": "00000000-0000-4000-8000-000000000000",
       "subject_name": "string",
       "subject_email": "…",
@@ -831,6 +837,9 @@ No request body.
 ```json
 {
   "consent_uuid": "00000000-0000-4000-8000-000000000000",
+  "consent_no": 1,
+  "person_no": 1,
+  "project_no": 1,
   "subject_uuid": "00000000-0000-4000-8000-000000000000",
   "subject_name": "string",
   "subject_email": "string",
@@ -1022,15 +1031,20 @@ For state changes whose only interesting output is that they happened.
 
 One consent record, in full.
 
-Declared rather than returned as a bare dict so `consent_id` - the internal
-surrogate key the scoped query needs for its follow-up lookups - cannot ship
-to a client. An integer primary key in a response body is an invitation to
-enumerate, and it becomes an accidental part of the contract the moment
-somebody reads it off the wire.
+Declared rather than returned as a bare dict so the scoped query's
+internal columns cannot ship to a client by accident. Three numbers do
+ship, on purpose (the product owner, 2026-11-12): the consent's, the
+person's and the project's own, as `*_no`, because the Data Collection Tool
+and the people who run a collection quote them. They are for reading:
+every route still names a record by its uuid, so a number that can be
+guessed opens nothing.
 
 | Field | Type | Required | Validation | Description |
 |---|---|---:|---|---|
 | `consent_uuid` | `string` | Yes | format: `uuid` | — |
+| `consent_no` | `integer` | Yes | — | — |
+| `person_no` | `integer` | Yes | — | — |
+| `project_no` | `integer` | Yes | — | — |
 | `subject_uuid` | `string` | Yes | format: `uuid` | — |
 | `subject_name` | `string` | Yes | — | — |
 | `subject_email` | `string` or `null` | Yes | — | — |
@@ -1140,6 +1154,9 @@ somebody reads it off the wire.
 | Field | Type | Required | Validation | Description |
 |---|---|---:|---|---|
 | `consent_uuid` | `string` | Yes | format: `uuid` | — |
+| `consent_no` | `integer` | Yes | — | — |
+| `person_no` | `integer` | Yes | — | — |
+| `project_no` | `integer` | Yes | — | — |
 | `subject_uuid` | `string` | Yes | format: `uuid` | — |
 | `subject_name` | `string` | Yes | — | — |
 | `subject_email` | `string` or `null` | Yes | — | — |
@@ -1162,6 +1179,9 @@ somebody reads it off the wire.
 | Field | Type | Required | Validation | Description |
 |---|---|---:|---|---|
 | `consent_uuid` | `string` | Yes | format: `uuid` | — |
+| `consent_no` | `integer` | Yes | — | — |
+| `person_no` | `integer` | Yes | — | — |
+| `project_no` | `integer` | Yes | — | — |
 | `subject_uuid` | `string` | Yes | format: `uuid` | — |
 | `subject_name` | `string` | Yes | — | — |
 | `subject_email` | `string` or `null` | Yes | — | — |

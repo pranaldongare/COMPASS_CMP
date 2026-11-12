@@ -187,6 +187,16 @@ sequence, padded to four digits (`cmp_next_number`, as `TPL-` codes are). The
 column stays `NOT NULL UNIQUE`; a code given by hand is kept, and the API
 refuses one in the numbered shape so the sequence never meets it.
 
+**Holders from a project's owner, since 0069.** A rights request's holder is
+a processor the records name (`processor_id`), somebody the office added by
+hand (neither), or - where a project or activity she gave consent in has no
+processor on record - whoever answers for that project: a DCO Admin, or the
+activity's HR PoC (`project_id`, with `derived_from = 'project_owner'`; the
+CHECK `holder_project_is_an_owner` holds the two together). One per request and project
+(`rights_holder_one_per_project`), as there is one per request and processor.
+`rights_request.holders_derived_at` is when the office last read the records;
+the page lists consents nobody could be found for only after it is set.
+
 **A breach's people from a list, since 0045.** `breach_upload` records each
 list taken - kind (`contacts` or `assets`, by CHECK; since 0066 also `typed`,
 mail IDs and mobile numbers typed in, with no file), sealed file name, hash

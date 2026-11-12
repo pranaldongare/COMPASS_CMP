@@ -970,9 +970,12 @@ rights request's model ([ADR 0023](../decisions/0023-breach-tickets-and-breach-o
 [rights-requests.md](rights-requests.md#holders-and-tickets)). **Tickets** on a
 breach's page.
 
-- **Assign a ticket** to a member of staff - or, choosing **Someone without a
-  console login**, to anyone internal named by an email (below) - with what you
-  are asking, an optional **Resolve by** date and, if it helps, a document. The
+- **Assign a ticket** to a member of staff - or, choosing **Person without a
+  console account**, to anyone internal named by an email (below) - with what you
+  are asking, an optional **Resolve by** date and, if it helps, a document. A
+  member of staff is found in one box, **Assign to** (2026-11-12): three letters
+  of a name or a whole email address list the active staff who match, and a
+  click, or the arrow keys and Enter, chooses one. The
   document goes on the ticket's thread as it is raised; if the file is refused,
   the ticket stands and the office is told. Refused before the breach is recorded (409
   `breach_not_recorded`); refused for anyone whose address is not on
@@ -998,7 +1001,18 @@ breach's page.
   told by email in words that name no breach: the holder, or every active officer
   of the breach's office. A trigger refuses a new date that no event records.
   The label is **Resolve by** on breach tickets only; `answer_by` keeps its name
-  in the code, and a rights ticket's date is unchanged.
+  in the code. A rights ticket's **Answer by** is changed the same way since
+  2026-11-12 ([rights-requests.md](rights-requests.md#holders-and-tickets)),
+  with one difference: whoever reads the audit trail is shown its reason, read
+  from the ticket's message.
+- **The window is a rights ticket's** (2026-11-12). In the tickets table each
+  row ends in a button - **Review the answer** once the holder has answered,
+  **Open** otherwise. Inside: the date with **Change the date**, the holder's
+  answer, **Close the ticket**, **Send back** and **Withdraw** as buttons, then
+  the messages. The holder has two tabs, **Answer the ticket** and **Messages**,
+  so a message sent is never taken for the answer. States read *Waiting on the
+  holder* and *Answered - review* to the office, *To answer* and *Answered -
+  with the Privacy Office* to the holder.
 
 | From | Event | To | Who |
 |---|---|---|---|

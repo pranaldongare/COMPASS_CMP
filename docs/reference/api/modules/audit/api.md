@@ -73,7 +73,8 @@ No request body.
       "entity_label": "…",
       "entity_label_parts": "…",
       "entity_noun": "…",
-      "entity_href": "…"
+      "entity_href": "…",
+      "reason": "…"
     }
   ],
   "next_cursor": "string",
@@ -486,7 +487,8 @@ No request body.
     "string"
   ],
   "entity_noun": "string",
-  "entity_href": "string"
+  "entity_href": "string",
+  "reason": "string"
 }
 ```
 
@@ -531,6 +533,7 @@ No request body.
 | `entity_label_parts` | array of `string` or `null` | No | — | — |
 | `entity_noun` | `string` or `null` | No | — | — |
 | `entity_href` | `string` or `null` | No | — | — |
+| `reason` | `string` or `null` | No | — | — |
 
 <a id="schema-auditsummary"></a>
 #### `AuditSummary`

@@ -93,12 +93,12 @@ hash and no email is written
 rows from before that change stand as written, because the trail is
 hash-chained and cannot be rewritten.
 
-## 2. API endpoints that carry PII — 282 endpoints in 25 modules
+## 2. API endpoints that carry PII — 289 endpoints in 25 modules
 
 Every GET, POST, PUT, PATCH and DELETE whose request or response includes a
 personal field. *In* is what the caller sends (body, path and query); *out* is
 what a 2xx response returns. The response carries the value **as stored** — a
-sealed column comes back as `SE::…` and the portal decrypts it. 34 of
+sealed column comes back as `SE::…` and the portal decrypts it. 35 of
 these need no session; they are marked **public**.
 
 ### Authentication (`/auth`) — 12 endpoints
@@ -175,7 +175,7 @@ these need no session; they are marked **public**.
 | POST | `/rights/requests` **public** | `contact`, `request_text` | — |
 | POST | `/rights/requests/verify` **public** | `code` | — |
 
-### Rights requests — Privacy Office (`/requests`) — 43 endpoints
+### Rights requests — Privacy Office (`/requests`) — 44 endpoints
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
@@ -192,7 +192,8 @@ these need no session; they are marked **public**.
 | POST | `/requests/{request_uuid}/holders` | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/derive` | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/accept` | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/confirm` | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/answer-by` | `reason` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/confirm` | `responder_contact`, `responder_name`, `responder_user_uuid` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/contact` | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/correct-contact` | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/escalate` | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
@@ -207,7 +208,7 @@ these need no session; they are marked **public**.
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/withdraw` | `reason` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/intent` | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/public-reports/erase` | — | `reporter_email`, `reporter_erased_at`, `reporter_name` |
-| POST | `/requests/{request_uuid}/refuse` | `reason` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+| POST | `/requests/{request_uuid}/refuse` | `files`, `reason` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/respond` | `files`, `response_text` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/reviewer` | `reviewer_uuid` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/scope/derive` | — | `decided_by_name`, `disposition`, `other_subjects`, `subject_role` |
@@ -231,7 +232,7 @@ these need no session; they are marked **public**.
 | POST | `/legal-holds` | `reason`, `subject_uuid` | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
 | POST | `/legal-holds/{hold_uuid}/release` | — | `placed_by_name`, `reason`, `released_by_name`, `subject_name`, `subject_uuid` |
 
-### Personal data breaches (`/breaches`) — 45 endpoints
+### Personal data breaches (`/breaches`) — 48 endpoints
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
@@ -247,6 +248,8 @@ these need no session; they are marked **public**.
 | POST | `/breaches/{breach_uuid}/affected` | — | `confirmed_by_name`, `evidence`, `full_name`, `has_email`, `has_mobile`, `person_uuid`, `role` |
 | GET | `/breaches/{breach_uuid}/affected/contacts` | — | `added_by_name`, `contact_uuid`, `email`, `file_name`, `full_name`, `mobile` |
 | POST | `/breaches/{breach_uuid}/affected/preview` | — | `evidence`, `full_name`, `has_email`, `has_mobile`, `person_uuid`, `role` |
+| POST | `/breaches/{breach_uuid}/affected/typed` | `mail_ids`, `mobiles` | — |
+| POST | `/breaches/{breach_uuid}/affected/typed/check` | `mail_ids`, `mobiles` | — |
 | GET | `/breaches/{breach_uuid}/assessments` | — | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `remedial_measures`, `revised_by_name` |
 | POST | `/breaches/{breach_uuid}/assessments` | `caused_by_findings`, `circumstances`, `consequences`, `contact_point`, `likely_impact`, `mitigation`, `nature_extent`, `protective_steps`, `remedial_measures` | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `reporter_email`, `reporter_name`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
 | POST | `/breaches/{breach_uuid}/attachments` | — | `added_by_name`, `affected_systems`, `breach_recorded_by_name`, `caused_by_findings`, `changed_by_name`, `circumstances`, `consequences`, `contact_point`, `content_type`, `countries_involved`, `data_nature`, `determined_by_name`, `discovery`, `entities_involved`, `file_name`, `impact_scale`, `incident_details`, `likely_impact`, `mitigation`, `nature_extent`, `origin`, `protective_steps`, `reason`, `reasoning`, `recorded_by_name`, `remedial_measures`, `reported_to`, `reporter_email`, `reporter_name`, `revised_by_name`, `size_bytes`, `subject_types`, `third_parties` |
@@ -266,6 +269,7 @@ these need no session; they are marked **public**.
 | POST | `/breaches/{breach_uuid}/reports` | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
 | GET | `/breaches/{breach_uuid}/reports/recipients` | — | `email`, `full_name` |
 | PUT | `/breaches/{breach_uuid}/reports/{report_uuid}` | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
+| GET | `/breaches/{breach_uuid}/reports/{report_uuid}/email` | — | `body` |
 | POST | `/breaches/{breach_uuid}/reports/{report_uuid}/evidence` | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
 | POST | `/breaches/{breach_uuid}/reports/{report_uuid}/file` | — | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
 | POST | `/breaches/{breach_uuid}/reports/{report_uuid}/finalise` | `email`, `full_name` | `created_by_name`, `evidence`, `filed_by_name`, `finalised_by_name` |
@@ -316,12 +320,13 @@ these need no session; they are marked **public**.
 | POST | `/restricted-countries` | — | `lifted_by_name`, `listed_by_name` |
 | POST | `/restricted-countries/{country_uuid}/lift` | — | `lifted_by_name`, `listed_by_name` |
 
-### Tickets (`/tickets`) — 4 endpoints
+### Tickets (`/tickets`) — 5 endpoints
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
 | GET | `/tickets` | — | `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `instruction`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | GET | `/tickets/{holder_uuid}` | — | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
+| POST | `/tickets/{holder_uuid}/answer-by` | `reason` | `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `instruction`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | POST | `/tickets/{holder_uuid}/messages` | `body`, `evidence` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | POST | `/tickets/{holder_uuid}/return` | `evidence` | `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `instruction`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 
@@ -329,18 +334,18 @@ these need no session; they are marked **public**.
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
-| GET | `/consents` | — | `action_type`, `affirmative_action_at`, `consent_status`, `consent_uuid`, `granted_count`, `is_withdrawal`, `refused_count`, `served_at`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid` |
-| GET | `/consents/{consent_uuid}` | `consent_uuid` | `action_type`, `affirmative_action_at`, `consent_uuid`, `is_withdrawal`, `served_at`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid` |
+| GET | `/consents` | — | `action_type`, `affirmative_action_at`, `consent_no`, `consent_status`, `consent_uuid`, `granted_count`, `is_withdrawal`, `person_no`, `refused_count`, `served_at`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid` |
+| GET | `/consents/{consent_uuid}` | `consent_uuid` | `action_type`, `affirmative_action_at`, `consent_no`, `consent_uuid`, `is_withdrawal`, `person_no`, `served_at`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid` |
 | GET | `/consents/{consent_uuid}/assets` | `consent_uuid` | `disposition`, `has_unmapped_subjects`, `storage_ref`, `subject_role` |
 | GET | `/consents/{consent_uuid}/grants` | `consent_uuid` | `granted` |
 | GET | `/consents/{consent_uuid}/record` | `consent_uuid` | — |
 | GET | `/links` | — | `registrations`, `url_path` |
 | GET | `/links/{link_uuid}` | — | `url_path` |
 | GET | `/links/{link_uuid}/stats` | — | `consents`, `registrations`, `withdrawals` |
-| GET | `/projects/{project_uuid}/consents` | — | `action_type`, `affirmative_action_at`, `consent_status`, `consent_uuid`, `granted_count`, `is_withdrawal`, `refused_count`, `served_at`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid` |
+| GET | `/projects/{project_uuid}/consents` | — | `action_type`, `affirmative_action_at`, `consent_no`, `consent_status`, `consent_uuid`, `granted_count`, `is_withdrawal`, `person_no`, `refused_count`, `served_at`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid` |
 | GET | `/projects/{project_uuid}/links` | — | `url_path` |
 
-### Exports, imports, collections, assets — 10 endpoints
+### Exports, imports, collections, assets — 11 endpoints
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
@@ -354,18 +359,19 @@ these need no session; they are marked **public**.
 | GET | `/imports/{batch_uuid}` | — | `file_name`, `imported_by_name`, `imported_by_uuid` |
 | GET | `/projects/{project_uuid}/exports` | — | `exported_by_name` |
 | POST | `/projects/{project_uuid}/exports` | — | `exported_by_name` |
+| POST | `/projects/{project_uuid}/exports/dct-consented-list` | — | `exported_by_name` |
 
 ### Users (`/users`) — 16 endpoints
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
-| GET | `/users` | `person_type`, `role` | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` |
-| POST | `/users` | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` |
+| GET | `/users` | `person_type`, `role` | `email`, `full_name`, `mobile`, `organization_id`, `person_no`, `person_type`, `role`, `username` |
+| POST | `/users` | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` | `email`, `full_name`, `mobile`, `organization_id`, `person_no`, `person_type`, `role`, `username` |
 | GET | `/users/collection-owners` | — | `email`, `full_name`, `role` |
 | GET | `/users/hr-pocs` | — | `email`, `full_name` |
-| GET | `/users/staff` | — | `email`, `full_name`, `role` |
-| GET | `/users/{user_uuid}` | `user_uuid` | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` |
-| PATCH | `/users/{user_uuid}` | `full_name`, `mobile`, `organization_id`, `user_uuid` | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` |
+| GET | `/users/staff` | `role` | `email`, `full_name`, `role` |
+| GET | `/users/{user_uuid}` | `user_uuid` | `email`, `full_name`, `mobile`, `organization_id`, `person_no`, `person_type`, `role`, `username` |
+| PATCH | `/users/{user_uuid}` | `full_name`, `mobile`, `organization_id`, `user_uuid` | `email`, `full_name`, `mobile`, `organization_id`, `person_no`, `person_type`, `role`, `username` |
 | PUT | `/users/{user_uuid}/categories` | `user_uuid` | — |
 | POST | `/users/{user_uuid}/deactivate` | `user_uuid` | — |
 | POST | `/users/{user_uuid}/invite` | `user_uuid` | — |
@@ -465,11 +471,11 @@ these need no session; they are marked **public**.
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
-| GET | `/audit` | `actor_role` | `actor_name`, `actor_role`, `actor_uuid`, `subject_name`, `subject_uuid` |
+| GET | `/audit` | `actor_role` | `actor_name`, `actor_role`, `actor_uuid`, `reason`, `subject_name`, `subject_uuid` |
 | GET | `/audit/export.csv` | `actor_role` | — |
 | GET | `/audit/lookup` | — | `hint` |
 | GET | `/audit/summary` | `actor_role` | — |
-| GET | `/audit/{log_uuid}` | — | `actor_name`, `actor_role`, `actor_uuid`, `subject_name`, `subject_uuid` |
+| GET | `/audit/{log_uuid}` | — | `actor_name`, `actor_role`, `actor_uuid`, `reason`, `subject_name`, `subject_uuid` |
 
 ### Dashboard — 1 endpoint
 
@@ -495,12 +501,13 @@ these need no session; they are marked **public**.
 | GET | `/hr/categories/{category_uuid}/processors` | — | `respondent_email`, `respondent_name` |
 | PUT | `/hr/categories/{category_uuid}/processors` | — | `respondent_email`, `respondent_name` |
 
-### Public_information — 8 endpoints
+### Public_information — 9 endpoints
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
 | GET | `/holder-tickets/{token}` **public** | `token` | — |
 | POST | `/holder-tickets/{token}/answer` **public** | `evidence`, `token` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
+| POST | `/holder-tickets/{token}/answer-by` **public** | `reason`, `token` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | POST | `/holder-tickets/{token}/code` **public** | `token` | — |
 | POST | `/holder-tickets/{token}/messages` **public** | `body`, `evidence`, `token` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | GET | `/holder-tickets/{token}/messages/{message_uuid}/evidence` **public** | `token` | — |

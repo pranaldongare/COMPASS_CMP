@@ -415,7 +415,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-286 of 398 operations accept or return personal data. Each table gives the
+289 of 401 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 
@@ -516,7 +516,7 @@ selected.
 
 ### Rights requests, the office's side — `/requests/*`
 
-43 operations carry personal data.
+44 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
@@ -533,7 +533,8 @@ selected.
 | POST | `/requests/{request_uuid}/holders` | DPO every row, Admin rows in scope, Legal PoC every row | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/derive` | DPO every row, Admin rows in scope, Legal PoC every row | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/accept` | DPO every row, Admin rows in scope, Legal PoC every row | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
-| POST | `/requests/{request_uuid}/holders/{holder_uuid}/confirm` | DPO every row, Admin rows in scope, Legal PoC every row | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/answer-by` | DPO every row, Admin rows in scope, Legal PoC every row | `reason` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/confirm` | DPO every row, Admin rows in scope, Legal PoC every row | `responder_contact`, `responder_name`, `responder_user_uuid` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/contact` | DPO every row, Admin rows in scope, Legal PoC every row | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/correct-contact` | DPO every row, Admin rows in scope, Legal PoC every row | `responder_contact`, `responder_name` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/escalate` | DPO every row, Admin rows in scope, Legal PoC every row | — | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
@@ -548,7 +549,7 @@ selected.
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/withdraw` | DPO every row, Admin rows in scope, Legal PoC every row | `reason` | `accepted_by_name`, `brief`, `confirmed_by_name`, `contact_log`, `evidence`, `instruction`, `responder_contact`, `responder_name`, `responder_user_name`, `responder_user_uuid`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `seen_at`, `sent_back_reason` |
 | POST | `/requests/{request_uuid}/intent` | DPO every row, Admin rows in scope, Legal PoC every row | — | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/public-reports/erase` | DPO every row, Legal PoC every row | — | `reporter_email`, `reporter_erased_at`, `reporter_name` |
-| POST | `/requests/{request_uuid}/refuse` | DPO every row, Admin rows in scope, Legal PoC every row | `reason` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
+| POST | `/requests/{request_uuid}/refuse` | DPO every row, Admin rows in scope, Legal PoC every row | `files`, `reason` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/respond` | DPO every row, Admin rows in scope, Legal PoC every row | `files`, `response_text` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/reviewer` | Admin rows in scope | `reviewer_uuid` | `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_project_uuid`, `consent_purposes`, `consent_uuid`, `consent_withdrawn`, `download_expires_at`, `nominee_contact`, `nominee_name`, `refusal_reason`, `remedy_text`, `request_text`, `response_file_hash`, `response_text`, `reviewer_name`, `reviewer_uuid`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid`, `submitted_contact`, `submitted_name`, `trigger_evidence_hash`, `verification_note`, `verified_by_name` |
 | POST | `/requests/{request_uuid}/scope/derive` | DPO every row, Admin rows in scope, Legal PoC every row | — | `decided_by_name`, `disposition`, `other_subjects`, `subject_role` |
@@ -674,12 +675,13 @@ selected.
 
 ### Tickets a holder answers — `/tickets/*`
 
-4 operations carry personal data.
+5 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
 | GET | `/tickets` | any signed-in session, own record | — | `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `instruction`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | GET | `/tickets/{holder_uuid}` | any signed-in session, own record | — | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
+| POST | `/tickets/{holder_uuid}/answer-by` | any signed-in session, own record | `reason` | `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `instruction`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | POST | `/tickets/{holder_uuid}/messages` | any signed-in session, own record | `body`, `evidence` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | POST | `/tickets/{holder_uuid}/return` | any signed-in session, own record | `evidence` | `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `instruction`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 
@@ -689,15 +691,15 @@ selected.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
-| GET | `/consents` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | — | `action_type`, `affirmative_action_at`, `consent_status`, `consent_uuid`, `granted_count`, `is_withdrawal`, `refused_count`, `served_at`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid` |
-| GET | `/consents/{consent_uuid}` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | `consent_uuid` | `action_type`, `affirmative_action_at`, `consent_uuid`, `is_withdrawal`, `served_at`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid` |
+| GET | `/consents` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | — | `action_type`, `affirmative_action_at`, `consent_no`, `consent_status`, `consent_uuid`, `granted_count`, `is_withdrawal`, `person_no`, `refused_count`, `served_at`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid` |
+| GET | `/consents/{consent_uuid}` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | `consent_uuid` | `action_type`, `affirmative_action_at`, `consent_no`, `consent_uuid`, `is_withdrawal`, `person_no`, `served_at`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid` |
 | GET | `/consents/{consent_uuid}/assets` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | `consent_uuid` | `disposition`, `has_unmapped_subjects`, `storage_ref`, `subject_role` |
 | GET | `/consents/{consent_uuid}/grants` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | `consent_uuid` | `granted` |
 | GET | `/consents/{consent_uuid}/record` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, Legal PoC every row, HR PoC rows in scope | `consent_uuid` | — |
 | GET | `/links` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, Legal PoC every row, HR PoC rows in scope | — | `registrations`, `url_path` |
 | GET | `/links/{link_uuid}` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, Legal PoC every row, HR PoC rows in scope | — | `url_path` |
 | GET | `/links/{link_uuid}/stats` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, Legal PoC every row, HR PoC rows in scope | — | `consents`, `registrations`, `withdrawals` |
-| GET | `/projects/{project_uuid}/consents` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | — | `action_type`, `affirmative_action_at`, `consent_status`, `consent_uuid`, `granted_count`, `is_withdrawal`, `refused_count`, `served_at`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid` |
+| GET | `/projects/{project_uuid}/consents` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, R&D own rows, Legal PoC every row, HR PoC rows in scope | — | `action_type`, `affirmative_action_at`, `consent_no`, `consent_status`, `consent_uuid`, `granted_count`, `is_withdrawal`, `person_no`, `refused_count`, `served_at`, `subject_email`, `subject_mobile`, `subject_name`, `subject_uuid` |
 | GET | `/projects/{project_uuid}/links` | DPO every row, DCO rows in scope, DCO Admin rows in scope, RCO rows in scope, Legal PoC every row, HR PoC rows in scope | — | `url_path` |
 
 ### Exports, imports, collections and assets
@@ -724,13 +726,13 @@ selected.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
-| GET | `/users` | DPO every row, Admin every row, Legal PoC every row | `person_type`, `role` | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` |
-| POST | `/users` | Admin every row | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` |
+| GET | `/users` | DPO every row, Admin every row, Legal PoC every row | `person_type`, `role` | `email`, `full_name`, `mobile`, `organization_id`, `person_no`, `person_type`, `role`, `username` |
+| POST | `/users` | Admin every row | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` | `email`, `full_name`, `mobile`, `organization_id`, `person_no`, `person_type`, `role`, `username` |
 | GET | `/users/collection-owners` | DPO every row, Admin every row, DCO every row, DCO Admin every row, RCO every row, R&D every row | — | `email`, `full_name`, `role` |
 | GET | `/users/hr-pocs` | Admin every row, Legal PoC every row | — | `email`, `full_name` |
-| GET | `/users/staff` | DPO every row, Admin every row | — | `email`, `full_name`, `role` |
-| GET | `/users/{user_uuid}` | DPO every row, Admin every row, Legal PoC every row | `user_uuid` | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` |
-| PATCH | `/users/{user_uuid}` | Admin every row | `full_name`, `mobile`, `organization_id`, `user_uuid` | `email`, `full_name`, `mobile`, `organization_id`, `person_type`, `role`, `username` |
+| GET | `/users/staff` | DPO every row, Admin every row, Legal PoC every row | `role` | `email`, `full_name`, `role` |
+| GET | `/users/{user_uuid}` | DPO every row, Admin every row, Legal PoC every row | `user_uuid` | `email`, `full_name`, `mobile`, `organization_id`, `person_no`, `person_type`, `role`, `username` |
+| PATCH | `/users/{user_uuid}` | Admin every row | `full_name`, `mobile`, `organization_id`, `user_uuid` | `email`, `full_name`, `mobile`, `organization_id`, `person_no`, `person_type`, `role`, `username` |
 | PUT | `/users/{user_uuid}/categories` | Admin every row | `user_uuid` | — |
 | POST | `/users/{user_uuid}/deactivate` | Admin every row | `user_uuid` | — |
 | POST | `/users/{user_uuid}/invite` | Admin every row | `user_uuid` | — |
@@ -856,11 +858,11 @@ selected.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
-| GET | `/audit` | DPO every row, Admin every row, Legal PoC every row | `actor_role` | `actor_name`, `actor_role`, `actor_uuid`, `subject_name`, `subject_uuid` |
+| GET | `/audit` | DPO every row, Admin every row, Legal PoC every row | `actor_role` | `actor_name`, `actor_role`, `actor_uuid`, `reason`, `subject_name`, `subject_uuid` |
 | GET | `/audit/export.csv` | DPO every row, Admin every row, Legal PoC every row | `actor_role` | — |
 | GET | `/audit/lookup` | DPO every row, Admin every row, Legal PoC every row | — | `hint` |
 | GET | `/audit/summary` | DPO every row, Admin every row, Legal PoC every row | `actor_role` | — |
-| GET | `/audit/{log_uuid}` | DPO every row, Admin every row, Legal PoC every row | — | `actor_name`, `actor_role`, `actor_uuid`, `subject_name`, `subject_uuid` |
+| GET | `/audit/{log_uuid}` | DPO every row, Admin every row, Legal PoC every row | — | `actor_name`, `actor_role`, `actor_uuid`, `reason`, `subject_name`, `subject_uuid` |
 
 ### Dashboard
 
@@ -880,12 +882,13 @@ selected.
 
 ### Public_information
 
-8 operations carry personal data.
+9 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
 | GET | `/holder-tickets/{token}` | **public** — the request carries its own credential (password, link token, one-time code) | `token` | — |
 | POST | `/holder-tickets/{token}/answer` | **public** — the request carries its own credential (password, link token, one-time code) | `evidence`, `token` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
+| POST | `/holder-tickets/{token}/answer-by` | **public** — the request carries its own credential (password, link token, one-time code) | `reason`, `token` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | POST | `/holder-tickets/{token}/code` | **public** — the request carries its own credential (password, link token, one-time code) | `token` | — |
 | POST | `/holder-tickets/{token}/messages` | **public** — the request carries its own credential (password, link token, one-time code) | `body`, `evidence`, `token` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | GET | `/holder-tickets/{token}/messages/{message_uuid}/evidence` | **public** — the request carries its own credential (password, link token, one-time code) | `token` | — |
@@ -893,11 +896,11 @@ selected.
 | GET | `/holder-tickets/{token}/ticket` | **public** — the request carries its own credential (password, link token, one-time code) | `token` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | POST | `/holder-tickets/{token}/verify` | **public** — the request carries its own credential (password, link token, one-time code) | `code`, `token` | — |
 
-<!-- 286 of 398 operations carry personal data; 34 of them need no session. -->
+<!-- 289 of 401 operations carry personal data; 35 of them need no session. -->
 
 ## The public surface
 
-34 of the operations that carry personal data answer without a session. They
+35 of the operations that carry personal data answer without a session. They
 are the ones worth re-reading after any change, because everything else is
 behind an authenticated role. The rows below group sibling endpoints that take
 the same token and are protected the same way.
@@ -924,7 +927,7 @@ the same token and are protected the same way.
 | `GET /rights/nominations/{token}` | Nomination token | — | Returns `principal_name` and `nominee_name` — **the one anonymous read that returns two people's names**, and the token is single-purpose, expiring and hashed at rest |
 | `POST /rights/nominations/{token}/accept`, `/decline`, `/code` | Nomination token | `code` | As above. One code is live per nomination, under the contact it went to (2026-11-08) |
 | `POST /rights/nominee/start`, `/requests` | Carries a code or a token | `contact`, `request_text`, `evidence` | The nominee proves the trigger event before acting; on `/requests` a wrong code, one of the wrong length and a spent budget answer as a nomination not in effect does, 400 `otp_invalid` (2026-11-08), and only the limit of ten an hour per address answers 429; the code is checked before the request and spent only once the request is accepted, so a request refused for its right, its event or its kind leaves it for the next try (7bdb710) |
-| `/holder-tickets/{token}` and its seven siblings (`/code`, `/verify`, `/ticket`, `/messages`, the evidence, `/answer`, `/sign-out`) | Link token, then a code | `code`, `body`, `evidence` | An outside holder's ticket (0049). The token alone shows the reference, the holder's name and where a code will go. The code goes only to the address on the ticket, rate-limited per ticket, and opens that one ticket for an hour: an HttpOnly cookie whose fingerprint in Redis names the ticket and the link, and both must agree. A ticket sent to somebody else gets a new link, which shuts the old one |
+| `/holder-tickets/{token}` and its eight siblings (`/code`, `/verify`, `/ticket`, `/messages`, the evidence, `/answer`, `/answer-by`, `/sign-out`) | Link token, then a code | `code`, `body`, `evidence`, `reason` | An outside holder's ticket (0049). The token alone shows the reference, the holder's name and where a code will go. The code goes only to the address on the ticket, rate-limited per ticket, and opens that one ticket for an hour: an HttpOnly cookie whose fingerprint in Redis names the ticket and the link, and both must agree. A ticket sent to somebody else gets a new link, which shuts the old one |
 
 ## What protects it
 

@@ -1,6 +1,6 @@
 # COMPASS complete database schema
 
-The table reference, the enum reference, the inventory JSON and the Graphviz sources in `source/` are generated from the catalogue of a scratch database at migration **0065**, on 2026-11-08; `schema.sql` is a `pg_dump --schema-only --no-owner --no-privileges` of the same database. That database, `cmp_ref_bw`, was made empty and built by replaying the whole chain, so CHECK expressions print as a replay gives them (`ARRAY['yes'::character varying, ...]::text[]`) where the 0063 build, a restored copy of the development data, printed the restored form; the two mean the same thing, and that is most of the churn in that diff. There is no revision 0057 on this branch: it is the DataVault branch's. The committed SVGs still show **0049**: Graphviz was not installed when the rest was regenerated, so render them with `--render` (or `dot -Tsvg` on each source). Rebuild with `python3 docs/tools/generate-schema-docs.py --database <db>`, and `schema.sql` with `pg_dump --schema-only --no-owner --no-privileges <db>`. The notes on this page follow them by hand.
+The table reference, the enum reference, the inventory JSON and the Graphviz sources in `source/` are generated from the catalogue of a scratch database at migration **0069**, on 2026-11-12; `schema.sql` is a `pg_dump --schema-only --no-owner --no-privileges` of the same database. That database, `cmp_ref69`, was made empty and built by replaying the whole chain, so CHECK expressions print as a replay gives them (`ARRAY['yes'::character varying, ...]::text[]`) where the 0063 build, a restored copy of the development data, printed the restored form; the two mean the same thing, and that is most of the churn in that diff. There is no revision 0057 on this branch: it is the DataVault branch's. The committed SVGs still show **0049**: Graphviz was not installed when the rest was regenerated, so render them with `--render` (or `dot -Tsvg` on each source). Rebuild with `python3 docs/tools/generate-schema-docs.py --database <db>`, and `schema.sql` with `pg_dump --schema-only --no-owner --no-privileges <db>`. The notes on this page follow them by hand.
 
 ## Open the diagrams
 
@@ -35,13 +35,13 @@ Module diagrams include full local tables and their outgoing foreign keys. Refer
 | Application Tables | 74 |
 | Metadata Tables | 1 |
 | Views | 1 |
-| Table Columns | 889 |
-| Foreign Keys | 220 |
+| Table Columns | 891 |
+| Foreign Keys | 221 |
 | Enums | 39 |
 | Triggers | 82 |
-| Checks | 132 |
+| Checks | 133 |
 
-The Alembic `alembic_version` table is included separately as migration metadata. Its one column and the view's derived columns are additional to the 889 application-table columns; the inventory above comes from PostgreSQL's catalogues after replaying the full migration chain.
+The Alembic `alembic_version` table is included separately as migration metadata. Its one column and the view's derived columns are additional to the 891 application-table columns; the inventory above comes from PostgreSQL's catalogues after replaying the full migration chain.
 
 Since **0027–0030** the personal columns are `text` rather than `varchar(n)` - ciphertext is longer than the plaintext it replaces - and each column the platform looks rows up by carries a `*_hash` column beside it holding `HMAC-SHA256(normalised value, BLIND_INDEX_KEY)`. Three name columns additionally carry `*_ngrams text[]` with a GIN index: the hashed three-character runs that let staff search by part of a name without the name being readable. `auth_user.minor_until` is the one date kept in the clear, for the section 9 test. What each column holds and why is in [docs/dkms/](../../dkms/README.md).
 
@@ -87,11 +87,13 @@ Since **0027–0030** the personal columns are `text` rather than `varchar(n)` -
 
 **0051** adds the offices (ADR 0032): `office`, with `rnd` and `hr`; `office_id` on `project`, `purpose`, `notice_template`, `notice`, `consent_link`, `export_log`, `breach`, `rights_request` and `auth_user`; row-level security with one `office_isolation` policy on 45 tables; `v_current_consent` recreated `security_invoker`; the roles `legal` and `hr_user`. How it works: [offices-and-tenancy.md](../../architecture/offices-and-tenancy.md).
 
+**0069** adds who to ask when no record names a processor: `rights_holder_source` gains `project_owner`; `rights_request_holder.project_id` names the project or activity the holder answers for (a DCO Admin for a project, the HR PoC for an activity) - one per request, by a partial unique index, and present exactly when the holder is of that kind, by CHECK; and `rights_request.holders_derived_at` records when the records were last read for who holds a person's data.
+
 ## Reading relationships and keys
 
 - Arrow direction is **referencing child column → referenced parent key**. A solid line means all FK columns are NOT NULL; a dashed line means at least one is nullable. A dotted green line is a view dependency, not an FK.
 - `PK` = primary key; `FK` = foreign key; `UQ` = member of a declared unique constraint, which can be composite; `?` = nullable column. Not every UQ-marked column is unique on its own. Unique expression/partial indexes are listed in the column reference and SQL.
-- Repeated arrows between tables represent distinct foreign-key constraints, for example created-by versus approved-by. The full SVG includes all 220 constraints, including circular and self-referencing ones.
+- Repeated arrows between tables represent distinct foreign-key constraints, for example created-by versus approved-by. The full SVG includes all 221 constraints, including circular and self-referencing ones.
 - Types are displayed compactly (`int4`, `int8`, `varchar`, `timestamptz`, `bool`); the exact PostgreSQL types are in the column reference. View nullability is derived and is not asserted by the diagram.
 - Arrow styles express foreign-key nullability, not universal one-to-many cardinality. Composite uniqueness, partial indexes and trigger rules must also be considered; these are retained in the supporting SQL/reference.
 

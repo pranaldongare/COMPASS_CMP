@@ -2,7 +2,7 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-5 operations; 5 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
+6 operations; 6 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
@@ -11,6 +11,7 @@
 | POST | `/tickets/{holder_uuid}/messages` | `admin`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
 | GET | `/tickets/{holder_uuid}/messages/{message_uuid}/evidence` | `admin`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
 | POST | `/tickets/{holder_uuid}/return` | `admin`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
+| POST | `/tickets/{holder_uuid}/answer-by` | `admin`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder` | Full session; anonymous NO |
 
 ## GET /tickets
 
@@ -81,3 +82,17 @@ Return a ticket addressed to me.
 - **Resolved gate:** `RequireResource(ticket, write=True)`.
 - **Rules:** Any staff role can use tickets addressed to that account only (respondent_user_id). This does not grant the staff member the full rights-request register. A return must state `outcome` - done, partial or failed (422 otherwise); only done counts as the work done (review DPDP-1, 2026-10-01).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1753), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L891).
+
+## POST /tickets/{holder_uuid}/answer-by
+
+Change the date my answer is due, with the reason.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | NO | NO |
+
+- **Who:** `admin`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user`, `breach_holder`.
+- **Route guard:** `TicketWriter`.
+- **Resolved gate:** `RequireResource(ticket, write=True)`.
+- **Rules:** Any staff role can use tickets addressed to that account only (respondent_user_id). This does not grant the staff member the full rights-request register. The date a ticket is to be answered by, moved with the reason (2026-11-12). Only on an open request that is being worked on (409 `request_not_open`) and a ticket that is waiting (409 `ticket_not_open`). A reason is required (422); a date that has passed, a date after the response's own, and the date it already has are refused (422). No approval. The old date, the new one and the reason go on the ticket's thread and its contact log; the trail (`rights.ticket_date_changed`) holds the two dates, which side moved it, that a reason was given and the message that keeps it - never the words (ADR 0015). A ticket that had its final reminder waits again from the new date. Only while the ticket waits on its holder - not once it is answered. The office's officers are told.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/tickets.py).

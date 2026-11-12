@@ -1,6 +1,6 @@
 {
-  "commit": "db40786e8ba7fd349b32241313dbc6f5f57951f7",
-  "migration_head": "0068",
+  "commit": "c98fcbb1256384c3ac5cd53baddfca80d9c91118",
+  "migration_head": "0069",
   "migrations": [
     {
       "revision": "0001",
@@ -269,6 +269,10 @@
     {
       "revision": "0068",
       "source": "backend/api/migrations/versions/0068_codes_given_and_knox.py"
+    },
+    {
+      "revision": "0069",
+      "source": "backend/api/migrations/versions/0069_holders_by_project_owner.py"
     }
   ],
   "postgres_version": "16.15",
@@ -7595,6 +7599,15 @@
       "comment": "Why the last transfer moved the request to this office; sealed, FREE_TEXT"
     },
     {
+      "table_name": "rights_request",
+      "name": "holders_derived_at",
+      "position": 56,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": "When the office last read the records for who holds her data; NULL: not yet"
+    },
+    {
       "table_name": "rights_request_attachment",
       "name": "attachment_id",
       "position": 1,
@@ -8043,6 +8056,15 @@
       "not_null": false,
       "default_value": null,
       "comment": null
+    },
+    {
+      "table_name": "rights_request_holder",
+      "name": "project_id",
+      "position": 41,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The project or activity whose owner this holder is (derived_from = project_owner); NULL otherwise"
     },
     {
       "table_name": "rights_request_item",
@@ -16398,6 +16420,22 @@
     },
     {
       "table_name": "rights_request_holder",
+      "name": "holder_project_is_an_owner",
+      "kind": "c",
+      "definition": "CHECK (((project_id IS NOT NULL) = (derived_from = 'project_owner'::rights_holder_source)))",
+      "columns": [
+        "project_id",
+        "derived_from"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_request_holder",
       "name": "holder_return_outcome",
       "kind": "c",
       "definition": "CHECK (((return_outcome IS NULL) OR ((return_outcome)::text = ANY ((ARRAY['done'::character varying, 'partial'::character varying, 'failed'::character varying])::text[]))))",
@@ -16517,6 +16555,23 @@
       "referenced_table": "processor",
       "referenced_columns": [
         "processor_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "rights_request_holder",
+      "name": "rights_request_holder_project_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (project_id) REFERENCES project(project_id)",
+      "columns": [
+        "project_id"
+      ],
+      "referenced_table": "project",
+      "referenced_columns": [
+        "project_id"
       ],
       "delete_action": "a",
       "update_action": "a",
@@ -18637,6 +18692,11 @@
     },
     {
       "table_name": "rights_request_holder",
+      "name": "rights_holder_one_per_project",
+      "definition": "CREATE UNIQUE INDEX rights_holder_one_per_project ON public.rights_request_holder USING btree (request_id, project_id) WHERE (project_id IS NOT NULL)"
+    },
+    {
+      "table_name": "rights_request_holder",
       "name": "rights_request_holder_holder_uuid_key",
       "definition": "CREATE UNIQUE INDEX rights_request_holder_holder_uuid_key ON public.rights_request_holder USING btree (holder_uuid)"
     },
@@ -18964,7 +19024,8 @@
         "export_line",
         "asset_consent",
         "manual",
-        "activity_processor"
+        "activity_processor",
+        "project_owner"
       ]
     },
     {
@@ -19915,10 +19976,10 @@
     "application_tables": 74,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 889,
-    "foreign_keys": 220,
+    "table_columns": 891,
+    "foreign_keys": 221,
     "enums": 39,
     "triggers": 82,
-    "checks": 132
+    "checks": 133
   }
 }

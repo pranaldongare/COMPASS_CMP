@@ -35,9 +35,14 @@ Naming who answers a rights-request ticket for an in-house processor
 means picking an account. Four fields, active staff only, and only for the
 two roles that manage the registry - not a way around the register.
 
+`role` narrows it to one role: the DCO Admins an office chooses between
+when a project's ticket goes to one of them (0069).
+
 ### Validation
 
-No path, query, header, or cookie parameters are declared for this operation.
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `role` | query | No | [`Role`](#schema-role) or `null` | — | — |
 
 ### Payload
 
@@ -48,6 +53,7 @@ No request body.
 | Status | Description | Content type | Schema |
 |---:|---|---|---|
 | `200` | Successful Response | `application/json` | array of [`CollectionOwner`](#schema-collectionowner) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
 
 **Example `200` `application/json` response:**
 
@@ -60,6 +66,24 @@ No request body.
     "role": "string"
   }
 ]
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
 ```
 
 <a id="2_get_users_collection_owners"></a>
@@ -173,6 +197,7 @@ No request body.
   "items": [
     {
       "uuid": "00000000-0000-4000-8000-000000000000",
+      "person_no": "…",
       "username": "…",
       "full_name": "string",
       "email": "…",
@@ -265,6 +290,7 @@ Request body required: **yes**.
 ```json
 {
   "uuid": "00000000-0000-4000-8000-000000000000",
+  "person_no": 1,
   "username": "string",
   "full_name": "string",
   "email": "string",
@@ -463,6 +489,7 @@ No request body.
 ```json
 {
   "uuid": "00000000-0000-4000-8000-000000000000",
+  "person_no": 1,
   "username": "string",
   "full_name": "string",
   "email": "string",
@@ -558,6 +585,7 @@ Request body required: **yes**.
 ```json
 {
   "uuid": "00000000-0000-4000-8000-000000000000",
+  "person_no": 1,
   "username": "string",
   "full_name": "string",
   "email": "string",
@@ -1174,6 +1202,7 @@ For state changes whose only interesting output is that they happened.
 | Field | Type | Required | Validation | Description |
 |---|---|---:|---|---|
 | `uuid` | `string` | Yes | format: `uuid` | — |
+| `person_no` | `integer` or `null` | No | — | — |
 | `username` | `string` or `null` | Yes | — | — |
 | `full_name` | `string` | Yes | — | — |
 | `email` | `string` or `null` | Yes | — | — |

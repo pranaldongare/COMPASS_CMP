@@ -9,7 +9,7 @@
 | GET | `/users` | `dpo`, `legal`, `admin` | Full session; anonymous NO |
 | POST | `/users` | `admin` | Full session; anonymous NO |
 | GET | `/users/collection-owners` | `admin`, `dco`, `dco_admin`, `dpo`, `rco`, `rnd_user` | Full session; anonymous NO |
-| GET | `/users/staff` | `admin`, `dpo` | Full session; anonymous NO |
+| GET | `/users/staff` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
 | GET | `/users/{user_uuid}` | `dpo`, `legal`, `admin` | Full session; anonymous NO |
 | PATCH | `/users/{user_uuid}` | `admin` | Full session; anonymous NO |
 | POST | `/users/{user_uuid}/deactivate` | `admin` | Full session; anonymous NO |
@@ -75,11 +75,11 @@ Active staff, for naming a processor's respondent.
 
 | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| ALL | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
+| ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
 
-- **Who:** `admin`, `dpo`.
-- **Route guard:** `Annotated[Any, Depends(RequireRole(Role.DPO, Role.ADMIN))]`.
-- **Rules:** Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff.
+- **Who:** `admin`, `dpo`, `legal`.
+- **Route guard:** `Annotated[Any, Depends(RequireRole(Role.DPO, Role.LEGAL, Role.ADMIN))]`.
+- **Rules:** Naming who answers a rights ticket means picking an account: four fields (uuid, name, email, role) of active staff, for the two officers and the administrator - not the account register, and not a way around it. `role` narrows the list to one role: the DCO Admins an office chooses between when a project's ticket goes to one of them (0069).
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/users.py#L133).
 
 ## GET /users/{user_uuid}

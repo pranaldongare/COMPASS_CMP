@@ -25,7 +25,7 @@ Done on 2026-10-08.
 | # | Change | Where |
 |---|---|---|
 | 1 | **The server says what a ticket may do next.** Each holder carries its `state` in plain words and its `moves`, each with a label, whether it is the main one, whether it needs a reason, whether it sends an email. The console draws buttons from that, never from a copy of the rules | `domain/rights/tickets.py`; `HolderOut.state`, `.moves`, `.overdue` |
-| 2 | **One table, one ticket dialog.** Holder · State · Due · Last activity · Next action; the row opens the ticket: what it was asked (the brief and the instruction, no longer hidden), the thread, the answer, and its actions - the main one first, the rest under *More* | `holders-card.tsx` |
+| 2 | **One table, one ticket dialog.** Holder · State · Due · Last activity · Next action; the row opens the ticket: what it was asked (the brief and the instruction, no longer hidden), the thread, the answer, and its actions - the main one first, *Send back* beside it (2026-11-12: it was the only thing under More), the rest under *More* | `holders-card.tsx` |
 | 3 | **A guided path.** Find who holds the data → Choose who answers → Send tickets → Wait for answers → Review answers; only the current step's controls show | `holders-card.tsx` |
 | 4 | **A review step.** An answer arrives as *Answered - review*; the DPO **Accepts** it or **Sends it back**. Only an accepted answer counts toward closing the request or toward an erasure being done. Partly done and could not do are amber and red, never a green "Returned" | migration 0048 `accepted_at`; `settle`, `execution`, `erasure` |
 | 5 | **Reopen** a withdrawn ticket, with a new date; the holder is told | `reopen_ticket` |
@@ -35,7 +35,7 @@ Done on 2026-10-08.
 | 9 | **One rule for overdue**, the server's: overdue once the due date has passed (the end of that day); a final reminder only then | `tickets.py` |
 | 10 | **Nobody left guessing.** The holder is told when the office records or accepts their answer; the person a ticket is moved away from is told; a holder cannot write on a closed request | `service.py` |
 | 11 | **Daily reminders** while overdue and unanswered, from the nightly sweep | `sweep_tickets` |
-| 12 | **My tasks for holders.** *To do · Waiting on the Privacy Office · Done*; a clear *Submit your answer* form - what was done, then a summary, then a file; the dialog stays open after a message; withdrawn and no-answer tickets say so | console `tickets/page.tsx` |
+| 12 | **My tasks for holders.** *To do · Waiting on the Privacy Office · Done*; a clear *Submit your answer* form - what was done, then a summary, then a file; the dialog stays open after a message; withdrawn and no-answer tickets say so. Since 2026-11-12 answering and messaging are two tabs, *Answer the ticket* and *Messages*, with *Submit answer* and *Send message*: side by side, a message was taken for the answer. The portal's link for an outside holder has the same two tabs | console `tickets/page.tsx`, portal `ticket-view.tsx` |
 
 ## Phase 2: external holders on the portal, internal without a login, per-holder instructions
 

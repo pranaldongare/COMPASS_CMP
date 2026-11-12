@@ -8,6 +8,75 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Consent ID, Person ID and Project ID, as numbers** (2026-11-12). The three
+  numbers the Data Collection Tool needs are shown in the console and written
+  to what a collection owner exports: columns on the consent register, on a
+  project's consents and on the projects list, and fields on a consent, a
+  project and an account. The consent CSV gains `project_id`, `consent_id` and
+  `person_id` beside the uuids; the Data Collection Tool's consented list
+  keeps its contract's three uuid columns and adds `project_no`, `person_no`
+  and `consent_no` after them, which its validator and loader accept. They
+  are the tables' own serial numbers: unique, never reused, with gaps. On the
+  wire they are `consent_no`, `person_no` and `project_no`, read-only - every
+  route still takes the uuid, and a test keeps them out of every request.
+- **A rights ticket's date can be changed, with the reason** (2026-11-12), as
+  a breach ticket's can. The office changes **Answer by** on a holder's
+  ticket, and the holder on their own - in My tasks or by the ticket's link -
+  while it waits on them. A reason is required; the date cannot pass the
+  response's own date; no approval is asked and the other side is told. The
+  old date, the new date and who changed it are on the ticket's messages, its
+  contact log and the audit trail (`rights.ticket_date_changed`). The reason's
+  words stay on the ticket: the trail marks that one was given and names the
+  message that holds it (ADR 0015), and a member of staff reading the trail -
+  the Audit page, a request's history, the audit CSV's new `reason` column -
+  is shown the reason from there. A ticket past its final reminder waits
+  again from the new date. Three operations:
+  `POST /requests/{uuid}/holders/{uuid}/answer-by`,
+  `POST /tickets/{uuid}/answer-by`, `POST /holder-tickets/{token}/answer-by`.
+- **Breach tickets look and read like rights tickets** (2026-11-12).
+  - **Assign a ticket** has one search box: type three letters of a name, or
+    an email address, and the matching staff are listed to choose from. It
+    replaces "Find them" above a "Who" drop-down. The fields read **Assign
+    to**, **Instruction**, **Resolve by**, **Attachment**.
+  - In the tickets table each row ends in a button: **Review the answer**
+    when the holder has answered, **Open** otherwise; the holder's name opens
+    the ticket too.
+  - The ticket window is laid out as a rights ticket is: the date with
+    **Change the date**, the holder's answer, then **Close the ticket**,
+    **Send back** and **Withdraw** as buttons, then the messages. States read
+    **Waiting on the holder** and **Answered - review**.
+  - A holder answers on **Answer the ticket** and writes on **Messages**, with
+    **Submit answer** and **Send message**, as on a rights ticket.
+  - Shorter labels through the breach screens: **Reason for dismissal**,
+    **Claim for this office**, **Open report**, **Retry**, **Record a Board
+    extension**, **Reason it is not reportable**, **Search for a person**.
+- **Rights requests: owners found, documents with a refusal, clearer ticket
+  windows** (2026-11-12).
+  - *Find who holds the data* no longer comes back empty for a person with
+    consents on record. Where no export, asset or category processor names a
+    holder for a project or activity she gave consent in, somebody is asked
+    in the console: a DCO Admin for a project (chosen at **Confirm who
+    answers** where the office has several), the HR PoC who runs an activity.
+    A consent with nobody to ask is listed under the holders (migration 0069;
+    `unowned_consents` and `holders_derived_at` on the request's detail,
+    `responder_user_uuid` on a holder's confirm, `?role=` on `/users/staff`).
+  - **My consents** is a list with the chosen consent beside it - its
+    purposes, notice and history as tabs - in shorter words ("View notice"
+    was "Show the exact notice I was given"), and withdrawing asks first.
+  - A ticket holder answers on **Answer the ticket** and writes on
+    **Messages**, two tabs in the console's My tasks and on the portal link:
+    a message typed and sent is no longer taken for the answer. The buttons
+    read **Submit answer** and **Send message**.
+  - Shorter labels across both apps: **Send code** / **Resend code**,
+    **Verify identity**, **Validate only**, **Use default wording**,
+    **Enter code manually**, **Escalate (about me)**, **Done**.
+  - A refusal can carry documents, as a response can: **Attach files** beside
+    the reason. They are named in the mail and downloaded from the person's
+    account (`POST /requests/{uuid}/refuse` is now a form).
+  - **Send back** stands beside **Accept the answer** in a holder's ticket; a
+    menu of one thing is a button.
+  - Files for a response are chosen with an **Attach files** button, which
+    also says at once when a file is too large or of a kind not taken.
 - **Codes are given, not typed; record pages carry their actions; Knox; dates
   bounded; "Assign"** (2026-11-11). A new purpose is numbered `PUR-0001` and a
   new data source `SRC-0001` by the platform (migration 0068): the console no
@@ -1072,6 +1141,16 @@ as a release yet.
 - `CONTRIBUTING.md`.
 
 ### Changed
+- **A pop-up asks about unsaved changes only when there are some**
+  (2026-11-12). The Respondents window after a respondent was added, and a
+  ticket after it was sent back or a move was cancelled, went on saying "You
+  have changes that are not saved". Each form that finishes and leaves its
+  window open now answers for its own fields (`useDialogPart`), so one form
+  finishing does not hide another's half-typed words; the consent-link panel
+  asks in its own words before a link shown once is lost (`useDialogHold`).
+- **The portal no longer offers "Download your data"** on a rights request
+  (2026-11-12). The answer is read on the page and in the mail; files released
+  with it are still downloaded there. The response mail says so.
 - **A CERT-In mark is set aside whatever validation says** (2026-11-07, the
   product owner's answer, ADR 0037). It was first allowed only once the latest
   validation was *no*; 409 `cert_in_not_validated_no` is gone, and a mark made

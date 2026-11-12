@@ -199,6 +199,39 @@ has been sent to it. Each confirmed holder gets one **ticket**: the
 instruction to return what it holds, addressed to a **respondent** of that
 processor.
 
+**Where no record names a processor, a DCO Admin or the HR owner is asked**
+(0069, 2026-11-12). Every consent is given against a project or an activity,
+and until something has been exported or an asset registered - or where an HR
+category names no processors - the three records above find nobody, and the
+list was empty for a person with consents on record. For each such project
+*Find who holds the data* now adds one holder, `project_owner`, labelled with
+the project and answered in the console:
+
+* **a project - by a DCO Admin** of its office (the product owner's decision,
+  2026-11-12): the role that routes a project's collection, and never the
+  project's own Data Collection Owner. Where the office has one DCO Admin
+  they are named. Where it has several the holder is found with nobody
+  named, and the office chooses one as it confirms the holder
+  (`responder_user_uuid` on `.../confirm`; the console lists them from
+  `GET /users/staff?role=dco_admin`). Only a DCO Admin can be chosen that
+  way; anybody else is typed by name and email, as for any holder.
+* **an activity - by its HR PoC** (`project.dco_user_id`), else the first HR
+  PoC assigned to its category.
+
+Only an active member of staff counts. A project one of the three records
+already names a processor for is left to that processor. A consent later
+withdrawn counts, because her data was held; one on which she agreed to
+nothing does not. The office's own projects only: a request is one office's.
+The ticket opens with her consents, the exports and the assets of that
+project (`holder_brief`, by project).
+
+**A consent nobody could be found for is listed, not dropped.** Where there
+is nobody to ask - an office with no DCO Admin, an activity with no HR PoC -
+the request's detail carries it in `unowned_consents` - project, notice and
+date - once the records have been read (`holders_derived_at`), and the
+holders card lists them under the table: the office adds whoever holds that
+data by hand, or finds again once there is somebody.
+
 **Every holder needs an email address** (2026-10-08): whoever answers is
 emailed the ticket. A holder is not added or confirmed without one, or a
 registered respondent who signs in; sending tickets refuses any holder still
@@ -301,6 +334,35 @@ it is told), **reminded**, **withdrawn**, and **reopened** with a new date. A **
 reminder** is sent only once a ticket is overdue; after it the response may go out partial,
 naming the gap. The last answer accepted moves the request off `awaiting_holders`. A holder
 cannot write on a closed request.
+
+**The date a ticket is to be answered by can be changed, with the reason**
+(2026-11-12), as a breach ticket's can. The office changes it on the holder's
+ticket (`POST /requests/{uuid}/holders/{uuid}/answer-by`); the holder changes
+their own while the ticket waits on them, in My tasks
+(`POST /tickets/{uuid}/answer-by`) or by the ticket's link
+(`POST /holder-tickets/{token}/answer-by`). No approval is asked. The rules are
+the same for both: the request is open and being worked on, the ticket is
+waiting, a reason is given, and the date is ahead of today, not the day it
+already has, and **not after the response's own date** - a ticket never falls
+due after the answer it feeds. The other side is told the way it is reached.
+A ticket that had its final reminder waits again from the new date, and a
+request that had gone on to collating for want of it is awaiting holders once
+more.
+
+Where the change is kept: on the ticket's messages, in words ("Answer by
+changed from 20 November 2026 to 27 November 2026: …"); on its contact log
+(`date_changed`); and on the audit trail as `rights.ticket_date_changed`, with
+the holder, which side changed it, the date before and the date after. **The
+reason is read in the trail and is not written into it.** The trail marks
+`reason_given` and names the message that holds the words (`message_uuid`), as
+[ADR 0015](../decisions/0015-nothing-erasable-in-a-trail-nobody-can-erase.md)
+requires of every reason; when a member of staff reads the trail - the Audit
+page, a request's history, the dashboard's feed - the entry comes with
+`reason`, the message's own sealed words read at that moment, and the console
+says "The office changed a ticket's answer-by date from … to …. Reason: …".
+The audit CSV has a `reason` column for the same. A data principal reading her
+own trail is never given it, and once the message is gone the entry says only
+that a reason was given.
 
 **Breach tickets follow this model** ([breaches.md](breaches.md#breach-tickets),
 ADR 0023): an instruction, a thread with files, a return saying done, partial or
@@ -479,6 +541,18 @@ no account answered by text, that is the whole answer
 The response is sent to her by email and appears on her portal page, together with
 any **response files** the office released, each downloadable for a bounded
 period (`RIGHTS_DOWNLOAD_TTL_DAYS`, 30 by default) and hashed on the row.
+The record as a data file is no longer offered on her page (2026-11-12): she
+reads the answer there and in the mail, and downloads the files. The office
+still downloads the record from the request, and `GET
+/me/requests/{uuid}/download` still answers; `download_available` now means
+that files can be downloaded.
+
+**A refusal can carry documents** (2026-11-12): the letter, schedule or order
+it rests on. `POST /requests/{uuid}/refuse` is a form, as `respond` is - the
+reason and any files - and they are kept as response files, named in the mail
+and (sealed) on the trail, and downloaded from her account on the same window.
+A request with no account behind it has nowhere to download from: its mail
+names them and says to reply for a copy.
 She can **dispute** a closed request from the portal, which opens a grievance
 linked to it, and a grievance carries the request it disputes.
 

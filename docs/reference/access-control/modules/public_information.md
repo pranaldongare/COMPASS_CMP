@@ -2,7 +2,7 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-18 operations; 18 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
+19 operations; 19 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
@@ -23,6 +23,7 @@
 | GET | `/holder-tickets/{token}/ticket` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | No session required; anonymous COND |
 | POST | `/holder-tickets/{token}/messages` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | No session required; anonymous COND |
 | POST | `/holder-tickets/{token}/answer` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | No session required; anonymous COND |
+| POST | `/holder-tickets/{token}/answer-by` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | No session required; anonymous COND |
 | GET | `/holder-tickets/{token}/messages/{message_uuid}/evidence` | `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder` | No session required; anonymous COND |
 
 ## GET /notice/{notice_uuid}
@@ -252,6 +253,20 @@ An outside holder gives its answer.
 - **Resolved gate:** `Public; no session dependency`.
 - **Rules:** A valid ticket link: the token's keyed fingerprint names an issued ticket, and the link is that ticket's current one (a ticket sent to somebody else has a new link). Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. And the hour the code opened: the HttpOnly, SameSite=Strict `cmp_ticket` cookie, whose fingerprint in Redis names this ticket and this link (401 `code_needed` otherwise). Only an open ticket on an open request (409). What was done (done, partial, failed), what is held, and proof; it waits for the office to accept it or send it back. On the trail with no actor, channel `link`. (0049)
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py).
+
+## POST /holder-tickets/{token}/answer-by
+
+Change the date the answer is due, with the reason.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | NO | NO |
+
+- **Who:** `dpo`, `admin`, `dco`, `dco_admin`, `rco`, `rnd_user`, `data_subject`, `breach_holder`.
+- **Route guard:** `Public; no session dependency`.
+- **Resolved gate:** `Public; no session dependency`.
+- **Rules:** A valid ticket link: the token's keyed fingerprint names an issued ticket, and the link is that ticket's current one (a ticket sent to somebody else has a new link). Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. And the hour the code opened: the HttpOnly, SameSite=Strict `cmp_ticket` cookie, whose fingerprint in Redis names this ticket and this link (401 `code_needed` otherwise). The date a ticket is to be answered by, moved with the reason (2026-11-12). Only on an open request that is being worked on (409 `request_not_open`) and a ticket that is waiting (409 `ticket_not_open`). A reason is required (422); a date that has passed, a date after the response's own, and the date it already has are refused (422). No approval. The old date, the new one and the reason go on the ticket's thread and its contact log; the trail (`rights.ticket_date_changed`) holds the two dates, which side moved it, that a reason was given and the message that keeps it - never the words (ADR 0015). A ticket that had its final reminder waits again from the new date. Only while the ticket waits on its holder. The office's officers are told. On the trail with no actor, channel `link`.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/holder_tickets.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/holder_link.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py).
 
 ## GET /holder-tickets/{token}/messages/{message_uuid}/evidence
 

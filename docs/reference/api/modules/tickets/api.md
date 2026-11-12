@@ -1,6 +1,6 @@
 # Tickets API
 
-Generated from `backend/api/openapi.json`. **5 operations.**
+Generated from `backend/api/openapi.json`. **6 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -10,7 +10,8 @@ For each operation the information is deliberately ordered as **API → Validati
 2. [`GET /tickets/{holder_uuid}`](#2_get_tickets_holder_uuid)
 3. [`POST /tickets/{holder_uuid}/messages`](#3_post_tickets_holder_uuid_messages)
 4. [`GET /tickets/{holder_uuid}/messages/{message_uuid}/evidence`](#4_get_tickets_holder_uuid_messages_message_uuid_evidence)
-5. [`POST /tickets/{holder_uuid}/return`](#5_post_tickets_holder_uuid_return)
+5. [`POST /tickets/{holder_uuid}/answer-by`](#5_post_tickets_holder_uuid_answer_by)
+6. [`POST /tickets/{holder_uuid}/return`](#6_post_tickets_holder_uuid_return)
 
 <a id="1_get_tickets"></a>
 ## 1. `GET /tickets` — Tickets addressed to me
@@ -72,6 +73,8 @@ No request body.
     "state": "",
     "state_label": "",
     "overdue": false,
+    "may_change_date": false,
+    "request_due_at": "2026-09-17T12:00:00Z",
     "consent_uuid": "00000000-0000-4000-8000-000000000000",
     "consent_project": "string",
     "consent_notice_code": "string",
@@ -145,6 +148,8 @@ No request body.
     "state": "",
     "state_label": "",
     "overdue": false,
+    "may_change_date": false,
+    "request_due_at": "2026-09-17T12:00:00Z",
     "consent_uuid": "00000000-0000-4000-8000-000000000000",
     "consent_project": "string",
     "consent_notice_code": "string",
@@ -272,6 +277,8 @@ Request body required: **yes**.
     "state": "",
     "state_label": "",
     "overdue": false,
+    "may_change_date": false,
+    "request_due_at": "2026-09-17T12:00:00Z",
     "consent_uuid": "00000000-0000-4000-8000-000000000000",
     "consent_project": "string",
     "consent_notice_code": "string",
@@ -378,8 +385,110 @@ No request body.
 }
 ```
 
-<a id="5_post_tickets_holder_uuid_return"></a>
-## 5. `POST /tickets/{holder_uuid}/return` — Return a ticket addressed to me
+<a id="5_post_tickets_holder_uuid_answer_by"></a>
+## 5. `POST /tickets/{holder_uuid}/answer-by` — Change the date my answer is due, with the reason
+
+### API
+
+- **Operation ID:** `change_my_ticket_date_tickets__holder_uuid__answer_by_post`
+- **Access:** Role-controlled `tickets` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+While the ticket waits on me. The Privacy Office is told, and the
+reason is on the thread and the trail.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `holder_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`TicketDateIn`](#schema-ticketdatein)
+
+```json
+{
+  "due_at": "2026-09-17T12:00:00Z",
+  "reason": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`TicketOut`](#schema-ticketout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "holder_uuid": "00000000-0000-4000-8000-000000000000",
+  "request_uuid": "00000000-0000-4000-8000-000000000000",
+  "reference": "string",
+  "request_type": "string",
+  "request_status": "string",
+  "label": "string",
+  "subject_name": "string",
+  "instruction": "string",
+  "ticket_status": "string",
+  "issued_at": "2026-09-17T12:00:00Z",
+  "due_at": "2026-09-17T12:00:00Z",
+  "escalated_at": "2026-09-17T12:00:00Z",
+  "returned_at": "2026-09-17T12:00:00Z",
+  "return_summary": "string",
+  "return_outcome": "string",
+  "return_evidence_hash": "string",
+  "brief": {},
+  "message_count": 0,
+  "unread_for_holder": 0,
+  "last_reminded_at": "2026-09-17T12:00:00Z",
+  "reminders_sent": 0,
+  "return_evidence_name": "string",
+  "sent_back_at": "2026-09-17T12:00:00Z",
+  "sent_back_reason": "string",
+  "sent_back_count": 0,
+  "accepted_at": "2026-09-17T12:00:00Z",
+  "state": "",
+  "state_label": "",
+  "overdue": false,
+  "may_change_date": false,
+  "request_due_at": "2026-09-17T12:00:00Z",
+  "consent_uuid": "00000000-0000-4000-8000-000000000000",
+  "consent_project": "string",
+  "consent_notice_code": "string",
+  "consent_notice_version": 1,
+  "consent_at": "2026-09-17T12:00:00Z",
+  "consent_purposes": [
+    "string"
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="6_post_tickets_holder_uuid_return"></a>
+## 6. `POST /tickets/{holder_uuid}/return` — Return a ticket addressed to me
 
 ### API
 
@@ -447,6 +556,8 @@ Request body required: **yes**.
   "state": "",
   "state_label": "",
   "overdue": false,
+  "may_change_date": false,
+  "request_due_at": "2026-09-17T12:00:00Z",
   "consent_uuid": "00000000-0000-4000-8000-000000000000",
   "consent_project": "string",
   "consent_notice_code": "string",
@@ -502,6 +613,16 @@ Request body required: **yes**.
 |---|---|---:|---|---|
 | `detail` | array of [`ValidationError`](#schema-validationerror) | No | — | — |
 
+<a id="schema-ticketdatein"></a>
+#### `TicketDateIn`
+
+A new date for a ticket to be answered by, and why (2026-11-12).
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `due_at` | `string` | Yes | format: `date-time` | — |
+| `reason` | `string` | Yes | max length: `1000` | — |
+
 <a id="schema-ticketdetailout"></a>
 #### `TicketDetailOut`
 
@@ -547,6 +668,8 @@ A ticket as its respondent sees it: what is asked, of whom, by when.
 | `state` | `string` | No | default: `` | — |
 | `state_label` | `string` | No | default: `` | — |
 | `overdue` | `boolean` | No | default: `False` | — |
+| `may_change_date` | `boolean` | No | default: `False` | — |
+| `request_due_at` | `string` or `null` | No | format: `date-time` | — |
 | `consent_uuid` | `string` or `null` | No | format: `uuid` | — |
 | `consent_project` | `string` or `null` | No | — | — |
 | `consent_notice_code` | `string` or `null` | No | — | — |

@@ -2,7 +2,7 @@
 
 [Guide](../README.md) · [Role legend](../roles_and_scopes.md) · [Implementation notes](../implementation_notes.md)
 
-53 operations; 53 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
+54 operations; 54 appear in the existing OpenAPI/API docs. Snapshot `1757d50`.
 
 | Method | Endpoint | Who has access | Authentication / anonymous |
 | --- | --- | --- | --- |
@@ -29,6 +29,7 @@
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/remind` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/return` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/send-back` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/answer-by` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
 | GET | `/requests/{request_uuid}/holders/{holder_uuid}/thread` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/thread` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/withdraw` | `admin`, `dpo`, `legal` | Full session; anonymous NO |
@@ -383,6 +384,20 @@ Send a returned ticket back to its holder.
 - **Resolved gate:** `RequireResource(rights_request, write=True)`.
 - **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.
 - **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L1102), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/db/repositories/rights.py#L99), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/domain/rights/state_machine.py#L109).
+
+## POST /requests/{request_uuid}/holders/{holder_uuid}/answer-by
+
+Change the date a ticket is to be answered by, with the reason.
+
+| DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
+
+- **Who:** `admin`, `dpo`, `legal`.
+- **Route guard:** `RightsWriter`.
+- **Resolved gate:** `RequireResource(rights_request, write=True)`.
+- **Rules:** DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests. Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it. The date a ticket is to be answered by, moved with the reason (2026-11-12). Only on an open request that is being worked on (409 `request_not_open`) and a ticket that is waiting (409 `ticket_not_open`). A reason is required (422); a date that has passed, a date after the response's own, and the date it already has are refused (422). No approval. The old date, the new one and the reason go on the ticket's thread and its contact log; the trail (`rights.ticket_date_changed`) holds the two dates, which side moved it, that a reason was given and the message that keeps it - never the words (ADR 0015). A ticket that had its final reminder waits again from the new date. The holder is told.
+- **Evidence:** [source 1](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py), [source 2](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py), [source 3](https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/tickets.py).
 
 ## GET /requests/{request_uuid}/holders/{holder_uuid}/thread
 

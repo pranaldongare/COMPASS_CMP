@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 398,
-  "registered_business_and_system_operations": 401,
+  "documented_operations": 401,
+  "registered_business_and_system_operations": 404,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -8277,6 +8277,49 @@
     },
     {
       "module": "rights",
+      "method": "POST",
+      "path": "/requests/{request_uuid}/holders/{holder_uuid}/answer-by",
+      "summary": "Change the date a ticket is to be answered by, with the reason",
+      "function": "change_ticket_date",
+      "operation_id": "change_ticket_date_requests__request_uuid__holders__holder_uuid__answer_by_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RightsWriter",
+      "resolved_gate": "RequireResource(rights_request, write=True)",
+      "route_roles": [
+        "admin",
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "rights_request",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "SCOPED",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.",
+        "The date a ticket is to be answered by, moved with the reason (2026-11-12). Only on an open request that is being worked on (409 `request_not_open`) and a ticket that is waiting (409 `ticket_not_open`). A reason is required (422); a date that has passed, a date after the response's own, and the date it already has are refused (422). No approval. The old date, the new one and the reason go on the ticket's thread and its contact log; the trail (`rights.ticket_date_changed`) holds the two dates, which side moved it, that a reason was given and the message that keeps it - never the words (ADR 0015). A ticket that had its final reminder waits again from the new date. The holder is told."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/tickets.py"
+      ]
+    },
+    {
+      "module": "rights",
       "method": "GET",
       "path": "/requests/{request_uuid}/holders/{holder_uuid}/thread",
       "summary": "The ticket's thread, as the office reads it",
@@ -9630,6 +9673,52 @@
       ]
     },
     {
+      "module": "tickets",
+      "method": "POST",
+      "path": "/tickets/{holder_uuid}/answer-by",
+      "summary": "Change the date my answer is due, with the reason",
+      "function": "change_my_ticket_date",
+      "operation_id": "change_my_ticket_date_tickets__holder_uuid__answer_by_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "TicketWriter",
+      "resolved_gate": "RequireResource(ticket, write=True)",
+      "route_roles": [
+        "admin",
+        "dco",
+        "dco_admin",
+        "dpo",
+        "rco",
+        "rnd_user",
+        "breach_holder"
+      ],
+      "inline_role_checks": [],
+      "resource": "ticket",
+      "write_gate": true,
+      "access": {
+        "dpo": "OWN",
+        "admin": "OWN",
+        "dco": "OWN",
+        "dco_admin": "OWN",
+        "rco": "OWN",
+        "rnd_user": "OWN",
+        "data_subject": "NO",
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "Any staff role can use tickets addressed to that account only (respondent_user_id). This does not grant the staff member the full rights-request register.",
+        "The date a ticket is to be answered by, moved with the reason (2026-11-12). Only on an open request that is being worked on (409 `request_not_open`) and a ticket that is waiting (409 `ticket_not_open`). A reason is required (422); a date that has passed, a date after the response's own, and the date it already has are refused (422). No approval. The old date, the new one and the reason go on the ticket's thread and its contact log; the trail (`rights.ticket_date_changed`) holds the two dates, which side moved it, that a reason was given and the message that keeps it - never the words (ADR 0015). A ticket that had its final reminder waits again from the new date. Only while the ticket waits on its holder - not once it is answered. The office's officers are told."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/rights.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/tickets.py"
+      ]
+    },
+    {
       "module": "users",
       "method": "GET",
       "path": "/users",
@@ -9761,11 +9850,12 @@
       "in_openapi": true,
       "authentication": "Full session",
       "anonymous": "NO",
-      "gate": "Annotated[Any, Depends(RequireRole(Role.DPO, Role.ADMIN))]",
-      "resolved_gate": "Annotated[Any, Depends(RequireRole(Role.DPO, Role.ADMIN))]",
+      "gate": "Annotated[Any, Depends(RequireRole(Role.DPO, Role.LEGAL, Role.ADMIN))]",
+      "resolved_gate": "Annotated[Any, Depends(RequireRole(Role.DPO, Role.LEGAL, Role.ADMIN))]",
       "route_roles": [
         "admin",
-        "dpo"
+        "dpo",
+        "legal"
       ],
       "inline_role_checks": [],
       "resource": "",
@@ -9779,11 +9869,11 @@
         "rnd_user": "NO",
         "data_subject": "NO",
         "breach_holder": "NO",
-        "legal": "NO",
+        "legal": "ALL",
         "hr_user": "NO"
       },
       "conditions": [
-        "Account register: DPO/Admin read, Admin provisions or changes accounts. Access is not inherited merely because another role is staff."
+        "Naming who answers a rights ticket means picking an account: four fields (uuid, name, email, role) of active staff, for the two officers and the administrator - not the account register, and not a way around it. `role` narrows the list to one role: the DCO Admins an office chooses between when a project's ticket goes to one of them (0069)."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/users.py#L133"
@@ -14429,6 +14519,52 @@
     },
     {
       "module": "public_information",
+      "method": "POST",
+      "path": "/holder-tickets/{token}/answer-by",
+      "summary": "Change the date the answer is due, with the reason",
+      "function": "change_date",
+      "operation_id": "",
+      "in_openapi": true,
+      "authentication": "No session required",
+      "anonymous": "COND",
+      "gate": "Public; no session dependency",
+      "resolved_gate": "Public; no session dependency",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "data_subject",
+        "breach_holder"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "PUBLIC",
+        "admin": "PUBLIC",
+        "dco": "PUBLIC",
+        "dco_admin": "PUBLIC",
+        "rco": "PUBLIC",
+        "rnd_user": "PUBLIC",
+        "data_subject": "PUBLIC",
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "A valid ticket link: the token's keyed fingerprint names an issued ticket, and the link is that ticket's current one (a ticket sent to somebody else has a new link). Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. And the hour the code opened: the HttpOnly, SameSite=Strict `cmp_ticket` cookie, whose fingerprint in Redis names this ticket and this link (401 `code_needed` otherwise). The date a ticket is to be answered by, moved with the reason (2026-11-12). Only on an open request that is being worked on (409 `request_not_open`) and a ticket that is waiting (409 `ticket_not_open`). A reason is required (422); a date that has passed, a date after the response's own, and the date it already has are refused (422). No approval. The old date, the new one and the reason go on the ticket's thread and its contact log; the trail (`rights.ticket_date_changed`) holds the two dates, which side moved it, that a reason was given and the message that keeps it - never the words (ADR 0015). A ticket that had its final reminder waits again from the new date. Only while the ticket waits on its holder. The office's officers are told. On the trail with no actor, channel `link`."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/holder_tickets.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/holder_link.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/rights/service.py"
+      ]
+    },
+    {
+      "module": "public_information",
       "method": "GET",
       "path": "/holder-tickets/{token}/messages/{message_uuid}/evidence",
       "summary": "Download a file on the ticket's messages",
@@ -16813,6 +16949,11 @@
       "on": "2026-11-11",
       "commit": "DCT consented list",
       "note": "One operation added: POST /projects/{project_uuid}/exports/dct-consented-list (dpo, legal; dco, dco_admin, rco and hr_user scoped; ExportActor), the consented list the Data Collection Tool loads, to its data contract v1. export_type gains dct_consented_list (0067); downloads go through GET /exports/{export_uuid}/download, which names the file consented_list_<project_id>_<YYYYMMDD>.csv."
+    },
+    {
+      "on": "2026-11-12",
+      "commit": "A rights ticket's date, changed with the reason",
+      "note": "Three operations added: POST /requests/{request_uuid}/holders/{holder_uuid}/answer-by (dpo, legal, admin scoped; RightsWriter), POST /tickets/{holder_uuid}/answer-by (the member of staff the ticket is addressed to; TicketWriter) and POST /holder-tickets/{token}/answer-by (the ticket's link and its code). Either side moves the date a ticket is to be answered by, with the reason, never past the response's own date; the trail (rights.ticket_date_changed) marks that a reason was given and names the ticket message that keeps it, and an audit entry served to staff carries `reason`, read from that message (GET /audit, GET /audit/{log_uuid}; GET /audit/export.csv gains a `reason` column). GET /users/staff corrected: the Legal PoC has been in its guard since the offices were separated, and `role` narrows the list (0069). POST /requests/{request_uuid}/refuse is multipart and may carry documents. No guard changed."
     }
   ]
 }

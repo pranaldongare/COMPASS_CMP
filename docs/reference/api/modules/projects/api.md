@@ -219,6 +219,7 @@ No request body.
   "items": [
     {
       "project_uuid": "00000000-0000-4000-8000-000000000000",
+      "project_no": "…",
       "project_name": "string",
       "internal_project_name": "…",
       "description": "…",
@@ -298,6 +299,7 @@ Request body required: **yes**.
 ```json
 {
   "project_uuid": "00000000-0000-4000-8000-000000000000",
+  "project_no": 1,
   "project_name": "string",
   "internal_project_name": "string",
   "description": "string",
@@ -360,6 +362,7 @@ No request body.
 ```json
 {
   "project_uuid": "00000000-0000-4000-8000-000000000000",
+  "project_no": 1,
   "project_name": "string",
   "internal_project_name": "string",
   "description": "string",
@@ -434,6 +437,7 @@ Request body required: **yes**.
 ```json
 {
   "project_uuid": "00000000-0000-4000-8000-000000000000",
+  "project_no": 1,
   "project_name": "string",
   "internal_project_name": "string",
   "description": "string",
@@ -1841,6 +1845,7 @@ For state changes whose only interesting output is that they happened.
 | Field | Type | Required | Validation | Description |
 |---|---|---:|---|---|
 | `project_uuid` | `string` | Yes | format: `uuid` | — |
+| `project_no` | `integer` or `null` | No | — | — |
 | `project_name` | `string` | Yes | — | — |
 | `internal_project_name` | `string` or `null` | Yes | — | — |
 | `description` | `string` or `null` | Yes | — | — |

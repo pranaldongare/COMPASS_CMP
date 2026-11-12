@@ -111,6 +111,9 @@ ACCOUNT_REF = {
     "nominee_user_uuid", "nominee_user_id", "person_uuid",
     # A breach's person with no account (0045): the row holding their contacts.
     "contact_uuid", "contact_id",
+    # The account's own number, shown as the Person ID and carried to the Data
+    # Collection Tool (2026-11-12): it singles out one person, as the uuid does.
+    "person_no",
 }
 FREE_TEXT = {
     "request_text", "response_text", "remedy_text", "verification_note",
@@ -146,6 +149,8 @@ CONSENT = {
     "action_type", "disposition", "bystander_count", "subject_count",
     "other_subjects", "mapped_asset_count", "has_unmapped_subjects",
     "refused_count", "consents", "withdrawals", "registrations",
+    # A consent's own number, shown as the Consent ID (2026-11-12).
+    "consent_no",
 }
 
 #: Worked out from a sealed value so a row can be found without opening it: a

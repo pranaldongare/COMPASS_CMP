@@ -1,6 +1,6 @@
 # Holder Tickets API
 
-Generated from `backend/api/openapi.json`. **8 operations.**
+Generated from `backend/api/openapi.json`. **9 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -13,7 +13,8 @@ For each operation the information is deliberately ordered as **API → Validati
 5. [`GET /holder-tickets/{token}/ticket`](#5_get_holder_tickets_token_ticket)
 6. [`POST /holder-tickets/{token}/messages`](#6_post_holder_tickets_token_messages)
 7. [`POST /holder-tickets/{token}/answer`](#7_post_holder_tickets_token_answer)
-8. [`GET /holder-tickets/{token}/messages/{message_uuid}/evidence`](#8_get_holder_tickets_token_messages_message_uuid_evidence)
+8. [`POST /holder-tickets/{token}/answer-by`](#8_post_holder_tickets_token_answer_by)
+9. [`GET /holder-tickets/{token}/messages/{message_uuid}/evidence`](#9_get_holder_tickets_token_messages_message_uuid_evidence)
 
 <a id="1_get_holder_tickets_token"></a>
 ## 1. `GET /holder-tickets/{token}` — What the link opens, before the code
@@ -291,6 +292,8 @@ No request body.
     "state": "",
     "state_label": "",
     "overdue": false,
+    "may_change_date": false,
+    "request_due_at": "2026-09-17T12:00:00Z",
     "consent_uuid": "00000000-0000-4000-8000-000000000000",
     "consent_project": "string",
     "consent_notice_code": "string",
@@ -416,6 +419,8 @@ Request body required: **yes**.
     "state": "",
     "state_label": "",
     "overdue": false,
+    "may_change_date": false,
+    "request_due_at": "2026-09-17T12:00:00Z",
     "consent_uuid": "00000000-0000-4000-8000-000000000000",
     "consent_project": "string",
     "consent_notice_code": "string",
@@ -544,6 +549,8 @@ Request body required: **yes**.
     "state": "",
     "state_label": "",
     "overdue": false,
+    "may_change_date": false,
+    "request_due_at": "2026-09-17T12:00:00Z",
     "consent_uuid": "00000000-0000-4000-8000-000000000000",
     "consent_project": "string",
     "consent_notice_code": "string",
@@ -600,8 +607,137 @@ Request body required: **yes**.
 }
 ```
 
-<a id="8_get_holder_tickets_token_messages_message_uuid_evidence"></a>
-## 8. `GET /holder-tickets/{token}/messages/{message_uuid}/evidence` — Download a file on the ticket's messages
+<a id="8_post_holder_tickets_token_answer_by"></a>
+## 8. `POST /holder-tickets/{token}/answer-by` — Change the date the answer is due, with the reason
+
+### API
+
+- **Operation ID:** `change_date_holder_tickets__token__answer_by_post`
+- **Access:** Role-controlled `holder tickets` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+While the ticket waits on its holder. The Privacy Office is told.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `token` | path | Yes | `string` | min length: `20`; max length: `64`; pattern: `^[A-Za-z0-9_-]+$` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`TicketDateIn`](#schema-ticketdatein)
+
+```json
+{
+  "due_at": "2026-09-17T12:00:00Z",
+  "reason": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`TicketDetailOut`](#schema-ticketdetailout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "ticket": {
+    "holder_uuid": "00000000-0000-4000-8000-000000000000",
+    "request_uuid": "00000000-0000-4000-8000-000000000000",
+    "reference": "string",
+    "request_type": "string",
+    "request_status": "string",
+    "label": "string",
+    "subject_name": "string",
+    "instruction": "string",
+    "ticket_status": "string",
+    "issued_at": "2026-09-17T12:00:00Z",
+    "due_at": "2026-09-17T12:00:00Z",
+    "escalated_at": "2026-09-17T12:00:00Z",
+    "returned_at": "2026-09-17T12:00:00Z",
+    "return_summary": "string",
+    "return_outcome": "string",
+    "return_evidence_hash": "string",
+    "brief": {},
+    "message_count": 0,
+    "unread_for_holder": 0,
+    "last_reminded_at": "2026-09-17T12:00:00Z",
+    "reminders_sent": 0,
+    "return_evidence_name": "string",
+    "sent_back_at": "2026-09-17T12:00:00Z",
+    "sent_back_reason": "string",
+    "sent_back_count": 0,
+    "accepted_at": "2026-09-17T12:00:00Z",
+    "state": "",
+    "state_label": "",
+    "overdue": false,
+    "may_change_date": false,
+    "request_due_at": "2026-09-17T12:00:00Z",
+    "consent_uuid": "00000000-0000-4000-8000-000000000000",
+    "consent_project": "string",
+    "consent_notice_code": "string",
+    "consent_notice_version": 1,
+    "consent_at": "2026-09-17T12:00:00Z",
+    "consent_purposes": [
+      "…"
+    ]
+  },
+  "messages": [
+    {
+      "message_uuid": "00000000-0000-4000-8000-000000000000",
+      "author_side": "string",
+      "author_name": "…",
+      "kind": "string",
+      "body": "string",
+      "evidence_hash": "…",
+      "evidence_name": "…",
+      "created_at": "2026-09-17T12:00:00Z"
+    }
+  ],
+  "items": [
+    {
+      "item_uuid": "00000000-0000-4000-8000-000000000000",
+      "decision": "string",
+      "retain_until": "…",
+      "other_subjects": 1,
+      "state": "string",
+      "asset_type": "string",
+      "source_asset_ref": "string",
+      "source_name": "string",
+      "project_name": "string",
+      "collected_on": "2026-09-17"
+    }
+  ]
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="9_get_holder_tickets_token_messages_message_uuid_evidence"></a>
+## 9. `GET /holder-tickets/{token}/messages/{message_uuid}/evidence` — Download a file on the ticket's messages
 
 ### API
 
@@ -709,6 +845,16 @@ What the link alone shows: whose ticket, and where the code goes.
 | `due_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `signed_in` | `boolean` | Yes | — | — |
 
+<a id="schema-ticketdatein"></a>
+#### `TicketDateIn`
+
+A new date for a ticket to be answered by, and why (2026-11-12).
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `due_at` | `string` | Yes | format: `date-time` | — |
+| `reason` | `string` | Yes | max length: `1000` | — |
+
 <a id="schema-ticketdetailout"></a>
 #### `TicketDetailOut`
 
@@ -765,6 +911,8 @@ A ticket as its respondent sees it: what is asked, of whom, by when.
 | `state` | `string` | No | default: `` | — |
 | `state_label` | `string` | No | default: `` | — |
 | `overdue` | `boolean` | No | default: `False` | — |
+| `may_change_date` | `boolean` | No | default: `False` | — |
+| `request_due_at` | `string` or `null` | No | format: `date-time` | — |
 | `consent_uuid` | `string` or `null` | No | format: `uuid` | — |
 | `consent_project` | `string` or `null` | No | — | — |
 | `consent_notice_code` | `string` or `null` | No | — | — |

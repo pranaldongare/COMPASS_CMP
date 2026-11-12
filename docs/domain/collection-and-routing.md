@@ -140,7 +140,13 @@ database and **opened on the way into the file**: a collector cannot use a
 list of ciphertext. So the CSV is one of the few places personal data leaves
 the platform in the clear, and the file kept under the uploads directory
 holds it that way; [personal-data.md](personal-data.md#files-on-disk) lists
-what is in it.
+what is in it. Since 2026-11-12 each row also carries the three numbers the
+Data Collection Tool is given: `project_id` after `project_uuid`, and
+`consent_id` and `person_id` after `consent_uuid` - the tables' own serial
+numbers, the ones the console shows as **Project ID**, **Consent ID** and
+**Person ID**. They are for reading and quoting: unique, never reused, with
+gaps, and no route takes one (the API serves them as `project_no`,
+`consent_no` and `person_no` and addresses every record by its uuid).
 
 **The consented list for the Data Collection Tool, since 0067 (2026-11-11).**
 A second export beside the project's, for the DCT, which tags the consented
@@ -152,6 +158,12 @@ digits of the mobile, `…42`), `consent_expires_at`, `is_minor`,
 `list_generated_at` and `list_valid_until` (seven days later,
 `DCT_LIST_VALID_DAYS`). Every time is UTC with a `Z`, whole seconds. The file is
 `consented_list_<project_id>_<YYYYMMDD>.csv` (`cmp.domain.exchange.dct`).
+After the contract's ten columns come three more (2026-11-12): `project_no`,
+`person_no` and `consent_no`, the same three numbers as whole numbers. The
+contract's own `project_id`, `person_id` and `consent_id` stay uuids, because
+the DCT's validator refuses anything else there (its rule E02); its loader
+passes columns it does not know through, and both were run against a list
+with the new columns.
 
 | Rule | Why |
 |---|---|

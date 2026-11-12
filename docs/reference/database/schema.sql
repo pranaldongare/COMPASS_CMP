@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 9H1VbZuKlc1VAurHqCZKV2d7KOEEg32ADYK6Y2GHrUgeffVvZjvIguSaOBAzp1Q
+\restrict OH6n2SXoV5cmm66XenU7PNTNK3n0TPHTDmGXH3U8gFRJiih2sWEWr2ENsfpG4Q8
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -343,7 +343,8 @@ CREATE TYPE public.rights_holder_source AS ENUM (
     'export_line',
     'asset_consent',
     'manual',
-    'activity_processor'
+    'activity_processor',
+    'project_owner'
 );
 
 
@@ -5461,6 +5462,7 @@ CREATE TABLE public.rights_request (
     transferred_at timestamp with time zone,
     transferred_by integer,
     transfer_reason text,
+    holders_derived_at timestamp with time zone,
     CONSTRAINT rights_closed_has_outcome CHECK (((status <> 'closed'::public.rights_request_status) OR (outcome IS NOT NULL))),
     CONSTRAINT rights_due_after_receipt CHECK ((due_at > received_at)),
     CONSTRAINT rights_nominee_has_nomination CHECK (((channel <> 'nominee'::public.rights_request_channel) OR (nomination_id IS NOT NULL))),
@@ -5507,6 +5509,13 @@ COMMENT ON COLUMN public.rights_request.claimed_at IS 'When an office took the r
 --
 
 COMMENT ON COLUMN public.rights_request.transfer_reason IS 'Why the last transfer moved the request to this office; sealed, FREE_TEXT';
+
+
+--
+-- Name: COLUMN rights_request.holders_derived_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.rights_request.holders_derived_at IS 'When the office last read the records for who holds her data; NULL: not yet';
 
 
 --
@@ -5616,11 +5625,13 @@ CREATE TABLE public.rights_request_holder (
     link_token character varying(64),
     link_token_sealed bytea,
     link_issued_at timestamp with time zone,
+    project_id integer,
     CONSTRAINT holder_accepted_is_returned CHECK (((accepted_at IS NULL) OR (ticket_status = 'returned'::public.rights_ticket_status))),
     CONSTRAINT holder_channel CHECK (((channel)::text = ANY ((ARRAY['portal'::character varying, 'email'::character varying])::text[]))),
     CONSTRAINT holder_issued_has_date CHECK (((ticket_status = 'pending'::public.rights_ticket_status) OR (issued_at IS NOT NULL))),
     CONSTRAINT holder_link_whole CHECK ((((link_token IS NULL) = (link_token_sealed IS NULL)) AND ((link_token IS NULL) = (link_issued_at IS NULL)))),
     CONSTRAINT holder_portal_has_account CHECK ((((channel)::text <> 'portal'::text) OR (responder_user_id IS NOT NULL))),
+    CONSTRAINT holder_project_is_an_owner CHECK (((project_id IS NOT NULL) = (derived_from = 'project_owner'::public.rights_holder_source))),
     CONSTRAINT holder_return_outcome CHECK (((return_outcome IS NULL) OR ((return_outcome)::text = ANY ((ARRAY['done'::character varying, 'partial'::character varying, 'failed'::character varying])::text[])))),
     CONSTRAINT holder_returned_has_date CHECK (((ticket_status <> 'returned'::public.rights_ticket_status) OR (returned_at IS NOT NULL)))
 );
@@ -5654,6 +5665,13 @@ COMMENT ON COLUMN public.rights_request_holder.link_token IS 'The portal link''s
 --
 
 COMMENT ON COLUMN public.rights_request_holder.link_token_sealed IS 'The link token, AES-GCM sealed, so a reminder carries the same link';
+
+
+--
+-- Name: COLUMN rights_request_holder.project_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.rights_request_holder.project_id IS 'The project or activity whose owner this holder is (derived_from = project_owner); NULL otherwise';
 
 
 --
@@ -8717,6 +8735,13 @@ CREATE INDEX nomination_nominee_user_id_idx ON public.nomination USING btree (no
 
 
 --
+-- Name: rights_holder_one_per_project; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX rights_holder_one_per_project ON public.rights_request_holder USING btree (request_id, project_id) WHERE (project_id IS NOT NULL);
+
+
+--
 -- Name: rights_request_consent_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10932,6 +10957,14 @@ ALTER TABLE ONLY public.rights_request_holder
 
 
 --
+-- Name: rights_request_holder rights_request_holder_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.rights_request_holder
+    ADD CONSTRAINT rights_request_holder_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(project_id);
+
+
+--
 -- Name: rights_request_holder rights_request_holder_request_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12115,5 +12148,5 @@ ALTER TABLE public.template_version_purpose ENABLE ROW LEVEL SECURITY;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 9H1VbZuKlc1VAurHqCZKV2d7KOEEg32ADYK6Y2GHrUgeffVvZjvIguSaOBAzp1Q
+\unrestrict OH6n2SXoV5cmm66XenU7PNTNK3n0TPHTDmGXH3U8gFRJiih2sWEWr2ENsfpG4Q8
 

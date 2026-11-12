@@ -130,7 +130,13 @@ outlive every right its owner has to have it removed:
 - **A reason is `reason_given: true`.** The words stay in their own sealed
   row (`rights_request.refusal_reason`, `project_status_history.reason`,
   `delegation.reason` and the rest); the reader who needs them follows the
-  entity there.
+  entity there. For one event the platform follows it for them: a rights
+  ticket's date change (`rights.ticket_date_changed`, 2026-11-12) names the
+  ticket message that holds the reason, and an entry served to a member of
+  staff carries `reason` - that message's sealed words, read at that moment
+  (`entities.attach`) - and the CSV a `reason` column. Nothing is added to
+  the row: when the message is gone the entry says a reason was given, and
+  a data principal is never served it.
 
 Rows written before that date still hold raw addresses, 2,261 of them, and an
 email on eleven. They cannot be rewritten, and are not.

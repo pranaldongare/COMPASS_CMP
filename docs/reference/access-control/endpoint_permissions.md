@@ -429,6 +429,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | GET | `/holder-tickets/{token}/ticket` | COND | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | NO | NO |
 | POST | `/holder-tickets/{token}/messages` | COND | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | NO | NO |
 | POST | `/holder-tickets/{token}/answer` | COND | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | NO | NO |
+| POST | `/holder-tickets/{token}/answer-by` | COND | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | NO | NO |
 | GET | `/holder-tickets/{token}/messages/{message_uuid}/evidence` | COND | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | PUBLIC | NO | NO |
 
 ## Registry
@@ -496,6 +497,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/remind` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/return` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/send-back` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
+| POST | `/requests/{request_uuid}/holders/{holder_uuid}/answer-by` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 | GET | `/requests/{request_uuid}/holders/{holder_uuid}/thread` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/thread` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/requests/{request_uuid}/holders/{holder_uuid}/withdraw` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
@@ -553,6 +555,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | POST | `/tickets/{holder_uuid}/messages` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | NO | NO |
 | GET | `/tickets/{holder_uuid}/messages/{message_uuid}/evidence` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | NO | NO |
 | POST | `/tickets/{holder_uuid}/return` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | NO | NO |
+| POST | `/tickets/{holder_uuid}/answer-by` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | NO | NO |
 
 ## Users
 
@@ -563,7 +566,7 @@ Roles refer to the **effective session role**. A staff account signed in through
 | GET | `/users` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/users` | NO | NO | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
 | GET | `/users/collection-owners` | NO | ALL | ALL | ALL | ALL | ALL | ALL | NO | NO | NO | NO |
-| GET | `/users/staff` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
+| GET | `/users/staff` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
 | GET | `/users/{user_uuid}` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
 | PATCH | `/users/{user_uuid}` | NO | NO | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
 | POST | `/users/{user_uuid}/deactivate` | NO | NO | ALL | NO | NO | NO | NO | NO | NO | NO | NO |

@@ -10,12 +10,12 @@ Each cell is **GET / non-GET endpoint counts** for which that role is eligible. 
 | [Auth](modules/auth.md) | 15 | 3 / 12 | 3 / 12 | 3 / 12 | 3 / 12 | 3 / 12 | 3 / 12 | 3 / 12 | 3 / 12 | 0 / 0 | 0 / 0 |
 | [Breach settings](modules/breach_settings.md) | 5 | 1 / 4 | 1 / 4 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 1 / 4 | 0 / 0 |
 | [Breach tickets](modules/breach_tickets.md) | 7 | 3 / 4 | 3 / 4 | 3 / 4 | 3 / 4 | 3 / 4 | 3 / 4 | 0 / 0 | 3 / 4 | 3 / 4 | 3 / 4 |
-| [Breaches](modules/breaches.md) | 53 | 22 / 31 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 22 / 31 | 0 / 0 |
+| [Breaches](modules/breaches.md) | 56 | 23 / 33 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 23 / 33 | 0 / 0 |
 | [Consent](modules/consent.md) | 15 | 12 / 3 | 0 / 0 | 12 / 3 | 12 / 3 | 12 / 3 | 6 / 0 | 0 / 0 | 0 / 0 | 12 / 3 | 12 / 3 |
 | [Cross-border transfers](modules/cross_border_transfers.md) | 3 | 1 / 2 | 1 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
 | [Dashboard](modules/dashboard.md) | 3 | 2 / 1 | 2 / 0 | 2 / 1 | 2 / 0 | 2 / 0 | 2 / 0 | 2 / 0 | 2 / 0 | 1 / 0 | 1 / 0 |
 | [Delegations](modules/delegations.md) | 6 | 4 / 2 | 4 / 2 | 3 / 2 | 3 / 1 | 3 / 1 | 3 / 1 | 2 / 0 | 2 / 0 | 0 / 0 | 0 / 0 |
-| [Exchange](modules/exchange.md) | 19 | 16 / 3 | 3 / 0 | 16 / 3 | 15 / 3 | 15 / 3 | 9 / 0 | 3 / 0 | 0 / 0 | 5 / 1 | 5 / 1 |
+| [Exchange](modules/exchange.md) | 20 | 16 / 4 | 3 / 0 | 16 / 4 | 15 / 4 | 15 / 4 | 9 / 0 | 3 / 0 | 0 / 0 | 5 / 2 | 5 / 2 |
 | [HR activities](modules/hr_activities.md) | 6 | 2 / 0 | 0 / 0 | 2 / 0 | 2 / 0 | 2 / 0 | 2 / 0 | 0 / 0 | 0 / 0 | 2 / 1 | 3 / 3 |
 | [HR categories](modules/hr_categories.md) | 7 | 0 / 0 | 3 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 3 / 4 | 3 / 0 |
 | [Incident reports](modules/incident_reports.md) | 2 | 0 / 2 | 0 / 2 | 0 / 2 | 0 / 2 | 0 / 2 | 0 / 2 | 0 / 2 | 0 / 2 | 0 / 2 | 0 / 2 |
@@ -25,12 +25,12 @@ Each cell is **GET / non-GET endpoint counts** for which that role is eligible. 
 | [Notices](modules/notices.md) | 44 | 16 / 28 | 0 / 0 | 9 / 0 | 9 / 0 | 9 / 0 | 11 / 4 | 0 / 0 | 0 / 0 | 15 / 17 | 10 / 3 |
 | [Projects](modules/projects.md) | 27 | 13 / 9 | 0 / 0 | 12 / 5 | 12 / 7 | 12 / 5 | 13 / 10 | 0 / 0 | 0 / 0 | 13 / 14 | 13 / 14 |
 | [Public Consent](modules/public_consent.md) | 9 | 3 / 5 | 3 / 5 | 3 / 5 | 3 / 5 | 3 / 5 | 3 / 5 | 3 / 6 | 3 / 5 | 0 / 0 | 0 / 0 |
-| [Public Information](modules/public_information.md) | 18 | 6 / 12 | 6 / 12 | 6 / 12 | 6 / 12 | 6 / 12 | 6 / 12 | 6 / 12 | 6 / 12 | 0 / 0 | 0 / 0 |
+| [Public Information](modules/public_information.md) | 19 | 6 / 13 | 6 / 13 | 6 / 13 | 6 / 13 | 6 / 13 | 6 / 13 | 6 / 13 | 6 / 13 | 0 / 0 | 0 / 0 |
 | [Registry](modules/registry.md) | 29 | 10 / 13 | 12 / 13 | 8 / 4 | 8 / 4 | 8 / 4 | 8 / 0 | 1 / 0 | 0 / 0 | 3 / 4 | 0 / 0 |
-| [Rights](modules/rights.md) | 53 | 13 / 39 | 13 / 39 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 13 / 39 | 0 / 0 |
+| [Rights](modules/rights.md) | 54 | 13 / 40 | 13 / 40 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 13 / 40 | 0 / 0 |
 | [System](modules/system.md) | 8 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 8 / 0 | 0 / 0 | 0 / 0 |
-| [Tickets](modules/tickets.md) | 5 | 3 / 2 | 3 / 2 | 3 / 2 | 3 / 2 | 3 / 2 | 3 / 2 | 0 / 0 | 3 / 2 | 0 / 0 | 0 / 0 |
-| [Users](modules/users.md) | 17 | 6 / 0 | 7 / 10 | 2 / 0 | 2 / 0 | 2 / 0 | 2 / 0 | 0 / 0 | 0 / 0 | 5 / 0 | 1 / 0 |
+| [Tickets](modules/tickets.md) | 6 | 3 / 3 | 3 / 3 | 3 / 3 | 3 / 3 | 3 / 3 | 3 / 3 | 0 / 0 | 3 / 3 | 0 / 0 | 0 / 0 |
+| [Users](modules/users.md) | 17 | 6 / 0 | 7 / 10 | 2 / 0 | 2 / 0 | 2 / 0 | 2 / 0 | 0 / 0 | 0 / 0 | 6 / 0 | 1 / 0 |
 
 
 System includes three registered routes omitted from OpenAPI. Read the endpoint conditions for imports, delegations, public flows and rights requests before treating any count as broad access.
