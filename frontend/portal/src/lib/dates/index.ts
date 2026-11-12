@@ -19,6 +19,25 @@ export function todayLocal(at: Date = new Date()): string {
   return `${at.getFullYear()}-${two(at.getMonth() + 1)}-${two(at.getDate())}`;
 }
 
+/** The end of a chosen day, as the moment a ticket due that day falls due:
+ *  due today is overdue tomorrow. */
+export function endOfDay(date: string): string {
+  return new Date(`${date}T23:59:00`).toISOString();
+}
+
+/**
+ * The last day a ticket may fall due, given the moment the response it feeds
+ * is due: that day, if the day's end is not past it, else the day before. A
+ * ticket never falls due after the response itself.
+ */
+export function lastDayBy(moment: string): string {
+  const due = new Date(moment);
+  const day = todayLocal(due);
+  return new Date(endOfDay(day)).getTime() <= due.getTime()
+    ? day
+    : todayLocal(new Date(due.getTime() - 86_400_000));
+}
+
 /** This minute, as a datetime-local input's value (`YYYY-MM-DDTHH:mm`). */
 export function nowLocal(at: Date = new Date()): string {
   return `${todayLocal(at)}T${two(at.getHours())}:${two(at.getMinutes())}`;

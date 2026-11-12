@@ -46,6 +46,12 @@ export interface LinkStats {
 
 export interface ConsentRow {
   consent_uuid: Uuid;
+  /** The consent's, the person's and the project's own numbers: shown as
+   *  their IDs, in the export a collection owner takes, and carried to the
+   *  Data Collection Tool (2026-11-12). To read; routes take the uuid. */
+  consent_no: number;
+  person_no: number;
+  project_no: number;
   subject_uuid: Uuid;
   subject_name: string;
   subject_email: string | null;
@@ -121,6 +127,9 @@ export interface ConsentListRow extends ConsentRow {
  */
 export interface ConsentArtefact {
   consent_uuid: Uuid;
+  consent_no: number;
+  person_no: number;
+  project_no: number;
   subject_uuid: Uuid;
   subject_name: string;
   subject_email: string | null;

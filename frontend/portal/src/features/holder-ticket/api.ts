@@ -68,6 +68,12 @@ export interface HolderTicket {
   state: string;
   state_label: string;
   overdue: boolean;
+  /** Whether the holder may move the date their answer is due (2026-11-12):
+   *  while the ticket waits on them. */
+  may_change_date?: boolean;
+  /** When the request itself must be answered: the latest the ticket's date
+   *  may be moved to. */
+  request_due_at?: string | null;
 }
 
 export interface HolderTicketDetail {
@@ -107,6 +113,10 @@ export function giveAnswer(
   if (input.file) form.set("evidence", input.file);
   return apiPost<HolderTicketDetail>(`${base(token)}/answer`, form);
 }
+
+/** Move the date the answer is due, with the reason; the office is told. */
+export const changeDate = (token: string, body: { due_at: string; reason: string }) =>
+  apiPost<HolderTicketDetail>(`${base(token)}/answer-by`, body);
 
 export const downloadFile = (token: string, messageUuid: string) =>
   apiDownload(`${base(token)}/messages/${encodeURIComponent(messageUuid)}/evidence`);

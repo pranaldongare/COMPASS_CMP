@@ -64,7 +64,7 @@ describe("the nominee's request", () => {
     const { user } = render(<NomineePage />);
 
     await user.type(screen.getByLabelText(/your email or mobile/i), "nominee@example.org");
-    await user.click(screen.getByRole("button", { name: "Send me a code" }));
+    await user.click(screen.getByRole("button", { name: "Send code" }));
 
     expect(await screen.findByText(STARTED)).toBeInTheDocument();
     expect(screen.getByText(HINT)).toBeInTheDocument();
@@ -91,7 +91,7 @@ describe("the nominee's request", () => {
     expect(sent[0]).toHaveProperty("evidence");
     expect(screen.getByText(HINT)).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Send me a new code" }));
+    await user.click(screen.getByRole("button", { name: "Resend code" }));
 
     expect(
       await screen.findByText(
@@ -132,9 +132,9 @@ describe("the nominee's request", () => {
     const { user } = render(<NomineePage />);
 
     await user.type(screen.getByLabelText(/your email or mobile/i), "nominee@example.org");
-    await user.click(screen.getByRole("button", { name: "Send me a code" }));
+    await user.click(screen.getByRole("button", { name: "Send code" }));
     await screen.findByText(STARTED);
-    await user.click(screen.getByRole("button", { name: "Send me a new code" }));
+    await user.click(screen.getByRole("button", { name: "Resend code" }));
 
     expect(
       await screen.findByText("Too many requests. Try again later."),
@@ -152,7 +152,7 @@ describe("the nominee's request", () => {
 
     const contact = screen.getByLabelText(/your email or mobile/i);
     await user.type(contact, "nominee@example.org");
-    await user.click(screen.getByRole("button", { name: "Send me a code" }));
+    await user.click(screen.getByRole("button", { name: "Send code" }));
     await user.type(await screen.findByLabelText(/^the request/i), "Everything, please.");
     expect(contact).toBeDisabled();
 
@@ -160,7 +160,7 @@ describe("the nominee's request", () => {
 
     expect(contact).toBeEnabled();
     expect(screen.queryByLabelText(/^the request/i)).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Send me a code" }));
+    await user.click(screen.getByRole("button", { name: "Send code" }));
     expect(await screen.findByLabelText(/^the request/i)).toHaveValue(
       "Everything, please.",
     );

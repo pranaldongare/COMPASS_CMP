@@ -6,12 +6,19 @@
  * do: write to the Privacy Office, or give the answer. The answer is its own
  * form, in order: what was done, then what is held and what was done with it,
  * then any proof. It waits for the office to accept it or send it back.
+ *
+ * The two are tabs (2026-11-12, mock-up A), as in the console's My tasks:
+ * "Answer the ticket", open first while an answer is due, and "Messages",
+ * which says a message is not an answer. Side by side, a holder typed the
+ * answer into the message box, pressed Send, and took the ticket for
+ * answered.
  */
 "use client";
 
-import { Download, Paperclip, Send } from "lucide-react";
+import { Download, MessageSquare, Send } from "lucide-react";
 import * as React from "react";
 
+import { ChangeDate } from "@/components/data-display/change-date";
 import { FileInput } from "@/components/forms";
 import {
   Alert,
@@ -28,8 +35,10 @@ import {
   Th,
   Tr,
 } from "@/components/ui/primitives";
+import { Tab, TabList, TabPanel, Tabs } from "@/components/ui/tabs";
 import {
   OUTCOME_COPY,
+  changeDate,
   downloadFile,
   giveAnswer,
   writeMessage,
@@ -38,6 +47,7 @@ import {
   type HolderTicketDetail,
   type ReturnOutcome,
 } from "@/features/holder-ticket/api";
+import { endOfDay, lastDayBy, todayLocal } from "@/lib/dates";
 import { ApiError } from "@/lib/errors";
 import { formatDate, formatDateTime, saveBlob } from "@/lib/format";
 
@@ -71,7 +81,33 @@ export function TicketView({
 }) {
   const t = detail.ticket;
   const open = OPEN.includes(t.state) && t.request_status !== "closed";
-  const [answering, setAnswering] = React.useState(false);
+  const [tab, setTab] = React.useState<"answer" | "messages">("answer");
+  const [redating, setRedating] = React.useState(false);
+  const messages = (
+    <div className="space-y-4">
+      <Thread token={token} messages={detail.messages} />
+      {t.request_status !== "closed" ? (
+        <>
+          {open && (
+            <Alert tone="warning">
+              A message does not answer the ticket. To answer it, use{" "}
+              <button
+                type="button"
+                className="font-semibold underline underline-offset-2"
+                onClick={() => setTab("answer")}
+              >
+                Answer the ticket
+              </button>
+              .
+            </Alert>
+          )}
+          <MessageBox token={token} onSent={onChange} />
+        </>
+      ) : (
+        <p className="text-sm text-text-muted">The request is closed; nothing more can be written here.</p>
+      )}
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -94,6 +130,29 @@ export function TicketView({
         </CardHeader>
         <CardBody className="space-y-4">
           <StateNote detail={detail} />
+          {/* More time, with the reason, as a holder in the console has
+              (2026-11-12): no approval is asked, and the office is told. */}
+          {t.may_change_date && (
+            <ChangeDate
+              label="Answer by"
+              current={t.due_at ? todayLocal(new Date(t.due_at)) : null}
+              latest={
+                t.request_due_at
+                  ? { date: lastDayBy(t.request_due_at), hint: "No later than the date the request itself is due" }
+                  : undefined
+              }
+              told="The Privacy Office is told."
+              pending={redating}
+              onSave={async ({ date, reason }) => {
+                setRedating(true);
+                try {
+                  onChange(await changeDate(token, { due_at: endOfDay(date), reason }));
+                } finally {
+                  setRedating(false);
+                }
+              }}
+            />
+          )}
           <section>
             <h2 className="text-xs font-semibold tracking-wide text-text-subtle uppercase">What you are asked</h2>
             <p className="mt-1 text-sm whitespace-pre-wrap">{t.instruction ?? "See the messages below."}</p>
@@ -115,43 +174,43 @@ export function TicketView({
               <p className="mt-1 whitespace-pre-wrap">{t.return_summary}</p>
             </section>
           )}
-          {open &&
-            (answering ? (
-              <AnswerForm
-                token={token}
-                onCancel={() => setAnswering(false)}
-                onDone={(next) => {
-                  setAnswering(false);
-                  onChange(next);
-                }}
-              />
-            ) : (
-              <div className="flex flex-wrap items-center gap-3 rounded-md border border-accent-border bg-accent-subtle p-3">
-                <Button variant="primary" onClick={() => setAnswering(true)}>
-                  <Send className="size-4" aria-hidden="true" />
-                  Submit your answer
-                </Button>
-                <span className="text-xs text-text-muted">
-                  When your work is done: what was done, what you hold, and any proof.
-                </span>
-              </div>
-            ))}
         </CardBody>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Messages</CardTitle>
-        </CardHeader>
-        <CardBody className="space-y-4">
-          <Thread token={token} messages={detail.messages} />
-          {t.request_status !== "closed" ? (
-            <MessageBox token={token} onSent={onChange} />
-          ) : (
-            <p className="text-sm text-text-muted">The request is closed; nothing more can be written here.</p>
-          )}
-        </CardBody>
-      </Card>
+      {open ? (
+        <Card>
+          <CardBody>
+            <Tabs
+              value={tab}
+              onValueChange={(next) => setTab(next as "answer" | "messages")}
+              label="Answer or messages"
+              layout="underline"
+            >
+              <TabList>
+                <Tab value="answer" icon={Send}>
+                  Answer the ticket
+                </Tab>
+                <Tab value="messages" icon={MessageSquare} count={detail.messages.length}>
+                  Messages
+                </Tab>
+              </TabList>
+              <TabPanel value="answer" className="pt-4">
+                <AnswerForm token={token} sentBack={t.sent_back_reason} onDone={onChange} />
+              </TabPanel>
+              <TabPanel value="messages" className="pt-4">
+                {messages}
+              </TabPanel>
+            </Tabs>
+          </CardBody>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Messages</CardTitle>
+          </CardHeader>
+          <CardBody>{messages}</CardBody>
+        </Card>
+      )}
     </div>
   );
 }
@@ -299,14 +358,14 @@ function MessageBox({ token, onSent }: { token: string; onSent: (next: HolderTic
       }}
     >
       {error && <Alert tone="danger">{error}</Alert>}
-      <Field label="Write to the Privacy Office" hint="A question, or what you have found so far.">
+      <Field label="Message to the Privacy Office" hint="A question or an update.">
         {(p) => <Textarea {...p} rows={3} maxLength={20_000} value={body} onChange={(e) => setBody(e.target.value)} />}
       </Field>
       <FileInput label="Attach a file" hint="Optional. PDF, image, CSV or text, up to 25 MB." accept={ACCEPT} maxBytes={MAX} file={file} onChange={setFile} />
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" variant="secondary" loading={pending} disabled={!body.trim()}>
-          <Paperclip className="size-4" aria-hidden="true" />
-          Send
+          <MessageSquare className="size-4" aria-hidden="true" />
+          Send message
         </Button>
         {note && <span className="text-xs text-text-muted" role="status">{note}</span>}
       </div>
@@ -316,11 +375,12 @@ function MessageBox({ token, onSent }: { token: string; onSent: (next: HolderTic
 
 function AnswerForm({
   token,
-  onCancel,
+  sentBack,
   onDone,
 }: {
   token: string;
-  onCancel: () => void;
+  /** What the office said was missing, when it sent the ticket back. */
+  sentBack: string | null;
   onDone: (next: HolderTicketDetail) => void;
 }) {
   // No default: "did all of it" is never assumed (review DPDP-1).
@@ -333,7 +393,7 @@ function AnswerForm({
     <form
       method="post"
       noValidate
-      className="space-y-4 rounded-md border border-accent-border p-4"
+      className="space-y-4 rounded-md border border-accent-border bg-accent-subtle/40 p-4"
       onSubmit={async (e) => {
         e.preventDefault();
         if (!outcome || !summary.trim()) return;
@@ -342,13 +402,23 @@ function AnswerForm({
         try {
           onDone(await giveAnswer(token, { summary: summary.trim(), outcome, file }));
         } catch (err) {
-          setError(said(err, "Could not send your answer."));
+          setError(said(err, "Could not submit your answer."));
         } finally {
           setPending(false);
         }
       }}
     >
-      <h2 className="text-sm font-semibold">Submit your answer</h2>
+      <div>
+        <h2 className="text-sm font-semibold">Your answer to the Privacy Office</h2>
+        <p className="mt-0.5 text-xs text-text-muted">
+          This is what answers the ticket. The office reviews it, then accepts it or sends it back.
+        </p>
+      </div>
+      {sentBack && (
+        <Alert tone="warning" title="Sent back to you">
+          {sentBack}
+        </Alert>
+      )}
       {error && <Alert tone="danger">{error}</Alert>}
       <fieldset className="space-y-1.5">
         <legend className="text-sm font-medium">1 · What was done?</legend>
@@ -364,12 +434,10 @@ function AnswerForm({
         {(p) => <Textarea {...p} rows={4} maxLength={20_000} value={summary} onChange={(e) => setSummary(e.target.value)} />}
       </Field>
       <FileInput label="3 · Proof" hint="Optional. PDF, image, CSV or text, up to 25 MB." accept={ACCEPT} maxBytes={MAX} file={file} onChange={setFile} />
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" onClick={onCancel}>
-          Cancel
-        </Button>
+      <div className="flex justify-end">
         <Button type="submit" variant="primary" loading={pending} disabled={!outcome || !summary.trim()}>
-          Send your answer
+          <Send className="size-4" aria-hidden="true" />
+          Submit answer
         </Button>
       </div>
     </form>

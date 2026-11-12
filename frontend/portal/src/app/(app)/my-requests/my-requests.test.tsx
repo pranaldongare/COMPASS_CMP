@@ -42,6 +42,16 @@ const READY = makeMyRequest({
   closed_at: "2026-09-20T10:00:00Z",
   download_available: true,
   download_expires_at: "2026-11-01T00:00:00Z",
+  response_files: [
+    {
+      file_uuid: "33333333-3333-4333-8333-333333333333",
+      file_name: "extract.csv",
+      file_hash: "9f2c".repeat(16),
+      size_bytes: 2048,
+      content_type: "text/csv",
+      created_at: "2026-09-20T10:00:00Z",
+    },
+  ],
   received_at: "2026-09-01T10:00:00Z",
 });
 
@@ -109,7 +119,12 @@ describe("The list and the request beside it", () => {
     expect(panel.getByRole("region", { name: "Your answer" })).toHaveTextContent(
       READY.response_text as string,
     );
-    expect(panel.getByRole("button", { name: /download your data/i })).toBeInTheDocument();
+    // The files released with it are what she downloads; the record as a data
+    // file is no longer offered (2026-11-12).
+    expect(panel.getByText("extract.csv")).toBeInTheDocument();
+    expect(panel.getByRole("button", { name: "Download" })).toBeInTheDocument();
+    expect(panel.getByText(/available until/i)).toBeInTheDocument();
+    expect(panel.queryByRole("button", { name: /download your data/i })).not.toBeInTheDocument();
     expect(panel.getByRole("list", { name: "Where it is" })).toHaveTextContent(/answered/i);
     expect(panel.queryByText(/the path/i)).not.toBeInTheDocument();
     expect(panel.queryByText(/halfway|tickets issued|collate/i)).not.toBeInTheDocument();

@@ -104,7 +104,7 @@ export function VerifyForm({
         </div>
       )}
       <Button type="submit" variant="primary" loading={pending}>
-        Confirm it is me
+        Verify identity
       </Button>
     </form>
   );

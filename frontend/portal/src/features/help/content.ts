@@ -67,7 +67,7 @@ export const SECTIONS: HelpSection[] = [
         kind: "steps",
         items: [
           "On the [[Sign in]] page choose [[Mobile]] or [[Email]] under [[Sign in with]].",
-          "Type the number or address you registered with and click [[Send me a code]].",
+          "Type the number or address you registered with and click [[Send code]].",
           "Type the six-digit code in [[Six-digit code]] and click [[Verify]].",
           "You land on [[Home]]: your consents, your requests and your latest updates on one page. Each figure and row opens the record behind it, and [[Make a request]] is at the top.",
         ],
@@ -109,18 +109,19 @@ export const SECTIONS: HelpSection[] = [
   {
     id: "your-consents",
     title: "My consents",
-    summary: "What you agreed to, the exact notice you were shown, and the record.",
+    summary: "What you agreed to, the notice you were shown, and the history.",
     blocks: [
       {
         kind: "p",
-        text: "[[My consents]] shows one card per study, with its status: [[Consented]] (everything agreed), [[Partial]] (some agreed), [[Declined]] (nothing agreed) or [[Withdrawn]] (you withdrew everything).",
+        text: "[[My consents]] lists your consents, one per study, each with its status: [[Consented]] (everything agreed), [[Partial]] (some agreed), [[Declined]] (nothing agreed) or [[Withdrawn]] (you withdrew everything). Click one to open it beside the list.",
       },
       {
         kind: "list",
         items: [
-          "[[See what you agreed to]] lists each purpose, what data it uses and how long it is kept.",
-          "[[Show the exact notice I was given]] shows the text as it was when you decided. [[Integrity verified]] means it has not changed since.",
-          "[[What was recorded]] lists every change to this consent, oldest first - the same record the Privacy Office sees.",
+          "[[Purposes]] lists each purpose, what data it uses and how long it is kept.",
+          "[[Notice]] shows the text as it was when you decided. [[Integrity verified]] means it has not changed since.",
+          "[[History]] lists every change to this consent, oldest first - the same record the Privacy Office sees.",
+          "[[Download record]] saves the consent as a PDF.",
         ],
       },
     ],
@@ -133,9 +134,9 @@ export const SECTIONS: HelpSection[] = [
       {
         kind: "steps",
         items: [
-          "On the study's card click [[See what you agreed to]].",
-          "Click [[Withdraw just this one]] under a purpose - or [[Withdraw everything]] on the card.",
-          "Confirm with [[Withdraw]], or change your mind with [[Keep my consent]].",
+          "On [[My consents]], click the study.",
+          "Click [[Withdraw]] beside a purpose - or [[Withdraw consent]] to withdraw all of them.",
+          "Confirm with [[Withdraw]], or change your mind with [[Cancel]].",
           "[[Withdrawal recorded]] confirms it, and a confirmation is sent to you. Anything you still agree to stays in place and can be withdrawn later.",
         ],
       },
@@ -148,12 +149,12 @@ export const SECTIONS: HelpSection[] = [
   },
   {
     id: "shared-with",
-    title: "Who your data has been shared with",
+    title: "Data sharing",
     summary: "Every organisation your data went to, and when.",
     blocks: [
       {
         kind: "p",
-        text: "On [[My consents]], [[Who your data has been shared with]] lists each organisation that received your data in an export, with the study and the date. It is answered from the record of every disclosure, not from memory.",
+        text: "On [[My consents]], [[Data sharing]] - the last row of the list - shows each organisation that received your data in an export, with the study and the date. It is answered from the record of every disclosure, not from memory.",
       },
     ],
   },
@@ -186,12 +187,12 @@ export const SECTIONS: HelpSection[] = [
   {
     id: "responses",
     title: "Responses and disputes",
-    summary: "Downloading an answer, and what to do if you disagree.",
+    summary: "Reading an answer, its files, and what to do if you disagree.",
     blocks: [
       {
         kind: "list",
         items: [
-          "When a request is answered you are told, and the request shows [[Your answer]]. [[Download your data]] saves it; the download is available for a limited time, so keep a copy.",
+          "When a request is answered you are told, and the request shows [[Your answer]]. Files released with it each have a [[Download]] button; they are available for a limited time, so keep a copy.",
           "An answer is [[Complete]] only when everything you asked for was done. Otherwise it is [[Partial]] and says what remains.",
         ],
       },
@@ -223,7 +224,7 @@ export const SECTIONS: HelpSection[] = [
           "Open [[Your rights and how to exercise them]] from the sign-in page.",
           "In [[Make a request]], choose what you are asking for and give the email or mobile you registered with.",
           "Click [[Send the request]]. You are given a reference.",
-          "Type the code we send to the contact we already hold for you in [[The code we sent]] and click [[Confirm it is me]].",
+          "Type the code we send to the contact we already hold for you in [[The code we sent]] and click [[Verify identity]].",
         ],
       },
       {
@@ -250,7 +251,7 @@ export const SECTIONS: HelpSection[] = [
         kind: "steps",
         title: "If somebody named you",
         items: [
-          "Open the link you were sent, choose where to receive a code, and click [[Send me a code]].",
+          "Open the link you were sent, choose where to receive a code, and click [[Send code]].",
           "Type the code and click [[Accept the nomination]]. Keep the nomination reference you are shown.",
           "If the time comes, use [[Act on their behalf here]] on the sign-in page, with that reference.",
         ],
@@ -324,7 +325,7 @@ export const SECTIONS: HelpSection[] = [
         items: [
           "On the [[Your rights]] page, click [[Report an incident]].",
           "Fill in [[Your name]], [[Your email]], [[What happened in one line]] and [[What happened]]. Add anything else you know under [[More details (optional)]].",
-          "Click [[Send me a code]]. Type the code we email you in [[The code we sent]].",
+          "Click [[Send code]]. Type the code we email you in [[The code we sent]].",
           "Click [[Send the report]]. You are shown a reference, and we email it to you. Quote it if you contact us.",
         ],
       },
@@ -350,7 +351,7 @@ export const SECTIONS: HelpSection[] = [
         title: "Opening the ticket",
         items: [
           "Open the link in our email. The page names the ticket and shows where the code will go - the address the ticket was sent to.",
-          "Click [[Send me a code]]. Type the code from your email in [[Six-digit code]] and click [[Open the ticket]].",
+          "Click [[Send code]]. Type the code from your email in [[Six-digit code]] and click [[Open the ticket]].",
           "The ticket stays open on that device for an hour. After that, ask for a new code. [[Close the ticket on this device]] closes it sooner.",
         ],
       },
@@ -367,8 +368,8 @@ export const SECTIONS: HelpSection[] = [
         kind: "steps",
         title: "Answering",
         items: [
-          "To ask us something, write in [[Write to the Privacy Office]], attach a file if it helps, and click [[Send]]. We are told at once, and you are emailed when we reply.",
-          "When your work is done, click [[Submit your answer]]: choose what was done - all of it, part of it, or none - say what you hold and what you did, attach any proof, and click [[Send your answer]].",
+          "The ticket opens on [[Answer the ticket]]. When your work is done, choose what was done - all of it, part of it, or none - say what you hold and what you did, attach any proof, and click [[Submit answer]]. This is what answers the ticket.",
+          "To ask us something first, open [[Messages]], write in [[Message to the Privacy Office]], attach a file if it helps, and click [[Send message]]. We are told at once, and you are emailed when we reply. A message does not answer the ticket.",
           "We review your answer. If something is missing we send it back with what we need and a new date; you are emailed, and the same link opens it.",
         ],
       },

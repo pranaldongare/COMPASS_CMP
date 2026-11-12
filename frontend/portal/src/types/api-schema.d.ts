@@ -879,6 +879,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/holder-tickets/{token}/answer-by": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change the date the answer is due, with the reason
+         * @description While the ticket waits on its holder. The Privacy Office is told.
+         */
+        post: operations["change_date_holder_tickets__token__answer_by_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/holder-tickets/{token}/messages/{message_uuid}/evidence": {
         parameters: {
             query?: never;
@@ -942,6 +962,9 @@ export interface paths {
          * @description Naming who answers a rights-request ticket for an in-house processor
          *     means picking an account. Four fields, active staff only, and only for the
          *     two roles that manage the registry - not a way around the register.
+         *
+         *     `role` narrows it to one role: the DCO Admins an office chooses between
+         *     when a project's ticket goes to one of them (0069).
          */
         get: operations["staff_directory_users_staff_get"];
         put?: never;
@@ -4721,7 +4744,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Not a rights request, or refused - with reasons */
+        /**
+         * Not a rights request, or refused - with reasons
+         * @description A form, as a response is (2026-11-12): the reason, plus any documents
+         *     that go with it - the letter or the schedule the refusal rests on.
+         */
         post: operations["refuse_requests__request_uuid__refuse_post"];
         delete?: never;
         options?: never;
@@ -4857,7 +4884,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Holders derived from export_line and asset_consent */
+        /** Holders found from the records: processors that hold her data, and the owner of each project or activity she gave consent in */
         post: operations["derive_holders_requests__request_uuid__holders_derive_post"];
         delete?: never;
         options?: never;
@@ -4936,6 +4963,27 @@ export interface paths {
          *     reason and a date, the holder is told, and the request waits again.
          */
         post: operations["send_back_ticket_requests__request_uuid__holders__holder_uuid__send_back_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/holders/{holder_uuid}/answer-by": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change the date a ticket is to be answered by, with the reason
+         * @description The office gives a holder more time, or less. The reason is on the
+         *     ticket's thread and on the trail, and the holder is told.
+         */
+        post: operations["change_ticket_date_requests__request_uuid__holders__holder_uuid__answer_by_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6582,6 +6630,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/tickets/{holder_uuid}/answer-by": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change the date my answer is due, with the reason
+         * @description While the ticket waits on me. The Privacy Office is told, and the
+         *     reason is on the thread and the trail.
+         */
+        post: operations["change_my_ticket_date_tickets__holder_uuid__answer_by_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/tickets/{holder_uuid}/return": {
         parameters: {
             query?: never;
@@ -7290,6 +7359,8 @@ export interface components {
             entity_noun?: string | null;
             /** Entity Href */
             entity_href?: string | null;
+            /** Reason */
+            reason?: string | null;
         };
         /** AuditSummary */
         AuditSummary: {
@@ -7546,6 +7617,16 @@ export interface components {
              * @description Optional file, max 25 MB
              */
             evidence?: string | null;
+        };
+        /** Body_refuse_requests__request_uuid__refuse_post */
+        Body_refuse_requests__request_uuid__refuse_post: {
+            /** Reason */
+            reason: string;
+            /**
+             * Files
+             * @default []
+             */
+            files: string[];
         };
         /** Body_respond_requests__request_uuid__respond_post */
         Body_respond_requests__request_uuid__respond_post: {
@@ -9585,6 +9666,8 @@ export interface components {
         ConfirmHolderIn: {
             /** Respondent Uuid */
             respondent_uuid?: string | null;
+            /** Responder User Uuid */
+            responder_user_uuid?: string | null;
             /** Responder Name */
             responder_name?: string | null;
             /** Responder Contact */
@@ -9594,11 +9677,13 @@ export interface components {
          * ConsentArtefactOut
          * @description One consent record, in full.
          *
-         *     Declared rather than returned as a bare dict so `consent_id` - the internal
-         *     surrogate key the scoped query needs for its follow-up lookups - cannot ship
-         *     to a client. An integer primary key in a response body is an invitation to
-         *     enumerate, and it becomes an accidental part of the contract the moment
-         *     somebody reads it off the wire.
+         *     Declared rather than returned as a bare dict so the scoped query's
+         *     internal columns cannot ship to a client by accident. Three numbers do
+         *     ship, on purpose (the product owner, 2026-11-12): the consent's, the
+         *     person's and the project's own, as `*_no`, because the Data Collection Tool
+         *     and the people who run a collection quote them. They are for reading:
+         *     every route still names a record by its uuid, so a number that can be
+         *     guessed opens nothing.
          */
         ConsentArtefactOut: {
             /**
@@ -9606,6 +9691,12 @@ export interface components {
              * Format: uuid
              */
             consent_uuid: string;
+            /** Consent No */
+            consent_no: number;
+            /** Person No */
+            person_no: number;
+            /** Project No */
+            project_no: number;
             /**
              * Subject Uuid
              * Format: uuid
@@ -9742,6 +9833,12 @@ export interface components {
              * Format: uuid
              */
             consent_uuid: string;
+            /** Consent No */
+            consent_no: number;
+            /** Person No */
+            person_no: number;
+            /** Project No */
+            project_no: number;
             /**
              * Subject Uuid
              * Format: uuid
@@ -9800,6 +9897,12 @@ export interface components {
              * Format: uuid
              */
             consent_uuid: string;
+            /** Consent No */
+            consent_no: number;
+            /** Person No */
+            person_no: number;
+            /** Project No */
+            project_no: number;
             /**
              * Subject Uuid
              * Format: uuid
@@ -10393,6 +10496,12 @@ export interface components {
             processor_name: string | null;
             /** Is In House */
             is_in_house: boolean | null;
+            /** Project Uuid */
+            project_uuid?: string | null;
+            /** Project Name */
+            project_name?: string | null;
+            /** Is Activity */
+            is_activity?: boolean | null;
             /** Confirmed At */
             confirmed_at: string | null;
             /** Confirmed By Name */
@@ -12195,6 +12304,8 @@ export interface components {
              * Format: uuid
              */
             project_uuid: string;
+            /** Project No */
+            project_no?: number | null;
             /** Project Name */
             project_name: string;
             /** Internal Project Name */
@@ -12542,11 +12653,6 @@ export interface components {
             /** Responder Contact */
             responder_contact?: string | null;
         };
-        /** RefuseIn */
-        RefuseIn: {
-            /** Reason */
-            reason: string;
-        };
         /** RegisterVerifyBody */
         RegisterVerifyBody: {
             /** Mobile */
@@ -12723,6 +12829,10 @@ export interface components {
             claimed_at?: string | null;
             /** Holders */
             holders: components["schemas"]["HolderOut"][];
+            /** Holders Derived At */
+            holders_derived_at?: string | null;
+            /** Unowned Consents */
+            unowned_consents?: components["schemas"]["UnownedConsentOut"][];
             /** Items */
             items: components["schemas"]["ItemOut"][];
             /** Transitions */
@@ -13073,6 +13183,23 @@ export interface components {
              */
             reviewer_uuid: string;
         };
+        /**
+         * Role
+         * @description The ten roles. Values match the `user_role` PostgreSQL enum exactly.
+         *
+         *     Two of them exist because collection has two shapes:
+         *
+         *     * **`DCO_ADMIN`** routes a project collected by an external processor. They
+         *       assign its data sources, and each source's owner picks it up. They hold a
+         *       DCO's powers across every such project rather than over their own sources.
+         *     * **`RCO`** — R&D Collection Owner — is the same accountability where the
+         *       R&D team collects for itself and no external processor is involved. The
+         *       role is separate rather than reusing DCO because the two answer to
+         *       different people, and a permission table that cannot tell them apart
+         *       cannot express that.
+         * @enum {string}
+         */
+        Role: "dpo" | "dco" | "dco_admin" | "rco" | "rnd_user" | "admin" | "data_subject" | "breach_holder" | "legal" | "hr_user";
         /** RoleChange */
         RoleChange: {
             /** Role */
@@ -13719,6 +13846,19 @@ export interface components {
             /** Messages */
             messages: components["schemas"]["cmp__api__routers__v1__rights__MessageOut"][];
         };
+        /**
+         * TicketDateIn
+         * @description A new date for a ticket to be answered by, and why (2026-11-12).
+         */
+        TicketDateIn: {
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Reason */
+            reason: string;
+        };
         /** TicketDetailOut */
         TicketDetailOut: {
             ticket: components["schemas"]["TicketOut"];
@@ -13852,6 +13992,13 @@ export interface components {
              * @default false
              */
             overdue: boolean;
+            /**
+             * May Change Date
+             * @default false
+             */
+            may_change_date: boolean;
+            /** Request Due At */
+            request_due_at?: string | null;
             /** Consent Uuid */
             consent_uuid?: string | null;
             /** Consent Project */
@@ -13928,6 +14075,39 @@ export interface components {
             /** Reason */
             reason?: string | null;
         };
+        /**
+         * UnownedConsentOut
+         * @description A consent nobody could be found to ask about (0069): given in a project
+         *     or an activity that names no owner with an account. The office places it
+         *     by hand - or assigns the project an owner and looks again.
+         */
+        UnownedConsentOut: {
+            /**
+             * Consent Uuid
+             * Format: uuid
+             */
+            consent_uuid: string;
+            /**
+             * Project Uuid
+             * Format: uuid
+             */
+            project_uuid: string;
+            /** Project Name */
+            project_name: string;
+            /** Is Activity */
+            is_activity: boolean;
+            /** Notice Code */
+            notice_code: string;
+            /** Notice Version */
+            notice_version: number;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Withdrawal */
+            withdrawal: boolean;
+        };
         /** UpdateMe */
         UpdateMe: {
             /** Full Name */
@@ -13984,6 +14164,8 @@ export interface components {
              * Format: uuid
              */
             uuid: string;
+            /** Person No */
+            person_no?: number | null;
             /** Username */
             username: string | null;
             /** Full Name */
@@ -15937,6 +16119,41 @@ export interface operations {
             };
         };
     };
+    change_date_holder_tickets__token__answer_by_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketDateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     message_file_holder_tickets__token__messages__message_uuid__evidence_get: {
         parameters: {
             query?: never;
@@ -16037,7 +16254,9 @@ export interface operations {
     };
     staff_directory_users_staff_get: {
         parameters: {
-            query?: never;
+            query?: {
+                role?: components["schemas"]["Role"] | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -16051,6 +16270,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CollectionOwner"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -23102,7 +23330,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RefuseIn"];
+                "multipart/form-data": components["schemas"]["Body_refuse_requests__request_uuid__refuse_post"];
             };
         };
         responses: {
@@ -23542,6 +23770,42 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SendBackIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HolderOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_ticket_date_requests__request_uuid__holders__holder_uuid__answer_by_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketDateIn"];
             };
         };
         responses: {
@@ -26806,6 +27070,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_my_ticket_date_tickets__holder_uuid__answer_by_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketDateIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketOut"];
                 };
             };
             /** @description Validation Error */

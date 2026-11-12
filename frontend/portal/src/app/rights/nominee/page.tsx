@@ -234,7 +234,7 @@ function NomineeForm() {
                           loading={resending}
                           onClick={resend}
                         >
-                          Send me a new code
+                          Resend code
                         </Button>
                         <Button type="button" variant="ghost" onClick={changeDetails}>
                           Change the details
@@ -243,7 +243,7 @@ function NomineeForm() {
                     </>
                   ) : (
                     <Button type="submit" variant="primary" loading={pending} disabled={!nominationUuid || !contact}>
-                      Send me a code
+                      Send code
                     </Button>
                   )}
                 </form>

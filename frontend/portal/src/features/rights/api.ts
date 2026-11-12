@@ -175,10 +175,6 @@ export function listMyRequestTrail(uuid: Uuid): Promise<AuditEntry[]> {
   return apiGet<AuditEntry[]>(`/me/requests/${uuid}/trail`);
 }
 
-export function downloadMyResponse(uuid: Uuid) {
-  return apiDownload(`/me/requests/${uuid}/download`);
-}
-
 /** A file the Privacy Office released with the response, on the same window. */
 export function downloadMyResponseFile(uuid: Uuid, fileUuid: Uuid) {
   return apiDownload(`/me/requests/${uuid}/files/${fileUuid}`);

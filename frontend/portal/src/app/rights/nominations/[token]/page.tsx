@@ -181,7 +181,7 @@ export default function NominationAcceptPage() {
                   ))}
                 </fieldset>
                 <Button variant="secondary" disabled={!medium || pending} onClick={sendCode}>
-                  Send me a code
+                  Send code
                 </Button>
                 {codeSent && <p className="text-sm text-text-muted">{codeSent}</p>}
                 {codeError && !codeSent && <p className="text-sm text-danger-text">{codeError}</p>}

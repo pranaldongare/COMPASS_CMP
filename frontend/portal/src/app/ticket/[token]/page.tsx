@@ -187,7 +187,7 @@ function CodeStep({
         </p>
         {error && <Alert tone="danger">{error}</Alert>}
         <Button variant={sent ? "secondary" : "primary"} loading={pending && !sent} onClick={send}>
-          {sent ? "Send a new code" : "Send me a code"}
+          {sent ? "Resend code" : "Send code"}
         </Button>
         {sent && <p className="text-text-muted" role="status">{sent}</p>}
         <p className="text-xs text-text-subtle">

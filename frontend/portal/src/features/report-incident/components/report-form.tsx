@@ -294,7 +294,7 @@ export function ReportForm({ onDone }: { onDone: (receipt: IncidentReportReceipt
         </div>
       ) : (
         <Button type="submit" variant="primary" loading={pending}>
-          Send me a code
+          Send code
         </Button>
       )}
     </form>

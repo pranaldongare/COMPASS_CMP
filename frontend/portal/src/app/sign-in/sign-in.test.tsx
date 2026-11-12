@@ -92,7 +92,7 @@ describe("verifying a sign-in code", () => {
     const field = await screen.findByLabelText(/email address/i);
     await user.clear(field);
     await user.type(field, "Asha@Example.org");
-    await user.click(screen.getByRole("button", { name: /send me a code/i }));
+    await user.click(screen.getByRole("button", { name: "Send code" }));
     await user.type(await screen.findByLabelText(/six-digit code/i), "654321");
     await user.click(screen.getByRole("button", { name: "Verify" }));
     await vi.waitFor(() => expect(verified).toHaveLength(2));

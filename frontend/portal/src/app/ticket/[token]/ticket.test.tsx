@@ -7,7 +7,7 @@ import { HttpResponse, http } from "msw";
 import { describe, expect, it, vi } from "vitest";
 
 import HolderTicketPage from "@/app/ticket/[token]/page";
-import { render, screen } from "@/test/render";
+import { render, screen, within } from "@/test/render";
 import { API, server } from "@/test/server";
 
 const TOKEN = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFG";
@@ -84,7 +84,7 @@ describe("an outside holder's ticket", () => {
 
     expect(await screen.findByText("k•••@vendor.example")).toBeInTheDocument();
     expect(screen.queryByText(/tell us what your archive holds/i)).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Send me a code" }));
+    await user.click(screen.getByRole("button", { name: "Send code" }));
     await user.type(await screen.findByLabelText(/six-digit code/i), "123456");
     await user.click(screen.getByRole("button", { name: "Open the ticket" }));
 
@@ -99,14 +99,47 @@ describe("an outside holder's ticket", () => {
     );
     const { user } = render(<HolderTicketPage />);
 
-    await user.click(await screen.findByRole("button", { name: "Submit your answer" }));
-    const send = screen.getByRole("button", { name: "Send your answer" });
-    expect(send).toBeDisabled();
-    for (const radio of screen.getAllByRole("radio")) expect(radio).not.toBeChecked();
-    await user.type(screen.getByLabelText(/what you hold, and what you did/i), "Two boxes.");
-    expect(send).toBeDisabled();
-    await user.click(screen.getByLabelText("Did all of it"));
-    expect(send).toBeEnabled();
+    // The page opens on the answer (2026-11-12): no button to find it behind.
+    expect(await screen.findByRole("tab", { name: /answer the ticket/i })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    const answer = within(screen.getByRole("tabpanel", { name: /answer the ticket/i }));
+    const submit = answer.getByRole("button", { name: "Submit answer" });
+    expect(submit).toBeDisabled();
+    for (const radio of answer.getAllByRole("radio")) expect(radio).not.toBeChecked();
+    await user.type(answer.getByLabelText(/what you hold, and what you did/i), "Two boxes.");
+    expect(submit).toBeDisabled();
+    await user.click(answer.getByLabelText("Did all of it"));
+    expect(submit).toBeEnabled();
+  });
+
+  it("keeps messages on their own tab, and says a message is not an answer", async () => {
+    let written: string | null = null;
+    server.use(
+      http.get(`${API}/holder-tickets/${TOKEN}`, () => HttpResponse.json(link(true))),
+      http.get(`${API}/holder-tickets/${TOKEN}/ticket`, () => HttpResponse.json(detail)),
+      http.post(`${API}/holder-tickets/${TOKEN}/messages`, async ({ request }) => {
+        written = await request.text();
+        return HttpResponse.json(detail);
+      }),
+    );
+    const { user } = render(<HolderTicketPage />);
+    const answer = within(await screen.findByRole("tabpanel", { name: /answer the ticket/i }));
+    expect(answer.queryByRole("button", { name: /send message/i })).not.toBeInTheDocument();
+    await user.type(answer.getByLabelText(/what you hold, and what you did/i), "Two boxes.");
+
+    await user.click(screen.getByRole("tab", { name: /messages/i }));
+    const messages = within(screen.getByRole("tabpanel", { name: /messages/i }));
+    expect(messages.getByText(/a message does not answer the ticket/i)).toBeInTheDocument();
+    expect(messages.queryByRole("button", { name: "Submit answer" })).not.toBeInTheDocument();
+    await user.type(messages.getByLabelText(/message to the privacy office/i), "Which archive?");
+    await user.click(messages.getByRole("button", { name: "Send message" }));
+    await vi.waitFor(() => expect(written).toMatch(/Which archive\?/));
+
+    // Back on the answer, what was typed there is still there.
+    await user.click(messages.getByRole("button", { name: "Answer the ticket" }));
+    expect(answer.getByLabelText(/what you hold, and what you did/i)).toHaveValue("Two boxes.");
   });
 
   it("says a link that opens nothing is not valid, and nothing more", async () => {

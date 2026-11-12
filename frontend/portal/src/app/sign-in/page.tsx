@@ -232,7 +232,7 @@ function SubjectForm() {
         loading={form.formState.isSubmitting}
         disabled={!hydrated}
       >
-        Send me a code
+        Send code
       </Button>
     </form>
   );

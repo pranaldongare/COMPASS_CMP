@@ -235,7 +235,15 @@ export function FileInput({
   required?: boolean;
 }) {
   const id = React.useId();
+  const input = React.useRef<HTMLInputElement>(null);
   const [localError, setLocalError] = React.useState<string | null>(null);
+
+  // The browser goes on naming the file it was given until it is told
+  // otherwise. When the form lets go of its file - sent with a message, say -
+  // the picker lets go too, or it shows a file that is no longer attached.
+  React.useEffect(() => {
+    if (!file && input.current) input.current.value = "";
+  }, [file]);
 
   function pick(next: File | null) {
     setLocalError(null);
@@ -243,6 +251,7 @@ export function FileInput({
       setLocalError(
         `That file is ${formatBytes(next.size)}. The limit is ${formatBytes(maxBytes)}.`,
       );
+      if (input.current) input.current.value = "";
       onChange(null);
       return;
     }
@@ -263,6 +272,7 @@ export function FileInput({
       </label>
 
       <input
+        ref={input}
         id={id}
         type="file"
         accept={accept}

@@ -6,8 +6,9 @@
  * is what she is shown of hers. Two copies would drift, and the one that
  * drifted would be the nominee's.
  *
- * Her answer first, when there is one, with its file and the way to dispute
- * it; then where the request stands, in four plain steps and the date she will
+ * Her answer first, when there is one, with the files released with it and
+ * the way to dispute it (the answer is read here and in the mail; the record
+ * as a data file is no longer offered for download, 2026-11-12); then where the request stands, in four plain steps and the date she will
  * hear by; then what she asked. The office's working is not here: the clock's
  * internal checkpoints and the staff flow (what made the page clumsy), the
  * verification notes and the holders' tickets - the holders themselves are in
@@ -35,7 +36,7 @@ import { ActivityFeed } from "@/components/data-display/activity-feed";
 import { FormError, useApiForm } from "@/components/forms";
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { Alert, Button, Field, Mono, Textarea } from "@/components/ui/primitives";
-import { downloadMyResponse, downloadMyResponseFile } from "@/features/rights/api";
+import { downloadMyResponseFile } from "@/features/rights/api";
 import {
   OUTCOME_COPY,
   RequestStatusBadge,
@@ -208,7 +209,6 @@ export function RequestDetail({
   const [disputing, setDisputing] = React.useState(false);
   const [trailOpen, setTrailOpen] = React.useState(false);
   const trail = useMyRequestTrail(trailOpen ? r.request_uuid : undefined);
-  const [downloading, setDownloading] = React.useState(false);
   const [fetching, setFetching] = React.useState<string | null>(null);
 
   function failed(err: unknown) {
@@ -229,19 +229,6 @@ export function RequestDetail({
       failed(err);
     } finally {
       setFetching(null);
-    }
-  }
-
-  async function download() {
-    setDownloading(true);
-    try {
-      const file = await downloadMyResponse(r.request_uuid);
-      saveBlob(file.blob, file.filename);
-      toast.success("Downloaded", "Keep it somewhere safe - the link is time-limited.");
-    } catch (err) {
-      failed(err);
-    } finally {
-      setDownloading(false);
     }
   }
 
@@ -330,30 +317,17 @@ export function RequestDetail({
               ))}
             </ul>
           )}
-          {(r.download_available || (canDispute && !grievance)) && (
+          {r.response_files.length > 0 && r.download_available && r.download_expires_at && (
+            <p className="mt-1 text-xs text-text-muted">
+              Available until {formatDate(r.download_expires_at)}. Keep a copy.
+            </p>
+          )}
+          {canDispute && !grievance && (
             <div className="mt-3 flex flex-wrap items-center gap-2">
-              {r.download_available && (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  loading={downloading}
-                  onClick={download}
-                >
-                  <Download className="size-4" />
-                  Download your data
-                </Button>
-              )}
-              {r.download_available && r.download_expires_at && (
-                <span className="text-xs text-text-muted">
-                  until {formatDate(r.download_expires_at)}
-                </span>
-              )}
-              {canDispute && !grievance && (
-                <Button variant="secondary" size="sm" onClick={() => setDisputing(true)}>
-                  <MessageSquareWarning className="size-4" />
-                  Dispute this answer
-                </Button>
-              )}
+              <Button variant="secondary" size="sm" onClick={() => setDisputing(true)}>
+                <MessageSquareWarning className="size-4" />
+                Dispute this answer
+              </Button>
             </div>
           )}
           <p className="mt-3 text-xs text-text-subtle">

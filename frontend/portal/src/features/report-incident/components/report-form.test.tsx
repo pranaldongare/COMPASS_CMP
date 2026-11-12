@@ -38,8 +38,8 @@ async function fillTheRequiredBoxes(user: User) {
   await user.type(screen.getByLabelText(/^what happened\s*\*?$/i), "From a car, on Tuesday.");
 }
 
-async function pressSendMeACode(user: User) {
-  await user.click(screen.getByRole("button", { name: /send me a code/i }));
+async function pressSendCode(user: User) {
+  await user.click(screen.getByRole("button", { name: "Send code" }));
   return screen.findByLabelText(/the code we sent/i);
 }
 
@@ -47,7 +47,7 @@ describe("ReportForm", () => {
   it("sends nothing until the four required boxes are filled", async () => {
     const sent = anAcceptingServer();
     const { user } = render(<ReportForm onDone={() => {}} />);
-    await user.click(screen.getByRole("button", { name: /send me a code/i }));
+    await user.click(screen.getByRole("button", { name: "Send code" }));
 
     expect(await screen.findByText(/give your name/i)).toBeInTheDocument();
     expect(screen.getByText(/an email address is required/i)).toBeInTheDocument();
@@ -63,7 +63,7 @@ describe("ReportForm", () => {
     await fillTheRequiredBoxes(user);
     expect(screen.queryByLabelText(/the code we sent/i)).not.toBeInTheDocument();
 
-    const code = await pressSendMeACode(user);
+    const code = await pressSendCode(user);
     expect(sent.codes).toEqual([{ email: "asha@example.org" }]);
     expect(sent.reports).toEqual([]);
     expect(screen.getByText(/on its way/i)).toBeInTheDocument();
@@ -105,7 +105,7 @@ describe("ReportForm", () => {
     await user.type(screen.getByLabelText(/kinds of personal data/i), "Names and mobiles");
     await user.click(screen.getByRole("radio", { name: /not sure/i }));
 
-    await user.type(await pressSendMeACode(user), "123456");
+    await user.type(await pressSendCode(user), "123456");
     await user.click(screen.getByRole("button", { name: /send the report/i }));
     await waitFor(() => expect(onDone).toHaveBeenCalled());
     expect(sent.reports[0]).toMatchObject({
@@ -122,7 +122,7 @@ describe("ReportForm", () => {
     const { user } = render(<ReportForm onDone={() => {}} />);
     await fillTheRequiredBoxes(user);
     await user.type(screen.getByLabelText(/when did you notice it/i), "2099-01-01T09:30");
-    await user.click(screen.getByRole("button", { name: /send me a code/i }));
+    await user.click(screen.getByRole("button", { name: "Send code" }));
     expect(await screen.findByText(/this time is in the future/i)).toBeInTheDocument();
     expect(sent.codes).toEqual([]);
   });
@@ -131,7 +131,7 @@ describe("ReportForm", () => {
     const sent = anAcceptingServer();
     const { user } = render(<ReportForm onDone={() => {}} />);
     await fillTheRequiredBoxes(user);
-    await pressSendMeACode(user);
+    await pressSendCode(user);
     await user.click(screen.getByRole("button", { name: /send the report/i }));
     expect(await screen.findByText(/enter the code we sent you/i)).toBeInTheDocument();
     expect(sent.reports).toEqual([]);
@@ -151,7 +151,7 @@ describe("ReportForm", () => {
     const onDone = vi.fn();
     const { user } = render(<ReportForm onDone={onDone} />);
     await fillTheRequiredBoxes(user);
-    const code = await pressSendMeACode(user);
+    const code = await pressSendCode(user);
     await user.type(code, "000000");
     await user.click(screen.getByRole("button", { name: /send the report/i }));
 
@@ -171,7 +171,7 @@ describe("ReportForm", () => {
     const sent = anAcceptingServer();
     const { user } = render(<ReportForm onDone={() => {}} />);
     await fillTheRequiredBoxes(user);
-    const code = await pressSendMeACode(user);
+    const code = await pressSendCode(user);
     await user.type(code, "abc");
     await user.click(screen.getByRole("button", { name: /send a new code/i }));
     expect(await screen.findByText(/we have sent a new code/i)).toBeInTheDocument();
@@ -183,20 +183,20 @@ describe("ReportForm", () => {
     anAcceptingServer();
     const { user } = render(<ReportForm onDone={() => {}} />);
     await fillTheRequiredBoxes(user);
-    await pressSendMeACode(user);
+    await pressSendCode(user);
     await user.type(screen.getByLabelText(/your email/i), "m");
     expect(screen.queryByLabelText(/the code we sent/i)).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /send me a code/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Send code" })).toBeInTheDocument();
   });
 
   it("lets a stray letter in the code box go with the address it was for", async () => {
     const sent = anAcceptingServer();
     const { user } = render(<ReportForm onDone={() => {}} />);
     await fillTheRequiredBoxes(user);
-    await user.type(await pressSendMeACode(user), "abc");
+    await user.type(await pressSendCode(user), "abc");
     await user.type(screen.getByLabelText(/your email/i), "m");
 
-    await user.click(screen.getByRole("button", { name: /send me a code/i }));
+    await user.click(screen.getByRole("button", { name: "Send code" }));
     const code = await screen.findByLabelText(/the code we sent/i);
     expect(sent.codes).toEqual([{ email: "asha@example.org" }, { email: "asha@example.orgm" }]);
     expect(code).toHaveValue("");
@@ -214,7 +214,7 @@ describe("ReportForm", () => {
     );
     const { user, container } = render(<ReportForm onDone={() => {}} />);
     await fillTheRequiredBoxes(user);
-    const button = screen.getByRole("button", { name: /send me a code/i });
+    const button = screen.getByRole("button", { name: "Send code" });
     await user.click(button);
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent(/too many codes.*about 10 minutes/i);
@@ -238,7 +238,7 @@ describe("ReportForm", () => {
     );
     const { user } = render(<ReportForm onDone={() => {}} />);
     await fillTheRequiredBoxes(user);
-    const code = await pressSendMeACode(user);
+    const code = await pressSendCode(user);
     await user.type(code, "123456");
     const button = screen.getByRole("button", { name: /send the report/i });
     await user.click(button);
@@ -259,7 +259,7 @@ describe("ReportForm", () => {
     const fold = container.querySelector("details");
     expect(fold).not.toHaveAttribute("open");
     await fillTheRequiredBoxes(user);
-    await user.type(await pressSendMeACode(user), "123456");
+    await user.type(await pressSendCode(user), "123456");
     await user.click(screen.getByRole("button", { name: /send the report/i }));
     expect(await screen.findByText(/too long/i)).toBeInTheDocument();
     expect(fold).toHaveAttribute("open");

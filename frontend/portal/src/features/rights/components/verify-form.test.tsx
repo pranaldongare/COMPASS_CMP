@@ -36,7 +36,7 @@ describe("VerifyForm", () => {
     expect(screen.queryByText(NEW_CODE)).not.toBeInTheDocument();
 
     await user.type(screen.getByLabelText(/the code we sent/i), "000000");
-    await user.click(screen.getByRole("button", { name: /confirm it is me/i }));
+    await user.click(screen.getByRole("button", { name: "Verify identity" }));
 
     expect(await screen.findByText("Invalid or expired code")).toBeInTheDocument();
     expect(screen.getByText(NEW_CODE)).toBeInTheDocument();
@@ -61,7 +61,7 @@ describe("VerifyForm", () => {
     for (let i = 0; i < 6; i += 1) {
       await user.clear(code);
       await user.type(code, `00000${i}`);
-      await user.click(screen.getByRole("button", { name: /confirm it is me/i }));
+      await user.click(screen.getByRole("button", { name: "Verify identity" }));
       await vi.waitFor(() => expect(tries.n).toBe(i + 1));
       expect(await screen.findByText(NEW_CODE)).toBeInTheDocument();
     }
@@ -89,7 +89,7 @@ describe("VerifyForm", () => {
     const { user } = render(<VerifyForm reference={REFERENCE} onDone={onDone} />);
 
     await user.type(screen.getByLabelText(/the code we sent/i), "123456");
-    await user.click(screen.getByRole("button", { name: /confirm it is me/i }));
+    await user.click(screen.getByRole("button", { name: "Verify identity" }));
 
     await vi.waitFor(() => expect(onDone).toHaveBeenCalled());
     expect(screen.queryByText(NEW_CODE)).not.toBeInTheDocument();
