@@ -15,7 +15,7 @@
 import * as React from "react";
 import { Trash2 } from "lucide-react";
 import { FormError } from "@/components/forms";
-import { DialogFooter } from "@/components/ui/dialog";
+import { DialogFooter, useDialogSaved } from "@/components/ui/dialog";
 import { Button, Field, Select } from "@/components/ui/primitives";
 import { useAttachPurpose, useDetachPurpose } from "@/features/notices";
 import { useNoticePurposes } from "@/features/notices";
@@ -24,6 +24,7 @@ import { useToast } from "@/providers";
 
 export function NoticePurposesForm({ noticeUuid }: { noticeUuid: string }) {
   const toast = useToast();
+  const saved = useDialogSaved();
   const attached = useNoticePurposes(noticeUuid);
   const { data: available } = usePurposes({ status: "active", limit: 100 });
   const attach = useAttachPurpose(noticeUuid);
@@ -53,6 +54,8 @@ export function NoticePurposesForm({ noticeUuid }: { noticeUuid: string }) {
       toast.success("Purpose attached");
       setChosen("");
       setMandatory(false);
+      // Attached is saved; the window stays open for the next one.
+      saved();
       await attached.refetch();
     } catch (err) {
       setError(

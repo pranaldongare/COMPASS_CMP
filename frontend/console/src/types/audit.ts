@@ -37,6 +37,11 @@ export interface AuditEntry {
   entity_noun: string | null;
   /** In-app path, or null where the product has no page for that thing. */
   entity_href: string | null;
+  /** The words of a reason the trail only marks as given (ADR 0015), for the
+   *  events a reader is shown them for - a rights ticket's date change. The
+   *  server reads them now from the ticket message that keeps them, and the
+   *  client opens them; absent for other events and once that message is gone. */
+  reason?: string | null;
 }
 
 export interface AuditVerification {

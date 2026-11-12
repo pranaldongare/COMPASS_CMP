@@ -44,7 +44,7 @@ test.describe("messages", () => {
 
     // Two clicks to reset, on purpose.
     await card.getByRole("button", { name: "Reset to default" }).click();
-    await card.getByRole("button", { name: "Yes, use the default words" }).click();
+    await card.getByRole("button", { name: "Use default wording" }).click();
     await expect(page.getByText("Back to the default")).toBeVisible();
     await expect(card.getByText("Default words", { exact: true })).toBeVisible();
   });

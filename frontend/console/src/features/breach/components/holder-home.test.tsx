@@ -109,7 +109,7 @@ describe("HolderHome", () => {
     expect(
       screen.getByText("You were asked to help with a breach. Your tickets are below."),
     ).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /open my tickets/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /open tickets/i })).toHaveAttribute(
       "href",
       "#breach-tickets",
     );

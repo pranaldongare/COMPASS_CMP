@@ -126,7 +126,9 @@ export function ProjectConsents({
               <caption className="sr-only">This project&apos;s consents</caption>
               <thead>
                 <tr>
+                  <Th>Consent ID</Th>
                   <Th>Data subject</Th>
+                  <Th>Person ID</Th>
                   <Th>Site</Th>
                   <Th>Status</Th>
                   <Th>Purposes</Th>
@@ -136,12 +138,14 @@ export function ProjectConsents({
               <tbody>
                 {rows.map((c) => (
                   <Tr key={c.consent_uuid}>
+                    <Td className="tabular whitespace-nowrap text-text-muted">{c.consent_no}</Td>
                     <Td>
                       <Link href={`/consents/${c.consent_uuid}`} className="font-medium text-text hover:text-accent-text hover:underline">
                         {c.subject_name}
                       </Link>
                       <p className="mt-0.5 text-xs text-text-subtle">{c.subject_email ?? c.subject_mobile}</p>
                     </Td>
+                    <Td className="tabular whitespace-nowrap text-text-muted">{c.person_no}</Td>
                     <Td className="text-text-muted">{c.site_label}</Td>
                     <Td>
                       <StatusBadge kind="consent" value={c.consent_status} />

@@ -136,12 +136,26 @@ export interface RightsRequestRow {
 export interface RightsHolder {
   holder_uuid: Uuid;
   label: string;
-  derived_from: "export_line" | "asset_consent" | "manual";
-  /** What named this holder: export and asset uuids. Empty for a manual one. */
-  evidence: { exports?: string[]; assets?: string[] };
+  derived_from: "export_line" | "asset_consent" | "manual" | "activity_processor" | "project_owner";
+  /** What named this holder: export, asset and activity uuids for a
+   *  processor; the project and her consents in it for a project's owner.
+   *  Empty for a manual one. */
+  evidence: {
+    exports?: string[];
+    assets?: string[];
+    activities?: string[];
+    project?: string;
+    is_activity?: boolean;
+    consents?: string[];
+  };
   processor_uuid: Uuid | null;
   processor_name: string | null;
   is_in_house: boolean | null;
+  /** The project or activity whose owner this holder is (0069); null for a
+   *  processor, or a holder added by hand. */
+  project_uuid?: Uuid | null;
+  project_name?: string | null;
+  is_activity?: boolean | null;
   confirmed_at: Timestamp | null;
   confirmed_by_name: string | null;
   ticket_status: RightsTicketStatus;
@@ -223,7 +237,8 @@ export type TicketMoveName =
   | "send_back"
   | "reopen"
   | "edit_responder"
-  | "correct_contact";
+  | "correct_contact"
+  | "change_date";
 
 export interface TicketMove {
   move: TicketMoveName;
@@ -362,6 +377,12 @@ export interface MyTicket {
   state: TicketState;
   state_label: string;
   overdue: boolean;
+  /** Whether the holder may move the date their answer is due (2026-11-12):
+   *  while the ticket waits on them. */
+  may_change_date?: boolean;
+  /** When the request itself must be answered: the latest the ticket's date
+   *  may be moved to. */
+  request_due_at?: Timestamp | null;
 }
 
 /**
@@ -538,6 +559,19 @@ export interface RequestAttachment {
   added_at: Timestamp;
 }
 
+/** A consent nobody could be found to ask about (0069). */
+export interface UnownedConsent {
+  consent_uuid: Uuid;
+  project_uuid: Uuid;
+  project_name: string;
+  is_activity: boolean;
+  notice_code: string;
+  notice_version: number;
+  at: Timestamp;
+  /** The record of her withdrawing, not of her agreeing. */
+  withdrawal: boolean;
+}
+
 export interface RightsRequestDetail extends RightsRequest {
   /** The last transfer: from which office, when, and why (sealed). */
   transferred_from: string | null;
@@ -546,6 +580,11 @@ export interface RightsRequestDetail extends RightsRequest {
   /** When an office took it from the shared intake. */
   claimed_at: Timestamp | null;
   holders: RightsHolder[];
+  /** When the records were last read for who holds the person's data. */
+  holders_derived_at?: Timestamp | null;
+  /** Consents that reading found nobody for: their project or activity names
+   *  no owner. Empty until the records have been read. */
+  unowned_consents?: UnownedConsent[];
   items: RightsScopeItem[];
   transitions: RightsTransitionOption[];
   /** Why the request may not close as `complete`, or null when it may. The

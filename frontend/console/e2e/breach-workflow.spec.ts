@@ -500,14 +500,14 @@ test.describe("the public link", () => {
     await signedIn(browser, "dpo", async (page) => {
       await page.goto("/breaches");
       const row = page.getByTestId("incident-intake").getByRole("listitem").filter({ hasText: world.title });
-      await row.getByRole("button", { name: "Read it" }).click();
+      await row.getByRole("button", { name: "Open report" }).click();
       const dialog = page.getByRole("dialog");
       await expect(dialog.getByText(`Reported incident ${world.incident}`)).toBeVisible();
       await expect(dialog.getByText(world.details)).toBeVisible();
       await expect(dialog.getByText(world.reporter)).toBeVisible();
       await expect(dialog.getByText("No clock has started", { exact: false })).toBeVisible();
       await snap(page, "03-read-report");
-      await dialog.getByRole("button", { name: "Claim for my office" }).click();
+      await dialog.getByRole("button", { name: "Claim for this office" }).click();
 
       await page.waitForURL(/\/breaches\/[0-9a-f-]{36}/);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(world.incident);
@@ -545,12 +545,12 @@ test.describe("the public link", () => {
     await signedIn(browser, "dpo", async (page) => {
       await page.goto("/breaches");
       const row = page.getByTestId("incident-intake").getByRole("listitem").filter({ hasText: title });
-      await row.getByRole("button", { name: "Read it" }).click();
+      await row.getByRole("button", { name: "Open report" }).click();
       const dialog = page.getByRole("dialog");
       await dialog.getByRole("button", { name: "Dismiss", exact: true }).click();
       const dismiss = dialog.getByRole("button", { name: "Dismiss the report" });
       await expect(dismiss).toBeDisabled();
-      await dialog.getByLabel(/^Why is it being dismissed/).fill("A joke, not an incident");
+      await dialog.getByLabel(/^Reason for dismissal/).fill("A joke, not an incident");
       await dismiss.click();
       await expect(page.getByText("Report dismissed")).toBeVisible();
       await expect(page.getByText(title)).toHaveCount(0);
@@ -897,20 +897,19 @@ test.describe("the DPO's office", () => {
     await page.goto(`${world.url}#tickets`);
     await page.getByRole("button", { name: "Assign a ticket" }).click();
     const dialog = page.getByRole("dialog");
-    await dialog.getByLabel(/^Find them/).fill("dco@cmp.local");
-    const who = dialog.getByLabel(/^Who/);
-    await expect(who.locator("option", { hasText: "dco@cmp.local" })).toHaveCount(1);
-    await who.selectOption({ label: (await who.locator("option", { hasText: "dco@cmp.local" }).textContent()) ?? "" });
-    await dialog.getByLabel(/^What you are asking them to do/).fill("Keep the drive's access log");
+    // Found by typing: the matches are listed under the box as it is typed.
+    await dialog.getByRole("combobox", { name: /^Assign to/ }).fill("dco@cmp.local");
+    await dialog.getByRole("option").filter({ hasText: "dco@cmp.local" }).click();
+    await dialog.getByLabel(/^Instruction/).fill("Keep the drive's access log");
     await dialog.getByLabel(/^Resolve by/).fill(world.answerBy);
-    await dialog.getByLabel(/^Attach a document/).setInputFiles({
+    await dialog.getByLabel(/^Attachment/).setInputFiles({
       name: "drive-scope.pdf",
       mimeType: "application/pdf",
       buffer: PDF,
     });
     await snap(page, "19-assign-ticket");
     const mark = outboxMark();
-    await dialog.getByRole("button", { name: "Assign", exact: true }).click();
+    await dialog.getByRole("button", { name: "Assign ticket" }).click();
     await expect(page.getByText("Ticket assigned", { exact: true })).toBeVisible();
 
     const mails = await arrivals(mark, (e) => e.some((m) => m.to === "dco@cmp.local"));
@@ -938,9 +937,9 @@ test.describe("the DPO's office", () => {
     const dialog = page.getByRole("dialog");
     await dialog.getByRole("button", { name: "Change the date" }).click();
     const save = dialog.getByRole("button", { name: "Change the date" });
-    await dialog.getByLabel(/^New date/).fill(world.office);
+    await dialog.getByLabel(/^New resolve by date/).fill(world.office);
     await expect(save, "a reason is required").toBeDisabled();
-    await dialog.getByLabel(/^Why is it changing/).fill(`Waiting on IT ${stamp}`);
+    await dialog.getByLabel(/^Reason/).fill(`Waiting on IT ${stamp}`);
     await snap(page, "20-office-change-date");
     const mark = outboxMark();
     await save.click();
@@ -964,8 +963,10 @@ test.describe("the holder", () => {
     const card = page.getByTestId("breach-ticket").filter({ hasText: world.reference });
     await expect(card).toBeVisible();
     await expect(page.getByText(world.title)).toHaveCount(0);
-    await card.getByRole("button", { name: "Respond" }).click();
+    await card.getByRole("button", { name: "Answer" }).click();
     const dialog = page.getByRole("dialog");
+    // The window opens on the answer; what was said is on the other tab.
+    await dialog.getByRole("tab", { name: /Messages/ }).click();
     const thread = dialog.getByRole("list", { name: "Messages" });
     await expect(thread.getByText(/File: drive-scope\.pdf/)).toBeVisible();
     await expect(thread.getByText(`Waiting on IT ${stamp}`, { exact: false })).toBeVisible();
@@ -975,9 +976,9 @@ test.describe("the holder", () => {
 
     await dialog.getByRole("button", { name: "Change the date" }).click();
     const save = dialog.getByRole("button", { name: "Change the date" });
-    await dialog.getByLabel(/^New date/).fill(world.holder);
+    await dialog.getByLabel(/^New resolve by date/).fill(world.holder);
     await expect(save, "a reason is required").toBeDisabled();
-    await dialog.getByLabel(/^Why is it changing/).fill(`Log arrives Friday ${stamp}`);
+    await dialog.getByLabel(/^Reason/).fill(`Log arrives Friday ${stamp}`);
     await snap(page, "21-holder-change-date");
     const mark = outboxMark();
     await save.click();
@@ -1120,7 +1121,7 @@ test.describe("the trail and the close", () => {
     const dialog = page.getByRole("dialog");
     // Nothing back from the holder yet: the office withdraws its ask.
     await dialog.getByRole("button", { name: "Withdraw" }).click();
-    await dialog.getByLabel(/Why is it withdrawn/).fill("The log arrived by another route");
+    await dialog.getByLabel(/^Reason for withdrawing/).fill("The log arrived by another route");
     await dialog.getByRole("button", { name: "Withdraw" }).click();
     await expect(page.getByText("Ticket withdrawn")).toBeVisible();
     await page.keyboard.press("Escape");
@@ -1363,8 +1364,8 @@ test.describe("a report to CERT-In before validation", () => {
     await certIn.getByRole("button", { name: "Not reportable to CERT-In" }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByText(/is not mailed while it stays set aside/)).toBeVisible();
-    await dialog.getByLabel(/^Why it is not reportable/).fill(`A scanner's false alarm ${stamp}`);
-    await dialog.getByRole("button", { name: "Set CERT-In aside" }).click();
+    await dialog.getByLabel(/^Reason it is not reportable/).fill(`A scanner's false alarm ${stamp}`);
+    await dialog.getByRole("button", { name: "Mark as not reportable" }).click();
     await expect(page.getByText("CERT-In set aside")).toBeVisible();
     await expect(certIn.getByText("Not applicable")).toBeVisible();
     await expect(certIn.getByText(`A scanner's false alarm ${stamp}`)).toBeVisible();
@@ -1392,8 +1393,8 @@ test.describe("the Legal office's own breach", () => {
     own.incident = await report(`legal.reporter.${stamp}@example.org`, own.title, "A payslip went astray");
     await page.goto("/breaches");
     const row = page.getByTestId("incident-intake").getByRole("listitem").filter({ hasText: own.title });
-    await row.getByRole("button", { name: "Read it" }).click();
-    await page.getByRole("dialog").getByRole("button", { name: "Claim for my office" }).click();
+    await row.getByRole("button", { name: "Open report" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "Claim for this office" }).click();
     await page.waitForURL(/\/breaches\/[0-9a-f-]{36}/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(own.incident);
     own.url = page.url().split("#")[0];
@@ -1471,18 +1472,16 @@ test.describe("the Legal office's own breach", () => {
     await page.goto(`${own.url}#tickets`);
     await page.getByRole("button", { name: "Assign a ticket" }).click();
     const dialog = page.getByRole("dialog");
-    await dialog.getByLabel(/^Find them/).fill(HR_POC);
-    const who = dialog.getByLabel(/^Who/);
-    await expect(who.locator("option", { hasText: HR_POC })).toHaveCount(1);
-    await who.selectOption({ label: (await who.locator("option", { hasText: HR_POC }).textContent()) ?? "" });
-    await dialog.getByLabel(/^What you are asking them to do/).fill("Confirm who received it");
-    await dialog.getByRole("button", { name: "Assign", exact: true }).click();
+    await dialog.getByRole("combobox", { name: /^Assign to/ }).fill(HR_POC);
+    await dialog.getByRole("option").filter({ hasText: HR_POC }).click();
+    await dialog.getByLabel(/^Instruction/).fill("Confirm who received it");
+    await dialog.getByRole("button", { name: "Assign ticket" }).click();
     await expect(page.getByText("Ticket assigned", { exact: true })).toBeVisible();
     const row = page.locator("#tickets").getByRole("row", { name: /Waiting on the holder/ });
     await row.getByRole("button", { name: "Open" }).click();
     const opened = page.getByRole("dialog");
     await opened.getByRole("button", { name: "Withdraw" }).click();
-    await opened.getByLabel(/Why is it withdrawn/).fill("Answered by phone");
+    await opened.getByLabel(/^Reason for withdrawing/).fill("Answered by phone");
     await opened.getByRole("button", { name: "Withdraw" }).click();
     await expect(page.getByText("Ticket withdrawn")).toBeVisible();
     await page.keyboard.press("Escape");

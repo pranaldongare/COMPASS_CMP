@@ -28,6 +28,13 @@ function minutesAgo(minutes: number): string {
   return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}T${pad(at.getHours())}:${pad(at.getMinutes())}`;
 }
 
+/** A day ahead of today, as a date input takes it, in the browser's own calendar. */
+function daysAhead(days: number): string {
+  const at = new Date(Date.now() + days * 86_400_000);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())}`;
+}
+
 const shared: { url: string; reference: string; title: string } = { url: "", reference: "", title: "" };
 
 /** The breach page's sections are tabs; a tab's name carries its count. */
@@ -51,7 +58,7 @@ test.describe("the DPO asks", () => {
 
     // Before the yes, nobody can be asked.
     await openTab(page, "Tickets");
-    await expect(page.getByText("Tickets wait for the breach to be recorded")).toBeVisible();
+    await expect(page.getByText("Tickets are available once the breach is recorded")).toBeVisible();
 
     await openTab(page, "Validation");
     await page.getByLabel(/^Became aware at/).fill(minutesAgo(10));
@@ -64,14 +71,30 @@ test.describe("the DPO asks", () => {
     await openTab(page, "Tickets");
     await page.getByRole("button", { name: "Assign a ticket" }).click();
     const dialog = page.getByRole("dialog");
-    await dialog.getByLabel(/^Find them/).fill("dco@cmp.local");
-    const who = dialog.getByLabel(/^Who/);
-    await expect(who.locator("option", { hasText: "dco@cmp.local" })).toHaveCount(1);
-    await who.selectOption({ label: (await who.locator("option", { hasText: "dco@cmp.local" }).textContent()) ?? "" });
-    await dialog.getByLabel(/^What you are asking them to do/).fill("Export the drive's access log and keep it");
-    await dialog.getByRole("button", { name: "Assign", exact: true }).click();
+    // Found by typing: the matches are listed under the box as it is typed.
+    await dialog.getByRole("combobox", { name: /^Assign to/ }).fill("dco@cmp.local");
+    await dialog.getByRole("option").filter({ hasText: "dco@cmp.local" }).click();
+    await dialog.getByLabel(/^Instruction/).fill("Export the drive's access log and keep it");
+    await dialog.getByRole("button", { name: "Assign ticket" }).click();
     const tickets = page.locator("#tickets");
-    await expect(tickets.getByRole("row", { name: /Waiting on the holder/ })).toBeVisible();
+    const row = tickets.getByRole("row", { name: /Waiting on the holder/ });
+    await expect(row).toBeVisible();
+
+    // The date is given afterwards, with the reason - the control a rights
+    // ticket has (2026-11-12) - and the window does not then ask about
+    // unsaved changes. The keyboard presses the row's button, as on a phone.
+    await row.getByRole("button", { name: "Open" }).focus();
+    await page.keyboard.press("Enter");
+    const opened = page.getByRole("dialog");
+    await opened.getByRole("button", { name: "Change the date" }).click();
+    await opened.getByLabel(/^New resolve by date/).fill(daysAhead(3));
+    await opened.getByLabel(/^Reason/).fill("The log rotates on Friday");
+    await opened.getByRole("button", { name: "Change the date" }).click();
+    await expect(page.getByText("Date changed")).toBeVisible();
+    await expect(opened.getByText(/Resolve by changed/).first()).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByText(/not saved/i)).toHaveCount(0);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 });
 
@@ -86,13 +109,13 @@ test.describe("the DCO answers", () => {
     // Nothing else from the register reaches the holder.
     await expect(page.getByText(shared.title)).toHaveCount(0);
 
-    await card.getByRole("button", { name: "Respond" }).click();
+    // The window opens on the answer, as a rights ticket's does (2026-11-12).
+    await card.getByRole("button", { name: "Answer" }).click();
     const dialog = page.getByRole("dialog");
-    await dialog.getByLabel(/^When you return the ticket/).selectOption("done");
-    await dialog.getByLabel("Message", { exact: true }).fill("Exported to the evidence share; nothing deleted.");
-    await dialog.getByText("This is my return").click();
-    await dialog.getByTestId("composer-send").click();
-    await expect(page.getByText("Ticket returned")).toBeVisible();
+    await dialog.getByLabel("Did all of it").check();
+    await dialog.getByLabel(/What you did, and how/).fill("Exported to the evidence share; nothing deleted.");
+    await dialog.getByRole("button", { name: "Submit answer" }).click();
+    await expect(page.getByText("Answer submitted")).toBeVisible();
 
     // The register is still not theirs.
     await page.goto(shared.url);
@@ -108,14 +131,15 @@ test.describe("the DPO closes", () => {
     // The open ticket is what stands in the way, among the rest.
     await expect(page.getByText("1 breach ticket is still open")).toBeVisible();
     const tickets = page.locator("#tickets");
-    const row = tickets.getByRole("row", { name: /Returned/ });
+    const row = tickets.getByRole("row", { name: /Answered - review/ });
     await expect(row).toBeVisible();
     // On a phone the table scrolls sideways inside its card, and the pointer's
     // hit-test lands on the card's header; the keyboard presses the same button.
-    await row.getByRole("button", { name: "Open" }).focus();
+    await row.getByRole("button", { name: "Review the answer" }).focus();
     await page.keyboard.press("Enter");
     const dialog = page.getByRole("dialog");
-    await expect(dialog.getByText("Exported to the evidence share; nothing deleted.")).toBeVisible();
+    // Their answer stands at the top of the window, and again among the messages.
+    await expect(dialog.getByText("Exported to the evidence share; nothing deleted.").first()).toBeVisible();
     await dialog.getByRole("button", { name: "Close the ticket" }).click();
     await expect(page.getByText("Ticket closed")).toBeVisible();
     await page.keyboard.press("Escape");
@@ -184,13 +208,13 @@ test.describe("a temporary holder", () => {
     await openTab(page, "Tickets");
     await page.getByRole("button", { name: "Assign a ticket" }).click();
     const dialog = page.getByRole("dialog");
-    await dialog.getByLabel("Someone without a console login").check();
-    await dialog.getByLabel(/^Their name/).fill(`Holder ${temp.stamp}`);
-    await dialog.getByLabel(/^Their work email/).fill(temp.email);
-    await dialog.getByLabel(/^What you are asking them to do/).fill("Pull the badge log for the server room");
+    await dialog.getByLabel("Person without a console account").check();
+    await dialog.getByLabel(/^Name/).fill(`Holder ${temp.stamp}`);
+    await dialog.getByLabel(/^Work email/).fill(temp.email);
+    await dialog.getByLabel(/^Instruction/).fill("Pull the badge log for the server room");
     // On a phone the tall dialog's own body takes the pointer's hit-test at
     // the foot of the viewport; the keyboard presses the same button.
-    await dialog.getByRole("button", { name: "Assign", exact: true }).focus();
+    await dialog.getByRole("button", { name: "Assign ticket" }).focus();
     await page.keyboard.press("Enter");
     const row = page.locator("#tickets").getByRole("row", { name: new RegExp(`^Holder ${temp.stamp}`) });
     await expect(row.getByText("Temporary login · not yet signed in")).toBeVisible();
@@ -224,19 +248,18 @@ test.describe("a temporary holder", () => {
 
     await card.getByRole("button", { name: "Add a colleague" }).click();
     const add = page.getByRole("dialog");
-    await add.getByLabel(/^Their name/).fill(`Colleague ${temp.stamp}`);
-    await add.getByLabel(/^Their work email/).fill(`colleague.${temp.stamp}@cmp.local`.toLowerCase());
-    await add.getByLabel(/^What you are asking them to do/).fill("Check the door controller's own log");
-    await add.getByRole("button", { name: "Add", exact: true }).click();
+    await add.getByLabel(/^Name/).fill(`Colleague ${temp.stamp}`);
+    await add.getByLabel(/^Work email/).fill(`colleague.${temp.stamp}@cmp.local`.toLowerCase());
+    await add.getByLabel(/^Instruction/).fill("Check the door controller's own log");
+    await add.getByRole("button", { name: "Add colleague" }).click();
     await expect(page.getByText("Colleague added")).toBeVisible();
 
-    await card.getByRole("button", { name: "Respond" }).click();
+    await card.getByRole("button", { name: "Answer" }).click();
     const respond = page.getByRole("dialog");
-    await respond.getByLabel(/^When you return the ticket/).selectOption("done");
-    await respond.getByLabel("Message", { exact: true }).fill("Badge log exported to the evidence share.");
-    await respond.getByText("This is my return").click();
-    await respond.getByTestId("composer-send").click();
-    await expect(page.getByText("Ticket returned")).toBeVisible();
+    await respond.getByLabel("Did all of it").check();
+    await respond.getByLabel(/What you did, and how/).fill("Badge log exported to the evidence share.");
+    await respond.getByRole("button", { name: "Submit answer" }).click();
+    await expect(page.getByText("Answer submitted")).toBeVisible();
 
     // Nothing else in the console is theirs.
     await page.goto(temp.url);
@@ -260,9 +283,10 @@ test.describe("a temporary holder", () => {
     await colleague.getByRole("button", { name: "Open" }).focus();
     await page.keyboard.press("Enter");
     let dialog = page.getByRole("dialog");
-    await expect(dialog.getByText("Check the door controller's own log")).toBeVisible();
+    // What they were asked, and the same words as the first message.
+    await expect(dialog.getByText("Check the door controller's own log").first()).toBeVisible();
     await dialog.getByRole("button", { name: "Withdraw" }).click();
-    await dialog.getByLabel(/Why is it withdrawn/).fill("Covered by the first return");
+    await dialog.getByLabel(/^Reason for withdrawing/).fill("Covered by the first return");
     await dialog.getByRole("button", { name: "Withdraw" }).click();
     await expect(page.getByText("Ticket withdrawn")).toBeVisible();
     await expect(dialog.getByText("Temporary login · read only")).toBeVisible();
@@ -272,7 +296,7 @@ test.describe("a temporary holder", () => {
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(colleague.getByText("Temporary login · read only")).toBeVisible();
 
-    await holder.getByRole("button", { name: "Open" }).focus();
+    await holder.getByRole("button", { name: "Review the answer" }).focus();
     await page.keyboard.press("Enter");
     dialog = page.getByRole("dialog");
     await dialog.getByRole("button", { name: "Close the ticket" }).click();

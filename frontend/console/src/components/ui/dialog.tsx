@@ -20,26 +20,68 @@ export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
 export const DialogClose = DialogPrimitive.Close;
 
-/** Tells the dialog around it that what was typed has been saved. */
-const SavedContext = React.createContext<() => void>(() => {});
+/** Tells the dialog around it that what was typed has been dealt with:
+ *  everything, or what was typed in one named part of it. */
+type Saved = (part?: string) => void;
+/** Marks a part of a dialog that finishes on its own (`useDialogPart`). */
+const PART = "data-dialog-part";
+/** Tells it that closing would lose something that is not typing, and why. */
+type Hold = (reason: string | null) => void;
+const DialogContext = React.createContext<{ saved: Saved; hold: Hold }>({
+  saved: () => {},
+  hold: () => {},
+});
 
 /**
- * For a form that saves and stays open - a message sent on a thread, a move
- * made with a reason: call it after the save succeeds, and closing the dialog
- * no longer asks about changes that are already saved. Outside a dialog it
- * does nothing.
+ * For a dialog whose whole content is saved while it stays open - a wizard
+ * that ends on a "created" panel: call it once the save succeeds, and closing
+ * the dialog no longer asks about typing that is already saved. A form that
+ * shares its dialog with others uses `useDialogPart`, and answers only for
+ * itself. Outside a dialog it does nothing.
  */
-export function useDialogSaved(): () => void {
-  return React.useContext(SavedContext);
+export function useDialogSaved(): Saved {
+  return React.useContext(DialogContext).saved;
+}
+
+/**
+ * For a form that finishes and leaves the dialog open, beside other things
+ * somebody may be typing in - a message sent on a thread, a respondent added,
+ * a move made with a reason: spread `part` on the form's element, and call
+ * `done()` once its save succeeds or its own Cancel gives it up. Closing the
+ * dialog then no longer asks about what was typed in that form, and still
+ * asks about anything typed outside it: a message sent does not answer for a
+ * reason half-typed beside it.
+ */
+export function useDialogPart(): { part: { [PART]: string }; done: () => void } {
+  const id = React.useId();
+  const { saved } = React.useContext(DialogContext);
+  const done = React.useCallback(() => saved(id), [saved, id]);
+  return { part: { [PART]: id }, done };
+}
+
+/**
+ * For something closing would lose that nobody typed - a link shown once and
+ * never again. While `reason` is given, closing the dialog by Escape, a click
+ * outside or its X asks first, in those words, and not as "changes that are
+ * not saved", which it is not. The content's own button closes as it always
+ * did. Outside a dialog it does nothing.
+ */
+export function useDialogHold(reason: string | null): void {
+  const { hold } = React.useContext(DialogContext);
+  React.useEffect(() => {
+    hold(reason);
+    return () => hold(null);
+  }, [hold, reason]);
 }
 
 /** The same, for a dialog's owner, which sits outside it: render it inside
- *  the dialog and bump `count` after each save. */
-export function DialogSaved({ count }: { count: number }) {
+ *  the dialog and bump `count` after each save. With `part`, only what was
+ *  typed inside the element carrying `data-dialog-part` of that name. */
+export function DialogSaved({ count, part }: { count: number; part?: string }) {
   const saved = useDialogSaved();
   React.useEffect(() => {
-    if (count > 0) saved();
-  }, [count, saved]);
+    if (count > 0) saved(part);
+  }, [count, part, saved]);
   return null;
 }
 
@@ -59,23 +101,42 @@ export function DialogContent({
   size?: "sm" | "md" | "lg";
 }) {
   // Typed in since it opened? The content mounts afresh each time the dialog
-  // opens, so this starts false every time. A dialog nobody has typed in
+  // opens, so this starts empty every time. A dialog nobody has typed in
   // closes as it always did; one somebody has asks before its typing is
   // thrown away (UX review 2026-10-05: a project draft vanished on Escape).
   // A form's own Cancel, and a save that closes it, are not dismissals and do
   // not ask. A save that keeps it open - a message sent on a thread - says so
   // through `useDialogSaved`, and typing after it starts the question again.
-  const [dirty, setDirty] = React.useState(false);
-  const [asking, setAsking] = React.useState(false);
-  const markSaved = React.useCallback(() => {
-    setDirty(false);
-    setAsking(false);
+  //
+  // Kept as the fields typed in, each with the part of the dialog it sits in,
+  // not as one flag (2026-11-12), so a form can answer for its own: a message
+  // sent used to clear a reason half-typed beside it. Nothing is inferred
+  // from a field emptying or going away - a wizard's earlier step and an
+  // address added to a list not yet saved look exactly like finished work,
+  // and are not.
+  const typed = React.useRef(new Map<Element, string | null>());
+  // What closing is being asked about, while it is: typing not saved, or
+  // something the content says would be lost (`useDialogHold`).
+  const [asking, setAsking] = React.useState<"unsaved" | "held" | null>(null);
+  const markSaved = React.useCallback<Saved>((part) => {
+    if (part === undefined) {
+      typed.current.clear();
+    } else {
+      for (const [field, within] of typed.current) if (within === part) typed.current.delete(field);
+    }
+    if (typed.current.size === 0) setAsking((now) => (now === "unsaved" ? null : now));
   }, []);
+  const [held, setHeld] = React.useState<string | null>(null);
+  const context = React.useMemo(() => ({ saved: markSaved, hold: setHeld }), [markSaved]);
   const guard = (event: { preventDefault: () => void }) => {
-    if (!dirty) return;
+    // Unsaved typing is the stronger reason, and is said first.
+    const unsaved = typed.current.size > 0;
+    if (!unsaved && !held) return;
     event.preventDefault();
-    setAsking(true);
+    setAsking(unsaved ? "unsaved" : "held");
   };
+  // Nothing left to lose: the question goes with its reason.
+  const question = asking === "held" && !held ? null : asking;
   const widths = {
     sm: "max-w-md",
     md: "max-w-xl",
@@ -97,7 +158,10 @@ export function DialogContent({
           className,
         )}
         onInput={(event) => {
-          setDirty(true);
+          if (event.target instanceof Element) {
+            const part = event.target.closest(`[${PART}]`)?.getAttribute(PART) ?? null;
+            typed.current.set(event.target, part);
+          }
           onInput?.(event);
         }}
         onEscapeKeyDown={(event) => {
@@ -136,19 +200,19 @@ export function DialogContent({
           </DialogPrimitive.Close>
         </div>
 
-        {asking && (
+        {question && (
           <div
             role="alert"
             className="flex flex-wrap items-center justify-between gap-2 border-b border-warning-border bg-warning-subtle px-5 py-3 text-sm text-warning-text"
           >
-            <span>You have changes that are not saved.</span>
+            <span>{question === "unsaved" ? "You have changes that are not saved." : held}</span>
             <span className="flex gap-2">
-              <Button variant="secondary" size="sm" onClick={() => setAsking(false)}>
-                Keep editing
+              <Button variant="secondary" size="sm" onClick={() => setAsking(null)}>
+                {question === "unsaved" ? "Keep editing" : "Stay"}
               </Button>
               <DialogPrimitive.Close asChild>
                 <Button variant="danger" size="sm">
-                  Discard changes
+                  {question === "unsaved" ? "Discard changes" : "Close anyway"}
                 </Button>
               </DialogPrimitive.Close>
             </span>
@@ -156,7 +220,7 @@ export function DialogContent({
         )}
 
         <div className="px-5 py-4">
-          <SavedContext.Provider value={markSaved}>{children}</SavedContext.Provider>
+          <DialogContext.Provider value={context}>{children}</DialogContext.Provider>
         </div>
       </DialogPrimitive.Content>
     </DialogPrimitive.Portal>

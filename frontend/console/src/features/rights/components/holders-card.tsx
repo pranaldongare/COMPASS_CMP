@@ -3,11 +3,14 @@
  * (reworked 2026-10-08).
  *
  * A guided path - find who holds the data, choose who answers, send tickets,
- * wait for answers, review them - with only the step at hand offered. One
+ * wait for answers, review them - with only the step at hand offered. Finding
+ * reads the records for processors and, where a project or activity has none,
+ * names who answers for it - a DCO Admin, or the activity's HR PoC (0069); a
+ * consent with nobody is listed under the table. One
  * table: holder, state, due, last activity, next action. A row opens its
  * ticket: what it was asked (the instruction and the brief, no longer hidden
  * in a thread), its answer, its thread, and what may be done now - the main
- * move first, the rest under More.
+ * move first, Send back beside it, the rest under More.
  *
  * Nothing here decides what a ticket may do: the server sends each holder's
  * state in words, whether it is overdue, and its moves, and the card draws
@@ -27,12 +30,15 @@ import {
   Plus,
   Search,
   Send,
+  Undo2,
 } from "lucide-react";
+import Link from "next/link";
 import * as React from "react";
 
 import { FileInput } from "@/components/forms";
+import { ChangeDate } from "@/components/data-display/change-date";
 import { ReplyBox, Thread, UnreadBadge } from "@/components/data-display/thread";
-import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, useDialogPart } from "@/components/ui/dialog";
 import { Menu, MenuItem } from "@/components/ui/menu";
 import {
   Alert,
@@ -53,6 +59,7 @@ import {
   Tr,
 } from "@/components/ui/primitives";
 import { useProcessors, useRespondents } from "@/features/registry";
+import { useStaff } from "@/features/users/queries";
 import { holderMessageAttachmentUrl } from "@/features/rights/api";
 import { ConfinedNote } from "@/features/rights/components/consent-scope";
 import { BriefPanel } from "@/features/rights/components/thread";
@@ -60,6 +67,7 @@ import { TicketItems } from "@/features/rights/components/ticket-items";
 import {
   useAcceptTicket,
   useAddHolder,
+  useChangeTicketDate,
   useConfirmHolder,
   useCorrectContact,
   useDeriveHolders,
@@ -87,9 +95,10 @@ import type {
   TicketMove,
   TicketMoveName,
   TicketState,
+  UnownedConsent,
 } from "@/types";
 import { RETURN_OUTCOME_COPY } from "@/types";
-import { todayLocal } from "@/lib/dates";
+import { endOfDay, lastDayBy, todayLocal } from "@/lib/dates";
 
 function messageOf(err: unknown, fallback: string): string {
   return err && typeof err === "object" && "userMessage" in err
@@ -100,11 +109,6 @@ function messageOf(err: unknown, fallback: string): string {
 /** Shaped like an email address: the server checks it properly. */
 function looksLikeEmail(v: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
-}
-
-/** The end of the chosen day: a ticket due today is overdue tomorrow. */
-function endOfDay(date: string): string {
-  return new Date(`${date}T23:59:00`).toISOString();
 }
 
 type Tone = "neutral" | "accent" | "success" | "warning" | "danger" | "info";
@@ -247,8 +251,19 @@ export function HoldersCard({ request: r }: { request: RightsRequestDetail }) {
               loading={derive.isPending}
               onClick={async () => {
                 try {
-                  await derive.mutateAsync();
-                  toast.success("Holders found", "Confirm who answers for each, then send the tickets.");
+                  const found = await derive.mutateAsync();
+                  // Nobody is an answer too, and is said as one (2026-11-12:
+                  // an empty list after "Holders found" read as a fault).
+                  if (found.length === 0)
+                    toast.success(
+                      "Nobody found on record",
+                      "No processor, DCO Admin or HR owner could be named for this person's consents. Add whoever holds the data.",
+                    );
+                  else
+                    toast.success(
+                      found.length === 1 ? "1 holder found" : `${found.length} holders found`,
+                      "Confirm who answers for each, then send the tickets.",
+                    );
                 } catch (err) {
                   toast.error("Not done", messageOf(err, "The server refused."));
                 }
@@ -269,7 +284,9 @@ export function HoldersCard({ request: r }: { request: RightsRequestDetail }) {
         {r.holders.length === 0 ? (
           <p className="text-sm text-text-muted">
             {working
-              ? "No holders yet. Find who holds the data from the records, or add one you know of."
+              ? r.holders_derived_at
+                ? "The records name nobody: no processor holds this person's data, and no DCO Admin or HR owner could be found. Add a holder you know of."
+                : "No holders yet. Find who holds the data from the records, or add one you know of."
               : r.status === "received"
                 ? "Start the request first."
                 : "No holders: nothing was held anywhere."}
@@ -304,7 +321,13 @@ export function HoldersCard({ request: r }: { request: RightsRequestDetail }) {
                       <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-text-muted">
                         <Reach holder={h} />
                         {!h.has_address && (
-                          <span className="font-medium text-danger-text"> · No email - add one before sending</span>
+                          <span className="font-medium text-danger-text">
+                            {" "}
+                            ·{" "}
+                            {h.derived_from === "project_owner"
+                              ? "Choose who answers before sending"
+                              : "No email - add one before sending"}
+                          </span>
                         )}
                         {h.responder_user_name || h.responder_name ? ` · ${h.responder_user_name ?? h.responder_name}` : ""}
                         {/* Opens the ticket at its messages: a badge that only
@@ -359,6 +382,8 @@ export function HoldersCard({ request: r }: { request: RightsRequestDetail }) {
           </Table>
         )}
 
+        {working && <UnownedConsents consents={r.unowned_consents ?? []} />}
+
         {working && unsent.length > 0 && <SendTickets request={r} count={unsent.length} />}
       </CardBody>
 
@@ -386,6 +411,46 @@ export function HoldersCard({ request: r }: { request: RightsRequestDetail }) {
         )}
       </Dialog>
     </Card>
+  );
+}
+
+/**
+ * Consents the records found nobody for (0069): no processor on record, and
+ * no DCO Admin or HR PoC to ask. Listed so they are not lost: the office adds
+ * whoever holds that data by hand, or looks again once there is somebody.
+ */
+function UnownedConsents({ consents }: { consents: UnownedConsent[] }) {
+  if (consents.length === 0) return null;
+  return (
+    <Alert
+      tone="warning"
+      title={
+        consents.length === 1
+          ? "1 consent has nobody to ask"
+          : `${consents.length} consents have nobody to ask`
+      }
+    >
+      <p className="text-sm">
+        No processor is on record for {consents.length === 1 ? "it" : "them"}, and there is no
+        DCO Admin or HR owner to ask. Add a holder, or find again once there is one.
+      </p>
+      <ul className="mt-2 space-y-1 text-sm" aria-label="Consents with nobody to ask">
+        {consents.map((c) => (
+          <li key={c.consent_uuid} className="flex flex-wrap items-baseline gap-x-2">
+            <Link
+              className="font-medium text-accent-text hover:underline"
+              href={c.is_activity ? `/hr-activities/${c.project_uuid}` : `/projects/${c.project_uuid}`}
+            >
+              {c.project_name}
+            </Link>
+            <span className="text-xs text-text-muted">
+              {c.is_activity ? "activity" : "project"} · {c.notice_code} v{c.notice_version} ·{" "}
+              {c.withdrawal ? "withdrawn" : "given"} {formatDate(c.at)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Alert>
   );
 }
 
@@ -502,7 +567,18 @@ function TicketPanel({
   // for a confirming click inside the panel.
   const [acting, setActing] = React.useState<TicketMoveName | null>(startWith);
   const main = h.moves.find((m) => m.primary);
-  const rest = h.moves.filter((m) => m !== main && m.move !== "message");
+  // The date is moved beside the date itself, as on a breach ticket
+  // (2026-11-12), not from the menu.
+  const mayChangeDate = h.moves.some((m) => m.move === "change_date");
+  const changeDate = useChangeTicketDate(r.request_uuid);
+  const others = h.moves.filter(
+    (m) => m !== main && m.move !== "message" && m.move !== "change_date",
+  );
+  // Sending an answer back is the other half of reviewing it, so it stands
+  // beside Accept and not in a menu; and a menu of one thing is a button
+  // (2026-11-12: "Send back" was the only thing under More).
+  const beside = others.filter((m) => m.move === "send_back" || others.length === 1);
+  const rest = others.filter((m) => !beside.includes(m));
   const actingMove = h.moves.find((m) => m.move === acting) ?? null;
   const unsent = h.state === "not_confirmed" || h.state === "not_sent";
   const items = r.items.filter((i) => i.holder_uuid === h.holder_uuid);
@@ -513,22 +589,37 @@ function TicketPanel({
   React.useEffect(() => {
     if (focus === "messages") messages.current?.scrollIntoView?.({ block: "start" });
   }, [focus]);
+  // A move made, or given up with its own Cancel, is finished: the window
+  // stays open and no longer asks about what was typed for it (2026-11-12 -
+  // a ticket sent back still said "changes that are not saved"). Only the
+  // move's own fields: a message half-typed below is still asked about.
+  const { part: movePart, done: moveDone } = useDialogPart();
 
   const actions = actingMove ? (
     <MoveForm
       request={r}
       holder={h}
       move={actingMove}
-      onDone={() => setActing(null)}
+      onDone={() => {
+        moveDone();
+        setActing(null);
+      }}
       onClose={onClose}
     />
   ) : h.moves.length > 0 ? (
     <div className="flex flex-wrap items-center gap-2">
       {main && (
         <Button variant="primary" size="sm" onClick={() => setActing(main.move)}>
+          {main.move === "accept" && <Check className="size-4" aria-hidden="true" />}
           {main.label}
         </Button>
       )}
+      {beside.map((m) => (
+        <Button key={m.move} variant="secondary" size="sm" onClick={() => setActing(m.move)}>
+          {m.move === "send_back" && <Undo2 className="size-4" aria-hidden="true" />}
+          {m.label}
+        </Button>
+      ))}
       {rest.length > 0 && (
         <Menu
           label="More actions"
@@ -551,6 +642,24 @@ function TicketPanel({
 
   return (
     <div className="space-y-5">
+      {mayChangeDate && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+          <span className={h.overdue ? "font-medium text-danger-text" : "text-text-muted"}>
+            {h.due_at ? `Answer by ${formatDate(h.due_at)}` : "No answer-by date"}
+          </span>
+          <ChangeDate
+            label="Answer by"
+            current={h.due_at ? todayLocal(new Date(h.due_at)) : null}
+            latest={{ date: lastDayBy(r.due_at), hint: "No later than the request's own response date" }}
+            told={`${h.responder_user_name ?? h.responder_name ?? h.label} is told.`}
+            pending={changeDate.isPending}
+            onSave={({ date, reason }) =>
+              changeDate.mutateAsync({ holderUuid: h.holder_uuid, due_at: endOfDay(date), reason })
+            }
+          />
+        </div>
+      )}
+
       {answered && (
         <section
           className={
@@ -588,7 +697,7 @@ function TicketPanel({
         </section>
       )}
 
-      {actions}
+      {actions && <div {...movePart}>{actions}</div>}
 
       {unsent && h.moves.length > 0 && <InstructionEditor request={r} holder={h} />}
 
@@ -645,16 +754,20 @@ function InstructionEditor({ request: r, holder: h }: { request: RightsRequestDe
   const [text, setText] = React.useState(h.instruction ?? standard);
   const own = Boolean(h.instruction);
   const changed = text.trim() !== (h.instruction ?? standard).trim();
+  // Saved, and the words stay in the box: the window is told, or closing it
+  // would ask about them.
+  const { part, done: kept } = useDialogPart();
   async function store(value: string | null, done: string) {
     try {
       await save.mutateAsync({ holderUuid: h.holder_uuid, instruction: value });
+      kept();
       toast.success(done);
     } catch (err) {
       toast.error("Not saved", messageOf(err, "The server refused."));
     }
   }
   return (
-    <section className="space-y-2">
+    <section {...part} className="space-y-2">
       <Field
         label="What their ticket will ask"
         hint={own ? "Your words for this holder." : "The standard words for this kind of request. Change them for this holder if you need to."}
@@ -861,8 +974,20 @@ function ConfirmForm({
   const confirm = useConfirmHolder(r.request_uuid);
   const respondents = useRespondents(h.processor_uuid ?? undefined);
   const [respondentUuid, setRespondentUuid] = React.useState(h.respondent_uuid ?? "");
-  const [name, setName] = React.useState(h.responder_name ?? "");
-  const [contact, setContact] = React.useState(h.responder_contact ?? "");
+  // A project's or an activity's holder (0069) is answered by an account, in
+  // the console: the HR PoC who runs the activity, or a DCO Admin - the one
+  // the office has, or the one it chooses here where it has several. The
+  // account's name and address are not put in the boxes: typing over an
+  // account's details means "not the console after all", and confirming it
+  // as found did that. Somebody else is still typed.
+  const owner = h.derived_from === "project_owner";
+  const picking = owner && !h.is_activity;
+  const admins = useStaff(picking, "dco_admin");
+  const [userUuid, setUserUuid] = React.useState(owner ? (h.responder_user_uuid ?? "") : "");
+  const [other, setOther] = React.useState(!owner);
+  const [name, setName] = React.useState(owner ? "" : (h.responder_name ?? ""));
+  const [contact, setContact] = React.useState(owner ? "" : (h.responder_contact ?? ""));
+  const typing = !respondentUuid && other;
   return (
     <form
       method="post"
@@ -873,7 +998,11 @@ function ConfirmForm({
           await confirm.mutateAsync(
             respondentUuid
               ? { holderUuid: h.holder_uuid, respondent_uuid: respondentUuid }
-              : { holderUuid: h.holder_uuid, responder_name: name || null, responder_contact: contact || null },
+              : typing
+                ? { holderUuid: h.holder_uuid, responder_name: name || null, responder_contact: contact || null }
+                : userUuid && userUuid !== h.responder_user_uuid
+                  ? { holderUuid: h.holder_uuid, responder_user_uuid: userUuid }
+                  : { holderUuid: h.holder_uuid, responder_name: null, responder_contact: null },
           );
           toast.success(
             editing ? "Saved" : "Confirmed",
@@ -900,7 +1029,50 @@ function ConfirmForm({
             )}
           </Field>
         )}
-        {!respondentUuid && (
+        {owner && (
+          <div className="space-y-3 text-sm">
+            {picking ? (
+              !other &&
+              (admins.isLoading ? (
+                <Skeleton className="h-10" />
+              ) : (
+                <Field
+                  label="Which DCO Admin answers"
+                  hint="They answer in the console. A project with no processor on record goes to a DCO Admin."
+                  required
+                >
+                  {(p) => (
+                    <Select {...p} value={userUuid} onChange={(e) => setUserUuid(e.target.value)}>
+                      <option value="">Choose…</option>
+                      {(admins.data ?? []).map((u) => (
+                        <option key={u.uuid} value={u.uuid}>
+                          {u.full_name} · {u.email}
+                        </option>
+                      ))}
+                    </Select>
+                  )}
+                </Field>
+              ))
+            ) : (
+              !other && (
+                <p>
+                  <span className="font-medium">{h.responder_user_name ?? "The HR PoC"}</span> runs
+                  this activity and answers in the console.
+                </p>
+              )
+            )}
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                className="size-4 rounded border-border-strong accent-[var(--accent)]"
+                checked={other}
+                onChange={(e) => setOther(e.target.checked)}
+              />
+              Somebody else answers
+            </label>
+          </div>
+        )}
+        {typing && (
           <div className="grid gap-2 sm:grid-cols-2">
             <Field label="Their name">{(p) => <Input {...p} value={name} onChange={(e) => setName(e.target.value)} />}</Field>
             <Field label="Their email" hint="Required: the ticket is emailed here." required>
@@ -911,7 +1083,7 @@ function ConfirmForm({
       </div>
       <FormButtons
         pending={confirm.isPending}
-        disabled={!respondentUuid && !looksLikeEmail(contact)}
+        disabled={typing ? !looksLikeEmail(contact) : picking && !userUuid}
         label={editing ? "Save" : "Confirm"}
         onCancel={onDone}
       />
@@ -1146,6 +1318,7 @@ const CONTACT_LABEL: Record<string, string> = {
   returned_by_link: "Answered by link",
   sent_back: "Sent back",
   corrected: "Email corrected",
+  date_changed: "Answer-by date changed",
   reminder: "Reminder sent",
   reassigned: "Sent to someone else",
   withdrawn: "Withdrawn",
@@ -1187,8 +1360,8 @@ function ContactForm({ request: r, holder: h, onDone }: { request: RightsRequest
           <Field label="What happened">
             {(p) => (
               <Select {...p} value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}>
-                <option value="mail_sent">I emailed them from my own inbox</option>
-                <option value="chased">I chased them</option>
+                <option value="mail_sent">Emailed from own inbox</option>
+                <option value="chased">Chased</option>
                 <option value="reply_noted">They replied (record their answer separately)</option>
                 <option value="note">A note</option>
               </Select>

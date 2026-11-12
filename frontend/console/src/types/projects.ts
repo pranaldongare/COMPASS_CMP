@@ -12,6 +12,9 @@ import type { DateOnly, Timestamp, Uuid } from "@/types/primitives";
 
 export interface Project {
   project_uuid: Uuid;
+  /** The project's own number, shown as its ID and carried to the Data
+   *  Collection Tool (2026-11-12). To read; routes take the uuid. */
+  project_no?: number | null;
   project_name: string;
   internal_project_name: string | null;
   description: string | null;

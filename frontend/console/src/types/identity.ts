@@ -102,6 +102,8 @@ export interface StaffMember {
 
 export interface User {
   uuid: Uuid;
+  /** The account's own number, shown as the Person ID (2026-11-12). */
+  person_no?: number | null;
   username: string | null;
   full_name: string;
   /** Null for a data principal who registered with a mobile alone. */

@@ -146,7 +146,19 @@ function ConsentsPageView() {
         query={query}
         stack={stack}
         caption="Current consent records across all projects in scope"
-        columns={["Data subject", "Project", "Site", "Status", "Purposes", "Recorded"]}
+        // The three IDs are what a collection owner quotes to the Data
+        // Collection Tool, and what its lists carry (2026-11-12).
+        columns={[
+          "Consent ID",
+          "Data subject",
+          "Person ID",
+          "Project",
+          "Project ID",
+          "Site",
+          "Status",
+          "Purposes",
+          "Recorded",
+        ]}
         keyOf={(c) => c.consent_uuid}
         empty={{
           illustration: <EmptyConsent />,
@@ -156,6 +168,7 @@ function ConsentsPageView() {
         }}
         row={(c) => (
           <Tr>
+            <Td className="tabular whitespace-nowrap text-text-muted">{c.consent_no}</Td>
             <Td>
               <PersonCell
                 label={c.subject_name}
@@ -170,6 +183,7 @@ function ConsentsPageView() {
                 secondary={c.subject_email}
               />
             </Td>
+            <Td className="tabular whitespace-nowrap text-text-muted">{c.person_no}</Td>
             <Td>
               <Link
                 href={`/projects/${c.project_uuid}`}
@@ -178,6 +192,7 @@ function ConsentsPageView() {
                 {c.project_name}
               </Link>
             </Td>
+            <Td className="tabular whitespace-nowrap text-text-muted">{c.project_no}</Td>
             <Td className="text-text-muted">{c.site_label}</Td>
             <Td>
               <StatusBadge kind="consent" value={c.consent_status} />

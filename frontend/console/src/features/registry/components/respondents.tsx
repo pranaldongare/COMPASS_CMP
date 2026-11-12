@@ -13,6 +13,7 @@
 import { Building2, Monitor, Plus, UserRoundX } from "lucide-react";
 import * as React from "react";
 
+import { useDialogPart } from "@/components/ui/dialog";
 import { Alert, Badge, Button, Field, Input, Select, Skeleton } from "@/components/ui/primitives";
 import { useAddRespondent, useRemoveRespondent, useRespondents } from "@/features/registry";
 import { useStaff } from "@/features/users/queries";
@@ -43,6 +44,10 @@ export function RespondentsPanel({ processor }: { processor: Processor }) {
   const [contact, setContact] = React.useState("");
   const [userUuid, setUserUuid] = React.useState("");
   const [error, setError] = React.useState<string | null>(null);
+  // Added is saved, and the window around this is told so: it went on saying
+  // "changes that are not saved" after the respondent was on the list
+  // (2026-11-12).
+  const { part, done } = useDialogPart();
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -54,6 +59,7 @@ export function RespondentsPanel({ processor }: { processor: Processor }) {
       setName("");
       setContact("");
       setUserUuid("");
+      done();
       toast.success("Respondent added");
     } catch (err) {
       setError(messageOf(err, "Could not add the respondent."));
@@ -120,7 +126,7 @@ export function RespondentsPanel({ processor }: { processor: Processor }) {
       )}
 
       {canEdit && (
-        <form method="post" onSubmit={submit} noValidate className="space-y-3 border-t border-border pt-4">
+        <form {...part} method="post" onSubmit={submit} noValidate className="space-y-3 border-t border-border pt-4">
           {error && <Alert tone="danger">{error}</Alert>}
           {!processor.is_in_house && (
             <fieldset className="space-y-1">

@@ -213,7 +213,7 @@ function AddByHand({ added, onAdd }: { added: AuditLookupHit[]; onAdd: (hit: Aud
   return (
     <div className="space-y-2">
       <div className="flex items-end gap-2">
-        <Field label="Find the person" hint="A mail ID, a mobile number, or part of a name">
+        <Field label="Search for a person" hint="A mail ID, a mobile number, or part of a name">
           {(p) => <Input {...p} value={q} onChange={(e) => setQ(e.target.value)} />}
         </Field>
         <Button variant="secondary" size="sm" disabled={q.trim().length < 3} loading={busy} onClick={find}>

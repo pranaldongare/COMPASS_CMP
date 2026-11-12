@@ -119,11 +119,11 @@ describe("setting CERT-In aside", () => {
     expect(within(dialog).getByText(/whatever validation says/)).toBeInTheDocument();
     expect(within(dialog).queryByText(/validated as No/)).not.toBeInTheDocument();
 
-    const go = within(dialog).getByRole("button", { name: "Set CERT-In aside" });
+    const go = within(dialog).getByRole("button", { name: "Mark as not reportable" });
     expect(go).toBeDisabled();
-    await user.type(within(dialog).getByLabelText(/why it is not reportable/i), "   ");
+    await user.type(within(dialog).getByLabelText(/reason it is not reportable/i), "   ");
     expect(go).toBeDisabled();
-    await user.type(within(dialog).getByLabelText(/why it is not reportable/i), "A false alarm from the scanner  ");
+    await user.type(within(dialog).getByLabelText(/reason it is not reportable/i), "A false alarm from the scanner  ");
     await user.click(go);
 
     await vi.waitFor(() => expect(sent).toEqual({ reason: "A false alarm from the scanner" }));
@@ -155,11 +155,11 @@ describe("setting CERT-In aside", () => {
 
     await user.click(screen.getByRole("button", { name: ACTION }));
     const dialog = await screen.findByRole("dialog");
-    await user.type(within(dialog).getByLabelText(/why it is not reportable/i), "A false alarm");
-    await user.click(within(dialog).getByRole("button", { name: "Set CERT-In aside" }));
+    await user.type(within(dialog).getByLabelText(/reason it is not reportable/i), "A false alarm");
+    await user.click(within(dialog).getByRole("button", { name: "Mark as not reportable" }));
 
     await vi.waitFor(() => expect(toast.error).toHaveBeenCalledWith("Not set aside", sentence));
-    expect(within(dialog).getByLabelText(/why it is not reportable/i)).toHaveValue("A false alarm");
+    expect(within(dialog).getByLabelText(/reason it is not reportable/i)).toHaveValue("A false alarm");
   });
 
   it("shows why it was set aside on the row", () => {

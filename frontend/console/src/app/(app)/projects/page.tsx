@@ -177,6 +177,7 @@ function ProjectsPageView() {
             </caption>
             <thead>
               <tr>
+                <Th>Project ID</Th>
                 <Th>Project</Th>
                 <Th>Status</Th>
                 <Th>Data Collection Owner</Th>
@@ -187,6 +188,9 @@ function ProjectsPageView() {
             <tbody>
               {data.items.map((project) => (
                 <Tr key={project.project_uuid}>
+                  <Td className="tabular whitespace-nowrap text-text-muted">
+                    {project.project_no ?? "—"}
+                  </Td>
                   <Td>
                     <Link
                       href={withFrom(`/projects/${project.project_uuid}`, here)}

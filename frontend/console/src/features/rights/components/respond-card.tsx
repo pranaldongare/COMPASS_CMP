@@ -15,12 +15,13 @@
  */
 "use client";
 
-import { Download, Paperclip, Send, X } from "lucide-react";
+import { Download, Paperclip, Send } from "lucide-react";
 import * as React from "react";
 
 import { Alert, Button, Card, CardBody, CardHeader, CardTitle, Field, Select, Textarea } from "@/components/ui/primitives";
 import { downloadResponse, downloadResponseFile } from "@/features/rights/api";
 import { OUTCOME_COPY } from "@/features/rights/components/copy";
+import { ReleaseFiles } from "@/features/rights/components/release-files";
 import { useDecideGrievance, useRespond } from "@/features/rights/mutations";
 import { formatBytes, formatDate, formatDateTime, saveBlob, shortHash } from "@/lib/format";
 import { useToast } from "@/providers";
@@ -227,41 +228,12 @@ export function RespondCard({ request: r }: { request: RightsRequestDetail }) {
         >
           {(p) => <Textarea {...p} rows={5} value={text} onChange={(e) => setText(e.target.value)} />}
         </Field>
-        <Field
+        <ReleaseFiles
           label="Files released with the response"
-          hint="Optional. An extract a holder returned, a corrected document, a letter. PDF, image, CSV or text, up to 25 MB each. The requester downloads them from their account, for as long as the record is available."
-        >
-          {(p) => (
-            <div className="space-y-2">
-              <input
-                {...p}
-                type="file"
-                multiple
-                accept=".pdf,.png,.jpg,.jpeg,.csv,.txt,application/pdf,image/*,text/csv,text/plain"
-                className="block text-sm"
-                onChange={(e) => {
-                  const picked = Array.from(e.target.files ?? []);
-                  setFiles((prev) => [...prev, ...picked.filter((n) => !prev.some((o) => o.name === n.name && o.size === n.size))]);
-                  e.target.value = "";
-                }}
-              />
-              {files.length > 0 && (
-                <ul className="space-y-1">
-                  {files.map((f) => (
-                    <li key={`${f.name}-${f.size}`} className="flex items-center gap-2 text-sm">
-                      <Paperclip className="size-3.5 text-text-subtle" aria-hidden="true" />
-                      <span>{f.name}</span>
-                      <span className="text-xs text-text-muted">{formatBytes(f.size)}</span>
-                      <button type="button" className="text-text-subtle hover:text-danger-text" aria-label={`Remove ${f.name}`} onClick={() => setFiles((prev) => prev.filter((o) => o !== f))}>
-                        <X className="size-3.5" aria-hidden="true" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          )}
-        </Field>
+          hint="An extract a holder returned, a corrected document, a letter. PDF, image, CSV or text, up to 25 MB each. The requester downloads them from their account."
+          files={files}
+          onChange={setFiles}
+        />
         <Button
           variant="primary"
           disabled={!closure.allowed || text.trim().length < 3}

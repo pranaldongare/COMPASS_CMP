@@ -97,7 +97,7 @@ describe("NextBar", () => {
     const { user } = render(<NextBar request={request} tab="identity" onGo={vi.fn()} />);
     expect(screen.getByText("Claim it for your office")).toBeInTheDocument();
     expect(screen.getByText(/Then: move to in progress → Holders/)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Claim for my office" }));
+    await user.click(screen.getByRole("button", { name: "Claim for this office" }));
     await vi.waitFor(() => expect(claimed).toBe(true));
   });
 

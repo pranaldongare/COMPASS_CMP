@@ -299,6 +299,17 @@ export default function ConsentDetailPage() {
                 </CardHeader>
                 <CardBody>
                   <DescriptionList>
+                    {/* The three numbers the Data Collection Tool is given,
+                        and a collection owner quotes (2026-11-12). */}
+                    <DescriptionItem term="Consent ID">
+                      <Mono>{record.consent_no}</Mono>
+                    </DescriptionItem>
+                    <DescriptionItem term="Person ID">
+                      <Mono>{record.person_no}</Mono>
+                    </DescriptionItem>
+                    <DescriptionItem term="Project ID">
+                      <Mono>{record.project_no}</Mono>
+                    </DescriptionItem>
                     <DescriptionItem term="Name">{record.subject_name}</DescriptionItem>
                     <DescriptionItem term="Email">{record.subject_email}</DescriptionItem>
                     <DescriptionItem term="Mobile">

@@ -45,6 +45,7 @@ import {
   CardTitle,
   DescriptionItem,
   DescriptionList,
+  Mono,
   Skeleton,
   Table,
   Td,
@@ -220,6 +221,9 @@ export default function UserDetailPage() {
             </CardHeader>
             <CardBody>
               <DescriptionList>
+                <DescriptionItem term="Person ID">
+                  <Mono>{u.person_no ?? "—"}</Mono>
+                </DescriptionItem>
                 <DescriptionItem term="Name">{u.full_name}</DescriptionItem>
                 <DescriptionItem term="Email">{u.email ?? "None"}</DescriptionItem>
                 <DescriptionItem term="Mobile">{u.mobile ?? "None"}</DescriptionItem>

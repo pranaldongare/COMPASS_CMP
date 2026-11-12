@@ -29,6 +29,7 @@ import {
   Textarea,
 } from "@/components/ui/primitives";
 import { REQUEST_TYPE_COPY, STATUS_COPY } from "@/features/rights/components/copy";
+import { ReleaseFiles } from "@/features/rights/components/release-files";
 import {
   useAssignReviewer,
   useClassify,
@@ -276,6 +277,7 @@ export function ClassificationCard({ request: r }: { request: RightsRequestDetai
   const [note, setNote] = React.useState("");
   const [reason, setReason] = React.useState("");
   const [refusing, setRefusing] = React.useState(false);
+  const [refusalFiles, setRefusalFiles] = React.useState<File[]>([]);
   const [reviewer, setReviewer] = React.useState("");
 
   const admins = useUsers({ role: "admin", status: "active", limit: 100 });
@@ -427,7 +429,7 @@ export function ClassificationCard({ request: r }: { request: RightsRequestDetai
                     real conflict. Recuse if this concerns your handling.
                   </p>
                   <Button variant="subtle" size="sm" className="mt-2" loading={escalate.isPending} onClick={() => run(() => escalate.mutateAsync(), "Escalated to an independent reviewer")}>
-                    This is about me - escalate
+                    Escalate (about me)
                   </Button>
                 </div>
               )
@@ -468,7 +470,32 @@ export function ClassificationCard({ request: r }: { request: RightsRequestDetai
                   <Field label="Reason, in writing" hint="Sent to the requester with the grievance route. A refusal is still a response." required>
                     {(p) => <Textarea {...p} rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />}
                   </Field>
-                  <Button variant="danger" size="sm" className="mt-2" disabled={reason.trim().length < 3} loading={refuse.isPending} onClick={() => run(() => refuse.mutateAsync(reason.trim()), "Refused, with reasons")}>
+                  {/* A refusal may rest on a document - a letter, the
+                      retention schedule, an order - and it goes with the
+                      reason, as files go with a response (2026-11-12). */}
+                  <div className="mt-3">
+                    <ReleaseFiles
+                      label="Documents sent with the refusal"
+                      hint="A letter, the retention schedule, an order. PDF, image, CSV or text, up to 25 MB each. The requester downloads them from their account."
+                      files={refusalFiles}
+                      onChange={setRefusalFiles}
+                    />
+                  </div>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    className="mt-3"
+                    disabled={reason.trim().length < 3}
+                    loading={refuse.isPending}
+                    onClick={() =>
+                      run(
+                        () => refuse.mutateAsync({ reason: reason.trim(), files: refusalFiles }),
+                        refusalFiles.length
+                          ? `Refused, with reasons and ${refusalFiles.length} document${refusalFiles.length === 1 ? "" : "s"}`
+                          : "Refused, with reasons",
+                      )
+                    }
+                  >
                     Refuse and close
                   </Button>
                 </div>

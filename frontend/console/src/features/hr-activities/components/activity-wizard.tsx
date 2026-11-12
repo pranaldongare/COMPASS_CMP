@@ -11,7 +11,7 @@ import { Check, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
-import { DialogFooter } from "@/components/ui/dialog";
+import { DialogFooter, useDialogSaved } from "@/components/ui/dialog";
 import { Alert, Button, Field, Input, Mono, Select, Skeleton, Textarea } from "@/components/ui/primitives";
 import { CopyLinkButton } from "@/features/consent/components/copy-link";
 import { useCreateHrActivity } from "@/features/hr-activities/mutations";
@@ -86,6 +86,7 @@ export function PurposePicker({
 
 export function ActivityWizard({ onDone }: { onDone: () => void }) {
   const toast = useToast();
+  const saved = useDialogSaved();
   const router = useRouter();
   const options = useActivityOptions();
   const create = useCreateHrActivity();
@@ -132,6 +133,9 @@ export function ActivityWizard({ onDone }: { onDone: () => void }) {
           link_expires_at: new Date(`${expires}T23:59:59`).toISOString(),
         }),
       );
+      // Created is saved, and the link can be read back from the activity's
+      // page: closing the window now loses nothing.
+      saved();
       toast.success("Activity created", "It is live. Share its link.");
     } catch (err) {
       setError(messageOf(err, "Could not create the activity."));

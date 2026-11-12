@@ -118,7 +118,7 @@ export function OfficeCard({ request: r }: { request: RightsRequestDetail }) {
             }}
           >
             <Inbox className="size-4" aria-hidden="true" />
-            Claim for my office
+            Claim for this office
           </Button>
         )}
 

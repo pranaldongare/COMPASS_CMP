@@ -162,6 +162,256 @@ describe("HoldersCard", () => {
     expect(screen.queryByRole("menuitem", { name: /withdraw/i })).not.toBeInTheDocument();
   });
 
+  it("puts Send back beside Accept, not under More, and takes the reason there", async () => {
+    // 2026-11-12: it was the only thing under More, and the officer reviewing
+    // an answer did not find it.
+    let sent: unknown = null;
+    thread();
+    server.use(
+      http.post(`${API}/requests/${REQUEST}/holders/${HOLDER}/send-back`, async ({ request }) => {
+        sent = await request.json();
+        return HttpResponse.json(holder());
+      }),
+    );
+    const { user } = render(<HoldersCard request={request([holder()])} />);
+    await user.click(screen.getByRole("button", { name: /review the answer/i }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByRole("button", { name: "Accept the answer" })).toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: /more/i })).not.toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: "Send back" }));
+    await user.type(within(dialog).getByLabelText(/what is missing or wrong/i), "The export is missing");
+    await user.click(within(dialog).getByRole("button", { name: "Send it back" }));
+    await vi.waitFor(() => expect(sent).toMatchObject({ reason: "The export is missing" }));
+
+    // Sent, and the window stays open: closing it does not then ask about
+    // the reason that has gone.
+    await vi.waitFor(() =>
+      expect(within(dialog).queryByLabelText(/what is missing or wrong/i)).not.toBeInTheDocument(),
+    );
+    await user.click(within(dialog).getByRole("button", { name: "Close" }));
+    expect(screen.queryByText(/not saved/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("does not ask about a move given up with its own Cancel, and still asks about a message", async () => {
+    thread();
+    const { user } = render(<HoldersCard request={request([holder()])} />);
+    await user.click(screen.getByRole("button", { name: /review the answer/i }));
+    const dialog = await screen.findByRole("dialog");
+    await user.click(within(dialog).getByRole("button", { name: "Send back" }));
+    await user.type(within(dialog).getByLabelText(/what is missing or wrong/i), "Not this");
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+
+    await user.type(await within(dialog).findByLabelText("Message"), "One question first");
+    await user.click(within(dialog).getByRole("button", { name: "Close" }));
+    expect(screen.getByText(/not saved/i)).toBeInTheDocument();
+  });
+
+  it("sends a project with no processor on record to a DCO Admin the officer chooses", async () => {
+    // 0069, and the product owner's rule: a DCO Admin, not the project's own
+    // owner; an office with several chooses one here.
+    let body: unknown = null;
+    let asked: string | null = null;
+    server.use(
+      http.get(`${API}/users/staff`, ({ request }) => {
+        asked = new URL(request.url).searchParams.get("role");
+        return HttpResponse.json([
+          { uuid: "a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1", full_name: "Zoya Khan", email: "zoya@example.org", role: "dco_admin" },
+          { uuid: "b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2", full_name: "Arun Shetty", email: "arun@example.org", role: "dco_admin" },
+        ]);
+      }),
+      http.post(`${API}/requests/${REQUEST}/holders/${HOLDER}/confirm`, async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json(holder());
+      }),
+    );
+    const unnamed = holder({
+      label: "Gait Study 2026 · DCO Admin",
+      derived_from: "project_owner",
+      evidence: { project: "p-1", is_activity: false, consents: ["c-1"] },
+      project_uuid: "55555555-5555-4555-8555-555555555555",
+      project_name: "Gait Study 2026",
+      is_activity: false,
+      confirmed_at: null,
+      ticket_status: "pending",
+      issued_at: null,
+      returned_at: null,
+      return_summary: null,
+      return_outcome: null,
+      channel: "email",
+      responder_user_uuid: null,
+      responder_user_name: null,
+      has_address: false,
+      state: "not_confirmed",
+      state_label: "Not confirmed",
+      moves: [move("confirm", "Confirm who answers", true), move("remove", "Remove")],
+    });
+    const { user } = render(<HoldersCard request={request([unnamed])} />);
+    expect(screen.getByText(/choose who answers before sending/i)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Confirm who answers" }));
+    const dialog = await screen.findByRole("dialog");
+    const which = await within(dialog).findByLabelText(/which dco admin answers/i);
+    expect(asked).toBe("dco_admin");
+    // Nobody chosen yet, nothing to confirm.
+    expect(within(dialog).getByRole("button", { name: "Confirm" })).toBeDisabled();
+    // In name order, each with the address that tells two apart.
+    expect(within(which).getAllByRole("option").map((o) => o.textContent)).toEqual([
+      "Choose…",
+      "Arun Shetty · arun@example.org",
+      "Zoya Khan · zoya@example.org",
+    ]);
+    await user.selectOptions(which, "Zoya Khan · zoya@example.org");
+    await user.click(within(dialog).getByRole("button", { name: "Confirm" }));
+    await vi.waitFor(() =>
+      expect(body).toEqual({ responder_user_uuid: "a1a1a1a1-a1a1-4a1a-8a1a-a1a1a1a1a1a1" }),
+    );
+  });
+
+  it("confirms an activity's HR owner as found, without retyping them", async () => {
+    let body: unknown = null;
+    server.use(
+      http.post(`${API}/requests/${REQUEST}/holders/${HOLDER}/confirm`, async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json(holder());
+      }),
+    );
+    const owner = holder({
+      label: "CSR day · HR owner",
+      derived_from: "project_owner",
+      evidence: { project: "p-2", is_activity: true, consents: ["c-2"] },
+      project_uuid: "56565656-5656-4656-8656-565656565656",
+      project_name: "CSR day",
+      is_activity: true,
+      confirmed_at: null,
+      ticket_status: "pending",
+      issued_at: null,
+      returned_at: null,
+      return_summary: null,
+      return_outcome: null,
+      responder_name: "Arun Shetty",
+      responder_contact: "arun@example.org",
+      responder_user_uuid: "b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2",
+      state: "not_confirmed",
+      state_label: "Not confirmed",
+      moves: [move("confirm", "Confirm who answers", true), move("remove", "Remove")],
+    });
+    const { user } = render(<HoldersCard request={request([owner])} />);
+    await user.click(screen.getByRole("button", { name: "Confirm who answers" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/runs this activity and answers in the console/i)).toHaveTextContent(
+      "Arun Shetty",
+    );
+    // Not typed into the boxes: typing over an account means email instead.
+    expect(within(dialog).queryByLabelText(/their email/i)).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Confirm" }));
+    await vi.waitFor(() => expect(body).toEqual({ responder_name: null, responder_contact: null }));
+  });
+
+  it("lists the consents nobody could be found for, once the records have been read", () => {
+    const unowned = {
+      consent_uuid: "66666666-6666-4666-8666-666666666666",
+      project_uuid: "77777777-7777-4777-8777-777777777777",
+      project_name: "Walk Study",
+      is_activity: false,
+      notice_code: "NTC-WALK",
+      notice_version: 2,
+      at: "2026-10-03T10:00:00Z",
+      withdrawal: false,
+    };
+    const { unmount } = render(
+      <HoldersCard
+        request={makeRequestDetail({
+          request_uuid: REQUEST,
+          status: "in_progress",
+          holders: [],
+          holders_derived_at: "2026-11-12T09:00:00Z",
+          unowned_consents: [unowned],
+        })}
+      />,
+    );
+    expect(screen.getByText("1 consent has nobody to ask")).toBeInTheDocument();
+    const listed = within(screen.getByRole("list", { name: "Consents with nobody to ask" }));
+    expect(listed.getByRole("link", { name: "Walk Study" })).toHaveAttribute(
+      "href",
+      "/projects/77777777-7777-4777-8777-777777777777",
+    );
+    expect(listed.getByText(/NTC-WALK v2/)).toBeInTheDocument();
+    // Read, and nobody found: said as an answer, not as "not yet".
+    expect(screen.getByText(/the records name nobody/i)).toBeInTheDocument();
+    unmount();
+
+    // Before the records are read there is nothing to say about them.
+    render(<HoldersCard request={makeRequestDetail({ request_uuid: REQUEST, status: "in_progress", holders: [] })} />);
+    expect(screen.getByText(/no holders yet/i)).toBeInTheDocument();
+    expect(screen.queryByText(/nobody to ask/i)).not.toBeInTheDocument();
+  });
+
+  it("moves a waiting ticket's date beside the date itself, with the reason, and not from the menu", async () => {
+    // 2026-11-12: a breach ticket's date could be moved and a rights ticket's
+    // could not.
+    let sent: { due_at: string; reason: string } | null = null;
+    thread();
+    server.use(
+      http.post(`${API}/requests/${REQUEST}/holders/${HOLDER}/answer-by`, async ({ request }) => {
+        sent = (await request.json()) as { due_at: string; reason: string };
+        return HttpResponse.json(holder());
+      }),
+    );
+    const waiting = holder({
+      ticket_status: "issued",
+      returned_at: null,
+      return_summary: null,
+      return_outcome: null,
+      state: "waiting",
+      state_label: "Waiting",
+      due_at: "2030-01-10T18:29:00Z",
+      moves: [
+        move("record_answer", "Record their answer for them"),
+        move("message", "Write to them"),
+        move("remind", "Send a reminder"),
+        move("change_date", "Change the date"),
+        move("withdraw", "Withdraw"),
+      ],
+    });
+    const { user } = render(
+      <HoldersCard
+        request={makeRequestDetail({
+          request_uuid: REQUEST,
+          status: "awaiting_holders",
+          due_at: "2030-02-01T10:00:00Z",
+          holders: [waiting],
+        })}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Samsung R&D Bangalore" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/^Answer by /)).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: "Change the date" }));
+    expect(within(dialog).getByText(/^Arun Shetty is told\./)).toBeInTheDocument();
+    const go = within(dialog).getByRole("button", { name: "Change the date" });
+    const date = within(dialog).getByLabelText(/^new answer by date/i);
+    // Never past the response the ticket feeds: the picker stops the day before.
+    expect(date).toHaveAttribute("max", "2030-01-31");
+    await user.clear(date);
+    await user.type(date, "2030-01-20");
+    expect(go).toBeDisabled();
+    await user.type(within(dialog).getByLabelText(/^reason/i), "Their archive is offline until Friday");
+    await user.click(go);
+
+    await vi.waitFor(() => expect(sent).not.toBeNull());
+    expect(sent!.reason).toBe("Their archive is offline until Friday");
+    // The end of the chosen day, in the officer's own calendar.
+    expect(new Date(sent!.due_at).getTime()).toBe(new Date(2030, 0, 20, 23, 59).getTime());
+
+    // Not one of the things under More: it sits with the date.
+    await user.click(within(dialog).getByRole("button", { name: /more/i }));
+    expect(await screen.findByRole("menuitem", { name: "Send a reminder" })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "Change the date" })).not.toBeInTheDocument();
+  });
+
   it("offers sending tickets once holders are confirmed, and finding them only while the request is worked", () => {
     const unsent = holder({
       ticket_status: "pending",
@@ -228,8 +478,9 @@ describe("HoldersCard", () => {
     const { user, unmount } = render(<HoldersCard request={request([open])} />);
     await user.click(screen.getByRole("button", { name: "Samsung R&D Bangalore" }));
     const dialog = await screen.findByRole("dialog");
-    await user.click(within(dialog).getByRole("button", { name: /more/i }));
-    await user.click(await screen.findByRole("menuitem", { name: "Correct their email" }));
+    // The only other move: a button, not a menu of one.
+    expect(within(dialog).queryByRole("button", { name: /more/i })).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Correct their email" }));
     const email = within(dialog).getByLabelText(/their email/i);
     await user.clear(email);
     await user.type(email, "keeper@vendor.example");

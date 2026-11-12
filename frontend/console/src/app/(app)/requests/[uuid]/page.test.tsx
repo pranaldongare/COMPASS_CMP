@@ -118,6 +118,37 @@ describe("RequestPage", () => {
     expect(screen.getByRole("button", { name: "Refuse and close" })).toBeDisabled();
   });
 
+  it("sends a refusal with the documents it rests on", async () => {
+    // 2026-11-12: a response could carry files and a refusal could not.
+    // The form as it went, as text: reading it as a form does not finish
+    // under this test's environment.
+    let sent: string | null = null;
+    serve({ ...verified, classified_at: null });
+    server.use(
+      http.post(`${API}/requests/${UUID}/refuse`, async ({ request }) => {
+        sent = await request.text();
+        return HttpResponse.json(makeRequestDetail({ status: "closed", outcome: "refused" }));
+      }),
+    );
+    const { user } = render(<RequestPage />);
+    await user.click(await screen.findByRole("tab", { name: /Identity & classification/ }));
+    await user.click(await screen.findByRole("button", { name: /Refuse this request/ }));
+    await user.type(screen.getByLabelText(/Reason, in writing/), "The retention floor has not passed.");
+
+    expect(screen.getByRole("button", { name: "Attach files" })).toBeInTheDocument();
+    const schedule = new File(["%PDF-1.4"], "retention-schedule.pdf", { type: "application/pdf" });
+    await user.upload(screen.getByLabelText(/Documents sent with the refusal/), schedule);
+    expect(screen.getByText("retention-schedule.pdf")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Attach more files" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Refuse and close" }));
+    await vi.waitFor(() => expect(sent).not.toBeNull());
+    expect(sent).toMatch(/name="reason"\r\n\r\nThe retention floor has not passed\./);
+    // The file is a part of the form. Its name is not asserted: this test's
+    // FormData is not the browser's, and names every file "blob".
+    expect(sent).toMatch(/name="files"; filename="[^"]+"\r\nContent-Type: application\/pdf/);
+  });
+
   it("lists the documents the requester sent, each one downloadable", async () => {
     serve({
       ...verified,

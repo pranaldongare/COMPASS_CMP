@@ -72,7 +72,9 @@ export const useClassify = (uuid: Uuid) =>
     api.classify(uuid, body),
   );
 export const useRefuse = (uuid: Uuid) =>
-  useRequestAction<RightsRequest, string>(uuid, (reason) => api.refuse(uuid, reason));
+  useRequestAction<RightsRequest, { reason: string; files?: File[] }>(uuid, (body) =>
+    api.refuse(uuid, body),
+  );
 export const useTreatAsWithdrawal = (uuid: Uuid) =>
   useRequestAction<RightsRequest, string | null>(uuid, (note) => api.treatAsWithdrawal(uuid, note));
 export const useConfirmIntent = (uuid: Uuid) =>
@@ -134,6 +136,12 @@ export const useSendBackTicket = (uuid: Uuid) =>
   useRequestAction<RightsHolder, { holderUuid: Uuid } & api.SendBackInput>(
     uuid,
     ({ holderUuid, ...body }) => api.sendBackTicket(uuid, holderUuid, body),
+  );
+/** The office moves the date a ticket is to be answered by, with the reason. */
+export const useChangeTicketDate = (uuid: Uuid) =>
+  useRequestAction<RightsHolder, { holderUuid: Uuid } & api.TicketDateInput>(
+    uuid,
+    ({ holderUuid, ...body }) => api.changeTicketDate(uuid, holderUuid, body),
   );
 export const useWithdrawTicket = (uuid: Uuid) =>
   useRequestAction<RightsHolder, { holderUuid: Uuid; reason: string }>(uuid, ({ holderUuid, reason }) =>
@@ -228,6 +236,19 @@ export const useDecideGrievance = (uuid: Uuid) =>
   );
 
 /* --------------------------------------------------- the respondent's side */
+
+/** The holder moves the date their own answer is due, with the reason. */
+export function useChangeMyTicketDate(): Result<MyTicket, { holderUuid: Uuid } & api.TicketDateInput> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ holderUuid, ...body }) => api.changeMyTicketDate(holderUuid, body),
+    onSuccess: (_data, { holderUuid }) => {
+      void qc.invalidateQueries({ queryKey: keys.tickets.mine });
+      void qc.invalidateQueries({ queryKey: keys.tickets.detail(holderUuid) });
+      void qc.invalidateQueries({ queryKey: keys.dashboard.all });
+    },
+  });
+}
 
 export function useReturnMyTicket(): Result<MyTicket, { holderUuid: Uuid; summary: string; outcome: ReturnOutcome; evidence: File | null }> {
   const qc = useQueryClient();

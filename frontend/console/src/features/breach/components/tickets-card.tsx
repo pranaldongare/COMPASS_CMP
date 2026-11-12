@@ -16,16 +16,24 @@
  * message. The date to resolve it by is either side's to move, with a reason
  * and no approval (0061); the thread keeps what it was and why it changed, so
  * the trail is there for both of them to read.
+ *
+ * Laid out as a rights ticket is (2026-11-12), so the two read alike: the
+ * holder's answer first, then what may be done about it - Close the ticket
+ * with Send back beside it - then what they were asked, then the messages.
+ * The table opens a ticket with a button that reads as one ("Review the
+ * answer" once there is one), and the person a ticket goes to is found by
+ * typing: the matches are listed as the name is typed.
  */
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarClock, ClipboardList, MessagesSquare, UserPlus } from "lucide-react";
+import { Check, ChevronRight, ClipboardList, ExternalLink, Undo2, UserPlus } from "lucide-react";
 import * as React from "react";
 
+import { ChangeDate } from "@/components/data-display/change-date";
 import { ReplyBox, Thread, UnreadBadge } from "@/components/data-display/thread";
 import { FileInput } from "@/components/forms";
-import { Dialog, DialogContent, DialogSaved, useDialogSaved } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogSaved } from "@/components/ui/dialog";
 import {
   Alert,
   Badge,
@@ -36,7 +44,6 @@ import {
   CardTitle,
   Field,
   Input,
-  Select,
   Skeleton,
   Table,
   Td,
@@ -59,24 +66,59 @@ import {
   TICKET_REPLY_FILE,
 } from "@/features/breach/components/attachments";
 import { messageOf } from "@/features/breach/components/record-breach";
-import { useUsers } from "@/features/users";
+import { StaffPicker, type StaffChoice } from "@/features/users/components/staff-picker";
+import { todayLocal } from "@/lib/dates";
 import { cn, formatDate, formatDateTime } from "@/lib/format";
 import { keys } from "@/lib/query";
 import { useToast } from "@/providers";
-import type { Breach, BreachTicket, BreachTicketMoveKind, BreachTicketState, TemporaryAccess } from "@/types";
+import type {
+  Breach,
+  BreachTicket,
+  BreachTicketEvent,
+  BreachTicketMoveKind,
+  BreachTicketState,
+  TemporaryAccess,
+  TicketMessage,
+} from "@/types";
+import { RETURN_OUTCOME_COPY } from "@/types";
 
-export const TICKET_STATE: Record<BreachTicketState, { label: string; tone: "info" | "warning" | "success" | "neutral" }> = {
-  issued: { label: "Waiting on the holder", tone: "info" },
-  returned: { label: "Returned", tone: "warning" },
-  closed: { label: "Closed", tone: "success" },
-  withdrawn: { label: "Withdrawn", tone: "neutral" },
+/**
+ * A ticket's state, as the office reads it and as its holder does. The words
+ * are a rights ticket's (2026-11-12): what the holder sends is their answer,
+ * and it waits for the office to review it.
+ */
+export const TICKET_STATE: Record<
+  BreachTicketState,
+  { label: string; holder: string; tone: "info" | "warning" | "success" | "neutral" }
+> = {
+  issued: { label: "Waiting on the holder", holder: "To answer", tone: "info" },
+  returned: { label: "Answered - review", holder: "Answered - with the Privacy Office", tone: "warning" },
+  closed: { label: "Closed", holder: "Closed", tone: "success" },
+  withdrawn: { label: "Withdrawn", holder: "Withdrawn", tone: "neutral" },
 };
 
-const MOVE_COPY: Record<Exclude<BreachTicketMoveKind, "return">, { label: string; ask: string; done: string }> = {
-  send_back: { label: "Send back", ask: "What is missing or wrong? The holder reads this.", done: "Sent back" },
-  close: { label: "Close the ticket", ask: "", done: "Ticket closed" },
-  withdraw: { label: "Withdraw", ask: "Why is it withdrawn? The holder reads this.", done: "Ticket withdrawn" },
-  reopen: { label: "Reopen", ask: "Why is it reopened? The holder reads this.", done: "Ticket reopened" },
+type OfficeMove = Exclude<BreachTicketMoveKind, "return">;
+
+const MOVE_COPY: Record<OfficeMove, { label: string; ask: string; hint: string; done: string }> = {
+  send_back: {
+    label: "Send back",
+    ask: "What is missing or wrong",
+    hint: "Sent to the holder, and kept with the ticket.",
+    done: "Sent back",
+  },
+  close: { label: "Close the ticket", ask: "", hint: "", done: "Ticket closed" },
+  withdraw: {
+    label: "Withdraw",
+    ask: "Reason for withdrawing",
+    hint: "Sent to the holder, and kept with the ticket.",
+    done: "Ticket withdrawn",
+  },
+  reopen: {
+    label: "Reopen",
+    ask: "Reason for reopening",
+    hint: "Sent to the holder, and kept with the ticket.",
+    done: "Ticket reopened",
+  },
 };
 
 const ACCESS: Record<TemporaryAccess, { label: string; tone: "info" | "success" | "neutral"; hint: string }> = {
@@ -104,11 +146,18 @@ export function AccessBadge({ access }: { access: TemporaryAccess | null }) {
   );
 }
 
-export function TicketStateBadge({ state }: { state: BreachTicketState }) {
+export function TicketStateBadge({
+  state,
+  side = "office",
+}: {
+  state: BreachTicketState;
+  /** Whose words: the office's, or the holder's own. */
+  side?: "office" | "holder";
+}) {
   const copy = TICKET_STATE[state];
   return (
     <Badge tone={copy.tone} dot={false}>
-      {copy.label}
+      {side === "holder" ? copy.holder : copy.label}
     </Badge>
   );
 }
@@ -124,99 +173,29 @@ export function localDay(value: string): Date {
   return new Date(y, m - 1, d);
 }
 
-/** Today as a date input's value, in the reader's own calendar. */
-function today(): string {
-  const now = new Date();
-  return new Date(now.getTime() - now.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
-}
-
-/** Moving the date to resolve a ticket by, from either side. */
-export function ChangeResolveBy({
-  current,
-  told,
-  pending,
-  onSave,
-}: {
-  current: string | null;
-  /** Who hears of it, as a sentence. */
-  told: string;
-  pending: boolean;
-  onSave: (body: { answer_by: string; reason: string }) => Promise<unknown>;
-}) {
-  const toast = useToast();
-  const saved = useDialogSaved();
-  const earliest = today();
-  const [changing, setChanging] = React.useState(false);
-  const [date, setDate] = React.useState("");
-  const [reason, setReason] = React.useState("");
-  function start() {
-    setDate(current && current >= earliest ? current : "");
-    setReason("");
-    setChanging(true);
+/**
+ * The holder's answer as it stands: the last one they gave, unless it was
+ * sent back or the ticket reopened since - then there is none to review.
+ */
+export function standingAnswer(events: BreachTicketEvent[]): BreachTicketEvent | null {
+  let answer: BreachTicketEvent | null = null;
+  for (const event of events) {
+    if (event.kind === "returned") answer = event;
+    else if (event.kind === "sent_back" || event.kind === "reopened") answer = null;
   }
-  async function save() {
-    try {
-      await onSave({ answer_by: date, reason: reason.trim() });
-      toast.success("Date changed", told);
-      setChanging(false);
-      saved();
-    } catch (err) {
-      toast.error("Not changed", messageOf(err, "The server refused."));
-    }
-  }
-  if (!changing) {
-    return (
-      <Button variant="secondary" size="sm" onClick={start}>
-        <CalendarClock className="size-4" />
-        Change the date
-      </Button>
-    );
-  }
-  return (
-    <div className="space-y-3 rounded-md border border-border p-3">
-      <p className="text-xs text-text-muted">
-        {told} The old date, the new date and your reason stay on the ticket.
-      </p>
-      <Field label="New date" required>
-        {(p) => <Input {...p} type="date" min={earliest} value={date} onChange={(e) => setDate(e.target.value)} />}
-      </Field>
-      <Field label="Why is it changing?" required>
-        {(p) => <Textarea {...p} rows={2} maxLength={8000} value={reason} onChange={(e) => setReason(e.target.value)} />}
-      </Field>
-      <div className="flex justify-end gap-2">
-        <Button variant="ghost" size="sm" onClick={() => setChanging(false)}>
-          Cancel
-        </Button>
-        <Button
-          variant="primary"
-          size="sm"
-          disabled={!date || date < earliest || date === current || !reason.trim()}
-          loading={pending}
-          onClick={save}
-        >
-          Change the date
-        </Button>
-      </div>
-    </div>
-  );
+  return answer;
 }
 
 function AssignDialog({ breach, onClose }: { breach: Breach; onClose: () => void }) {
   const toast = useToast();
   const qc = useQueryClient();
   const [byEmail, setByEmail] = React.useState(false);
-  const [q, setQ] = React.useState("");
-  const [picked, setPicked] = React.useState<string>("");
+  const [picked, setPicked] = React.useState<StaffChoice | null>(null);
   const [person, setPerson] = React.useState({ full_name: "", email: "", mobile: "" });
   const [instruction, setInstruction] = React.useState("");
   const [answerBy, setAnswerBy] = React.useState("");
   const [file, setFile] = React.useState<File | null>(null);
-  const search = q.trim();
-  const people = useUsers(search.length >= 3 ? { q: search, status: "active" } : { status: "active" });
-  // Staff only: the server refuses anyone else, and says so; offering them
-  // would only invite the refusal.
-  const staff = (people.data?.items ?? []).filter((u) => u.role !== "data_subject" && u.role !== "breach_holder");
-  const named = byEmail ? person.email.trim() !== "" : picked !== "";
+  const named = byEmail ? person.email.trim() !== "" : picked !== null;
   const assign = useMutation({
     // The ticket stands whatever becomes of the file, and a second assignment
     // would be refused, so a refused file comes back as words, not an error.
@@ -224,7 +203,7 @@ function AssignDialog({ breach, onClose }: { breach: Breach; onClose: () => void
       const made = await assignBreachTicket(breach.breach_uuid, {
         ...(byEmail
           ? { full_name: person.full_name.trim(), email: person.email.trim(), mobile: person.mobile.trim() || null }
-          : { user_uuid: picked }),
+          : { user_uuid: picked!.uuid }),
         instruction: instruction.trim(),
         answer_by: answerBy || null,
       });
@@ -248,46 +227,48 @@ function AssignDialog({ breach, onClose }: { breach: Breach; onClose: () => void
     try {
       const refused = await assign.mutateAsync();
       if (refused) {
-        toast.warning("Ticket assigned, but the document was not attached", `${refused}. Attach it on the ticket.`);
+        toast.warning("Ticket assigned, but the attachment was not added", `${refused}. Add it on the ticket.`);
       } else {
         toast.success(
           "Ticket assigned",
           byEmail
-            ? "They are emailed how to sign in, or that a ticket is waiting if they already can; the email names no breach."
-            : "They are emailed that a ticket is waiting; the email names no breach.",
+            ? "They are emailed how to sign in, or that a ticket is waiting if they already have an account. The email does not name the breach."
+            : "They are emailed that a ticket is waiting. The email does not name the breach.",
         );
       }
       onClose();
     } catch (err) {
-      toast.error("Not assigned", messageOf(err, "The server refused."));
+      toast.error("Ticket not assigned", messageOf(err, "The server refused."));
     }
   }
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent
         title="Assign a ticket"
-        description="To somebody on the organisation's own email domains. They see the breach reference, your instruction and the thread - nothing else from the register."
+        description="To a staff member, or to a colleague on the organisation's email domains. The assignee sees the breach reference, the instruction and the messages only."
       >
-        <div className="space-y-3">
-          <fieldset className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-            <legend className="sr-only">Who are you asking?</legend>
-            <label className="flex items-center gap-2">
-              <input type="radio" name="assign-to" checked={!byEmail} onChange={() => setByEmail(false)} />
-              A member of staff
-            </label>
-            <label className="flex items-center gap-2">
-              <input type="radio" name="assign-to" checked={byEmail} onChange={() => setByEmail(true)} />
-              Someone without a console login
-            </label>
+        <div className="space-y-4">
+          <fieldset className="space-y-1.5">
+            <legend className="text-sm font-medium text-text">Assignee</legend>
+            <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
+              <label className="flex items-center gap-2">
+                <input type="radio" name="assign-to" checked={!byEmail} onChange={() => setByEmail(false)} />
+                Staff member
+              </label>
+              <label className="flex items-center gap-2">
+                <input type="radio" name="assign-to" checked={byEmail} onChange={() => setByEmail(true)} />
+                Person without a console account
+              </label>
+            </div>
           </fieldset>
           {byEmail ? (
             <>
               <p className="text-xs text-text-muted">
-                They are given a login for this breach only: they set a password from the email, sign in with a code
-                like all staff, and see only their ticket. It ends when you withdraw their ticket or the breach closes.
-                If the address already has a console login, the ticket goes to it as usual.
+                The person receives a login limited to this breach: they set a password from the email, sign in with a
+                one-time code, and see only their ticket. Access ends when the ticket is withdrawn or the breach is
+                closed. If the address already has a console account, the ticket goes to that account.
               </p>
-              <Field label="Their name" hint="Needed when nobody has an account at this address">
+              <Field label="Name" hint="Required when the address has no account.">
                 {(p) => (
                   <Input
                     {...p}
@@ -297,7 +278,7 @@ function AssignDialog({ breach, onClose }: { breach: Breach; onClose: () => void
                   />
                 )}
               </Field>
-              <Field label="Their work email" required hint="On one of the organisation's own domains">
+              <Field label="Work email" required hint="Must be on one of the organisation's domains.">
                 {(p) => (
                   <Input
                     {...p}
@@ -308,7 +289,7 @@ function AssignDialog({ breach, onClose }: { breach: Breach; onClose: () => void
                   />
                 )}
               </Field>
-              <Field label="Their mobile" hint="Optional">
+              <Field label="Mobile" hint="Optional.">
                 {(p) => (
                   <Input
                     {...p}
@@ -321,34 +302,17 @@ function AssignDialog({ breach, onClose }: { breach: Breach; onClose: () => void
               </Field>
             </>
           ) : (
-            <>
-              <Field label="Find them" hint="Part of a name (three letters or more), or a whole email">
-                {(p) => <Input {...p} value={q} onChange={(e) => setQ(e.target.value)} />}
-              </Field>
-              <Field label="Who" required>
-                {(p) => (
-                  <Select {...p} value={picked} onChange={(e) => setPicked(e.target.value)}>
-                    <option value="">{people.isLoading ? "Looking…" : "Choose a member of staff"}</option>
-                    {staff.map((u) => (
-                      <option key={u.uuid} value={u.uuid}>
-                        {u.full_name}
-                        {u.email ? ` · ${u.email}` : ""}
-                      </option>
-                    ))}
-                  </Select>
-                )}
-              </Field>
-            </>
+            <StaffPicker label="Assign to" value={picked} onChange={setPicked} />
           )}
-          <Field label="What you are asking them to do" required>
+          <Field label="Instruction" required hint="What the assignee is asked to do. They read this on the ticket.">
             {(p) => <Textarea {...p} rows={4} value={instruction} onChange={(e) => setInstruction(e.target.value)} />}
           </Field>
-          <Field label="Resolve by" hint="Optional. Shown to both of you, and counted on your dashboard once passed">
-            {(p) => <Input {...p} type="date" value={answerBy} min={today()} onChange={(e) => setAnswerBy(e.target.value)} />}
+          <Field label="Resolve by" hint="Optional. Visible to both parties; shown as overdue on your dashboard once passed.">
+            {(p) => <Input {...p} type="date" value={answerBy} min={todayLocal()} onChange={(e) => setAnswerBy(e.target.value)} />}
           </Field>
           <FileInput
-            label="Attach a document"
-            hint="Optional. PDF, Word, image, saved email, CSV or text, up to 25 MB. They see it on the ticket."
+            label="Attachment"
+            hint="Optional. PDF, Word, image, saved email, CSV or text, up to 25 MB. Visible to the assignee on the ticket."
             accept={ATTACHMENT_ACCEPT}
             maxBytes={ATTACHMENT_MAX_BYTES}
             file={file}
@@ -364,13 +328,25 @@ function AssignDialog({ breach, onClose }: { breach: Breach; onClose: () => void
               loading={assign.isPending}
               onClick={save}
             >
-              Assign
+              <UserPlus className="size-4" />
+              Assign ticket
             </Button>
           </div>
         </div>
       </DialogContent>
     </Dialog>
   );
+}
+
+function outcomeTone(outcome: BreachTicketEvent["outcome"]): "success" | "warning" | "danger" | "neutral" {
+  return outcome === "done" ? "success" : outcome === "failed" ? "danger" : outcome ? "warning" : "neutral";
+}
+
+/** The file that came with an answer: on the last "return" message of the thread. */
+function answerFile(messages: TicketMessage[]): TicketMessage | null {
+  const returns = messages.filter((m) => m.kind === "return");
+  const last = returns[returns.length - 1];
+  return last?.evidence_hash ? last : null;
 }
 
 function TicketDialog({
@@ -388,10 +364,13 @@ function TicketDialog({
     queryKey: keys.breach.ticket(breach.breach_uuid, ticket.ticket_uuid),
     queryFn: () => getBreachTicket(breach.breach_uuid, ticket.ticket_uuid),
   });
-  const [asking, setAsking] = React.useState<Exclude<BreachTicketMoveKind, "return"> | null>(null);
+  const [asking, setAsking] = React.useState<OfficeMove | null>(null);
   const [reason, setReason] = React.useState("");
-  // Each move made: its reason is saved, so closing need not ask about it.
+  // Each move made, or given up with Cancel: its reason is dealt with, so
+  // closing need not ask about it. Named, so a message half-typed below the
+  // reason is still asked about.
   const [moved, setMoved] = React.useState(0);
+  const reasonPart = React.useId();
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: keys.breach.tickets(breach.breach_uuid) });
     void qc.invalidateQueries({ queryKey: keys.breach.detail(breach.breach_uuid) });
@@ -405,7 +384,7 @@ function TicketDialog({
     },
   });
   const move = useMutation({
-    mutationFn: (m: Exclude<BreachTicketMoveKind, "return">) =>
+    mutationFn: (m: OfficeMove) =>
       moveBreachTicket(breach.breach_uuid, ticket.ticket_uuid, m, reason.trim() || undefined),
     onSuccess: (fresh) => {
       qc.setQueryData(keys.breach.ticket(breach.breach_uuid, ticket.ticket_uuid), fresh);
@@ -420,7 +399,7 @@ function TicketDialog({
       refresh();
     },
   });
-  async function act(m: Exclude<BreachTicketMoveKind, "return">) {
+  async function act(m: OfficeMove) {
     try {
       await move.mutateAsync(m);
       toast.success(MOVE_COPY[m].done);
@@ -432,7 +411,18 @@ function TicketDialog({
     }
   }
   const t = detail.data?.ticket ?? ticket;
-  const moves = t.moves.filter((m) => m.move !== "return");
+  const messages = detail.data?.messages ?? [];
+  const moves = t.moves.filter((m) => m.move !== "return").map((m) => ({ ...m, move: m.move as OfficeMove }));
+  // As on a rights ticket: the main move first - closing an answered ticket -
+  // with Send back beside it, and a menu only where there is more than one
+  // thing to put in it. Here there never is, so each is a button.
+  const main = moves.find((m) => m.move === "close");
+  const others = moves.filter((m) => m !== main);
+  const answer = standingAnswer(t.events);
+  const file = answer ? answerFile(messages) : null;
+  const who = t.holder_name ?? "The holder";
+  const start = (m: OfficeMove, needsReason: boolean) => (needsReason ? setAsking(m) : void act(m));
+
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent
@@ -440,85 +430,152 @@ function TicketDialog({
         description={`On ${breach.reference}. ${TICKET_STATE[t.state].label}.`}
         size="lg"
       >
-        <DialogSaved count={moved} />
+        <DialogSaved count={moved} part={reasonPart} />
         {detail.isLoading ? (
           <Skeleton className="h-40" />
         ) : detail.error && !detail.data ? (
           <Alert tone="danger">{detail.error.message}</Alert>
         ) : (
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-text-muted">
+          <div className="space-y-5">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
               <TicketStateBadge state={t.state} />
               <AccessBadge access={t.temporary_access} />
-              {t.answer_by && <span className={cn(t.overdue && "font-medium text-danger-text")}>Resolve by {formatDate(localDay(t.answer_by))}</span>}
-              {t.added_by_name && <span>Added by {t.added_by_name}</span>}
+              <span className={cn(t.overdue ? "font-medium text-danger-text" : "text-text-muted")}>
+                {t.answer_by ? `Resolve by ${formatDate(localDay(t.answer_by))}` : "No resolve-by date"}
+              </span>
+              {t.added_by_name && <span className="text-xs text-text-muted">Added by {t.added_by_name}</span>}
+              {t.may_change_date && (
+                <ChangeDate
+                  label="Resolve by"
+                  current={t.answer_by}
+                  told={`${who} is told.`}
+                  pending={redate.isPending}
+                  onSave={({ date, reason: why }) => redate.mutateAsync({ answer_by: date, reason: why })}
+                />
+              )}
             </div>
-            <Thread
-              messages={detail.data?.messages ?? []}
-              you="office"
-              evidenceHref={(m) =>
-                m.evidence_hash ? breachTicketFileUrl(breach.breach_uuid, t.ticket_uuid, m.message_uuid) : null
-              }
-            />
-            {t.may_change_date && (
-              <ChangeResolveBy
-                current={t.answer_by}
-                told="The holder is told."
-                pending={redate.isPending}
-                onSave={redate.mutateAsync}
-              />
-            )}
-            {moves.length > 0 && (
-              <div className="space-y-2 border-t border-border pt-3">
-                {asking ? (
-                  <div className="space-y-2">
-                    <Field label={MOVE_COPY[asking].ask} required>
-                      {(p) => <Textarea {...p} rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />}
-                    </Field>
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => setAsking(null)}>
-                        Cancel
-                      </Button>
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        disabled={!reason.trim()}
-                        loading={move.isPending}
-                        onClick={() => act(asking)}
-                      >
-                        {MOVE_COPY[asking].label}
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {moves.map((m) => {
-                      const kind = m.move as Exclude<BreachTicketMoveKind, "return">;
-                      return (
-                        <Button
-                          key={m.move}
-                          variant={kind === "close" ? "primary" : "secondary"}
-                          size="sm"
-                          loading={move.isPending && move.variables === kind}
-                          onClick={() => (m.reason_required ? setAsking(kind) : act(kind))}
-                        >
-                          {MOVE_COPY[kind].label}
-                        </Button>
-                      );
-                    })}
-                  </div>
+
+            {answer && (
+              <section
+                className={
+                  t.state === "returned"
+                    ? "rounded-md border border-accent-border bg-accent-subtle p-3"
+                    : "rounded-md border border-border p-3"
+                }
+              >
+                <h3 className="text-xs font-semibold tracking-wide text-text-subtle uppercase">Their answer</h3>
+                <p className="mt-1 flex flex-wrap items-center gap-2 text-sm">
+                  {answer.outcome && (
+                    <Badge tone={outcomeTone(answer.outcome)} dot>
+                      {RETURN_OUTCOME_COPY[answer.outcome]}
+                    </Badge>
+                  )}
+                  <span className="text-xs text-text-muted">{formatDateTime(answer.occurred_at)}</span>
+                </p>
+                <p className="mt-2 text-sm whitespace-pre-wrap">{answer.summary}</p>
+                {file && (
+                  <a
+                    className="mt-2 inline-flex items-center gap-1 text-sm text-accent-text underline underline-offset-2"
+                    href={breachTicketFileUrl(breach.breach_uuid, t.ticket_uuid, file.message_uuid)}
+                  >
+                    {file.evidence_name ?? "Their proof"} <ExternalLink className="size-3" aria-hidden="true" />
+                  </a>
                 )}
-              </div>
+                {t.state === "returned" && (
+                  <p className="mt-2 text-xs text-text-muted">
+                    Read it, and their messages below; then close the ticket, or send it back with what is missing.
+                  </p>
+                )}
+              </section>
             )}
-            <ReplyBox
-              {...TICKET_REPLY_FILE}
-              pending={write.isPending}
-              placeholder="Write to the holder. They are not emailed the words; they read them in the console."
-              disabledReason={t.may_write ? null : "This ticket is not open; reopen it to write."}
-              onSend={async (body, file) => {
-                await write.mutateAsync({ body, evidence: file });
-              }}
-            />
+
+            {moves.length > 0 &&
+              (asking ? (
+                <section
+                  className="space-y-3 rounded-md border border-accent-border bg-accent-subtle/40 p-3"
+                  data-dialog-part={reasonPart}
+                >
+                  <h3 className="text-sm font-semibold">{MOVE_COPY[asking].label}</h3>
+                  <Field label={MOVE_COPY[asking].ask} hint={MOVE_COPY[asking].hint} required>
+                    {(p) => <Textarea {...p} rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />}
+                  </Field>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setAsking(null);
+                        setReason("");
+                        setMoved((n) => n + 1);
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      disabled={!reason.trim()}
+                      loading={move.isPending}
+                      onClick={() => act(asking)}
+                    >
+                      {MOVE_COPY[asking].label}
+                    </Button>
+                  </div>
+                </section>
+              ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                  {main && (
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      loading={move.isPending && move.variables === main.move}
+                      onClick={() => start(main.move, main.reason_required)}
+                    >
+                      <Check className="size-4" aria-hidden="true" />
+                      {MOVE_COPY[main.move].label}
+                    </Button>
+                  )}
+                  {others.map((m) => (
+                    <Button
+                      key={m.move}
+                      variant={m.move === "withdraw" && others.length > 1 ? "ghost" : "secondary"}
+                      size="sm"
+                      loading={move.isPending && move.variables === m.move}
+                      onClick={() => start(m.move, m.reason_required)}
+                    >
+                      {m.move === "send_back" && <Undo2 className="size-4" aria-hidden="true" />}
+                      {MOVE_COPY[m.move].label}
+                    </Button>
+                  ))}
+                </div>
+              ))}
+
+            {detail.data?.instruction && (
+              <section className="space-y-2">
+                <h3 className="text-xs font-semibold tracking-wide text-text-subtle uppercase">What they were asked</h3>
+                <p className="rounded-md bg-bg-inset p-3 text-sm whitespace-pre-wrap">{detail.data.instruction}</p>
+              </section>
+            )}
+
+            <section className="space-y-3">
+              <h3 className="text-xs font-semibold tracking-wide text-text-subtle uppercase">Messages</h3>
+              <Thread
+                messages={messages}
+                you="office"
+                evidenceHref={(m) =>
+                  m.evidence_hash ? breachTicketFileUrl(breach.breach_uuid, t.ticket_uuid, m.message_uuid) : null
+                }
+              />
+              <ReplyBox
+                {...TICKET_REPLY_FILE}
+                pending={write.isPending}
+                placeholder="Write to them - they read it in the console, not in an email."
+                disabledReason={t.may_write ? null : "This ticket is not open; reopen it to write."}
+                onSend={async (body, attached) => {
+                  await write.mutateAsync({ body, evidence: attached });
+                }}
+              />
+            </section>
           </div>
         )}
       </DialogContent>
@@ -560,8 +617,9 @@ export function TicketsCard({ breach }: { breach: Breach }) {
             Tickets
           </CardTitle>
           <p className="mt-1 text-xs text-text-muted">
-            Ask the people who must act - staff, or anyone on the organisation&apos;s own domains, who is given a login
-            for this breach only. They see the breach reference, your instruction and the thread, nothing else. Only you close a ticket, and the breach closes only when none is open.
+            Assign work to the people who must act: staff, or a colleague on the organisation&apos;s email domains, who
+            receives a login for this breach only. An assignee sees the breach reference, the instruction and the
+            messages. Only this office closes a ticket, and the breach closes only when none is open.
           </p>
         </div>
         {open && recorded && (
@@ -573,9 +631,9 @@ export function TicketsCard({ breach }: { breach: Breach }) {
       </CardHeader>
       <CardBody className="space-y-3">
         {!recorded && (
-          <Alert tone="info" title="Tickets wait for the breach to be recorded">
-            A ticket reaches a person on the breach&apos;s account, so it is assigned once validation records this as a
-            personal data breach.
+          <Alert tone="info" title="Tickets are available once the breach is recorded">
+            A ticket is addressed to a person on the breach&apos;s record, so it is assigned once validation records
+            this as a personal data breach.
           </Alert>
         )}
         {query.isLoading ? (
@@ -583,54 +641,66 @@ export function TicketsCard({ breach }: { breach: Breach }) {
         ) : query.error ? (
           <Alert tone="danger">{query.error.message}</Alert>
         ) : rows.length === 0 ? (
-          recorded && <p className="text-sm text-text-muted">No ticket yet.</p>
+          recorded && <p className="text-sm text-text-muted">No tickets yet.</p>
         ) : (
           <Table>
+            <caption className="sr-only">Tickets on this breach</caption>
             <thead>
               <tr>
                 <Th>Holder</Th>
                 <Th>State</Th>
                 <Th>Resolve by</Th>
                 <Th>Last activity</Th>
-                <Th>
-                  <span className="sr-only">Open</span>
-                </Th>
+                <Th>Next</Th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((t) => (
-                <Tr key={t.ticket_uuid} className={cn(t.overdue && "bg-danger-subtle/40")}>
-                  <Td>
-                    <span style={{ paddingLeft: `${depth(t) * 1.25}rem` }} className="block">
-                      <span className="font-medium">{t.holder_name ?? "A member of staff"}</span>
-                      {t.temporary_access && (
-                        <span className="mt-0.5 block">
-                          <AccessBadge access={t.temporary_access} />
-                        </span>
-                      )}
-                      {t.added_by_name && (
-                        <span className="block text-xs text-text-subtle">added by {t.added_by_name}</span>
-                      )}
-                    </span>
-                  </Td>
-                  <Td>
-                    <span className="flex flex-wrap items-center gap-1">
-                      <TicketStateBadge state={t.state} />
-                      <UnreadBadge count={t.unread} />
-                    </span>
-                  </Td>
-                  <Td className={cn("text-sm", t.overdue && "font-medium text-danger-text")}>
-                    {t.answer_by ? formatDate(localDay(t.answer_by)) : "-"}
-                  </Td>
-                  <Td className="text-sm">{t.last_activity_at ? formatDateTime(t.last_activity_at) : "-"}</Td>
-                  <Td className="text-right">
-                    <Button variant="ghost" size="sm" onClick={() => setOpened(t)}>
-                      <MessagesSquare className="size-4" />
-                      Open
-                    </Button>
-                  </Td>
-                </Tr>
-              ))}
+              {rows.map((t) => {
+                // An answer is read before anything is done about it: the row
+                // opens it, as a rights ticket's does.
+                const toReview = t.state === "returned";
+                return (
+                  <Tr key={t.ticket_uuid} className={cn(t.overdue && "bg-danger-subtle/40")}>
+                    <Td>
+                      <span style={{ paddingLeft: `${depth(t) * 1.25}rem` }} className="block">
+                        <button
+                          type="button"
+                          className="text-left font-medium text-accent-text hover:underline"
+                          onClick={() => setOpened(t)}
+                        >
+                          {t.holder_name ?? "A member of staff"}
+                        </button>
+                        {t.temporary_access && (
+                          <span className="mt-0.5 block">
+                            <AccessBadge access={t.temporary_access} />
+                          </span>
+                        )}
+                        {t.added_by_name && (
+                          <span className="block text-xs text-text-subtle">added by {t.added_by_name}</span>
+                        )}
+                      </span>
+                    </Td>
+                    <Td>
+                      <span className="flex flex-wrap items-center gap-1">
+                        <TicketStateBadge state={t.state} />
+                        <UnreadBadge count={t.unread} />
+                      </span>
+                    </Td>
+                    <Td className={cn("text-sm", t.overdue && "font-medium text-danger-text")}>
+                      {t.answer_by ? formatDate(localDay(t.answer_by)) : "-"}
+                    </Td>
+                    <Td className="text-sm">{t.last_activity_at ? formatDateTime(t.last_activity_at) : "-"}</Td>
+                    <Td className="text-right">
+                      {/* Outlined, or filled when there is an answer to read:
+                          a borderless "Open" read as text, not a button. */}
+                      <Button variant={toReview ? "primary" : "secondary"} size="sm" onClick={() => setOpened(t)}>
+                        {toReview ? "Review the answer" : "Open"}
+                        <ChevronRight className="size-4" />
+                      </Button>
+                    </Td>
+                  </Tr>
+                );
+              })}
             </tbody>
           </Table>
         )}

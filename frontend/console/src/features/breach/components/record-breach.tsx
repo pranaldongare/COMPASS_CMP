@@ -238,7 +238,7 @@ export function RecordBreachForm({ onDone }: { onDone: () => void }) {
       {kind === "processor" && <ProcessorPicker value={target} onChange={setTarget} />}
       {kind === "data_source" && <SourcePicker value={target} onChange={setTarget} />}
       <Field
-        label="Where, in words"
+        label="Location details"
         hint={kind === "other" ? "Which store or system" : "Optional: the system, the file, the device"}
         required={kind === "other"}
       >

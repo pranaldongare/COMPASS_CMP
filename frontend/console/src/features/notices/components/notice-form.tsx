@@ -149,7 +149,7 @@ export function NoticeForm({
               onClick={() => setOwnCode(true)}
               className="mt-1.5 text-xs text-accent-text underline underline-offset-2"
             >
-              Set the code myself
+              Enter code manually
             </button>
           </div>
         )}

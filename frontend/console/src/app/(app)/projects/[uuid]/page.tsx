@@ -429,6 +429,7 @@ export default function ProjectDetailPage() {
                 <dl className="grid gap-x-5 gap-y-4 p-5 sm:grid-cols-2 xl:grid-cols-3">
                   {(
                     [
+                      ["Project ID", <Mono key="no">{p.project_no ?? "—"}</Mono>],
                       ["Internal name", p.internal_project_name ?? "—"],
                       ["Requesting team", p.requesting_team ?? "—"],
                       ["Data Collection Owner", p.dco_name ?? "Not assigned"],

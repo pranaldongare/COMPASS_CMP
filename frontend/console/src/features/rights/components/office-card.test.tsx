@@ -40,7 +40,7 @@ describe("OfficeCard", () => {
     const { user } = render(<OfficeCard request={makeRequestDetail({ office: null })} />);
     expect(screen.getByText(/in the shared intake/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /transfer/i })).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /claim for my office/i }));
+    await user.click(screen.getByRole("button", { name: /claim for this office/i }));
     expect(claimed).toBe(true);
   });
 

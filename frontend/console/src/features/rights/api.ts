@@ -103,8 +103,14 @@ export const failVerification = (uuid: Uuid, note?: string | null) =>
   apiPost<RightsRequest>(action(uuid, "verification/fail"), { note: note ?? null });
 export const classify = (uuid: Uuid, body: { request_type: RightsRequestType; note?: string | null }) =>
   apiPost<RightsRequest>(action(uuid, "classify"), body);
-export const refuse = (uuid: Uuid, reason: string) =>
-  apiPost<RightsRequest>(action(uuid, "refuse"), { reason });
+/** A form, as a response is: the reason, and any documents that go with it
+ *  (2026-11-12). */
+export function refuse(uuid: Uuid, body: { reason: string; files?: File[] }): Promise<RightsRequest> {
+  const form = new FormData();
+  form.set("reason", body.reason);
+  for (const f of body.files ?? []) form.append("files", f);
+  return apiPost<RightsRequest>(action(uuid, "refuse"), form);
+}
 export const treatAsWithdrawal = (uuid: Uuid, note?: string | null) =>
   apiPost<RightsRequest>(action(uuid, "withdrawal"), { note: note ?? null });
 export const confirmIntent = (uuid: Uuid) => apiPost<RightsRequest>(action(uuid, "intent"), {});
@@ -137,9 +143,24 @@ export interface ConfirmHolderInput {
   responder_contact?: string | null;
   /** One of the processor's registered respondents; decides the channel. */
   respondent_uuid?: Uuid | null;
+  /** An account chosen to answer for a project's or an activity's holder: a
+   *  DCO Admin, where the office has several, or an HR PoC (0069). */
+  responder_user_uuid?: Uuid | null;
 }
 export const confirmHolder = (uuid: Uuid, holderUuid: Uuid, body: ConfirmHolderInput) =>
   apiPost<RightsHolder>(action(uuid, `holders/${holderUuid}/confirm`), body);
+
+/** A new date for a ticket to be answered by, and why (2026-11-12). */
+export interface TicketDateInput {
+  /** The end of the chosen day. */
+  due_at: string;
+  reason: string;
+}
+export const changeTicketDate = (uuid: Uuid, holderUuid: Uuid, body: TicketDateInput) =>
+  apiPost<RightsHolder>(action(uuid, `holders/${holderUuid}/answer-by`), body);
+/** The same, by the holder, on a ticket addressed to them. */
+export const changeMyTicketDate = (holderUuid: Uuid, body: TicketDateInput) =>
+  apiPost<MyTicket>(`/tickets/${holderUuid}/answer-by`, body);
 
 export interface ContactInput {
   kind: "mail_sent" | "chased" | "reply_noted" | "note";

@@ -18,7 +18,9 @@
  * Office to accept or send back, so tickets fall in three groups - to do,
  * waiting on the office, done - read off the state the server sends. Giving
  * the answer is its own form (what was done, then what, then proof), apart
- * from writing to the office, which no longer closes the window.
+ * from writing to the office, which no longer closes the window - and since
+ * 2026-11-12 its own tab, "Answer the ticket", beside "Messages": a message
+ * typed and sent is not an answer, and the two no longer sit together.
  */
 "use client";
 
@@ -30,6 +32,7 @@ import { PageHeader } from "@/components/layout/app-shell";
 import { FileInput } from "@/components/forms";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmptyQueue } from "@/components/ui/graphics";
+import { Tab, TabList, TabPanel, Tabs } from "@/components/ui/tabs";
 import {
   Alert,
   Badge,
@@ -49,11 +52,13 @@ import { myMessageAttachmentUrl } from "@/features/rights/api";
 import { BREACH_TICKETS_ANCHOR, HolderHome } from "@/features/breach/components/holder-home";
 import { BreachTicketCard } from "@/features/breach/components/my-breach-tickets";
 import { useMyBreachTickets } from "@/features/breach/queries";
+import { ChangeDate } from "@/components/data-display/change-date";
 import { ReplyBox, Thread, UnreadBadge } from "@/components/data-display/thread";
 import { BriefPanel } from "@/features/rights/components/thread";
 import { TicketItems } from "@/features/rights/components/ticket-items";
-import { useMessageOffice, useReturnMyTicket } from "@/features/rights/mutations";
+import { useChangeMyTicketDate, useMessageOffice, useReturnMyTicket } from "@/features/rights/mutations";
 import { useMyTicket, useMyTickets } from "@/features/rights/queries";
+import { endOfDay, lastDayBy, todayLocal } from "@/lib/dates";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { useToast } from "@/providers";
 import { useOptionalAuth } from "@/providers/auth-provider";
@@ -277,9 +282,7 @@ function TicketCard({ ticket: t, openAtFirst }: { ticket: MyTicket; openAtFirst?
             {toDo ? "Answer" : "Open"}
             {t.message_count ? ` · ${t.message_count}` : ""}
           </Button>
-          {toDo && (
-            <span className="text-xs text-text-muted">Ask a question, or give your answer - both from one place.</span>
-          )}
+
         </div>
       </CardBody>
       <Dialog open={responding} onOpenChange={(next) => !next && setResponding(false)}>
@@ -287,7 +290,7 @@ function TicketCard({ ticket: t, openAtFirst }: { ticket: MyTicket; openAtFirst?
           title={`${t.reference} · ${t.label}`}
           description={
             toDo
-              ? "What the platform already knows, everything said so far, and your answer."
+              ? "Answer the ticket, or message the Privacy Office with a question."
               : `${t.state_label}. Everything said is kept; you can still write to the Privacy Office.`
           }
         >
@@ -341,12 +344,52 @@ function Respond({ ticket: t, onDone }: { ticket: MyTicket; onDone: () => void }
   const toast = useToast();
   const detail = useMyTicket(t.holder_uuid);
   const send = useMessageOffice();
+  const changeDate = useChangeMyTicketDate();
   const toDo = TO_DO.includes(t.state);
-  const [answering, setAnswering] = React.useState(false);
+  // Answering the ticket and writing to the office are two tabs (2026-11-12,
+  // mock-up A): side by side, a holder typed the answer into the message box,
+  // pressed Send, and took the ticket for answered. While an answer is due
+  // the window opens on it.
+  const [tab, setTab] = React.useState<"answer" | "messages">(toDo ? "answer" : "messages");
   if (detail.isLoading) return <Skeleton className="h-40" />;
   if (detail.error) return <Alert tone="danger">{detail.error.userMessage()}</Alert>;
   const brief = detail.data?.ticket.brief ?? t.brief;
   const closed = t.request_status === "closed";
+  const messages = (
+    <div className="space-y-3">
+      <Thread
+        messages={detail.data?.messages ?? []}
+        you="holder"
+        evidenceHref={(m) => (m.evidence_hash ? myMessageAttachmentUrl(t.holder_uuid, m.message_uuid) : null)}
+      />
+      {toDo && (
+        <Alert tone="warning">
+          <p className="text-sm">
+            A message does not answer the ticket. To answer it, use{" "}
+            <button
+              type="button"
+              className="font-semibold underline underline-offset-2"
+              onClick={() => setTab("answer")}
+            >
+              Answer the ticket
+            </button>
+            .
+          </p>
+        </Alert>
+      )}
+      <ReplyBox
+        pending={send.isPending}
+        placeholder="Ask a question or send an update."
+        disabledReason={closed ? "The request is closed; nothing more can be written." : null}
+        onSend={async (body, file) => {
+          await send.mutateAsync({ holderUuid: t.holder_uuid, body, evidence: file });
+          // The window stays open: the message is on the thread above, and
+          // the answer may follow it.
+          toast.success("Message sent", "The Privacy Office can see it.");
+        }}
+      />
+    </div>
+  );
   return (
     <div className="space-y-4">
       {brief && (
@@ -360,41 +403,59 @@ function Respond({ ticket: t, onDone }: { ticket: MyTicket; onDone: () => void }
         </details>
       )}
       {detail.data?.items && <TicketItems items={detail.data.items} />}
-      <Thread
-        messages={detail.data?.messages ?? []}
-        you="holder"
-        evidenceHref={(m) => (m.evidence_hash ? myMessageAttachmentUrl(t.holder_uuid, m.message_uuid) : null)}
-      />
-      {toDo &&
-        (answering ? (
-          <AnswerForm ticket={t} onCancel={() => setAnswering(false)} onDone={onDone} />
-        ) : (
-          <div className="flex flex-wrap items-center gap-3 rounded-md border border-accent-border bg-accent-subtle p-3">
-            <Button variant="primary" size="sm" onClick={() => setAnswering(true)}>
-              <Send className="size-4" aria-hidden="true" />
-              Submit your answer
-            </Button>
-            <span className="text-xs text-text-muted">When your work is done: what was done, what you hold, and any proof.</span>
-          </div>
-        ))}
-      {!answering && (
-        <ReplyBox
-          pending={send.isPending}
-          placeholder="Write to the Privacy Office: a question, or what you have found so far."
-          disabledReason={closed ? "The request is closed; nothing more can be written." : null}
-          onSend={async (body, file) => {
-            await send.mutateAsync({ holderUuid: t.holder_uuid, body, evidence: file });
-            // The window stays open: the message is on the thread above, and
-            // the answer may follow it.
-            toast.success("Message sent", "The Privacy Office can see it.");
-          }}
-        />
+      {/* More time, with the reason, as on a breach ticket (2026-11-12): no
+          approval is asked, and the Privacy Office is told. */}
+      {t.may_change_date && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+          <span className={t.overdue ? "font-medium text-danger-text" : "text-text-muted"}>
+            {t.due_at ? `Answer by ${formatDate(t.due_at)}` : "No answer-by date"}
+          </span>
+          <ChangeDate
+            label="Answer by"
+            current={t.due_at ? todayLocal(new Date(t.due_at)) : null}
+            latest={
+              t.request_due_at
+                ? { date: lastDayBy(t.request_due_at), hint: "No later than the date the request itself is due" }
+                : undefined
+            }
+            told="The Privacy Office is told."
+            pending={changeDate.isPending}
+            onSave={({ date, reason }) =>
+              changeDate.mutateAsync({ holderUuid: t.holder_uuid, due_at: endOfDay(date), reason })
+            }
+          />
+        </div>
+      )}
+      {toDo ? (
+        <Tabs
+          value={tab}
+          onValueChange={(next) => setTab(next as "answer" | "messages")}
+          label="Answer or messages"
+          layout="underline"
+        >
+          <TabList>
+            <Tab value="answer" icon={Send}>
+              Answer the ticket
+            </Tab>
+            <Tab value="messages" icon={MessageSquareReply} count={detail.data?.messages.length ?? 0}>
+              Messages
+            </Tab>
+          </TabList>
+          <TabPanel value="answer" className="pt-4">
+            <AnswerForm ticket={t} onDone={onDone} />
+          </TabPanel>
+          <TabPanel value="messages" className="pt-4">
+            {messages}
+          </TabPanel>
+        </Tabs>
+      ) : (
+        messages
       )}
     </div>
   );
 }
 
-function AnswerForm({ ticket: t, onCancel, onDone }: { ticket: MyTicket; onCancel: () => void; onDone: () => void }) {
+function AnswerForm({ ticket: t, onDone }: { ticket: MyTicket; onDone: () => void }) {
   const toast = useToast();
   const ret = useReturnMyTicket();
   // No default: "did all of it" is not assumed (review DPDP-1).
@@ -406,21 +467,31 @@ function AnswerForm({ ticket: t, onCancel, onDone }: { ticket: MyTicket; onCance
     <form
       method="post"
       noValidate
-      className="space-y-4 rounded-md border border-accent-border p-4"
+      className="space-y-4 rounded-md border border-accent-border bg-accent-subtle/40 p-4"
       onSubmit={async (e) => {
         e.preventDefault();
         if (!outcome || !summary.trim()) return;
         setError(null);
         try {
           await ret.mutateAsync({ holderUuid: t.holder_uuid, summary: summary.trim(), outcome, evidence: file });
-          toast.success("Answer sent", "The Privacy Office will review it.");
+          toast.success("Answer submitted", "The Privacy Office will review it.");
           onDone();
         } catch (err) {
-          setError(err && typeof err === "object" && "userMessage" in err ? (err as { userMessage: () => string }).userMessage() : "Could not send your answer.");
+          setError(err && typeof err === "object" && "userMessage" in err ? (err as { userMessage: () => string }).userMessage() : "Could not submit your answer.");
         }
       }}
     >
-      <h3 className="text-sm font-semibold">Submit your answer</h3>
+      <div>
+        <h3 className="text-sm font-semibold">Your answer to the Privacy Office</h3>
+        <p className="mt-0.5 text-xs text-text-muted">
+          This is what answers the ticket. The office reviews it, then accepts it or sends it back.
+        </p>
+      </div>
+      {t.sent_back_at && t.sent_back_reason && (
+        <Alert tone="warning" title="Sent back to you">
+          <p className="text-sm">{t.sent_back_reason}</p>
+        </Alert>
+      )}
       {error && <Alert tone="danger">{error}</Alert>}
       <fieldset className="space-y-1.5">
         <legend className="text-sm font-medium">1 · What was done?</legend>
@@ -443,12 +514,10 @@ function AnswerForm({ ticket: t, onCancel, onDone }: { ticket: MyTicket; onCance
         file={file}
         onChange={setFile}
       />
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button type="submit" variant="primary" size="sm" loading={ret.isPending} disabled={!outcome || !summary.trim()}>
-          Send your answer
+      <div className="flex justify-end">
+        <Button type="submit" variant="primary" loading={ret.isPending} disabled={!outcome || !summary.trim()}>
+          <Send className="size-4" aria-hidden="true" />
+          Submit answer
         </Button>
       </div>
     </form>

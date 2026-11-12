@@ -327,7 +327,7 @@ function ReportEditor({
         <DialogSaved count={saves} />
         <div className="space-y-3">
           {blocked && (
-            <Alert tone="warning" title="This can't be finalised for now">
+            <Alert tone="warning" title="This cannot be finalised yet">
               {blocked}.
             </Alert>
           )}
@@ -643,7 +643,7 @@ function FilingDialog({
       >
         <div className="space-y-3">
           {blocked && (
-            <Alert tone="warning" title="This can't be recorded for now">
+            <Alert tone="warning" title="This cannot be recorded yet">
               {blocked}.
             </Alert>
           )}

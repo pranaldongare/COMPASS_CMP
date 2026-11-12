@@ -7,7 +7,8 @@ import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import ConsentsPage from "@/app/(app)/consents/page";
-import { render, screen } from "@/test/render";
+import { makeConsentRow } from "@/test/fixtures";
+import { render, screen, within } from "@/test/render";
 import { API, server } from "@/test/server";
 
 vi.mock("next/navigation", () => ({
@@ -60,5 +61,34 @@ describe("Consents filters", () => {
 
     await user.click(screen.getByRole("button", { name: "Clear filters" }));
     await vi.waitFor(() => expect([...asked.at(-1)!.keys()].filter((k) => k !== "limit")).toEqual([]));
+  });
+});
+
+describe("Consents register", () => {
+  it("shows the consent's, the person's and the project's IDs as numbers, beside the names", async () => {
+    // 2026-11-12: the three numbers the Data Collection Tool is given, and
+    // the ones in the export a collection owner takes - not the uuids.
+    server.use(
+      http.get(`${API}/consents`, () =>
+        HttpResponse.json({
+          items: [makeConsentRow({ consent_no: 55210, person_no: 10873, project_no: 412 })],
+          next_cursor: null,
+          total: 1,
+        }),
+      ),
+      http.get(`${API}/projects`, () => HttpResponse.json({ items: [], next_cursor: null, total: 0 })),
+    );
+    render(<ConsentsPage />);
+
+    const row = (await screen.findByRole("link", { name: "Meera Iyer" })).closest("tr") as HTMLElement;
+    for (const heading of ["Consent ID", "Person ID", "Project ID"]) {
+      expect(screen.getByRole("columnheader", { name: heading })).toBeInTheDocument();
+    }
+    const cells = within(row).getAllByRole("cell").map((c) => c.textContent);
+    expect(cells[0]).toBe("55210");
+    expect(cells[2]).toBe("10873");
+    expect(cells[4]).toBe("412");
+    // No uuid is shown in their place.
+    expect(row.textContent).not.toMatch(/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}/);
   });
 });

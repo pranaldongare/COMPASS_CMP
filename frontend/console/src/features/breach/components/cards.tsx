@@ -96,17 +96,17 @@ function ExtensionDialog({ breach, onClose }: { breach: Breach; onClose: () => v
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent
-        title="The Board allowed longer"
+        title="Record a Board extension"
         description="Rule 7(2)(b): the detailed report is due within 72 hours of becoming aware, or such longer period as the Board may allow. The initial intimation's clock does not move."
       >
         <div className="space-y-3">
-          <Field label="Asked for at" required>
+          <Field label="Requested at" required>
             {(p) => <Input {...p} type="datetime-local" value={asked} max={nowLocal()} onChange={(e) => setAsked(e.target.value)} />}
           </Field>
-          <Field label="Allowed until" required>
+          <Field label="Extended until" required>
             {(p) => <Input {...p} type="datetime-local" value={until} min={asked || undefined} onChange={(e) => setUntil(e.target.value)} />}
           </Field>
-          <Field label="The Board's reference" hint="Optional">
+          <Field label="Board reference" hint="Optional">
             {(p) => <Input {...p} value={reference} maxLength={200} onChange={(e) => setReference(e.target.value)} />}
           </Field>
           <div className="flex justify-end gap-2">
@@ -147,7 +147,7 @@ function CertInSetAsideDialog({ breach, onClose }: { breach: Breach; onClose: ()
         description="This sets the CERT-In duty aside, whatever validation says, so it stops running and no longer holds up closing the incident. Validation and the other duties are left as they are. It mails nobody: neither CERT-In nor the organisation's board is told. A report to CERT-In still waiting for a yes to be mailed to the board is not mailed while it stays set aside. If it turns out to be reportable, mark it again, and it comes back on the same clock."
       >
         <div className="space-y-3">
-          <Field label="Why it is not reportable" hint="Kept with the duty" required>
+          <Field label="Reason it is not reportable" hint="Kept with the duty" required>
             {(p) => (
               <Textarea {...p} rows={3} maxLength={8000} value={reason} onChange={(e) => setReason(e.target.value)} />
             )}
@@ -157,7 +157,7 @@ function CertInSetAsideDialog({ breach, onClose }: { breach: Breach; onClose: ()
               Cancel
             </Button>
             <Button variant="primary" disabled={!reason.trim()} loading={write.isPending} onClick={save}>
-              Set CERT-In aside
+              Mark as not reportable
             </Button>
           </div>
         </div>
@@ -655,7 +655,7 @@ export function BreachTransitions({ breach }: { breach: Breach }) {
           </Alert>
         )}
         {move.reason_required && (
-          <Field label="Why it is being reopened" required>
+          <Field label="Reason for reopening" required>
             {(p) => <Textarea {...p} value={reason} onChange={(e) => setReason(e.target.value)} />}
           </Field>
         )}

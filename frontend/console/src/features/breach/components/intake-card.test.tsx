@@ -7,7 +7,7 @@
  * word, not as the register's "reportable".
  *
  * The list is a page of short rows and the total. A report's full text is read
- * when somebody presses Read it, and a report can be claimed or dismissed from
+ * when somebody presses Open report, and a report can be claimed or dismissed from
  * its row whether or not the rest of it could be read.
  */
 import { HttpResponse, http } from "msw";
@@ -72,7 +72,7 @@ function serve(rows: IncidentReport[]) {
 }
 
 async function openIt(user: ReturnType<typeof render>["user"]) {
-  await user.click(await screen.findByRole("button", { name: "Read it" }));
+  await user.click(await screen.findByRole("button", { name: "Open report" }));
   return screen.findByRole("dialog");
 }
 
@@ -122,7 +122,7 @@ describe("IntakeCard", () => {
     expect(within(dialog).queryByText(/reportable to CERT-In/)).not.toBeInTheDocument();
   });
 
-  it("does not read a report's full text until somebody presses Read it", async () => {
+  it("does not read a report's full text until somebody presses Open report", async () => {
     let asked = 0;
     serve([report()]);
     server.use(
@@ -164,7 +164,7 @@ describe("IntakeCard", () => {
     expect(within(dialog).getByText("A file on a public share")).toBeInTheDocument();
     expect(within(dialog).getByRole("status", { name: "Reading the report" })).toBeInTheDocument();
 
-    await user.click(within(dialog).getByRole("button", { name: "Claim for my office" }));
+    await user.click(within(dialog).getByRole("button", { name: "Claim for this office" }));
     await vi.waitFor(() => expect(claimed).toBe(true));
     release();
   });
@@ -188,12 +188,12 @@ describe("IntakeCard", () => {
     expect(within(dialog).getByText("asha@example.org")).toBeInTheDocument();
 
     server.use(http.get(`${API}/breaches/intake/${REPORT}`, () => HttpResponse.json(report())));
-    await user.click(within(dialog).getByRole("button", { name: "Read it again" }));
+    await user.click(within(dialog).getByRole("button", { name: "Retry" }));
     expect(await within(dialog).findByText(/open to anyone with the link/)).toBeInTheDocument();
     expect(within(dialog).queryByText("The rest of this report could not be read")).not.toBeInTheDocument();
 
     await user.click(within(dialog).getByRole("button", { name: "Dismiss" }));
-    await user.type(within(dialog).getByLabelText(/why is it being dismissed/i), "A drill");
+    await user.type(within(dialog).getByLabelText(/reason for dismissal/i), "A drill");
     await user.click(within(dialog).getByRole("button", { name: "Dismiss the report" }));
     await vi.waitFor(() => expect(sent).toEqual({ reason: "A drill" }));
   });
@@ -226,7 +226,7 @@ describe("IntakeCard", () => {
     const { user } = render(<IntakeCard />);
 
     const dialog = await openIt(user);
-    await user.click(within(dialog).getByRole("button", { name: "Claim for my office" }));
+    await user.click(within(dialog).getByRole("button", { name: "Claim for this office" }));
 
     await vi.waitFor(() => expect(push).toHaveBeenCalledWith(`/breaches/${BREACH}`));
     expect(claimed).toBe(true);
@@ -241,7 +241,7 @@ describe("IntakeCard", () => {
     const { user } = render(<IntakeCard />);
 
     const dialog = await openIt(user);
-    await user.click(within(dialog).getByRole("button", { name: "Claim for my office" }));
+    await user.click(within(dialog).getByRole("button", { name: "Claim for this office" }));
 
     await vi.waitFor(() =>
       expect(toast.error).toHaveBeenCalledWith("Not claimed", "The other office has already claimed it"),
@@ -264,9 +264,9 @@ describe("IntakeCard", () => {
     await user.click(within(dialog).getByRole("button", { name: "Dismiss" }));
     const go = within(dialog).getByRole("button", { name: "Dismiss the report" });
     expect(go).toBeDisabled();
-    await user.type(within(dialog).getByLabelText(/why is it being dismissed/i), "   ");
+    await user.type(within(dialog).getByLabelText(/reason for dismissal/i), "   ");
     expect(go).toBeDisabled();
-    await user.type(within(dialog).getByLabelText(/why is it being dismissed/i), "A test by the helpdesk");
+    await user.type(within(dialog).getByLabelText(/reason for dismissal/i), "A test by the helpdesk");
     await user.click(go);
 
     await vi.waitFor(() => expect(sent).toEqual({ reason: "A test by the helpdesk" }));
@@ -285,7 +285,7 @@ describe("IntakeCard", () => {
     const { user, queryClient } = render(<IntakeCard />);
 
     const dialog = await openIt(user);
-    await user.click(within(dialog).getByRole("button", { name: "Claim for my office" }));
+    await user.click(within(dialog).getByRole("button", { name: "Claim for this office" }));
     await vi.waitFor(() => expect(push).toHaveBeenCalled());
     await polled(queryClient);
 
@@ -309,7 +309,7 @@ describe("IntakeCard", () => {
 
     const dialog = await openIt(user);
     await within(dialog).findByText(/open to anyone with the link/);
-    await user.click(within(dialog).getByRole("button", { name: "Claim for my office" }));
+    await user.click(within(dialog).getByRole("button", { name: "Claim for this office" }));
     await vi.waitFor(() => expect(world.rows).toEqual([]));
     await polled(queryClient);
     expect(toast.warning).not.toHaveBeenCalled();
@@ -330,7 +330,7 @@ describe("IntakeCard", () => {
     const { user, queryClient } = render(<IntakeCard />);
 
     const dialog = await openIt(user);
-    await user.click(within(dialog).getByRole("button", { name: "Claim for my office" }));
+    await user.click(within(dialog).getByRole("button", { name: "Claim for this office" }));
     await vi.waitFor(() => expect(toast.error).toHaveBeenCalled());
     await polled(queryClient);
 
@@ -363,7 +363,7 @@ describe("IntakeCard", () => {
     server.use(http.get(`${API}/breaches/intake/${REPORT}`, () => HttpResponse.json(GONE, { status: 409 })));
     const { user } = render(<IntakeCard />);
 
-    await user.click(await screen.findByRole("button", { name: "Read it" }));
+    await user.click(await screen.findByRole("button", { name: "Open report" }));
 
     await vi.waitFor(() => expect(toast.warning).toHaveBeenCalledTimes(1));
     await vi.waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
@@ -375,11 +375,11 @@ describe("IntakeCard", () => {
 
     const dialog = await openIt(user);
     await user.click(within(dialog).getByRole("button", { name: "Dismiss" }));
-    await user.type(within(dialog).getByLabelText(/why is it being dismissed/i), "A reason");
+    await user.type(within(dialog).getByLabelText(/reason for dismissal/i), "A reason");
     world.rows = [report(), report({ report_uuid: crypto.randomUUID(), reference: "INC-2026-0043" })];
     await polled(queryClient);
 
-    expect(within(screen.getByRole("dialog")).getByLabelText(/why is it being dismissed/i)).toHaveValue("A reason");
+    expect(within(screen.getByRole("dialog")).getByLabelText(/reason for dismissal/i)).toHaveValue("A reason");
     expect(toast.warning).not.toHaveBeenCalled();
   });
 
@@ -418,7 +418,7 @@ describe("IntakeCard", () => {
       render(<IntakeCard />);
 
       expect(await screen.findByRole("heading", { name: /Reported through the public link \(120\)/ })).toBeInTheDocument();
-      expect(screen.getAllByRole("button", { name: "Read it" })).toHaveLength(50);
+      expect(screen.getAllByRole("button", { name: "Open report" })).toHaveLength(50);
       expect(screen.getByText("1 to 50 of 120")).toBeInTheDocument();
       expect(world.seen).toEqual(["?limit=50&offset=0"]);
     });
@@ -478,7 +478,7 @@ describe("IntakeCard", () => {
       await screen.findByText("Report 1");
       await user.click(screen.getByRole("button", { name: "Next" }));
       const row = (await screen.findByText("Report 51")).closest("li") as HTMLElement;
-      await user.click(within(row).getByRole("button", { name: "Read it" }));
+      await user.click(within(row).getByRole("button", { name: "Open report" }));
       await screen.findByRole("dialog");
 
       // A report on the first page is taken up, so this one moves up onto it.

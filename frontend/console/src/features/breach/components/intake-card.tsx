@@ -9,7 +9,7 @@
  *
  * A stranger can fill the intake, and it has to stay readable while they do. So
  * the list comes a page at a time with only who sent each report and its title,
- * and the rest of a report is read when somebody presses Read it.
+ * and the rest of a report is read when somebody presses Open report.
  */
 "use client";
 
@@ -137,13 +137,13 @@ function ReportDialog({ report, onClose }: { report: IncidentReportRow; onClose:
                 {messageOf(full.error, "Try again in a moment.")}
               </Alert>
               <Button variant="secondary" size="sm" loading={full.isFetching} onClick={() => void full.refetch()}>
-                Read it again
+                Retry
               </Button>
             </div>
           )}
           {dismissing ? (
             <div className="space-y-2 border-t border-border pt-3">
-              <Field label="Why is it being dismissed?" hint="Kept with the report" required>
+              <Field label="Reason for dismissal" hint="Kept with the report" required>
                 {(p) => <Textarea {...p} rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />}
               </Field>
               <div className="flex justify-end gap-2">
@@ -169,7 +169,7 @@ function ReportDialog({ report, onClose }: { report: IncidentReportRow; onClose:
                 Dismiss
               </Button>
               <Button variant="primary" loading={claim.isPending} onClick={() => claim.mutate()}>
-                Claim for my office
+                Claim for this office
               </Button>
             </div>
           )}
@@ -229,7 +229,7 @@ export function IntakeCard() {
                   </p>
                 </div>
                 <Button variant="secondary" size="sm" onClick={() => setOpened(r)}>
-                  Read it
+                  Open report
                 </Button>
               </li>
             ))}

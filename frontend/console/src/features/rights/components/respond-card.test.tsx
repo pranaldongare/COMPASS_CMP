@@ -8,7 +8,7 @@ import { describe, expect, it } from "vitest";
 import { RespondCard } from "@/features/rights/components/respond-card";
 import { ToastProvider } from "@/providers/toast-provider";
 import { makeRequestDetail } from "@/test/fixtures";
-import { render, screen } from "@/test/render";
+import { fireEvent, render, screen } from "@/test/render";
 import type { RightsRequestDetail } from "@/types";
 
 const collating = {
@@ -38,5 +38,27 @@ describe("RespondCard", () => {
     expect(screen.getByRole("option", { name: "Complete" })).toBeDisabled();
     expect(screen.getByRole("combobox", { name: /outcome/i })).toHaveValue("partial");
     expect(screen.getByText(why)).toBeInTheDocument();
+  });
+
+  it("offers attaching files as a button, lists what was chosen and refuses what the server would", async () => {
+    // 2026-11-12: the browser's own "Choose files" under the response was
+    // not seen as something to press.
+    const { user } = card();
+    expect(screen.getByRole("button", { name: "Attach files" })).toBeInTheDocument();
+    const picker = screen.getByLabelText(/Files released with the response/);
+
+    await user.upload(picker, new File(["a,b\n1,2\n"], "extract.csv", { type: "text/csv" }));
+    expect(screen.getByText("extract.csv")).toBeInTheDocument();
+
+    // Not a kind the server takes: said here, and not added.
+    // Past the picker's own filter, as a drag or an "All files" choice gets.
+    fireEvent.change(picker, {
+      target: { files: [new File(["MZ"], "tool.exe", { type: "application/octet-stream" })] },
+    });
+    expect(screen.getByRole("alert")).toHaveTextContent("tool.exe is not a PDF, image, CSV or text file");
+    expect(screen.queryByText(/^tool\.exe$/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Remove extract.csv" }));
+    expect(screen.queryByText("extract.csv")).not.toBeInTheDocument();
   });
 });

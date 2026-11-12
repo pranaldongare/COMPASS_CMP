@@ -23,17 +23,21 @@ import type {
   Uuid,
 } from "@/types";
 
-export function useUsers(filters: Record<string, unknown> = {}) {
+export function useUsers(
+  filters: Record<string, unknown> = {},
+  options: { enabled?: boolean } = {},
+) {
   return useQuery<Page<User>, ApiError>({
     queryKey: keys.users.list(filters),
     queryFn: () => listUsers(filters),
+    enabled: options.enabled ?? true,
   });
 }
 
-export function useStaff(enabled = true) {
+export function useStaff(enabled = true, role?: StaffMember["role"]) {
   return useQuery<StaffMember[], ApiError>({
-    queryKey: keys.users.staff,
-    queryFn: listStaff,
+    queryKey: role ? [...keys.users.staff, role] : keys.users.staff,
+    queryFn: () => listStaff(role),
     enabled,
   });
 }

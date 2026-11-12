@@ -182,6 +182,9 @@ export function makeNoticeRow(overrides: Partial<NoticeListRow> = {}): NoticeLis
 export function makeConsentRow(overrides: Partial<ConsentListRow> = {}): ConsentListRow {
   return {
     consent_uuid: "66666666-6666-4666-8666-666666666666",
+    consent_no: 55210,
+    person_no: 10873,
+    project_no: 412,
     subject_uuid: "77777777-7777-4777-8777-777777777777",
     subject_name: "Meera Iyer",
     subject_email: "meera.iyer@example.com",

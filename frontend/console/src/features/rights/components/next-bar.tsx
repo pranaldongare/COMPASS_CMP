@@ -196,7 +196,7 @@ export function NextBar({
         loading={claim.isPending || move.isPending}
         onClick={act}
       >
-        {step.claim ? "Claim for my office" : `Move to ${statusLabel(step.move ?? "")}`}
+        {step.claim ? "Claim for this office" : `Move to ${statusLabel(step.move ?? "")}`}
       </Button>
     );
   } else if (step.go && step.go !== tab) {

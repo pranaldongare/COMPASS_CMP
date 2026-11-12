@@ -11,7 +11,7 @@
 import * as React from "react";
 import { Copy, Check } from "lucide-react";
 import { FormError, useApiForm } from "@/components/forms";
-import { DialogFooter } from "@/components/ui/dialog";
+import { DialogFooter, useDialogHold, useDialogSaved } from "@/components/ui/dialog";
 import { Alert, Button, Field, Input, Mono } from "@/components/ui/primitives";
 import { consentLinkUrl } from "@/features/consent/link-url";
 import { type MintedLink, useAssignAgent } from "@/features/projects";
@@ -24,6 +24,7 @@ export function AgentForm({ siteUuid, onDone }: { siteUuid: string; onDone: () =
   const toast = useToast();
   const assign = useAssignAgent(siteUuid);
   const [minted, setMinted] = React.useState<MintedLink | null>(null);
+  const saved = useDialogSaved();
 
   const form = useApiForm(agentSchema, {
     // Deliberately empty. The absence of a default expiry is the control.
@@ -40,6 +41,9 @@ export function AgentForm({ siteUuid, onDone }: { siteUuid: string; onDone: () =
       agent_ref: values.agent_ref || null,
       audience_mode: values.employees ? "sso" : "otp",
     });
+    // The link is made: what was typed for it is saved. What closing would
+    // lose now is the link itself, and the panel says that in its own words.
+    saved();
     setMinted(result);
     toast.success("Consent link created");
   });
@@ -115,6 +119,10 @@ export function AgentForm({ siteUuid, onDone }: { siteUuid: string; onDone: () =
  */
 function MintedLinkPanel({ link, onDone }: { link: MintedLink; onDone: () => void }) {
   const [copied, setCopied] = React.useState(false);
+  // Closing by Escape or the X before it has been copied asks first, and says
+  // why: it used to say "changes that are not saved", which it was not.
+  const [taken, setTaken] = React.useState(false);
+  useDialogHold(taken ? null : "This link is shown only once. Copy it before you close.");
   const url = consentLinkUrl(link.url_path);
 
   return (
@@ -132,6 +140,7 @@ function MintedLinkPanel({ link, onDone }: { link: MintedLink; onDone: () => voi
         className="mt-3"
         onClick={async () => {
           await copyText(url);
+          setTaken(true);
           setCopied(true);
           setTimeout(() => setCopied(false), 2000);
         }}

@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import type { AuditEntry } from "@/types";
-import { formatDateTime, humanise } from "@/lib/format";
+import { formatDate, formatDateTime, humanise } from "@/lib/format";
 
 /**
  * A one-line, human reading of an event.
@@ -45,6 +45,7 @@ const EVENT_SENTENCES: Record<string, string> = {
   "rights.ticket_withdrawn":
     "A ticket was withdrawn; nothing further is needed from the holder.",
   "rights.ticket_reassigned": "A ticket was sent to a different respondent.",
+  "rights.ticket_date_changed": "A ticket's answer-by date was changed, with the reason.",
   "rights.ticket_reminded": "A reminder went out on a ticket that is due or overdue.",
   "rights.ticket_escalated": "A ticket missed its date and was escalated once.",
   "notice.published":
@@ -77,7 +78,36 @@ const EVENT_SENTENCES: Record<string, string> = {
   "auth.login_locked_out": "An account was locked after repeated failed sign-ins.",
 };
 
+/**
+ * A ticket's answer-by date moved (2026-11-12): said with the two dates, who
+ * moved it and why. The trail itself keeps no reason - it marks that one was
+ * given (ADR 0015) - and the words come beside the entry, read from the
+ * ticket's own message: "Answer by changed from A to B: the reason". The
+ * reason is what follows the dates.
+ */
+function dateChanged(entry: AuditEntry): string | null {
+  const detail = entry.detail as Record<string, unknown> | null;
+  if (!detail || typeof detail.date_after !== "string") return null;
+  const day = (value: unknown) => (typeof value === "string" ? formatDate(value) : "no date");
+  const who = detail.side === "holder" ? "The holder" : "The office";
+  const said = typeof entry.reason === "string" ? entry.reason.trim() : "";
+  // Still sealed: the reader may not open it, so only the change is said.
+  const open = said && !said.startsWith("SE::") ? said : "";
+  const cut = open.indexOf(": ");
+  const reason = (cut === -1 ? open : open.slice(cut + 2)).trim();
+  const why = reason
+    ? ` Reason: ${reason}`
+    : detail.reason_given
+      ? " A reason was given; it is no longer on the ticket."
+      : "";
+  return `${who} changed a ticket's answer-by date from ${day(detail.date_before)} to ${day(detail.date_after)}.${why}`;
+}
+
 export function eventSentence(entry: AuditEntry): string {
+  if (entry.event_type === "rights.ticket_date_changed") {
+    const said = dateChanged(entry);
+    if (said) return said;
+  }
   return (
     EVENT_SENTENCES[entry.event_type] ?? humanise(entry.event_type.replace(/\./g, " "))
   );

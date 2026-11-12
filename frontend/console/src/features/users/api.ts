@@ -111,8 +111,12 @@ export function listOffices(): Promise<Office[]> {
   return apiGet<Office[]>("/offices");
 }
 
-/** Active staff, four fields, for naming a processor's respondent. DPO and admin only. */
-export async function listStaff(): Promise<StaffMember[]> {
+/** Active staff, four fields, for naming a processor's respondent. DPO and
+ *  admin only. With a role, only the accounts that hold it: the DCO Admins
+ *  an office chooses between for a project's ticket. */
+export async function listStaff(role?: StaffMember["role"]): Promise<StaffMember[]> {
   // Sorted here, not by the API: the names arrive sealed.
-  return inNameOrder(await apiGet<StaffMember[]>("/users/staff"));
+  return inNameOrder(
+    await apiGet<StaffMember[]>("/users/staff", role ? { params: { role } } : undefined),
+  );
 }

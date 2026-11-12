@@ -165,7 +165,7 @@ function MintedPanel({ link, onDone }: { link: RemintedLink; onDone: () => void 
 
       <DialogFooter>
         <Button variant="primary" onClick={onDone}>
-          I have copied it
+          Done
         </Button>
       </DialogFooter>
     </div>

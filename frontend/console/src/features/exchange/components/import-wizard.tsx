@@ -248,7 +248,7 @@ export function ImportWizard({ onDone }: { onDone: () => void }) {
             ) : (
               <FileSpreadsheet className="size-4" aria-hidden="true" />
             )}
-            Check it — this writes nothing
+            Validate only
           </Button>
 
           {result && (

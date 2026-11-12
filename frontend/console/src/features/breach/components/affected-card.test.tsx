@@ -434,7 +434,7 @@ describe("AffectedCard", () => {
     const dialog = await open(user);
     await user.click(within(dialog).getByRole("button", { name: /^Add by mail ID or mobile number/ }));
     await user.click(within(dialog).getByText("Know only their name? Find them on the platform"));
-    await user.type(within(dialog).getByLabelText(/^Find the person/), "asha");
+    await user.type(within(dialog).getByLabelText(/^Search for a person/), "asha");
     await user.click(within(dialog).getByRole("button", { name: "Find" }));
     await user.click(await within(dialog).findByRole("button", { name: "Add" }));
     expect(within(dialog).getByRole("button", { name: "Remove Asha Rao" })).toBeInTheDocument();
@@ -453,7 +453,7 @@ describe("AffectedCard", () => {
     const dialog = await open(user);
     await user.click(within(dialog).getByRole("button", { name: /^Add by mail ID or mobile number/ }));
     await user.click(within(dialog).getByText("Know only their name? Find them on the platform"));
-    await user.type(within(dialog).getByLabelText(/^Find the person/), "nobody");
+    await user.type(within(dialog).getByLabelText(/^Search for a person/), "nobody");
     await user.click(within(dialog).getByRole("button", { name: "Find" }));
     expect(await within(dialog).findByText(/added by their mail ID or mobile number above/)).toBeInTheDocument();
   });

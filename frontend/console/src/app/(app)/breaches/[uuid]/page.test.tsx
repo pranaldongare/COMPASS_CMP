@@ -256,7 +256,7 @@ describe("the breach page", () => {
     const { user } = render(<BreachPage />);
 
     expect(await screen.findByRole("tab", { name: /Tickets/ })).toHaveAttribute("aria-selected", "true");
-    expect(screen.getByText("Tickets wait for the breach to be recorded")).toBeVisible();
+    expect(screen.getByText("Tickets are available once the breach is recorded")).toBeVisible();
 
     await act(async () => {
       window.history.replaceState(null, "", "/#notices");

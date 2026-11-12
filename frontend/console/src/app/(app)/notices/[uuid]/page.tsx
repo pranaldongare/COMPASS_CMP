@@ -674,7 +674,7 @@ export default function NoticeDetailPage() {
                             size="sm"
                             loading={activating === purpose.purpose_uuid}
                             onClick={() => onActivate(purpose)}
-                            title="Make this purpose usable by a notice"
+                            title="Activate purpose"
                           >
                             <CheckCircle2 className="size-4" />
                             Activate

@@ -262,10 +262,10 @@ function ChannelEditor({
                 loading={reset.isPending}
                 onClick={onReset}
               >
-                Yes, use the default words
+                Use default wording
               </Button>
               <Button variant="subtle" size="sm" onClick={() => setConfirmingReset(false)}>
-                Keep mine
+                Keep current
               </Button>
             </>
           ) : (

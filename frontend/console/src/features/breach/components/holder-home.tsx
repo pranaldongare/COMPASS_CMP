@@ -183,7 +183,7 @@ function Banner({ first, now }: { first: string; now: Date }) {
         <Button asChild variant="primary">
           <a href={ALL}>
             <Ticket className="size-4" aria-hidden="true" />
-            Open my tickets
+            Open tickets
           </a>
         </Button>
       </div>

@@ -129,10 +129,9 @@ test.describe("DCO", () => {
     // And the check itself is not offered until it can actually run: the dry
     // run needs a source and a project, so the step says which is missing
     // rather than presenting a button that would fail.
-    // Matched on the button's real words. "Check it — this writes nothing" is
-    // what the control says, and a test that greps for "validate" passes or
-    // fails on vocabulary the user never sees.
-    const check = dialog.getByRole("button", { name: /check it/i });
+    // Matched on the button's real words: "Validate only" is what the control
+    // says since 2026-11-12 (it was "Check it — this writes nothing").
+    const check = dialog.getByRole("button", { name: "Validate only" });
     await expect(dialog.getByText(/choose a source and a project first/i)).toBeVisible();
     await expect(check).toHaveCount(0);
 
