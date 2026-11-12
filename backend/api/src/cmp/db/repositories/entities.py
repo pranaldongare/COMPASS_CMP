@@ -461,7 +461,43 @@ async def attach(
                 },
             )
         )
+    if not for_subject:
+        await _attach_reasons(conn, rows)
     return rows
+
+
+#: Events whose reason the trail only marks as given (ADR 0015) and whose words
+#: a reader of the trail is shown all the same: the detail names the ticket
+#: message that holds them.
+_REASON_IN_MESSAGE = frozenset({"rights.ticket_date_changed"})
+
+
+async def _attach_reasons(conn: Conn, rows: list[dict[str, Any]]) -> None:
+    """Give each such row its `reason`: the message's own sealed words, read
+    now from the row that keeps them. One query for the page. A message that
+    is gone leaves `reason` None - the trail still says one was given, and
+    that is all it ever held. Never for a data principal: these are the
+    office's and a holder's words about the work, not hers to read."""
+    wanted: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        if str(row.get("event_type")) not in _REASON_IN_MESSAGE:
+            continue
+        row["reason"] = None
+        message_uuid = (row.get("detail") or {}).get("message_uuid")
+        if isinstance(message_uuid, str) and message_uuid:
+            wanted.setdefault(message_uuid, []).append(row)
+    if not wanted:
+        return
+    found = await fetch_all(
+        conn,
+        """SELECT message_uuid::text AS uuid, body
+             FROM rights_ticket_message
+            WHERE message_uuid = ANY(%s::uuid[])""",
+        (list(wanted),),
+    )
+    for message in found:
+        for row in wanted.get(str(message["uuid"]), []):
+            row["reason"] = message["body"]
 
 
 def nouns() -> dict[str, str]:

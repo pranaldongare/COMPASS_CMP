@@ -42,6 +42,21 @@ OPEN: Final = (Ticket.ISSUED.value, Ticket.ESCALATED.value)
 WORKING: Final = (Status.IN_PROGRESS.value, Status.AWAITING_HOLDERS.value, Status.COLLATING.value)
 
 
+def date_change_said(before: str, after: str, why: str) -> str:
+    """What a ticket's thread says when its date is moved (2026-11-12). The
+    sentence is the row that keeps the reason: the trail marks that one was
+    given and names this message, so the shape is written once, here, for
+    whoever writes it and whoever reads the reason back out of it."""
+    return f"Answer by changed from {before} to {after}: {why}"
+
+
+def date_change_reason(said: str) -> str:
+    """The reason alone, out of that sentence: what follows its first colon.
+    The dates are written "20 November 2026" and hold none."""
+    _, found, why = said.partition(": ")
+    return why if found else said
+
+
 def overdue(holder: Row, *, now: datetime | None = None) -> bool:
     due = holder.get("due_at")
     return (
@@ -125,6 +140,9 @@ def moves(holder: Row, *, request_status: str, now: datetime | None = None) -> l
         )
         out.append(_move("message", "Write to them", emails=True))
         out.append(_move("remind", "Send a reminder", emails=True))
+        # More time, or less, with the reason - as a breach ticket's date is
+        # moved (2026-11-12). The holder may move it too (`holder_view`).
+        out.append(_move("change_date", "Change the date", reason=True, emails=True, date=True))
         if not console:
             out.append(_move("log_contact", "Note a call or email"))
         out.append(_move("reassign", "Send to someone else", emails=True))
@@ -163,9 +181,20 @@ HOLDER_STATES: Final[dict[str, str]] = {
 }
 
 
+#: The states in which a ticket waits on its holder.
+TO_ANSWER: Final = ("waiting", "sent_back", "overdue", "final_reminder")
+
+
 def holder_view(holder: Row, *, now: datetime | None = None) -> Row:
     at = state(holder, now=now)
-    return {"state": at, "state_label": HOLDER_STATES[at], "overdue": overdue(holder, now=now)}
+    return {
+        "state": at,
+        "state_label": HOLDER_STATES[at],
+        "overdue": overdue(holder, now=now),
+        # While the ticket waits on them and the request is still worked, the
+        # holder may move its date, with the reason (2026-11-12).
+        "may_change_date": at in TO_ANSWER and holder.get("request_status") in WORKING,
+    }
 
 
 def view(holder: Row, *, request_status: str, now: datetime | None = None) -> Row:

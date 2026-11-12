@@ -39,6 +39,7 @@ from cmp.db.repositories import entities as entity_repo
 from cmp.domain.audit import service as audit_service
 from cmp.domain.audit import vocabulary as vocab
 from cmp.domain.audit.service import Event
+from cmp.domain.rights import tickets as ticket_words
 from cmp.infrastructure.dkms import unseal_strings
 from cmp.schemas.common import Out, Page
 from cmp.validation import choice
@@ -87,6 +88,12 @@ class AuditEntry(Out):
     entity_label_parts: list[str] | None = None
     entity_noun: str | None = None
     entity_href: str | None = None
+
+    #: The words of a reason the trail only marks as given (ADR 0015), for the
+    #: events a reader is shown them for - a rights ticket's date change. Read
+    #: now from the ticket message that keeps them, sealed; None for every
+    #: other event, and once that message is gone.
+    reason: str | None = None
 
 
 class VerifyResult(Out):
@@ -345,6 +352,9 @@ EXPORT_COLUMNS = (
     "entity_label",
     "detail",
     "log_uuid",
+    # The words of a reason the trail marks as given, for the events that show
+    # them (2026-11-12). Last, so the columns before it keep their places.
+    "reason",
 )
 
 
@@ -407,6 +417,7 @@ async def export_csv(
             for v in (r.get("actor_name"), r.get("subject_name"), r.get("entity_label"))
         ]
         + [p for r in rows for p in (r.get("entity_label_parts") or [])]
+        + [r.get("reason") for r in rows]
     )
 
     def plain(value: Any) -> Any:
@@ -415,6 +426,11 @@ async def export_csv(
     def label(r: dict[str, Any]) -> Any:
         parts = r.get("entity_label_parts")
         return " ".join(str(plain(p)) for p in parts) if parts else plain(r.get("entity_label"))
+
+    def reason(r: dict[str, Any]) -> str:
+        # The ticket's own sentence, opened; the reason is what follows the dates.
+        said = plain(r.get("reason"))
+        return ticket_words.date_change_reason(said) if isinstance(said, str) else ""
 
     buf = io.StringIO()
     writer = csv.writer(buf, lineterminator="\n")
@@ -432,6 +448,7 @@ async def export_csv(
                 text_cell(label(r)),
                 text_cell(audit_service.canonical_detail(r.get("detail") or {})),
                 str(r["log_uuid"]),
+                text_cell(reason(r)),
             ]
         )
     stamp = datetime.now(UTC).strftime("%Y%m%d-%H%M")

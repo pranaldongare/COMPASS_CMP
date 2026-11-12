@@ -1979,6 +1979,62 @@
         }
       }
     },
+    "/holder-tickets/{token}/answer-by": {
+      "post": {
+        "tags": [
+          "holder tickets"
+        ],
+        "summary": "Change the date the answer is due, with the reason",
+        "description": "While the ticket waits on its holder. The Privacy Office is told.",
+        "operationId": "change_date_holder_tickets__token__answer_by_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 20,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketDateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/holder-tickets/{token}/messages/{message_uuid}/evidence": {
       "get": {
         "tags": [
@@ -2120,19 +2176,47 @@
           "users"
         ],
         "summary": "Active staff, for naming a processor's respondent",
-        "description": "Naming who answers a rights-request ticket for an in-house processor\nmeans picking an account. Four fields, active staff only, and only for the\ntwo roles that manage the registry - not a way around the register.",
+        "description": "Naming who answers a rights-request ticket for an in-house processor\nmeans picking an account. Four fields, active staff only, and only for the\ntwo roles that manage the registry - not a way around the register.\n\n`role` narrows it to one role: the DCO Admins an office chooses between\nwhen a project's ticket goes to one of them (0069).",
         "operationId": "staff_directory_users_staff_get",
+        "parameters": [
+          {
+            "name": "role",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Role"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Role"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/CollectionOwner"
                   },
-                  "type": "array",
                   "title": "Response Staff Directory Users Staff Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -13753,6 +13837,7 @@
           "rights"
         ],
         "summary": "Not a rights request, or refused - with reasons",
+        "description": "A form, as a response is (2026-11-12): the reason, plus any documents\nthat go with it - the letter or the schedule the refusal rests on.",
         "operationId": "refuse_requests__request_uuid__refuse_post",
         "parameters": [
           {
@@ -13769,9 +13854,9 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/json": {
+            "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/RefuseIn"
+                "$ref": "#/components/schemas/Body_refuse_requests__request_uuid__refuse_post"
               }
             }
           }
@@ -14144,7 +14229,7 @@
         "tags": [
           "rights"
         ],
-        "summary": "Holders derived from export_line and asset_consent",
+        "summary": "Holders found from the records: processors that hold her data, and the owner of each project or activity she gave consent in",
         "operationId": "derive_holders_requests__request_uuid__holders_derive_post",
         "parameters": [
           {
@@ -14453,6 +14538,70 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SendBackIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HolderOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{request_uuid}/holders/{holder_uuid}/answer-by": {
+      "post": {
+        "tags": [
+          "rights"
+        ],
+        "summary": "Change the date a ticket is to be answered by, with the reason",
+        "description": "The office gives a holder more time, or less. The reason is on the\nticket's thread and on the trail, and the holder is told.",
+        "operationId": "change_ticket_date_requests__request_uuid__holders__holder_uuid__answer_by_post",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          },
+          {
+            "name": "holder_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Holder Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketDateIn"
               }
             }
           }
@@ -19552,6 +19701,60 @@
         }
       }
     },
+    "/tickets/{holder_uuid}/answer-by": {
+      "post": {
+        "tags": [
+          "tickets"
+        ],
+        "summary": "Change the date my answer is due, with the reason",
+        "description": "While the ticket waits on me. The Privacy Office is told, and the\nreason is on the thread and the trail.",
+        "operationId": "change_my_ticket_date_tickets__holder_uuid__answer_by_post",
+        "parameters": [
+          {
+            "name": "holder_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Holder Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketDateIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/tickets/{holder_uuid}/return": {
       "post": {
         "tags": [
@@ -21821,6 +22024,17 @@
               }
             ],
             "title": "Entity Href"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
           }
         },
         "type": "object",
@@ -22462,6 +22676,30 @@
           "body"
         ],
         "title": "Body_post_to_holder_requests__request_uuid__holders__holder_uuid__thread_post"
+      },
+      "Body_refuse_requests__request_uuid__refuse_post": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 5000,
+            "minLength": 3,
+            "title": "Reason"
+          },
+          "files": {
+            "items": {
+              "type": "string",
+              "contentMediaType": "application/octet-stream"
+            },
+            "type": "array",
+            "title": "Files",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "Body_refuse_requests__request_uuid__refuse_post"
       },
       "Body_respond_requests__request_uuid__respond_post": {
         "properties": {
@@ -28611,6 +28849,18 @@
             ],
             "title": "Respondent Uuid"
           },
+          "responder_user_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responder User Uuid"
+          },
           "responder_name": {
             "anyOf": [
               {
@@ -28648,6 +28898,18 @@
             "type": "string",
             "format": "uuid",
             "title": "Consent Uuid"
+          },
+          "consent_no": {
+            "type": "integer",
+            "title": "Consent No"
+          },
+          "person_no": {
+            "type": "integer",
+            "title": "Person No"
+          },
+          "project_no": {
+            "type": "integer",
+            "title": "Project No"
           },
           "subject_uuid": {
             "type": "string",
@@ -28746,6 +29008,9 @@
         "type": "object",
         "required": [
           "consent_uuid",
+          "consent_no",
+          "person_no",
+          "project_no",
           "subject_uuid",
           "subject_name",
           "subject_email",
@@ -28766,7 +29031,7 @@
           "created_at"
         ],
         "title": "ConsentArtefactOut",
-        "description": "One consent record, in full.\n\nDeclared rather than returned as a bare dict so `consent_id` - the internal\nsurrogate key the scoped query needs for its follow-up lookups - cannot ship\nto a client. An integer primary key in a response body is an invitation to\nenumerate, and it becomes an accidental part of the contract the moment\nsomebody reads it off the wire."
+        "description": "One consent record, in full.\n\nDeclared rather than returned as a bare dict so the scoped query's\ninternal columns cannot ship to a client by accident. Three numbers do\nship, on purpose (the product owner, 2026-11-12): the consent's, the\nperson's and the project's own, as `*_no`, because the Data Collection Tool\nand the people who run a collection quote them. They are for reading:\nevery route still names a record by its uuid, so a number that can be\nguessed opens nothing."
       },
       "ConsentAssetOut": {
         "properties": {
@@ -28936,6 +29201,18 @@
             "format": "uuid",
             "title": "Consent Uuid"
           },
+          "consent_no": {
+            "type": "integer",
+            "title": "Consent No"
+          },
+          "person_no": {
+            "type": "integer",
+            "title": "Person No"
+          },
+          "project_no": {
+            "type": "integer",
+            "title": "Project No"
+          },
           "subject_uuid": {
             "type": "string",
             "format": "uuid",
@@ -29019,6 +29296,9 @@
         "type": "object",
         "required": [
           "consent_uuid",
+          "consent_no",
+          "person_no",
+          "project_no",
           "subject_uuid",
           "subject_name",
           "subject_email",
@@ -29063,6 +29343,18 @@
             "type": "string",
             "format": "uuid",
             "title": "Consent Uuid"
+          },
+          "consent_no": {
+            "type": "integer",
+            "title": "Consent No"
+          },
+          "person_no": {
+            "type": "integer",
+            "title": "Person No"
+          },
+          "project_no": {
+            "type": "integer",
+            "title": "Project No"
           },
           "subject_uuid": {
             "type": "string",
@@ -29138,6 +29430,9 @@
         "type": "object",
         "required": [
           "consent_uuid",
+          "consent_no",
+          "person_no",
+          "project_no",
           "subject_uuid",
           "subject_name",
           "subject_email",
@@ -30624,6 +30919,40 @@
               }
             ],
             "title": "Is In House"
+          },
+          "project_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Uuid"
+          },
+          "project_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Name"
+          },
+          "is_activity": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Activity"
           },
           "confirmed_at": {
             "anyOf": [
@@ -35985,6 +36314,17 @@
             "format": "uuid",
             "title": "Project Uuid"
           },
+          "project_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project No"
+          },
           "project_name": {
             "type": "string",
             "title": "Project Name"
@@ -37082,22 +37422,6 @@
         "type": "object",
         "title": "ReassignIn"
       },
-      "RefuseIn": {
-        "properties": {
-          "reason": {
-            "type": "string",
-            "maxLength": 5000,
-            "minLength": 3,
-            "title": "Reason"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "reason"
-        ],
-        "title": "RefuseIn"
-      },
       "RegisterVerifyBody": {
         "properties": {
           "mobile": {
@@ -37797,6 +38121,25 @@
             },
             "type": "array",
             "title": "Holders"
+          },
+          "holders_derived_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holders Derived At"
+          },
+          "unowned_consents": {
+            "items": {
+              "$ref": "#/components/schemas/UnownedConsentOut"
+            },
+            "type": "array",
+            "title": "Unowned Consents"
           },
           "items": {
             "items": {
@@ -39110,6 +39453,23 @@
           "reviewer_uuid"
         ],
         "title": "ReviewerIn"
+      },
+      "Role": {
+        "type": "string",
+        "enum": [
+          "dpo",
+          "dco",
+          "dco_admin",
+          "rco",
+          "rnd_user",
+          "admin",
+          "data_subject",
+          "breach_holder",
+          "legal",
+          "hr_user"
+        ],
+        "title": "Role",
+        "description": "The ten roles. Values match the `user_role` PostgreSQL enum exactly.\n\nTwo of them exist because collection has two shapes:\n\n* **`DCO_ADMIN`** routes a project collected by an external processor. They\n  assign its data sources, and each source's owner picks it up. They hold a\n  DCO's powers across every such project rather than over their own sources.\n* **`RCO`** \u2014 R&D Collection Owner \u2014 is the same accountability where the\n  R&D team collects for itself and no external processor is involved. The\n  role is separate rather than reusing DCO because the two answer to\n  different people, and a permission table that cannot tell them apart\n  cannot express that."
       },
       "RoleChange": {
         "properties": {
@@ -40964,6 +41324,28 @@
         ],
         "title": "ThreadOut"
       },
+      "TicketDateIn": {
+        "properties": {
+          "due_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Due At"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "due_at",
+          "reason"
+        ],
+        "title": "TicketDateIn",
+        "description": "A new date for a ticket to be answered by, and why (2026-11-12)."
+      },
       "TicketDetailOut": {
         "properties": {
           "ticket": {
@@ -41300,6 +41682,23 @@
             "title": "Overdue",
             "default": false
           },
+          "may_change_date": {
+            "type": "boolean",
+            "title": "May Change Date",
+            "default": false
+          },
+          "request_due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Due At"
+          },
           "consent_uuid": {
             "anyOf": [
               {
@@ -41542,6 +41941,58 @@
         ],
         "title": "TransitionRequest"
       },
+      "UnownedConsentOut": {
+        "properties": {
+          "consent_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Consent Uuid"
+          },
+          "project_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Uuid"
+          },
+          "project_name": {
+            "type": "string",
+            "title": "Project Name"
+          },
+          "is_activity": {
+            "type": "boolean",
+            "title": "Is Activity"
+          },
+          "notice_code": {
+            "type": "string",
+            "title": "Notice Code"
+          },
+          "notice_version": {
+            "type": "integer",
+            "title": "Notice Version"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          },
+          "withdrawal": {
+            "type": "boolean",
+            "title": "Withdrawal"
+          }
+        },
+        "type": "object",
+        "required": [
+          "consent_uuid",
+          "project_uuid",
+          "project_name",
+          "is_activity",
+          "notice_code",
+          "notice_version",
+          "at",
+          "withdrawal"
+        ],
+        "title": "UnownedConsentOut",
+        "description": "A consent nobody could be found to ask about (0069): given in a project\nor an activity that names no owner with an account. The office places it\nby hand - or assigns the project an owner and looks again."
+      },
       "UpdateMe": {
         "properties": {
           "full_name": {
@@ -41717,6 +42168,17 @@
             "type": "string",
             "format": "uuid",
             "title": "Uuid"
+          },
+          "person_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Person No"
           },
           "username": {
             "anyOf": [

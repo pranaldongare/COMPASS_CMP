@@ -151,6 +151,11 @@ class HolderOut(Out):
     processor_uuid: UUID | None
     processor_name: str | None
     is_in_house: bool | None
+    #: The project or activity whose owner this holder is (0069,
+    #: `derived_from` = project_owner); null for a processor or one added by hand.
+    project_uuid: UUID | None = None
+    project_name: str | None = None
+    is_activity: bool | None = None
     confirmed_at: datetime | None
     confirmed_by_name: str | None
     ticket_status: str
@@ -243,6 +248,16 @@ class SendBackIn(Schema):
     due_at: datetime | None = None
 
 
+class TicketDateIn(Schema):
+    """A new date for a ticket to be answered by, and why (2026-11-12)."""
+
+    #: The end of the chosen day. Never after the request's own response date.
+    due_at: datetime
+    #: Kept on the ticket's thread and, sealed, on the trail; the other side
+    #: is told it.
+    reason: ReasonText
+
+
 class WithdrawIn(Schema):
     reason: Annotated[str, Field(min_length=1, max_length=2000)]
 
@@ -303,6 +318,12 @@ class TicketOut(Out):
     state: str = ""
     state_label: str = ""
     overdue: bool = False
+    #: Whether the holder may move the date their answer is due (2026-11-12):
+    #: while the ticket waits on them.
+    may_change_date: bool = False
+    #: When the request itself must be answered: the latest a ticket's date
+    #: may be moved to.
+    request_due_at: datetime | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -481,6 +502,22 @@ class AttachmentOut(Out):
     added_at: datetime
 
 
+class UnownedConsentOut(Out):
+    """A consent nobody could be found to ask about (0069): given in a project
+    or an activity that names no owner with an account. The office places it
+    by hand - or assigns the project an owner and looks again."""
+
+    consent_uuid: UUID
+    project_uuid: UUID
+    project_name: str
+    is_activity: bool
+    notice_code: str
+    notice_version: int
+    at: datetime
+    #: The record of her withdrawing, not of her agreeing.
+    withdrawal: bool
+
+
 class RequestDetail(RequestOut):
     #: Where it came from, when it was transferred, and why (sealed).
     transferred_from: str | None = None
@@ -488,6 +525,11 @@ class RequestDetail(RequestOut):
     transfer_reason: str | None = None
     claimed_at: datetime | None = None
     holders: list[HolderOut]
+    #: When the records were last read for who holds her data; null: not yet.
+    holders_derived_at: datetime | None = None
+    #: Her consents that reading found nobody for. Empty until it has been
+    #: read, and once the request is closed.
+    unowned_consents: list[UnownedConsentOut] = Field(default_factory=list)
     items: list[ItemOut]
     transitions: list[dict[str, Any]]
     #: Why the request may not close as `complete`, or null when it may. The
@@ -640,10 +682,6 @@ class ClassifyIn(Schema):
     note: ReasonText | None = None
 
 
-class RefuseIn(Schema):
-    reason: Annotated[str, Field(min_length=3, max_length=5000)]
-
-
 class EvidenceIn(Schema):
     evidenced: bool
     note: ReasonText | None = None
@@ -669,6 +707,9 @@ class ConfirmHolderIn(Schema):
     #: One of the processor's registered respondents. Chosen instead of typing
     #: a name and address; decides the channel with it.
     respondent_uuid: UUID | None = None
+    #: An account chosen to answer for a project's or an activity's holder
+    #: (0069): a DCO Admin, where the office has several, or an HR PoC.
+    responder_user_uuid: UUID | None = None
     responder_name: ShortText | None = None
     responder_contact: Contact | None = None
 
@@ -772,6 +813,9 @@ async def _detail(conn: Any, row: dict[str, Any], principal: Any) -> dict[str, A
     return {
         **_with_clock(row),
         "holders": holders,
+        "unowned_consents": (
+            await service.unowned_consents(conn, row) if row["status"] != "closed" else []
+        ),
         "items": items,
         "transitions": service.transitions(row, role=principal.role),
         "complete_blocked_by": execution.complete_blocked_by(
@@ -799,9 +843,10 @@ def _subject_view(
     expires = row.get("download_expires_at")
     return {
         **_with_clock(row),
-        "download_available": bool(
-            row.get("response_file_ref") and expires and expires > datetime.now(expires.tzinfo)
-        ),
+        # Files released with a response, or sent with a refusal, while
+        # their window is open (2026-11-12). The record as a data file is no
+        # longer offered on her account, so it no longer makes this true.
+        "download_available": bool(files and expires and expires > datetime.now(expires.tzinfo)),
         "response_files": files or [],
         "attachments": attachments or [],
     }
@@ -1119,12 +1164,25 @@ async def classify(request_uuid: UUID, body: ClassifyIn, principal: RightsWriter
     response_model=RequestOut,
     summary="Not a rights request, or refused - with reasons",
 )
-async def refuse(request_uuid: UUID, body: RefuseIn, principal: RightsWriter) -> dict[str, Any]:
+async def refuse(
+    request_uuid: UUID,
+    principal: RightsWriter,
+    reason: Annotated[str, Form(min_length=3, max_length=5000)],
+    files: Annotated[list[UploadFile], File()] = [],  # noqa: B006 - FastAPI reads the default
+) -> dict[str, Any]:
+    """A form, as a response is (2026-11-12): the reason, plus any documents
+    that go with it - the letter or the schedule the refusal rests on."""
+    stored = [await _stored_file(f) for f in files if f.filename]
     async with transaction() as conn:
         row = await _load(conn, request_uuid, principal)
         return _with_clock(
             await service.refuse(
-                conn, row, reason=body.reason, role=principal.role, actor_id=principal.user_id
+                conn,
+                row,
+                reason=reason,
+                role=principal.role,
+                actor_id=principal.user_id,
+                files=stored,
             )
         )
 
@@ -1247,7 +1305,10 @@ async def transition(
 @router.post(
     "/{request_uuid}/holders/derive",
     response_model=list[HolderOut],
-    summary="Holders derived from export_line and asset_consent",
+    summary=(
+        "Holders found from the records: processors that hold her data, and the owner "
+        "of each project or activity she gave consent in"
+    ),
 )
 async def derive_holders(request_uuid: UUID, principal: RightsWriter) -> list[dict[str, Any]]:
     async with transaction() as conn:
@@ -1293,6 +1354,9 @@ async def confirm_holder(
             role=principal.role,
             actor_id=principal.user_id,
             respondent_uuid=str(body.respondent_uuid) if body.respondent_uuid else None,
+            responder_user_uuid=(
+                str(body.responder_user_uuid) if body.responder_user_uuid else None
+            ),
         )
 
 
@@ -1396,6 +1460,29 @@ async def send_back_ticket(
             holder_uuid=str(holder_uuid),
             reason=body.reason,
             due_at=body.due_at,
+            role=principal.role,
+            actor_id=principal.user_id,
+        )
+
+
+@router.post(
+    "/{request_uuid}/holders/{holder_uuid}/answer-by",
+    response_model=HolderOut,
+    summary="Change the date a ticket is to be answered by, with the reason",
+)
+async def change_ticket_date(
+    request_uuid: UUID, holder_uuid: UUID, body: TicketDateIn, principal: RightsWriter
+) -> dict[str, Any]:
+    """The office gives a holder more time, or less. The reason is on the
+    ticket's thread and on the trail, and the holder is told."""
+    async with transaction() as conn:
+        row = await _load(conn, request_uuid, principal)
+        return await service.change_ticket_date(
+            conn,
+            row,
+            holder_uuid=str(holder_uuid),
+            due_at=body.due_at,
+            reason=body.reason,
             role=principal.role,
             actor_id=principal.user_id,
         )
@@ -2272,6 +2359,26 @@ async def my_message_attachment(
             conn, holder=holder, message_uuid=str(message_uuid), actor_id=principal.user_id
         )
     return _attachment_response(payload, filename, recorded)
+
+
+@ticket_router.post(
+    "/{holder_uuid}/answer-by",
+    response_model=TicketOut,
+    summary="Change the date my answer is due, with the reason",
+)
+async def change_my_ticket_date(
+    holder_uuid: UUID, body: TicketDateIn, principal: TicketWriter
+) -> dict[str, Any]:
+    """While the ticket waits on me. The Privacy Office is told, and the
+    reason is on the thread and the trail."""
+    async with transaction() as conn, across_offices(conn):
+        return await service.change_own_ticket_date(
+            conn,
+            user_id=principal.user_id,
+            holder_uuid=str(holder_uuid),
+            due_at=body.due_at,
+            reason=body.reason,
+        )
 
 
 @ticket_router.post(

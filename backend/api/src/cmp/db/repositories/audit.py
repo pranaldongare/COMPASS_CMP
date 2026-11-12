@@ -418,6 +418,7 @@ _TO_HOLDER = (
     "rights.ticket_reminded",
     "rights.ticket_sent_back",
     "rights.ticket_escalated",
+    "rights.ticket_date_changed",
 )
 
 

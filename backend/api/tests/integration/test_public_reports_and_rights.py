@@ -1329,8 +1329,12 @@ async def test_a_request_with_an_account_is_still_pointed_at_it(
     )
     [mail] = [a for a in sent if a[0] == "send_rights_response"]
     assert str(mail[7]).endswith("/my-requests")
+    # No file was released with it, so no date is promised (2026-11-12: the
+    # record as a data file is no longer offered on her account).
+    assert mail[6] is None
     for channel, body in _rendered(mail, monkeypatch).items():
-        assert "from your account until" in body and "/my-requests" in body, channel
+        assert "also in your account" in body and "/my-requests" in body, channel
+        assert "from your account until" not in body, channel
 
 
 async def test_a_no_account_erasure_answered_partial_says_the_name_is_still_there(

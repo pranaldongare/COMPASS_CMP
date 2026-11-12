@@ -50,7 +50,7 @@ _SELECT = """
   r.subject_user_id,
   -- The office that answers it, or none: the shared intake (ADR 0032, 0055).
   (SELECT o.office_code FROM office o WHERE o.office_id = r.office_id) AS office_code,
-  r.claimed_at, r.transferred_at, r.transfer_reason,
+  r.claimed_at, r.transferred_at, r.transfer_reason, r.office_id, r.holders_derived_at,
   (SELECT o.office_code FROM office o WHERE o.office_id = r.transferred_from_office_id)
     AS transferred_from,
   r.consent_id, c.consent_uuid, c.affirmative_action_at AS consent_at,
@@ -291,6 +291,8 @@ _MUTABLE = frozenset(
         "responded_by",
         "download_expires_at",
         "closed_at",
+        # When the records were last read for who holds her data (0069).
+        "holders_derived_at",
     }
 )
 
@@ -572,6 +574,7 @@ _HOLDER_SELECT = """
   h.issued_at, h.due_at, h.escalated_at, h.returned_at, h.return_summary, h.return_outcome,
   h.return_evidence_ref, h.return_evidence_hash, h.created_at,
   h.processor_id, pr.processor_uuid, pr.legal_name AS processor_name, pr.is_in_house,
+  h.project_id, hp.project_uuid, hp.project_name, (hp.category_id IS NOT NULL) AS is_activity,
   cb.full_name AS confirmed_by_name,
   h.respondent_id, rs.respondent_uuid, h.responder_user_id, h.channel, h.contact_log,
   ru.uuid AS responder_user_uuid, ru.full_name AS responder_user_name,
@@ -602,6 +605,7 @@ _HOLDER_SELECT = """
     AS unread_for_holder
   FROM rights_request_holder h
   LEFT JOIN processor pr ON pr.processor_id = h.processor_id
+  LEFT JOIN project hp ON hp.project_id = h.project_id
   LEFT JOIN auth_user cb ON cb.id = h.confirmed_by
   LEFT JOIN processor_respondent rs ON rs.respondent_id = h.respondent_id
   LEFT JOIN auth_user ru ON ru.id = h.responder_user_id
@@ -638,27 +642,32 @@ async def add_holder(
     respondent_id: int | None = None,
     responder_user_id: int | None = None,
     channel: str = "email",
+    project_id: int | None = None,
 ) -> Row:
-    """One row per processor per request. Deriving twice refreshes the
-    evidence rather than adding a second holder."""
+    """One row per processor per request, and one per project or activity
+    whose owner is asked (0069). Deriving twice refreshes the evidence rather
+    than adding a second holder."""
     sealed = await seal(
         "rights_request_holder",
         {"responder_name": responder_name, "responder_contact": responder_contact},
     )
+    # One of the two partial indexes, by what the row stands for.
+    one_per = "project_id" if project_id is not None else "processor_id"
     row = await fetch_one(
         conn,
-        """
+        f"""
         INSERT INTO rights_request_holder
-          (request_id, processor_id, label, derived_from, evidence,
+          (request_id, processor_id, project_id, label, derived_from, evidence,
            responder_name, responder_contact, respondent_id, responder_user_id, channel)
-        VALUES (%s, %s, %s, %s::rights_holder_source, %s, %s, %s, %s, %s, %s)
-        ON CONFLICT (request_id, processor_id) WHERE processor_id IS NOT NULL
+        VALUES (%s, %s, %s, %s, %s::rights_holder_source, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (request_id, {one_per}) WHERE {one_per} IS NOT NULL
         DO UPDATE SET evidence = EXCLUDED.evidence
         RETURNING holder_id, holder_uuid, (xmax = 0) AS inserted
         """,
         (
             request_id,
             processor_id,
+            project_id,
             label,
             derived_from,
             Jsonb(evidence),
@@ -871,6 +880,7 @@ async def holder_brief(
     processor_id: int | None,
     consent_ids: list[int] | None = None,
     scope: dict[str, Any] | None = None,
+    project_id: int | None = None,
 ) -> dict[str, Any]:
     """What the platform already knows, for the ticket to open with.
 
@@ -883,6 +893,11 @@ async def holder_brief(
     Confined to `consent_ids` when the request is about one consent, and the
     brief then carries `scope` - the consent as the holder should read it -
     so the ticket says what it is confined to before it asks anything.
+
+    A project's or an activity's owner (0069) is asked about that project, not
+    about a processor: `project_id` in `processor_id`'s place, and the same
+    three lists read by project - her consents in it, the exports made from
+    it, the assets collected for it.
     """
     subject = await fetch_one(
         conn,
@@ -907,12 +922,25 @@ async def holder_brief(
         "exports": [],
         "assets": [],
     }
-    if processor_id is None:
+    if processor_id is None and project_id is None:
         return brief
-    params: dict[str, Any] = {"u": subject_user_id, "p": processor_id, "c": consent_ids}
+    params: dict[str, Any] = {
+        "u": subject_user_id,
+        "p": processor_id if processor_id is not None else project_id,
+        "c": consent_ids,
+    }
     by_consent = "AND ca.consent_id = ANY(%(c)s)" if consent_ids is not None else ""
     by_export = "AND el.consent_id = ANY(%(c)s)" if consent_ids is not None else ""
     by_asset = "AND ac.consent_id = ANY(%(c)s)" if consent_ids is not None else ""
+    # Whose records: a processor's, or a project's.
+    if processor_id is not None:
+        consent_of = "s.processor_id = %(p)s"
+        export_of = "COALESCE(el.destination_processor_id, s.processor_id) = %(p)s"
+        asset_of = "ds.processor_id = %(p)s"
+    else:
+        consent_of = "s.project_id = %(p)s"
+        export_of = "e.project_id = %(p)s"
+        asset_of = "c.project_id = %(p)s"
     consents = await fetch_all(
         conn,
         f"""SELECT ca.consent_uuid, ca.affirmative_action_at, ca.is_withdrawal,
@@ -927,7 +955,7 @@ async def holder_brief(
            JOIN project p ON p.project_id = s.project_id
            LEFT JOIN consent_purpose_grant g ON g.consent_id = ca.consent_id
            LEFT JOIN purpose pu ON pu.purpose_id = g.purpose_id
-           WHERE ca.auth_user_id = %(u)s AND s.processor_id = %(p)s {by_consent}
+           WHERE ca.auth_user_id = %(u)s AND {consent_of} {by_consent}
            GROUP BY ca.consent_id, ca.consent_uuid, ca.affirmative_action_at, ca.is_withdrawal,
                     p.project_name, s.site_label
            ORDER BY ca.affirmative_action_at""",
@@ -941,7 +969,7 @@ async def holder_brief(
            LEFT JOIN project_site s ON s.site_id = e.site_id
            JOIN project p ON p.project_id = e.project_id
            WHERE el.auth_user_id = %(u)s
-             AND COALESCE(el.destination_processor_id, s.processor_id) = %(p)s {by_export}
+             AND {export_of} {by_export}
            ORDER BY e.exported_at""",
         params,
     )
@@ -954,7 +982,7 @@ async def holder_brief(
            JOIN data_asset da ON da.asset_id = ac.asset_id
            JOIN data_source ds ON ds.source_id = da.source_id
            LEFT JOIN collection c ON c.collection_id = da.collection_id
-           WHERE ca.auth_user_id = %(u)s AND ds.processor_id = %(p)s {by_asset}
+           WHERE ca.auth_user_id = %(u)s AND {asset_of} {by_asset}
            ORDER BY c.collected_on, da.asset_id""",
         params,
     )
@@ -1021,6 +1049,7 @@ _TICKET_SELECT = f"""
   LEFT JOIN notice cn ON cn.notice_id = c.notice_id
   LEFT JOIN project cp ON cp.project_id = cn.project_id
   LEFT JOIN processor pr ON pr.processor_id = h.processor_id
+  LEFT JOIN project hp ON hp.project_id = h.project_id
   LEFT JOIN auth_user cb ON cb.id = h.confirmed_by
   LEFT JOIN processor_respondent rs ON rs.respondent_id = h.respondent_id
   LEFT JOIN auth_user ru ON ru.id = h.responder_user_id

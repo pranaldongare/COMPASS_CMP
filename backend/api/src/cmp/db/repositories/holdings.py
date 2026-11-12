@@ -12,7 +12,9 @@ nothing else in the platform re-derives it.
 It is read from two directions:
 
 * **a person's holders** - a rights request asks every processor that holds her
-  data (`holders_of_person`, S2 and before);
+  data (`holders_of_person`, S2 and before), and, where none does, a DCO
+  Admin for each project and the HR PoC of each activity she gave consent in
+  (`owners_of_person`, 0069);
 * **a holder's people** - a breach at a processor or a data source reaches
   everyone whose data it holds (`people_held_by`, S3-02).
 
@@ -98,6 +100,128 @@ async def holders_of_person(
          ORDER BY 2
         """,
         {"u": subject_user_id, "c": consent_ids},
+    )
+
+
+async def owners_of_person(
+    conn: Conn,
+    subject_user_id: int,
+    *,
+    office_id: int | None,
+    consent_ids: list[int] | None = None,
+) -> list[Row]:
+    """The projects and activities she gave consent in that no record names a
+    holder for, each with who answers for it (0069): one row per project, the
+    consents she holds in it, how many accounts could answer (`candidates`),
+    and the account that does where there is exactly one to name.
+
+    Every consent is given against a project or an activity, so this finds
+    somebody to ask where the three records of `_HOLDINGS` find nobody: before
+    anything was exported, before an asset was registered, in a category with
+    no processors. Only there: a project one of those records already names a
+    processor for is that processor's to answer, and is left out. Who answers
+    (the product owner, 2026-11-12):
+
+    * a project - **a DCO Admin** of its office, the role that routes its
+      collection and knows where the data went; never the project's own Data
+      Collection Owner. One DCO Admin is named; several are a choice the
+      office makes when it confirms the holder, and `owner_id` is then null
+      with `candidates` above one;
+    * an activity - **its HR PoC** (`project.dco_user_id`, ADR 0033), else the
+      first HR PoC assigned to its category.
+
+    An account that is not active answers nothing, and is passed over. A
+    consent later withdrawn counts, as it does for a breach
+    (`people_in_project`): her data was held. One where she agreed to nothing
+    does not - nothing was collected under it.
+
+    Within one office: the request's, or the session's where it has none yet.
+    `consent_ids` confines it as it confines the holders.
+    """
+    confined = "AND ca.consent_id = ANY(%(c)s)" if consent_ids is not None else ""
+    held_confined = "AND h.consent_id = ANY(%(c)s)" if consent_ids is not None else ""
+    office = "p.office_id = %(o)s" if office_id is not None else "cmp_office_visible(p.office_id)"
+    return await fetch_all(
+        conn,
+        f"""
+        WITH h AS ({_HOLDINGS}),
+        -- The projects a record already names a holder for, as
+        -- `holders_of_person` reads them.
+        covered AS (
+          SELECT DISTINCT hn.project_id
+            FROM h
+            JOIN consent_artefact hc ON hc.consent_id = h.consent_id
+            JOIN notice hn           ON hn.notice_id = hc.notice_id
+           WHERE h.person_id = %(u)s {held_confined}
+             AND (h.via = 'export' OR h.disposition = 'active')
+        ),
+        mine AS (
+          SELECT p.project_id, p.project_uuid, p.project_name, p.category_id, p.dco_user_id,
+                 p.office_id,
+                 ca.consent_id, ca.consent_uuid, ca.affirmative_action_at, ca.is_withdrawal,
+                 n.notice_code, n.version
+            FROM consent_artefact ca
+            JOIN notice n  ON n.notice_id = ca.notice_id
+            JOIN project p ON p.project_id = n.project_id
+           WHERE ca.auth_user_id = %(u)s AND {office} {confined}
+             AND p.project_id NOT IN (SELECT project_id FROM covered)
+             AND EXISTS (
+                   SELECT 1 FROM consent_artefact held
+                     JOIN notice hn ON hn.notice_id = held.notice_id
+                     JOIN consent_purpose_grant g ON g.consent_id = held.consent_id
+                    WHERE held.auth_user_id = ca.auth_user_id
+                      AND hn.project_id = n.project_id AND g.granted)
+        ), per_project AS (
+          SELECT m.project_id, m.project_uuid, m.project_name, m.dco_user_id, m.office_id,
+                 (m.category_id IS NOT NULL) AS is_activity, m.category_id,
+                 jsonb_agg(jsonb_build_object(
+                     'consent_uuid', m.consent_uuid, 'notice_code', m.notice_code,
+                     'notice_version', m.version, 'at', m.affirmative_action_at,
+                     'withdrawal', m.is_withdrawal)
+                   ORDER BY m.affirmative_action_at, m.consent_id) AS consents
+            FROM mine m
+           GROUP BY m.project_id, m.project_uuid, m.project_name, m.dco_user_id, m.office_id,
+                    m.category_id
+        )
+        SELECT pp.project_id, pp.project_uuid, pp.project_name, pp.is_activity, pp.consents,
+               o.id AS owner_id, o.full_name AS owner_name, o.email AS owner_email,
+               o.role::text AS owner_role,
+               CASE WHEN pp.is_activity THEN (hr.id IS NOT NULL)::int ELSE da.n END::int
+                 AS candidates
+          FROM per_project pp
+          -- An activity: its own HR PoC, else the longest-assigned of its category's.
+          LEFT JOIN LATERAL (
+            SELECT u.id
+              FROM (
+                SELECT pp.dco_user_id AS user_id, 1 AS rank, 0 AS seq
+                UNION ALL
+                SELECT a.user_id, 2, a.assignment_id
+                  FROM hr_poc_category a
+                 WHERE a.category_id = pp.category_id
+              ) named
+              -- Somebody who can open a ticket: an active member of staff. An
+              -- account that left is kept as a data principal's, and answers
+              -- for nothing.
+              JOIN auth_user u ON u.id = named.user_id AND u.status = 'active'
+                              AND u.role NOT IN ('data_subject', 'breach_holder')
+             WHERE pp.is_activity
+             ORDER BY named.rank, named.seq
+             LIMIT 1
+          ) hr ON true
+          -- A project: the DCO Admins of its office. One is the answer;
+          -- several are the office's choice.
+          LEFT JOIN LATERAL (
+            SELECT count(*) AS n, min(u.id) AS only_id
+              FROM auth_user u
+             WHERE NOT pp.is_activity AND u.role = 'dco_admin' AND u.status = 'active'
+               AND u.office_id = pp.office_id
+          ) da ON true
+          LEFT JOIN auth_user o
+                 ON o.id = CASE WHEN pp.is_activity THEN hr.id
+                                WHEN da.n = 1 THEN da.only_id END
+         ORDER BY pp.project_name, pp.project_id
+        """,
+        {"u": subject_user_id, "o": office_id, "c": consent_ids},
     )
 
 

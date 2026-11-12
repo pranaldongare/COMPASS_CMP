@@ -42,11 +42,22 @@ class TestWriteCsv:
         project: dict[str, Any] = {
             "project_name": "=1+1",
             "project_uuid": "6f1a2b3c-0000-4000-8000-000000000000",
+            "project_id": 412,
         }
         payload = _write_csv(project, [])
         rows = list(csv.reader(io.StringIO(payload)))
         assert rows[0] == list(EXPORT_COLUMNS)
         assert rows[1][0] == "'=1+1"
+        # The project's own number is on it even when nobody is (2026-11-12).
+        assert rows[1][EXPORT_COLUMNS.index("project_id")] == "412"
+
+    def test_the_three_numbers_are_columns_beside_the_uuids(self) -> None:
+        """Shown in the console as IDs and carried to the Data Collection
+        Tool: the project's, the consent's and the person's own numbers."""
+        for column in ("project_id", "consent_id", "person_id"):
+            assert column in EXPORT_COLUMNS
+        assert EXPORT_COLUMNS.index("project_id") == EXPORT_COLUMNS.index("project_uuid") + 1
+        assert EXPORT_COLUMNS.index("consent_id") == EXPORT_COLUMNS.index("consent_uuid") + 1
 
 
 class TestReceiptContact:

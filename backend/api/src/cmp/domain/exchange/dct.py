@@ -32,8 +32,16 @@ project, and the DCT rejects it (its rule L02); a file that cannot be loaded is
 no use to anyone, and generating it would record a disclosure of nothing.
 
 **What it never carries:** email, the mobile number beyond its last two digits,
-the consent link, the notice, the site or the source, or any internal id. It is
-copied onto collection laptops.
+the consent link, the notice, the site or the source. It is copied onto
+collection laptops.
+
+**Three numbers beside the contract's ten columns** (the product owner,
+2026-11-12): `project_no`, `person_no` and `consent_no` - the project's, the
+person's and the consent's own numbers here, the ones the console shows as
+their IDs. The contract's `project_id`, `person_id` and `consent_id` stay the
+uuids its loader insists on (it refuses anything else, rule E02); the numbers
+ride in columns of their own, which the loader passes through untouched, so
+the list loads today and the tool can read them when it is ready to.
 """
 
 from __future__ import annotations
@@ -66,6 +74,11 @@ COLUMNS: Final = (
     "list_generated_at",
     "list_valid_until",
 )
+
+#: The same three records by their own numbers here, after the contract's
+#: columns: extra to the contract, which lets a list carry columns it does not
+#: name. `_no`, because the contract's `_id` columns are the uuids.
+NUMBERS: Final = ("project_no", "person_no", "consent_no")
 
 
 def utc_z(moment: datetime) -> str:
@@ -148,7 +161,7 @@ def write(project: Row, people: list[Row], *, generated_at: datetime) -> str:
     valid_until = generated_at + timedelta(days=settings.dct_list_valid_days)
     buf = io.StringIO()
     writer = csv.writer(buf, lineterminator="\n")
-    writer.writerow(COLUMNS)
+    writer.writerow([*COLUMNS, *NUMBERS])
     for c in people:
         writer.writerow(
             [
@@ -163,6 +176,9 @@ def write(project: Row, people: list[Row], *, generated_at: datetime) -> str:
                 "false" if c["is_minor"] is False else "true",
                 utc_z(generated_at),
                 utc_z(valid_until),
+                int(project["project_id"]),
+                int(c["auth_user_id"]),
+                int(c["consent_id"]),
             ]
         )
     return buf.getvalue()

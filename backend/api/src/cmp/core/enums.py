@@ -394,6 +394,9 @@ class RightsHolderSource(StrEnum):
     MANUAL = "manual"
     #: An HR activity's category processor (ADR 0033; the value is in 0054).
     ACTIVITY_PROCESSOR = "activity_processor"
+    #: Whoever answers for a project or activity she gave consent in, where
+    #: no processor is on record for it (0069): a DCO Admin, or the HR PoC.
+    PROJECT_OWNER = "project_owner"
 
 
 class RightsTicketStatus(StrEnum):

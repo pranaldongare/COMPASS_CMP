@@ -111,3 +111,34 @@ def test_a_holder_with_nobody_to_send_to_says_so() -> None:
     assert not has(responder_contact=None, responder_user_id=None)
     assert has(responder_contact="SE::sealed")
     assert has(responder_user_id=7)
+
+
+def test_the_date_can_be_changed_while_a_ticket_is_open_and_not_after() -> None:
+    # 2026-11-12: as a breach ticket's can. It takes a date and a reason, and
+    # the holder is written to, so it asks first.
+    for open_ticket in (holder(), holder(ticket_status="escalated")):
+        offered = tickets.moves(open_ticket, request_status="awaiting_holders", now=NOW)
+        [move] = [m for m in offered if m["move"] == "change_date"]
+        assert move["label"] == "Change the date" and not move["primary"]
+        assert move["reason_required"] and move["needs_date"] and move["sends_email"]
+    assert "change_date" not in moves(holder(ticket_status="returned"))
+    assert "change_date" not in moves(holder(ticket_status="withdrawn"))
+    assert "change_date" not in moves(holder(ticket_status="not_issued"))
+
+    # The holder's side: only while it waits on them, on a request being worked on.
+    waiting = holder(request_status="awaiting_holders")
+    assert tickets.holder_view(waiting, now=NOW)["may_change_date"] is True
+    answered = holder(ticket_status="returned", request_status="awaiting_holders")
+    assert tickets.holder_view(answered, now=NOW)["may_change_date"] is False
+    closed = holder(request_status="closed")
+    assert tickets.holder_view(closed, now=NOW)["may_change_date"] is False
+
+
+def test_the_sentence_a_date_change_leaves_and_the_reason_read_back_out_of_it() -> None:
+    said = tickets.date_change_said("20 November 2026", "27 November 2026", "Audit: until Friday")
+    assert said == (
+        "Answer by changed from 20 November 2026 to 27 November 2026: Audit: until Friday"
+    )
+    # The reason is everything after the first colon - one of its own stays in it.
+    assert tickets.date_change_reason(said) == "Audit: until Friday"
+    assert tickets.date_change_reason("no date to 3 December 2026") == "no date to 3 December 2026"

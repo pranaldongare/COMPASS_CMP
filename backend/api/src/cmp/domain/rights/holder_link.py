@@ -22,6 +22,7 @@ the channel `link`.
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from typing import Any
 
 from cmp.auth.authentication import otp
@@ -164,4 +165,11 @@ async def answer(
         evidence_hash=evidence_hash,
         evidence_name=evidence_name,
     )
+    return await detail(conn, ticket)
+
+
+async def change_date(conn: Conn, ticket: Row, *, due_at: datetime, reason: str) -> dict[str, Any]:
+    """An outside holder moves the date their answer is due, with the reason
+    (2026-11-12), as a holder in the console does."""
+    await service.change_date_as_holder(conn, ticket, author_id=None, due_at=due_at, reason=reason)
     return await detail(conn, ticket)

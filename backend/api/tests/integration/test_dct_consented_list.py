@@ -190,17 +190,33 @@ class TestTheFile:
         assert export["row_count"] == 2 and export["line_count"] == 2
         payload = await _file(conn, seeded, export)
 
-        assert payload.split("\n", 1)[0] == ",".join(dct.COLUMNS)
-        assert not payload.startswith("﻿") and "\r\n" not in payload
+        # The contract's ten columns, then the three numbers it does not name
+        # (2026-11-12): the DCT's loader lets extra columns through.
+        assert payload.split("\n", 1)[0] == ",".join([*dct.COLUMNS, *dct.NUMBERS])
+        assert not payload.startswith("\ufeff") and "\r\n" not in payload
         header, rows = _rows(payload)
-        assert header == list(dct.COLUMNS)
+        assert header == [*dct.COLUMNS, *dct.NUMBERS]
+        assert dct.NUMBERS == ("project_no", "person_no", "consent_no")
         assert [r["display_name"] for r in rows] == ["Asha Rao", "meera Nair"]
         assert {r["person_id"] for r in rows} == {meera["uuid"], asha["uuid"]}
         for r in rows:
             assert r["project_id"] == str(seeded["project"]["project_uuid"])
             assert r["project_name"] == "Test Project"
+            # The contract's ids stay uuids, as its loader insists; the
+            # records' own numbers ride beside them.
             assert all(UUID.match(r[k]) for k in ("project_id", "person_id", "consent_id"))
+            assert r["project_no"] == str(seeded["project"]["project_id"])
             assert r["is_minor"] == "false" and r["consent_expires_at"] == ""
+        numbers = {r["person_id"]: (r["person_no"], r["consent_no"]) for r in rows}
+        for person in (meera, asha):
+            found = await conn.execute(
+                """SELECT u.id, ca.consent_id FROM auth_user u
+                     JOIN consent_artefact ca ON ca.auth_user_id = u.id
+                    WHERE u.uuid = %s ORDER BY ca.consent_id DESC LIMIT 1""",
+                (person["uuid"],),
+            )
+            hers = await found.fetchone()
+            assert numbers[str(person["uuid"])] == (str(hers["id"]), str(hers["consent_id"]))
         assert rows[0]["contact_hint"] == f"…{asha['mobile'][-2:]}"
 
         # Nothing an agent does not need: no contact in full, no link, no notice.

@@ -130,21 +130,23 @@ def send_rights_response(
     """The response itself, in the mail - not a note that it exists.
 
     The decision, the Privacy Office's words, and the record the platform
-    holds about her. The full file is downloaded from her account, where it is
-    authenticated and time-limited; the mail carries what a person needs to
-    read to know what was answered. `account_url` is None for a request with
-    no account behind it: there is nothing to sign in to, and the message is
-    the answer.
+    holds about her: the mail carries what a person needs to read to know
+    what was answered. Files released with the response are downloaded from
+    her account, where they are authenticated and time-limited; `expires_on`
+    is given only when there are any (2026-11-12: the record as a data file
+    is no longer offered on her account). `account_url` is None for a request
+    with no account behind it: there is nothing to sign in to, and the
+    message is the answer.
     """
     if account_url is None:
         availability = NO_ACCOUNT
     elif expires_on:
         availability = (
-            f"The full record, as a file, is available from your account until {expires_on}: "
-            f"{account_url}"
+            "The files released with this response can be downloaded from your account "
+            f"until {expires_on}: {account_url}"
         )
     else:
-        availability = f"The full record is available from your account: {account_url}"
+        availability = f"This response is also in your account: {account_url}"
     return deliver(
         Message.RIGHTS_RESPONSE,
         to=contact,

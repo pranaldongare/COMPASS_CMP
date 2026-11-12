@@ -695,10 +695,11 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             ),
             Variable(
                 "availability",
-                "Where and until when the full record can be read from the requester's account, "
-                "as a sentence; with no account behind the request, that this message is the "
-                "answer.",
-                "The full record, as a file, is available from your account until 9 January 2027: https://portal.example.org/my-requests",
+                "Where the response can be read in the requester's account and, when files "
+                "were released with it, until when they can be downloaded, as a sentence; "
+                "with no account behind the request, that this message is the answer.",
+                "The files released with this response can be downloaded from your account "
+                "until 9 January 2027: https://portal.example.org/my-requests",
             ),
             ORGANISATION,
         ),

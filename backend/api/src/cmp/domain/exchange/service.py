@@ -174,6 +174,11 @@ _text_cell = text_cell
 EXPORT_COLUMNS = (
     "project_name",
     "project_uuid",
+    # The project's, the consent's and the person's own numbers (2026-11-12):
+    # what the console shows as their IDs, and what the Data Collection Tool
+    # is given beside its uuids, so a file tagged there can be traced here by
+    # a number a person can read out.
+    "project_id",
     "site_label",
     "source_code",
     # Which link the consent came in through, whether that channel is still
@@ -189,6 +194,8 @@ EXPORT_COLUMNS = (
     "link_status",
     "link_expires_at",
     "consent_uuid",
+    "consent_id",
+    "person_id",
     "full_name",
     "email",
     "mobile",
@@ -232,6 +239,7 @@ def _row_for(project: dict[str, Any], c: dict[str, Any]) -> list[Any]:
     return [
         _text_cell(project["project_name"]),
         str(project["project_uuid"]),
+        int(project["project_id"]),
         _text_cell(c["site_label"]),
         _text_cell(c["source_code"]),
         str(c["link_uuid"]),
@@ -239,6 +247,8 @@ def _row_for(project: dict[str, Any], c: dict[str, Any]) -> list[Any]:
         c["link_status"],
         c["link_expires_at"].isoformat() if c["link_expires_at"] else "",
         str(c["consent_uuid"]),
+        int(c["consent_id"]),
+        int(c["auth_user_id"]),
         _text_cell(c["full_name"]),
         c["email"] or "",
         c["mobile"] or "",
@@ -265,6 +275,7 @@ def _write_csv(project: dict[str, Any], consents: list[dict[str, Any]]) -> str:
         row: list[Any] = [""] * len(EXPORT_COLUMNS)
         row[0] = _text_cell(project["project_name"])
         row[1] = str(project["project_uuid"])
+        row[2] = int(project["project_id"])
         writer.writerow(row)
         return buf.getvalue()
 

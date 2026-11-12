@@ -44,6 +44,9 @@ project_paging = Paging(repo.LIST_SORTS, "-created_at")
 
 class ProjectOut(Out):
     project_uuid: UUID
+    #: The project's own number, shown as its ID and carried to the Data
+    #: Collection Tool (2026-11-12). To read and to quote; routes take the uuid.
+    project_no: int | None = None
     project_name: str
     internal_project_name: str | None
     description: str | None

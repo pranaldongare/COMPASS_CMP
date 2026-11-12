@@ -76,6 +76,12 @@ class LinkStats(Out):
 
 class ConsentRow(Out):
     consent_uuid: UUID
+    #: The consent's, the person's and the project's own numbers, shown as
+    #: their IDs and carried to the Data Collection Tool (2026-11-12). To
+    #: read and to quote; no route takes one in.
+    consent_no: int
+    person_no: int
+    project_no: int
     subject_uuid: UUID
     subject_name: str
     subject_email: str | None
@@ -108,14 +114,19 @@ class ConsentListRow(ConsentRow):
 class ConsentArtefactOut(Out):
     """One consent record, in full.
 
-    Declared rather than returned as a bare dict so `consent_id` - the internal
-    surrogate key the scoped query needs for its follow-up lookups - cannot ship
-    to a client. An integer primary key in a response body is an invitation to
-    enumerate, and it becomes an accidental part of the contract the moment
-    somebody reads it off the wire.
+    Declared rather than returned as a bare dict so the scoped query's
+    internal columns cannot ship to a client by accident. Three numbers do
+    ship, on purpose (the product owner, 2026-11-12): the consent's, the
+    person's and the project's own, as `*_no`, because the Data Collection Tool
+    and the people who run a collection quote them. They are for reading:
+    every route still names a record by its uuid, so a number that can be
+    guessed opens nothing.
     """
 
     consent_uuid: UUID
+    consent_no: int
+    person_no: int
+    project_no: int
     subject_uuid: UUID
     subject_name: str
     subject_email: str | None

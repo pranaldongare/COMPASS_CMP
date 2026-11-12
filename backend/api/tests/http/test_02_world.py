@@ -135,7 +135,8 @@ async def test_the_dct_consented_list_is_its_contract_and_downloads_as_made(
 ) -> None:
     """The Data Collection Tool's list (2026-11-11): its ten columns, named as its
     contract names the file, the principal on it by her account's uuid and her
-    contacts not, and the same bytes on every download."""
+    contacts not, and the same bytes on every download. After the contract's
+    columns come the three numbers (2026-11-12), which its loader passes through."""
     made = await call(
         http,
         "POST",
@@ -158,8 +159,11 @@ async def test_the_dct_consented_list_is_its_contract_and_downloads_as_made(
     )
     assert first.content.split(b"\n", 1)[0] == (
         b"project_id,project_name,person_id,consent_id,display_name,contact_hint,"
-        b"consent_expires_at,is_minor,list_generated_at,list_valid_until"
+        b"consent_expires_at,is_minor,list_generated_at,list_valid_until,"
+        b"project_no,person_no,consent_no"
     )
+    line = first.text.splitlines()[1].split(",")
+    assert all(number.isdigit() for number in line[-3:]), "the three numbers are numbers"
     disposition = first.headers["Content-Disposition"]
     assert f'filename="consented_list_{world.project_uuid}_' in disposition
     text = first.text

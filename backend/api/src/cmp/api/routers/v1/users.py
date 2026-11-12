@@ -50,6 +50,9 @@ class CollectorProcessor(Out):
 
 class UserOut(Out):
     uuid: UUID
+    #: The account's own number, shown as the Person ID and carried to the
+    #: Data Collection Tool (2026-11-12). To read and to quote; routes take the uuid.
+    person_no: int | None = None
     username: str | None
     full_name: str
     #: None for a data principal who registered with a mobile alone. Staff
@@ -180,12 +183,16 @@ class CollectionOwner(Out):
 )
 async def staff_directory(
     principal: Annotated[Any, Depends(RequireRole(Role.DPO, Role.LEGAL, Role.ADMIN))],
+    role: Annotated[Role | None, Query()] = None,
 ) -> list[dict[str, Any]]:
     """Naming who answers a rights-request ticket for an in-house processor
     means picking an account. Four fields, active staff only, and only for the
-    two roles that manage the registry - not a way around the register."""
+    two roles that manage the registry - not a way around the register.
+
+    `role` narrows it to one role: the DCO Admins an office chooses between
+    when a project's ticket goes to one of them (0069)."""
     async with connection() as conn:
-        return await repo.staff_directory(conn)
+        return await repo.staff_directory(conn, role=role.value if role else None)
 
 
 @router.get(

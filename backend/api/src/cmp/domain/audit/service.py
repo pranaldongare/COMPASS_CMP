@@ -294,6 +294,10 @@ class Event:
     RIGHTS_TICKET_REASSIGNED = "rights.ticket_reassigned"
     RIGHTS_TICKET_REMINDED = "rights.ticket_reminded"
     RIGHTS_TICKET_SENT_BACK = "rights.ticket_sent_back"
+    #: The office or the holder moved the date a ticket is to be answered by
+    #: (2026-11-12). The detail carries the two dates, which side moved it and
+    #: the reason, sealed: the product owner asked for the reason on the trail.
+    RIGHTS_TICKET_DATE_CHANGED = "rights.ticket_date_changed"
     #: The office read a holder's answer and took it (0048); a withdrawn
     #: ticket reopened; a holder found by mistake removed before it was sent.
     RIGHTS_TICKET_ACCEPTED = "rights.ticket_accepted"

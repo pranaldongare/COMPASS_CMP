@@ -238,3 +238,42 @@ class TestHoldersFromTheCategory:
         assert hrms["derived_from"] == "activity_processor"
         assert vendor["responder_user_id"] == activity["vendor_contact"]["id"]
         assert hrms["responder_user_id"] == activity["world"]["poc"]["id"], "the HR PoC answers"
+        # The category's processors answer for the activity: its owner is not
+        # asked a second time (0069).
+        assert all(h["derived_from"] != "project_owner" for h in holders)
+
+    async def test_an_activity_whose_category_names_no_processor_is_its_owner_s(
+        self, conn: Any, activity: dict[str, Any], seeded: dict[str, Any]
+    ) -> None:
+        """A category with no processors found nobody, and the list was empty
+        (2026-11-12). The activity has an owner - the HR PoC who runs it -
+        and they are asked, in the console."""
+        from cmp.db.repositories import rights as rights_repo
+        from cmp.domain.rights import service as rights
+
+        legal = int(activity["world"]["legal"]["id"])
+        await conn.execute(
+            """UPDATE category_processor SET removed_at = now(), removed_by = %s
+                WHERE category_id = (SELECT category_id FROM hr_category WHERE category_uuid = %s)
+                  AND removed_at IS NULL""",
+            (legal, str(activity["world"]["category"]["category_uuid"])),
+        )
+        request = await fetch_all(
+            conn,
+            """INSERT INTO rights_request (reference, request_type, channel, subject_user_id,
+                                           status, due_at, submitted_contact,
+                                           submitted_contact_hash, request_text, office_id)
+               VALUES ('RR-HO-' || %s, 'access', 'portal', %s, 'in_progress',
+                       now() + interval '30 days', 'SE::contact', 'h', 'SE::text',
+                       (SELECT office_id FROM office WHERE office_code = 'hr'))
+               RETURNING request_id""",
+            (activity["world"]["tag"], seeded["subject"]["id"]),
+        )
+        row = await rights_repo.by_id(conn, int(request[0]["request_id"]))
+        [holder] = await rights.derive_holders(conn, row, role=Role.LEGAL, actor_id=legal)
+        assert holder["derived_from"] == "project_owner"
+        assert holder["label"] == f"Wellness {activity['world']['tag']} · HR owner"
+        assert holder["is_activity"] is True
+        assert holder["responder_user_id"] == activity["world"]["poc"]["id"]
+        assert holder["channel"] == "portal"
+        assert holder["evidence"]["project"] == str(activity["made"]["activity_uuid"])

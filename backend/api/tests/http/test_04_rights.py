@@ -12,6 +12,8 @@ the endpoint recorded.
 
 from __future__ import annotations
 
+import csv
+import io
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -42,6 +44,18 @@ async def world(
     if "w" not in _world_box:
         _world_box["w"] = await build(http, session_for, queued)
     return _world_box["w"]
+
+
+def _another_day(response_due: str, ticket_due: str | None) -> str:
+    """A day a ticket's date may be moved to: ahead of today, not after the
+    response it feeds, and not the day it already has."""
+    limit = datetime.fromisoformat(response_due)
+    held = datetime.fromisoformat(ticket_due).date() if ticket_due else None
+    day = limit - timedelta(days=1)
+    if day.date() == held:
+        day -= timedelta(days=1)
+    assert day > datetime.now(UTC), "the response is due too soon to move a ticket's date"
+    return day.isoformat()
 
 
 async def _public_request(http: httpx.AsyncClient, queued: Any, contact: str, text: str) -> str:
@@ -210,6 +224,51 @@ class TestAnAccessRequestThroughTheOffice:
             expect=(200, 201, 204),
             json={"kind": "note", "note": "Phoned; they are on it.", "send": False},
         )
+        # The date the ticket is due, moved by the office with the reason
+        # (2026-11-12): on the thread, the contact log and the trail.
+        before = await call(http, "GET", f"/requests/{ruuid}", template=RIGHTS, session=dpo)
+        asked = next(h for h in before.json()["holders"] if h["holder_uuid"] == huuid)
+        moved = await call(
+            http,
+            "POST",
+            f"/requests/{ruuid}/holders/{huuid}/answer-by",
+            template=HOLDER + "/answer-by",
+            session=dpo,
+            json={
+                "due_at": _another_day(before.json()["due_at"], asked["due_at"]),
+                "reason": "They are closed until the audit ends.",
+            },
+        )
+        assert moved.json()["due_at"] != asked["due_at"]
+        assert moved.json()["contact_log"][-1]["kind"] == "date_changed"
+        # The trail says a reason was given and keeps none of its words (ADR
+        # 0015); whoever reads the trail is shown them from the ticket, sealed
+        # on the wire and opened in the file a person takes away.
+        trail = await call(
+            http,
+            "GET",
+            "/audit",
+            session=dpo,
+            params={"event_type": "rights.ticket_date_changed", "from": world.built_at},
+        )
+        entry = next(
+            e for e in trail.json()["items"] if e["detail"]["label"] == moved.json()["label"]
+        )
+        assert entry["detail"]["reason_given"] is True and "reason" not in entry["detail"]
+        assert entry["reason"].startswith("SE::")
+        assert plain(entry["reason"]).endswith(": They are closed until the audit ends.")
+        taken = await call(
+            http,
+            "GET",
+            "/audit/export.csv",
+            session=dpo,
+            params={"event_type": "rights.ticket_date_changed", "from": world.built_at},
+            check_sealed=False,
+        )
+        lines = list(csv.DictReader(io.StringIO(taken.text)))
+        assert "They are closed until the audit ends." in {line["reason"] for line in lines}
+        assert "SE::" not in taken.text
+        assert all("closed until" not in line["detail"] for line in lines)
         await call(
             http,
             "POST",
@@ -479,9 +538,14 @@ class TestErasureRefusedAndTheGrievance:
             f"/requests/{ruuid}/refuse",
             template=RIGHTS + "/refuse",
             session=dpo,
-            json={"reason": "The retention floor has not passed."},
+            # A form, as a response is (2026-11-12): the reason, and the
+            # document it rests on.
+            data={"reason": "The retention floor has not passed."},
+            files={"files": ("schedule.pdf", b"%PDF-1.4 retention schedule", "application/pdf")},
         )
         assert refused.json()["refusal_reason"].startswith("SE::")
+        with_it = await call(http, "GET", f"/requests/{ruuid}", template=RIGHTS, session=dpo)
+        assert [f["file_name"][:4] for f in with_it.json()["response_files"]] == ["SE::"]
 
         # She disputes; the grievance is about the DPO, so an administrator reviews it.
         disputed = await call(
@@ -803,6 +867,20 @@ class TestTicketsFromTheHoldersSide:
             expect=(200, 201),
             data={"body": "We hold two files. Sending the list."},
         )
+        # They need longer, and say why: no approval, the office is told.
+        assert ticket["may_change_date"] is True
+        later = await call(
+            http,
+            "POST",
+            f"/tickets/{huuid}/answer-by",
+            template="/tickets/{holder_uuid}/answer-by",
+            session=team,
+            json={
+                "due_at": _another_day(ticket["request_due_at"], ticket["due_at"]),
+                "reason": "The archive is off site until Thursday.",
+            },
+        )
+        assert later.json()["due_at"] != ticket["due_at"]
         await call(
             http,
             "POST",
@@ -964,6 +1042,21 @@ class TestAnOutsideHolder:
             cookies=cookie,
         )
         assert got.content == b"box 1\nbox 2\n"
+        # By the link too: the date moved, with the reason, before the answer.
+        held = ticket.json()["ticket"]
+        assert held["may_change_date"] is True
+        later = await call(
+            http,
+            "POST",
+            f"/holder-tickets/{token}/answer-by",
+            template="/holder-tickets/{token}/answer-by",
+            cookies=cookie,
+            json={
+                "due_at": _another_day(held["request_due_at"], held["due_at"]),
+                "reason": "The paper files are in the other building.",
+            },
+        )
+        assert later.json()["ticket"]["due_at"] != held["due_at"]
         answered = await call(
             http,
             "POST",

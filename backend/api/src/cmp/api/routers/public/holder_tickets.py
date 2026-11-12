@@ -20,6 +20,7 @@ from fastapi import APIRouter, File, Form, Request, Response, UploadFile, status
 from pydantic import Field
 
 from cmp.api.routers.v1.rights import (
+    TicketDateIn,
     TicketDetailOut,
     _attachment,
     _attachment_response,
@@ -202,6 +203,21 @@ async def answer(
             evidence_hash=evidence_hash,
             evidence_name=evidence_name,
         )
+
+
+@router.post(
+    "/{token}/answer-by",
+    response_model=TicketDetailOut,
+    summary="Change the date the answer is due, with the reason",
+)
+async def change_date(
+    token: TokenPath, body: TicketDateIn, request: Request, response: Response
+) -> dict[str, Any]:
+    """While the ticket waits on its holder. The Privacy Office is told."""
+    _guard(response)
+    async with transaction() as conn:
+        ticket = await holder_link.holder_in(conn, token, _cookie(request))
+        return await holder_link.change_date(conn, ticket, due_at=body.due_at, reason=body.reason)
 
 
 @router.get(

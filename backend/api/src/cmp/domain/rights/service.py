@@ -740,18 +740,57 @@ async def classify(
     return row
 
 
-async def refuse(conn: Conn, row: Row, *, reason: str, role: Role | str, actor_id: int) -> Row:
+async def refuse(
+    conn: Conn,
+    row: Row,
+    *,
+    reason: str,
+    role: Role | str,
+    actor_id: int,
+    files: list[dict[str, Any]] | None = None,
+) -> Row:
     """Not a rights request, or refused. A refusal is still a response.
 
     Reason given in writing, plus the grievance route - the notification
     carries both, because a refusal without a route onward is a dead end the
     Act does not permit.
+
+    `files` go with it as they go with a response (2026-11-12): the letter
+    the reason rests on, the retention schedule, the order. Already in
+    storage; kept on the request, named in the mail, and downloaded from her
+    account for as long as a response's files are.
     """
     _may_act(row, role)
     _before_collation(row)
     if not reason.strip():
         raise ValidationFailed("A refusal needs its reason, in writing", field="reason")
     now = datetime.now(UTC)
+    # Their names as she reads them in the mail, and as the trail keeps them:
+    # sealed, like the file's own row - a name can say whose letter it is.
+    released: list[str] = []
+    on_trail: list[str] = []
+    for f in files or []:
+        kept = await repo.add_response_file(
+            conn,
+            int(row["request_id"]),
+            file_ref=str(f["ref"]),
+            file_hash=str(f["hash"]),
+            file_name=str(f["name"]),
+            size_bytes=int(f["size"]),
+            content_type=f.get("content_type"),
+            uploaded_by=actor_id,
+        )
+        released.append(str(f["name"]))
+        on_trail.append(str(kept["file_name"]))
+    # An account is where they are downloaded from, on a response's window. A
+    # request with no account behind it has nowhere to read them, and the
+    # mail says so.
+    has_account = row.get("subject_user_id") is not None
+    expires = (
+        now + timedelta(days=settings.rights_download_ttl_days)
+        if released and has_account
+        else None
+    )
     await repo.update(
         conn,
         int(row["request_id"]),
@@ -761,16 +800,44 @@ async def refuse(conn: Conn, row: Row, *, reason: str, role: Role | str, actor_i
         response_text=reason.strip(),
         responded_at=now,
         responded_by=actor_id,
+        download_expires_at=expires,
         closed_at=now,
     )
     row = await reload(conn, row)
     await _record(
-        conn, row, Event.RIGHTS_CLOSED, actor_user_id=actor_id, detail={"outcome": "refused"}
+        conn,
+        row,
+        Event.RIGHTS_CLOSED,
+        actor_user_id=actor_id,
+        detail={"outcome": "refused", "files_released": on_trail},
     )
     contact = contact_for(row)
     if contact:
-        _dispatch("send_rights_closed", contact, row["reference"], "refused", reason.strip())
+        _dispatch(
+            "send_rights_closed",
+            contact,
+            row["reference"],
+            "refused",
+            reason.strip() + _files_note(released, expires),
+        )
     return row
+
+
+def _files_note(names: list[str], expires: datetime | None) -> str:
+    """What a closing mail says of the documents that go with it: their names,
+    and where they are - her account until the date, or, for a request with no
+    account behind it, the office that holds them."""
+    if not names:
+        return ""
+    listed = "\n".join(f"- {name}" for name in names)
+    count = "1 document goes" if len(names) == 1 else f"{len(names)} documents go"
+    where = (
+        f"Download from your account until {expires.date().isoformat()}: "
+        f"{settings.public_base_url.rstrip('/')}/my-requests"
+        if expires
+        else "Reply to this message and the office will send them to you."
+    )
+    return f"\n\n{count} with this decision:\n{listed}\n{where}"
 
 
 async def reclassify_as_withdrawal(
@@ -1003,7 +1070,19 @@ async def _scope_ids(conn: Conn, row: Row) -> list[int] | None:
 
 
 async def derive_holders(conn: Conn, row: Row, *, role: Role | str, actor_id: int) -> list[Row]:
-    """Who holds her data, from export_line and asset_consent. The DPO confirms.
+    """Who holds her data, from the records. The DPO confirms.
+
+    Two readings. The processors that hold it: an export that carried her
+    consent, an asset a source captured, an activity's category processors.
+    And, since 0069, where a project or activity she gave consent in has none
+    of those yet, who answers for it - a DCO Admin for a project, the HR PoC
+    who runs an activity (the product owner, 2026-11-12) - because the first
+    reading then finds nobody, and the page showed an empty list for a person
+    with consents on record. One DCO Admin is named; where the office has
+    several, the holder is found without one and the office chooses as it
+    confirms. A consent with nobody at all is not dropped: `unowned_consents`
+    lists it for the office to place by hand.
+
     A request confined to one consent names only the holders of data under it."""
     _may_act(row, role)
     _open(row)
@@ -1051,6 +1130,40 @@ async def derive_holders(conn: Conn, row: Row, *, role: Role | str, actor_id: in
                     int(c["processor_id"]),
                     list(c.get("activities") or []),
                 )
+    owners = await holdings.owners_of_person(
+        conn,
+        int(row["subject_user_id"]),
+        office_id=row.get("office_id"),
+        consent_ids=scope_ids,
+    )
+    unowned = 0
+    for o in owners:
+        if not o["candidates"]:
+            unowned += len(o["consents"])
+            continue
+        # One account to name: it answers in the console, as every account
+        # that answers does. Several: the office chooses as it confirms.
+        named = o["owner_id"] is not None
+        result = await repo.add_holder(
+            conn,
+            int(row["request_id"]),
+            processor_id=None,
+            project_id=int(o["project_id"]),
+            label=_owner_label(o),
+            derived_from="project_owner",
+            evidence={
+                "project": str(o["project_uuid"]),
+                "is_activity": bool(o["is_activity"]),
+                "consents": [str(c["consent_uuid"]) for c in o["consents"]],
+            },
+            responder_user_id=int(o["owner_id"]) if named else None,
+            responder_name=str(o["owner_name"]) if named else None,
+            responder_contact=str(o["owner_email"]) if named else None,
+            channel="portal" if named else "email",
+        )
+        if result.get("inserted"):
+            added += 1
+    await repo.update(conn, int(row["request_id"]), holders_derived_at=datetime.now(UTC))
     await _record(
         conn,
         row,
@@ -1058,11 +1171,52 @@ async def derive_holders(conn: Conn, row: Row, *, role: Role | str, actor_id: in
         actor_user_id=actor_id,
         detail={
             "candidates": len(candidates),
+            "owners": sum(1 for o in owners if o["candidates"]),
+            "consents_without_owner": unowned,
             "added": added,
             "confined_to_consent": str(row["consent_uuid"]) if scope_ids is not None else None,
         },
     )
     return await repo.holders_of(conn, int(row["request_id"]))
+
+
+def _owner_label(owner: Row) -> str:
+    """Such a holder, as the table names it: the project or activity, and who
+    is asked about it. The person is beside it, as who answers."""
+    kind = "HR owner" if owner["is_activity"] else "DCO Admin"
+    return f"{str(owner['project_name'])[:170]} · {kind}"
+
+
+async def unowned_consents(conn: Conn, row: Row) -> list[dict[str, Any]]:
+    """The consents nobody could be found for (0069): given in a project or
+    activity no record names a holder for, and with nobody to answer for it -
+    an office with no DCO Admin, an activity with no HR PoC. Listed once the
+    records have been read, so the office sees what the list of holders does
+    not cover and can add whoever holds it by hand. Empty before that, and
+    for a request with no person behind it."""
+    if row.get("holders_derived_at") is None or row.get("subject_user_id") is None:
+        return []
+    owners = await holdings.owners_of_person(
+        conn,
+        int(row["subject_user_id"]),
+        office_id=row.get("office_id"),
+        consent_ids=await _scope_ids(conn, row),
+    )
+    return [
+        {
+            "consent_uuid": str(c["consent_uuid"]),
+            "project_uuid": str(o["project_uuid"]),
+            "project_name": str(o["project_name"]),
+            "is_activity": bool(o["is_activity"]),
+            "notice_code": str(c["notice_code"]),
+            "notice_version": int(c["notice_version"]),
+            "at": c["at"],
+            "withdrawal": bool(c["withdrawal"]),
+        }
+        for o in owners
+        if not o["candidates"]
+        for c in o["consents"]
+    ]
 
 
 def _ticket_email(raw: str | None) -> str | None:
@@ -1159,6 +1313,7 @@ async def confirm_holder(
     role: Role | str,
     actor_id: int,
     respondent_uuid: str | None = None,
+    responder_user_uuid: str | None = None,
 ) -> Row:
     _may_act(row, role)
     _open(row)
@@ -1166,7 +1321,10 @@ async def confirm_holder(
     if not holder:
         raise NotFound("Holder")
     if holder["ticket_status"] != Ticket.PENDING and (
-        respondent_uuid or responder_name is not None or responder_contact is not None
+        respondent_uuid
+        or responder_user_uuid
+        or responder_name is not None
+        or responder_contact is not None
     ):
         raise Conflict(
             "The ticket is sent: correct the email address on the ticket instead",
@@ -1189,6 +1347,8 @@ async def confirm_holder(
         if chosen is None:
             raise NotFound("Respondent")
         cols.update(_respondent_columns(chosen))
+    elif responder_user_uuid:
+        cols.update(await _owner_account(conn, holder, responder_user_uuid))
     else:
         if responder_name is not None:
             cols["responder_name"] = responder_name
@@ -1216,6 +1376,35 @@ async def confirm_holder(
     fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
     assert fresh is not None
     return fresh
+
+
+async def _owner_account(conn: Conn, holder: Row, user_uuid: str) -> dict[str, Any]:
+    """The account the office chose to answer for a project or an activity
+    (0069), as the holder's columns. Only for such a holder, and only one of
+    the accounts that could have been found: a DCO Admin for a project, an HR
+    PoC for an activity - an office with several DCO Admins says which here.
+    Anybody else is typed, by name and address, as before."""
+    if holder.get("project_id") is None:
+        raise ValidationFailed(
+            "Only a project's or an activity's holder is answered by a chosen account",
+            field="responder_user_uuid",
+        )
+    wanted = Role.HR_USER if holder.get("is_activity") else Role.DCO_ADMIN
+    account = await user_repo.by_uuid(conn, user_uuid)
+    if not account or account["status"] != "active" or account["role"] != wanted.value:
+        raise ValidationFailed(
+            "Choose an active HR PoC"
+            if holder.get("is_activity")
+            else "Choose an active DCO Admin",
+            field="responder_user_uuid",
+        )
+    return {
+        "respondent_id": None,
+        "responder_user_id": int(account["id"]),
+        "responder_name": str(account["full_name"]),
+        "responder_contact": str(account["email"]),
+        "channel": "portal",
+    }
 
 
 def _default_instruction(row: Row) -> str:
@@ -1358,6 +1547,8 @@ async def issue_tickets(
                 conn,
                 subject_user_id=int(row["subject_user_id"]),
                 processor_id=int(h["processor_id"]) if h.get("processor_id") else None,
+                # A project's or activity's owner is asked about that project.
+                project_id=int(h["project_id"]) if h.get("project_id") else None,
                 consent_ids=scope_ids,
                 scope=scope,
             )
@@ -2548,6 +2739,175 @@ async def send_back_ticket(
     return fresh
 
 
+# ---------------------------------------------------------- the ticket's date
+def _day(value: datetime | None) -> str:
+    return f"{value.day} {value:%B %Y}" if value else "no date"
+
+
+async def _change_ticket_date(
+    conn: Conn,
+    row: Row,
+    holder: Row,
+    *,
+    side: str,
+    due_at: datetime,
+    reason: str,
+    actor_id: int | None,
+) -> str:
+    """Move the date a ticket is to be answered by, as a breach ticket's is
+    moved (the product owner, 2026-11-12). Either side may, with the reason.
+
+    Where it is kept: on the ticket's thread and its contact log, in words;
+    and on the trail (`rights.ticket_date_changed`) with the date it was, the
+    date it is, which side moved it, that a reason was given, and the thread
+    message that holds the words. The words are not copied into the trail
+    (ADR 0015: nothing erasable in a trail nobody can erase) - whoever reads
+    the trail is shown them from the message, while it exists
+    (`entities.attach`). Returns the sentence the other side is told.
+
+    A ticket never falls due after the response it feeds. One that had its
+    final reminder waits again from the new date: the reminder was for a date
+    that no longer stands, and a request that had gone on to collating for
+    want of it is awaiting holders once more.
+    """
+    from cmp.domain.rights import tickets as ticket_view
+
+    _open(row)
+    if str(row["status"]) not in ticket_view.WORKING:
+        raise Conflict("This request is not being worked on", code="request_not_open")
+    _require_open_ticket(holder)
+    why = reason.strip()
+    if not why:
+        raise ValidationFailed("Give the reason", field="reason")
+    now = datetime.now(UTC)
+    if due_at <= now:
+        raise ValidationFailed("That date has already passed", field="due_at")
+    if due_at > row["due_at"]:
+        raise ValidationFailed("A ticket cannot fall due after the response itself", field="due_at")
+    before: datetime | None = holder.get("due_at")
+    if before is not None and before.date() == due_at.date():
+        raise ValidationFailed("That is the date it already has", field="due_at")
+    holder_id = int(holder["holder_id"])
+    had_final_reminder = str(holder["ticket_status"]) == Ticket.ESCALATED.value
+    cols: dict[str, Any] = {"due_at": due_at}
+    if had_final_reminder:
+        cols.update(ticket_status=Ticket.ISSUED.value, escalated_at=None)
+    await repo.update_holder(conn, holder_id, **cols)
+    said = ticket_view.date_change_said(_day(before), _day(due_at), why)
+    message = await repo.add_message(
+        conn, holder_id, side=side, kind="status", body=said, author_user_id=actor_id
+    )
+    await repo.mark_thread_read(conn, holder_id, side=side)
+    await repo.append_contact(
+        conn,
+        holder_id,
+        _contact_entry(
+            "date_changed",
+            to=None,
+            by=actor_id,
+            note=f"{_day(before)} to {_day(due_at)}, by the {side}: {why}",
+        ),
+    )
+    await _record(
+        conn,
+        row,
+        Event.RIGHTS_TICKET_DATE_CHANGED,
+        actor_user_id=actor_id,
+        entity_type="rights_request_holder",
+        entity_id=holder_id,
+        detail={
+            "label": holder["label"],
+            "side": side,
+            # A holder with no account moved it by the ticket's link: no actor.
+            **({"channel": "link" if actor_id is None else "portal"} if side == "holder" else {}),
+            "date_before": before.isoformat() if before else None,
+            "date_after": due_at.isoformat(),
+            # The words stay on the ticket: the trail says one was given, and where.
+            "reason_given": True,
+            "message_uuid": str(message["message_uuid"]),
+        },
+    )
+    if had_final_reminder and Status(row["status"]) is Status.COLLATING:
+        await repo.update(conn, int(row["request_id"]), status=Status.AWAITING_HOLDERS.value)
+        await _record(
+            conn,
+            await reload(conn, row),
+            Event.RIGHTS_STATUS_CHANGED,
+            actor_user_id=actor_id,
+            detail={
+                "from": Status.COLLATING.value,
+                "to": Status.AWAITING_HOLDERS.value,
+                "cause": f"The ticket for {holder['label']} was given a new date",
+                "automatic": True,
+            },
+        )
+    return said
+
+
+async def change_ticket_date(
+    conn: Conn,
+    row: Row,
+    *,
+    holder_uuid: str,
+    due_at: datetime,
+    reason: str,
+    role: Role | str,
+    actor_id: int,
+) -> Row:
+    """The office moves a ticket's date; the holder is told the way they are
+    reached."""
+    _may_act(row, role)
+    holder = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    if not holder:
+        raise NotFound("Holder")
+    said = await _change_ticket_date(
+        conn, row, holder, side="office", due_at=due_at, reason=reason, actor_id=actor_id
+    )
+    fresh = await repo.holder_by_uuid(conn, int(row["request_id"]), holder_uuid)
+    assert fresh is not None
+    await _tell_holder(
+        conn,
+        row,
+        fresh,
+        author_id=actor_id,
+        body=said,
+        event="The Privacy Office has changed the date your answer is due.",
+    )
+    return fresh
+
+
+async def change_date_as_holder(
+    conn: Conn, holder: Row, *, author_id: int | None, due_at: datetime, reason: str
+) -> None:
+    """The holder moves the date of a ticket that waits on them - in the
+    console, or by its link on the portal (`author_id` None); the office's
+    officers are told."""
+    from cmp.domain.rights import tickets as ticket_view
+
+    if not ticket_view.holder_view(holder)["may_change_date"]:
+        raise Conflict("This ticket is not waiting for your answer", code="ticket_not_open")
+    row = await repo.by_id(conn, int(holder["request_id"]))
+    assert row is not None
+    said = await _change_ticket_date(
+        conn, row, holder, side="holder", due_at=due_at, reason=reason, actor_id=author_id
+    )
+    await _tell_office(conn, row, holder, author_id=author_id, body=said)
+
+
+async def change_own_ticket_date(
+    conn: Conn, *, user_id: int, holder_uuid: str, due_at: datetime, reason: str
+) -> Row:
+    """A member of staff moves the date of a ticket addressed to them. Scope
+    is the predicate: a ticket not theirs is not found."""
+    holder = await repo.ticket_for_user(conn, user_id, holder_uuid)
+    if not holder:
+        raise NotFound("Ticket")
+    await change_date_as_holder(conn, holder, author_id=user_id, due_at=due_at, reason=reason)
+    fresh = await repo.ticket_for_user(conn, user_id, holder_uuid)
+    assert fresh is not None
+    return fresh
+
+
 async def reassign_holder(
     conn: Conn,
     row: Row,
@@ -3315,7 +3675,8 @@ async def respond(
             result.value,
             response_text.strip(),
             digest_for_mail,
-            expires.date().isoformat() if expires else None,
+            # The date is the files': there is nothing else to download.
+            expires.date().isoformat() if expires and attachments else None,
             (
                 f"{settings.public_base_url.rstrip('/')}/my-requests"
                 if row.get("subject_user_id") is not None

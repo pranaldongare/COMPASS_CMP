@@ -18,6 +18,15 @@ Two structural defences, both asserted here:
 The third test class is the one that matters most in this system: **no integer
 primary key may appear in any response model.** A sequential id tells the reader
 how many rows exist and lets them walk the neighbours.
+
+**Three numbers are shown on purpose** (the product owner, 2026-11-12): a
+consent's, a person's and a project's own, as `consent_no`, `person_no` and
+`project_no`, because the Data Collection Tool is given them and the people
+who run a collection quote them. They are the same numbers this module keeps
+off the wire everywhere else, so the fourth class holds what makes that safe:
+they are declared on the models that are meant to show them and no others, and
+no request model takes one in - every route still names a record by its uuid,
+so a number that can be counted opens nothing.
 """
 
 from __future__ import annotations
@@ -152,3 +161,45 @@ class TestNoSurrogateKeyReachesTheWire:
             f"{model.__module__}.{model.__name__} would serialise {offending}. "
             "Identifiers crossing the boundary are uuids."
         )
+
+
+#: The three numbers shown as IDs, and the only response models that carry them.
+_SHOWN_NUMBERS = {
+    "consent_no": {"ConsentRow", "ConsentListRow", "ConsentArtefactOut"},
+    "person_no": {"ConsentRow", "ConsentListRow", "ConsentArtefactOut", "UserOut"},
+    "project_no": {"ConsentRow", "ConsentListRow", "ConsentArtefactOut", "ProjectOut"},
+}
+
+
+def _request_models() -> list[type[BaseModel]]:
+    import cmp.api.routers as routers_pkg
+
+    found: list[type[BaseModel]] = []
+    for info in pkgutil.walk_packages(routers_pkg.__path__, f"{routers_pkg.__name__}."):
+        module = import_module(info.name)
+        for _, obj in inspect.getmembers(module, inspect.isclass):
+            if issubclass(obj, Schema) and obj is not Schema and obj.__module__ == info.name:
+                found.append(obj)
+    return found
+
+
+class TestTheNumbersShownAsIdsAreForReading:
+    """`consent_no`, `person_no`, `project_no` (2026-11-12): shown, never taken."""
+
+    def test_only_the_models_meant_to_show_them_do(self) -> None:
+        for field, allowed in _SHOWN_NUMBERS.items():
+            # A model that extends one of these shows what its parent shows.
+            carrying = {
+                m.__name__
+                for m in _response_models()
+                if field in m.model_fields
+                and not any(base.__name__ in allowed for base in m.__mro__[1:])
+            }
+            assert carrying <= allowed, f"{field} is also on {sorted(carrying - allowed)}"
+            assert carrying, f"{field} is shown nowhere"
+
+    def test_no_request_takes_one_in(self) -> None:
+        assert len(_request_models()) > 20
+        for model in _request_models():
+            taken = sorted(set(model.model_fields) & set(_SHOWN_NUMBERS))
+            assert not taken, f"{model.__module__}.{model.__name__} accepts {taken}"

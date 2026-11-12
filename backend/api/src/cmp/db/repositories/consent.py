@@ -380,6 +380,9 @@ async def artefact_scoped(
         conn,
         f"""
         SELECT ca.consent_id, {ARTEFACT_COLUMNS},
+               -- The three numbers shown as IDs and carried to the Data
+               -- Collection Tool (2026-11-12); read-only.
+               ca.consent_id AS consent_no, u.id AS person_no, p.project_id AS project_no,
                n.notice_uuid, n.notice_code, n.version, nl.language_code,
                p.project_uuid, p.project_name,
                s.site_uuid, s.site_label,
@@ -506,6 +509,7 @@ async def list_for_project(
         f"""
         SELECT ca.consent_id AS _row_id, ca.consent_uuid, ca.affirmative_action_at,
                ca.served_at, ca.action_type, ca.is_withdrawal, ca.created_at,
+               ca.consent_id AS consent_no, u.id AS person_no, n.project_id AS project_no,
                u.uuid AS subject_uuid, u.full_name AS subject_name,
                u.email AS subject_email, u.mobile AS subject_mobile,
                s.site_uuid, s.site_label,
@@ -723,6 +727,7 @@ async def list_all_consents(
         conn,
         f"""SELECT ca.consent_id AS _row_id, ca.consent_uuid, ca.affirmative_action_at,
             ca.served_at, ca.action_type, ca.is_withdrawal,
+            ca.consent_id AS consent_no, u.id AS person_no, p.project_id AS project_no,
             u.uuid AS subject_uuid, u.full_name AS subject_name,
             u.email AS subject_email, u.mobile AS subject_mobile,
             p.project_uuid, p.project_name, s.site_uuid, s.site_label,

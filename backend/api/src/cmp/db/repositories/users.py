@@ -21,6 +21,9 @@ from cmp.validation import normalise_mobile
 # The columns any caller may see. `password_hash` is not among them and must
 # never be added: a SELECT * here is one refactor away from a response body.
 PUBLIC_COLUMNS = """
+  -- The row's own number, shown to people as the Person ID and carried to the
+  -- Data Collection Tool (2026-11-12). Read-only: routes name an account by uuid.
+  u.id AS person_no,
   u.uuid, u.username, u.full_name, u.email, u.mobile, u.organization_id,
   u.role, u.person_type, u.status, u.dob, u.mobile_verified_at, u.email_verified_at,
   u.secondary_email, u.secondary_email_verified_at,
@@ -644,12 +647,12 @@ async def collection_owners(conn: Conn, *, processor_uuid: str | None = None) ->
     )
 
 
-async def staff_directory(conn: Conn) -> list[Row]:
+async def staff_directory(conn: Conn, *, role: str | None = None) -> list[Row]:
     """Active members of staff, for naming one as a processor's respondent.
 
     The minimum that makes the choice possible: who they are, enough to tell
     two people with the same name apart, and their role. Offered only to the
-    roles that manage the registry.
+    roles that manage the registry. `role` narrows it to one role.
     """
     return await fetch_all(
         conn,
@@ -657,8 +660,10 @@ async def staff_directory(conn: Conn) -> list[Row]:
            FROM auth_user u
            -- A breach-only login is nobody's respondent (S3-09, BD-19).
            WHERE u.role NOT IN ('data_subject', 'breach_holder') AND u.status = 'active'
+             AND (%(role)s::text IS NULL OR u.role::text = %(role)s)
            -- Not by name: it is sealed. The console sorts the opened names.
            ORDER BY u.id""",
+        {"role": role},
     )
 
 

@@ -27,9 +27,13 @@ from cmp.core.permissions import Role, Scope, scope_of
 from cmp.db.sql import Conn, Row, fetch_all, fetch_one, keyset_clause, require_one
 from cmp.infrastructure.dkms import seal
 
+#: `project_no` is the row's own number, shown to people as the Project ID
+#: and carried to the Data Collection Tool (the product owner, 2026-11-12). It
+#: is read-only: every route still names a project by its uuid.
 PROJECT_COLUMNS = """
   p.project_uuid, p.project_name, p.internal_project_name, p.description,
-  p.requesting_team, p.project_status, p.created_at, p.updated_at
+  p.requesting_team, p.project_status, p.created_at, p.updated_at,
+  p.project_id AS project_no
 """
 
 
