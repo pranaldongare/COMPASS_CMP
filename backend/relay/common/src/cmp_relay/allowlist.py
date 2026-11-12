@@ -1,6 +1,6 @@
 """What may cross: the public routes, the headers and cookies, and one input rule.
 
-**Routes.** The public portal calls 66 of the API's ~370 operations. Those, and
+**Routes.** The public portal calls 67 of the API's ~400 operations. Those, and
 nothing else, may cross: every staff route, `/auth/login`, the second factor,
 `/metrics`, `/docs` - all refused. The collector enforces the list (it is the
 side that matters); the bridge checks the same list first so a refused request
@@ -138,6 +138,8 @@ PUBLIC_ROUTES: tuple[tuple[str, str], ...] = (
     ("POST", "/holder-tickets/{token}/messages"),
     ("GET", "/holder-tickets/{token}/messages/{message}/evidence"),
     ("POST", "/holder-tickets/{token}/answer"),
+    # The date the answer is due, moved with the reason (2026-11-12)
+    ("POST", "/holder-tickets/{token}/answer-by"),
     ("POST", "/holder-tickets/{token}/sign-out"),
     # Reference data and the notifications page
     ("GET", "/meta/enums"),
