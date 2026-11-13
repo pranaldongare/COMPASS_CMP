@@ -139,6 +139,10 @@ class VocabularyEntityType(Out):
     value: str
     label: str
     filterable_by_uuid: bool
+    #: Filtered to one record of this type, the trail also reads the rows of
+    #: what belongs to it - a breach's tickets, a request's holders, a
+    #: project's sites and notices (2026-11-12).
+    with_parts: bool = False
 
 
 class VocabularyGroup(Out):

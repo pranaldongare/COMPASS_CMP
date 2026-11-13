@@ -17,6 +17,9 @@ from cmp.api.routers.v1.breach_tickets import router as breach_tickets_router
 from cmp.api.routers.v1.breaches import router as breaches_router
 from cmp.api.routers.v1.consents import router as consents_router
 from cmp.api.routers.v1.dashboard import router as dashboard_router
+from cmp.api.routers.v1.datavault import connection_router as datavault_connection_router
+from cmp.api.routers.v1.datavault import request_router as datavault_request_router
+from cmp.api.routers.v1.datavault import ticket_router as datavault_ticket_router
 from cmp.api.routers.v1.delegations import router as delegations_router
 from cmp.api.routers.v1.exchange import router as exchange_router
 from cmp.api.routers.v1.hr_activities import router as hr_activities_router
@@ -44,6 +47,9 @@ __all__ = [
     "breaches_router",
     "consents_router",
     "dashboard_router",
+    "datavault_connection_router",
+    "datavault_request_router",
+    "datavault_ticket_router",
     "delegations_router",
     "exchange_router",
     "hr_activities_router",

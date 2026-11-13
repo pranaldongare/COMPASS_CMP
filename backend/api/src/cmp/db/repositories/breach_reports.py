@@ -223,7 +223,7 @@ async def job(conn: Conn, delivery_uuid: str) -> Row | None:
     return await fetch_one(
         conn,
         """SELECT d.delivery_id, d.report_id, d.recipient_id, d.attempt, d.status,
-                  x.email, x.email_hash, r.breach_id,
+                  x.email, x.email_hash, x.recipient_uuid, x.one_off, r.breach_id,
                   (NOT x.one_off AND NOT EXISTS (
                      SELECT 1 FROM breach_board_recipient c
                       WHERE c.email_hash = x.email_hash

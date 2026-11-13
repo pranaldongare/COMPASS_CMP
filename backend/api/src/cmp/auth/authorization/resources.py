@@ -60,6 +60,8 @@ BREACH: Final = "breach"
 BREACH_TICKET: Final = "breach_ticket"
 #: Who hears of a breach, and how (0058): the office's settings, no breach in them.
 BREACH_SETTINGS: Final = "breach_settings"
+#: Where DataVault is reached and with what key (0070): the administrator's.
+DATAVAULT_CONNECTION: Final = "datavault_connection"
 
 #: The words of a message the platform sends, per junction and channel.
 MESSAGE_TEMPLATE: Final = "message_template"
@@ -99,6 +101,7 @@ ALL: Final[frozenset[str]] = frozenset(
         BREACH,
         BREACH_TICKET,
         BREACH_SETTINGS,
+        DATAVAULT_CONNECTION,
         NOTICE_TEMPLATE,
         HR_CATEGORY,
     }

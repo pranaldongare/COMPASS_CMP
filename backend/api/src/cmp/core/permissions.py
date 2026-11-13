@@ -398,6 +398,12 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         Role.DPO: Grant(Scope.ALL, write=True),
         Role.LEGAL: Grant(Scope.ALL, write=True),
     },
+    # Where DataVault is reached, and its key (0070). The administrator's alone:
+    # it is configuration, and whoever sets it decides where the platform sends
+    # a person's identifier. The officers use the connection; they do not keep it.
+    "datavault_connection": {
+        Role.ADMIN: Grant(Scope.ALL, write=True),
+    },
     # The Government's s.16 restricted-country list (S2-04). The DPO keeps it,
     # because it decides what may leave the country; the administrator reads it,
     # because a refused export lands on their desk as often as anyone's.
@@ -598,6 +604,8 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "sources",
         "requests",
         "breach-settings",
+        # Where DataVault is reached (0070): the administrator's alone.
+        "datavault",
         "audit",
         "delegate",
         *PERSONAL,

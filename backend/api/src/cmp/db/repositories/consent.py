@@ -14,8 +14,10 @@ from typing import Any
 
 from cmp.core.pagination import PageRequest, build_page
 from cmp.core.permissions import Role, Scope, scope_of
+from cmp.db.repositories.users import contact_indexes
 from cmp.db.sql import Conn, Row, fetch_all, fetch_one, keyset_clause
 from cmp.infrastructure.dkms import seal
+from cmp.infrastructure.dkms.blind import search_ngrams
 
 
 def _project_scope(role: Role | str, user_id: int) -> tuple[str, list[Any]]:
@@ -664,15 +666,33 @@ async def list_all_consents(
     site_uuid: str | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
+    person: str | None = None,
 ) -> tuple[list[Row], str | None, int]:
     """Every current consent this caller may see, across projects.
 
     Derived from v_current_consent, like every other consent read - a stored
     status column would be a second copy of the truth, and the copy goes stale.
+
+    `person` narrows it to one data subject's records (2026-11-12): part of a
+    name, three letters or more, or a whole email or mobile. The columns are
+    sealed, so a name is found through the hashed runs beside it and a contact
+    through its hash, as the account register is searched. Inside the caller's
+    scope like everything else here, and of what the register already shows.
     """
     pred, sparams = _project_scope(role, user_id)
     where = [pred]
     params: list[Any] = [*sparams]
+
+    if person and person.strip():
+        term = person.strip()
+        email_hash, mobile_hash = contact_indexes(term)
+        found = ["u.email_hash = %s", "u.secondary_email_hash = %s", "u.mobile_hash = %s"]
+        params.extend([email_hash, email_hash, mobile_hash])
+        runs = search_ngrams(term)
+        if runs:
+            found.append("u.full_name_ngrams @> %s")
+            params.append(runs)
+        where.append("(" + " OR ".join(found) + ")")
 
     if project_uuid:
         where.append("p.project_uuid = %s")

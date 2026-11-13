@@ -1491,13 +1491,36 @@ async def record_result(
     row = await repo.job(conn, delivery_uuid)
     if not row or (status == "failed" and row["reached"]):
         return
-    await repo.add_delivery(
+    written = await repo.add_delivery(
         conn,
         int(row["report_id"]),
         int(row["recipient_id"]),
         attempt=int(row["attempt"]),
         status=status,
         detail=detail,
+    )
+    if written is None or status not in ("delivered", "failed"):
+        return  # recorded already, or not an outcome
+    # On the breach's trail too (2026-11-12): that a report was sent says who
+    # it was addressed to, and this says what became of each mail. Read, not
+    # locked - nothing here waits behind the breach's row.
+    report = await repo.by_id(conn, int(row["report_id"]))
+    breach = await breach_repo.by_breach_id(conn, int(row["breach_id"]))
+    if report is None or breach is None:
+        return
+    await service.record_event(
+        conn,
+        breach,
+        Event.BREACH_REPORT_DELIVERED if status == "delivered" else Event.BREACH_REPORT_FAILED,
+        actor_id=None,
+        detail={
+            "kind": report["kind"],
+            "version": int(report["version"]),
+            "attempt": int(row["attempt"]),
+            # Which entry of the list, or which address added for this report.
+            "recipient": str(row["recipient_uuid"]) if row.get("recipient_uuid") else None,
+            **({"error": detail["error"]} if status == "failed" and detail.get("error") else {}),
+        },
     )
 
 

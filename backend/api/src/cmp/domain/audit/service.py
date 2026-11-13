@@ -86,6 +86,8 @@ ENTITY_TYPES: Final[frozenset[str]] = frozenset(
         # office has set up who hears of one. Neither belongs to an office.
         "incident_report",
         "breach_settings",
+        # Where DataVault is reached (0070): the administrator's one row.
+        "datavault_connection",
         # The office's replacement words for a message junction.
         "message_template",
         # The Legal office's category of HR activity (0052, ADR 0033): its
@@ -380,6 +382,11 @@ class Event:
     BREACH_REPORT_EDITED = "breach.report_edited"
     BREACH_REPORT_FINALISED = "breach.report_finalised"
     BREACH_REPORT_RESENT = "breach.report_resent"
+    #: What became of one mail of a report - it went, or it did not once its
+    #: retries were spent (2026-11-12). The worker's entry, so no actor; the
+    #: address is named by its row's uuid and never written (ADR 0015).
+    BREACH_REPORT_DELIVERED = "breach.report_delivered"
+    BREACH_REPORT_FAILED = "breach.report_failed"
     BREACH_REPORT_PROOF_ADDED = "breach.report_proof_added"
     BREACH_REPORT_FILED = "breach.report_filed"
     BREACH_REPORT_READ = "breach.report_read"
@@ -390,6 +397,10 @@ class Event:
     BREACH_REPORT_WITHHELD = "breach.report_withheld"
     #: Who is told of a report, or who is on the organisation's board.
     BREACH_SETTINGS_CHANGED = "breach_settings.changed"
+    #: DataVault asked what it holds of a request's person (0070), and the
+    #: administrator's change to where it is reached.
+    DATAVAULT_CHECKED = "datavault.checked"
+    DATAVAULT_CONNECTION_CHANGED = "datavault.connection_changed"
     RIGHTS_RESPONDED = "rights.responded"
     RIGHTS_RESPONSE_DOWNLOADED = "rights.response_downloaded"
     #: A document the requester sent with the request, and every read of one.

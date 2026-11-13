@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any
+from typing import Any, Final
 
 from cmp.core.pagination import PageRequest, build_page
 from cmp.db.sql import Conn, Row, fetch_all, fetch_one, keyset_clause
@@ -126,6 +126,61 @@ def office_clause(office: str | None) -> tuple[str, list[Any]]:
     return "(l.detail_json ->> 'office' = %s OR l.detail_json ->> 'office' IS NULL)", [office]
 
 
+#: What belongs to a record, for the question "what happened to this?".
+#:
+#: The trail names the table each row was written against, so a breach's
+#: tickets, a request's holders and a project's sites are entity types of their
+#: own, and asked about the breach the trail left out a ticket assigned on it
+#: and a date moved on that ticket (2026-11-12). Each fragment is the record's
+#: own rows and the rows of its parts, found through the part's own table; the
+#: `%s` in each takes the record's id.
+#:
+#: Left out on purpose: `breach_notice` (one row per person told - her
+#: notification, thousands on one breach; `breach.notice_sent` on the breach
+#: carries the count), a project's consents (each person's own record), and
+#: `link.opened` (every visit to a consent link).
+_PARTS: Final[dict[str, tuple[str, ...]]] = {
+    "breach": (
+        "l.entity_type = 'breach' AND l.entity_id = %s",
+        """l.entity_type = 'breach_ticket' AND l.entity_id IN
+             (SELECT ticket_id FROM breach_ticket WHERE breach_id = %s)""",
+        # The report from the public link that this incident began as.
+        """l.entity_type = 'incident_report' AND l.entity_id IN
+             (SELECT report_id FROM incident_report WHERE breach_id = %s)""",
+    ),
+    "rights_request": (
+        "l.entity_type = 'rights_request' AND l.entity_id = %s",
+        """l.entity_type = 'rights_request_holder' AND l.entity_id IN
+             (SELECT holder_id FROM rights_request_holder WHERE request_id = %s)""",
+        """l.entity_type = 'rights_request_item' AND l.entity_id IN
+             (SELECT item_id FROM rights_request_item WHERE request_id = %s)""",
+        """l.entity_type = 'nomination' AND l.entity_id IN
+             (SELECT nomination_id FROM nomination WHERE invoked_request_id = %s)""",
+    ),
+    "project": (
+        "l.entity_type = 'project' AND l.entity_id = %s",
+        """l.entity_type = 'project_status_history' AND l.entity_id IN
+             (SELECT history_id FROM project_status_history WHERE project_id = %s)""",
+        """l.entity_type = 'project_approval' AND l.entity_id IN
+             (SELECT approval_id FROM project_approval WHERE project_id = %s)""",
+        """l.entity_type = 'project_site' AND l.entity_id IN
+             (SELECT site_id FROM project_site WHERE project_id = %s)""",
+        """l.entity_type = 'consent_link' AND l.event_type <> 'link.opened' AND l.entity_id IN
+             (SELECT cl.link_id FROM consent_link cl
+                JOIN project_site ps ON ps.site_id = cl.site_id WHERE ps.project_id = %s)""",
+        """l.entity_type = 'notice' AND l.entity_id IN
+             (SELECT notice_id FROM notice WHERE project_id = %s)""",
+        """l.entity_type = 'export_log' AND l.entity_id IN
+             (SELECT export_id FROM export_log WHERE project_id = %s)""",
+        """l.entity_type = 'import_batch' AND l.entity_id IN
+             (SELECT batch_id FROM import_batch WHERE project_id = %s)""",
+    ),
+}
+
+#: The record types whose trail is read with their parts.
+WHOLE_RECORDS: Final[frozenset[str]] = frozenset(_PARTS)
+
+
 def _like(term: str) -> str:
     escaped = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
     return f"%{escaped}%"
@@ -143,12 +198,18 @@ def _where(f: AuditFilters) -> tuple[str, list[Any]]:
     if f.subject_uuid:
         where.append("subject.uuid = %s")
         params.append(f.subject_uuid)
-    if f.entity_type:
-        where.append("l.entity_type = %s")
-        params.append(f.entity_type)
-    if f.entity_id is not None:
-        where.append("l.entity_id = %s")
-        params.append(f.entity_id)
+    parts = _PARTS.get(f.entity_type or "") if f.entity_id is not None else None
+    if parts:
+        # One record: its own rows and the rows of what belongs to it.
+        where.append("(" + " OR ".join(f"({part})" for part in parts) + ")")
+        params.extend([f.entity_id] * len(parts))
+    else:
+        if f.entity_type:
+            where.append("l.entity_type = %s")
+            params.append(f.entity_type)
+        if f.entity_id is not None:
+            where.append("l.entity_id = %s")
+            params.append(f.entity_id)
     if f.event_type:
         where.append("l.event_type = %s")
         params.append(f.event_type)

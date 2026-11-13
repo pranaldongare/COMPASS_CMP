@@ -84,6 +84,11 @@ BreachWriter = Annotated[Principal, Depends(RequireResource("breach", write=True
 #: How the office hears of a breach (0058). Not hidden: it says nothing of one.
 BreachSettingsReader = Annotated[Principal, Depends(RequireResource("breach_settings"))]
 BreachSettingsWriter = Annotated[Principal, Depends(RequireResource("breach_settings", write=True))]
+#: Where DataVault is reached (0070): the administrator's.
+DataVaultConnectionReader = Annotated[Principal, Depends(RequireResource("datavault_connection"))]
+DataVaultConnectionWriter = Annotated[
+    Principal, Depends(RequireResource("datavault_connection", write=True))
+]
 #: A breach ticket addressed to me (S3-08). Not hidden: the resource is the
 #: holder's own ticket, and a ticket that is not theirs is 404 by its WHERE.
 BreachTicketReader = Annotated[Principal, Depends(RequireResource("breach_ticket"))]

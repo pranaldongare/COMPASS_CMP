@@ -306,3 +306,25 @@ async def test_a_ticket_past_its_final_reminder_waits_again_from_the_new_date(
     )
     assert moved["ticket_status"] == "issued" and moved["escalated_at"] is None
     assert ticket_view.state(moved) == "waiting"
+
+
+async def test_a_line_on_the_thread_names_the_respondent_in_words_not_in_ciphertext(
+    conn: Any, seeded: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A reminder's line read "Reminder sent to SE::..." (found 2026-11-12,
+    reading a ticket through the relay): the respondent's name is sealed at
+    rest and went into the sentence as it was read. The line is sealed whole,
+    so what it holds must be the name."""
+    monkeypatch.setattr(service, "_dispatch", lambda *a: None)
+    row, holder = await _ticketed(conn, seeded)
+    await service.remind_holder(
+        conn,
+        row,
+        holder_uuid=str(holder["holder_uuid"]),
+        role=DPO,
+        actor_id=int(seeded["users"]["dpo"]["id"]),
+    )
+    last = (await repo.messages_of(conn, int(holder["holder_id"])))[-1]
+    said = plain(last["body"])
+    assert said.startswith("Reminder sent to Records team:")
+    assert "SE::" not in said

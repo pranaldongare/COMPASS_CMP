@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from typing import Any, Final
 
+from cmp.db.repositories.audit import WHOLE_RECORDS
 from cmp.db.repositories.audit_lookup import FILTERABLE_BY_UUID, LOOKUP_KINDS
 from cmp.db.repositories.entities import nouns
 from cmp.domain.audit.service import ENTITY_TYPES, Event
@@ -50,6 +51,7 @@ GROUP_LABELS: Final[dict[str, str]] = {
     "breach_ticket": "Breach tickets",
     "incident_report": "Incident reports",
     "breach_settings": "Breach settings",
+    "datavault": "DataVault",
     "message_template": "Messages",
     "audit": "Audit trail",
 }
@@ -62,12 +64,16 @@ EVENT_LABELS: Final[dict[str, str]] = {
     "breach.report_edited": "Report edited",
     "breach.report_finalised": "Report finalised",
     "breach.report_resent": "Report sent to the board again",
+    "breach.report_delivered": "Report mail delivered to an address",
+    "breach.report_failed": "Report mail not delivered to an address",
     "breach.report_proof_added": "Proof added to a report",
     "breach.report_filed": "Report recorded as sent to the regulator",
     "breach.report_read": "Report downloaded as a PDF",
     "breach.report_released": "Report held for the board sent at the validation",
     "breach.report_withheld": "Report held for the board not sent at the validation",
     "incident_report.reporter_erased": "Reporter's name and email erased",
+    "datavault.checked": "Checked in DataVault",
+    "datavault.connection_changed": "DataVault connection changed",
 }
 
 #: Which pickers the console offers, and the plain name of each.
@@ -116,6 +122,7 @@ def vocabulary() -> dict[str, Any]:
                     "value": t,
                     "label": noun_of.get(t) or _label(t),
                     "filterable_by_uuid": t in FILTERABLE_BY_UUID,
+                    "with_parts": t in WHOLE_RECORDS,
                 }
                 for t in ENTITY_TYPES
             ),

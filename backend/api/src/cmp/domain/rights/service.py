@@ -1069,7 +1069,28 @@ async def _scope_ids(conn: Conn, row: Row) -> list[int] | None:
     return await repo.consent_chain_ids(conn, int(row["consent_id"]))
 
 
-async def derive_holders(conn: Conn, row: Row, *, role: Role | str, actor_id: int) -> list[Row]:
+def finds_holders_at_start(before: str, row: Row) -> bool:
+    """Whether the platform reads the records for who holds her data by itself
+    (the product owner, 2026-11-13): as work begins on a request the office
+    has found valid - the move from received to in progress, which the state
+    machine allows only once identity is verified, the request is classified,
+    an office has it and, for an erasure, she has said she means erasure.
+
+    Not for a grievance, which asks no holder anything; and not for a request
+    with no person behind it, where there are no records to read and the
+    office adds holders by hand. Not on the way back from collating either:
+    the office is there for a reason of its own, and has the button."""
+    return (
+        before == Status.RECEIVED
+        and row["status"] == Status.IN_PROGRESS
+        and row["request_type"] != Kind.GRIEVANCE
+        and row.get("subject_user_id") is not None
+    )
+
+
+async def derive_holders(
+    conn: Conn, row: Row, *, role: Role | str, actor_id: int, automatic: bool = False
+) -> list[Row]:
     """Who holds her data, from the records. The DPO confirms.
 
     Two readings. The processors that hold it: an export that carried her
@@ -1083,7 +1104,11 @@ async def derive_holders(conn: Conn, row: Row, *, role: Role | str, actor_id: in
     confirms. A consent with nobody at all is not dropped: `unowned_consents`
     lists it for the office to place by hand.
 
-    A request confined to one consent names only the holders of data under it."""
+    A request confined to one consent names only the holders of data under it.
+
+    `automatic`: read by the platform as work began (`finds_holders_at_start`)
+    rather than by a press of "Find who holds the data"; the trail says which.
+    Either way the same reading, and reading again refreshes what was found."""
     _may_act(row, role)
     _open(row)
     if row["subject_user_id"] is None:
@@ -1175,6 +1200,8 @@ async def derive_holders(conn: Conn, row: Row, *, role: Role | str, actor_id: in
             "consents_without_owner": unowned,
             "added": added,
             "confined_to_consent": str(row["consent_uuid"]) if scope_ids is not None else None,
+            # Only when it was: a press of the button leaves the row as it was.
+            **({"automatic": True} if automatic else {}),
         },
     )
     return await repo.holders_of(conn, int(row["request_id"]))
@@ -1993,6 +2020,20 @@ async def _apply_respondent(conn: Conn, holder_id: int, processor_id: int) -> No
     respondents = await registry_repo.respondents_of(conn, processor_id)
     if respondents:
         await repo.update_holder(conn, holder_id, **_respondent_columns(respondents[0]))
+
+
+async def _responder_named(holder: Row) -> str:
+    """Who answers a ticket, in words, for a line written onto its thread.
+
+    `responder_name` is sealed at rest, and a thread line is sealed whole: the
+    name left as it is read put ciphertext inside the line, and the reader saw
+    "Reminder sent to SE::..." (found 2026-11-12, reading a ticket through the
+    relay). Opened here, the one place a sentence is about to be made of it.
+    """
+    name = await unseal_value(
+        "rights_request_holder", "responder_name", holder.get("responder_name")
+    )
+    return str(name or holder["label"])
 
 
 async def _ticket_address(holder: Row) -> str | None:
@@ -3002,7 +3043,7 @@ async def reassign_holder(
         body=(
             "The email address was corrected; the ticket has been sent again."
             if correction
-            else f"Sent to {fresh['responder_name']} "
+            else f"Sent to {await _responder_named(fresh)} "
             f"({'in the console' if fresh['channel'] == 'portal' else 'by email'}) "
             "instead; the ticket has been sent to them."
         ),
@@ -3120,7 +3161,7 @@ async def _send_reminder(
         int(ticket["holder_id"]),
         side="system",
         kind="status",
-        body=f"Reminder sent to {ticket.get('responder_name') or ticket['label']}: {stage}.",
+        body=f"Reminder sent to {await _responder_named(ticket)}: {stage}.",
     )
     await repo.update_holder(
         conn,

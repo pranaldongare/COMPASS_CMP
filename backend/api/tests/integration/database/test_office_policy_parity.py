@@ -60,6 +60,9 @@ CHILDREN = {
     "rights_ticket_message",
     "rights_response_file",
     "rights_request_attachment",
+    # A request's checks in DataVault, and what each listed (0070).
+    "datavault_check",
+    "datavault_check_asset",
     "breach_affected",
     "breach_affected_revision",
     "breach_assessment",

@@ -733,7 +733,12 @@ class TestTicketsFromTheHoldersSide:
             if isinstance(added.json(), list)
             else added.json().get("holders", [added.json()])
         )
-        huuid = next(h for h in holders if h.get("label") == "Our own team")["holder_uuid"]
+        # The processor may be a holder already: the platform reads the records
+        # as work begins (2026-11-13), and one processor is one holder, under
+        # the name the records gave it.
+        huuid = next(h for h in holders if h.get("processor_uuid") == world.processor_uuid)[
+            "holder_uuid"
+        ]
         rows = respondent.json() if isinstance(respondent.json(), list) else [respondent.json()]
         ours = next(r for r in rows if r.get("user_uuid") == team.uuid)
         await call(

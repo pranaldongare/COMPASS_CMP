@@ -10883,7 +10883,7 @@
           "consent"
         ],
         "summary": "All consents in scope",
-        "description": "Every current consent in scope. Status is derived, never stored:\nconsented (every purpose), partial (some), declined, withdrawn. Filtered\nby project, site, status, and when it was given (`from` and `to`,\nboth inclusive).",
+        "description": "Every current consent in scope. Status is derived, never stored:\nconsented (every purpose), partial (some), declined, withdrawn. Filtered\nby project, site, status, and when it was given (`from` and `to`,\nboth inclusive).\n\n`q` finds one data subject's records: three or more letters of the name,\nor a whole email address or mobile number. A name is sealed and is found\nby its parts, so a shorter term cannot be searched for and is refused\n(422) rather than answered with an empty list that would read as \"no such\nperson\".",
         "operationId": "list_all_consents_consents_get",
         "parameters": [
           {
@@ -10968,6 +10968,23 @@
                 }
               ],
               "title": "To"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
             }
           },
           {
@@ -14177,6 +14194,7 @@
           "rights"
         ],
         "summary": "Transition",
+        "description": "Move a request along its path; the state machine is the gate.\n\nStarting it - received to in progress, which needs identity verified, the\nrequest classified and an office holding it - also reads the records for\nwho holds the person's data, as `POST .../holders/derive` does, for an\naccess or erasure request with a person behind it. The holders found are\nnot confirmed: the office still does that.",
         "operationId": "transition_requests__request_uuid__transition_post",
         "parameters": [
           {
@@ -19509,6 +19527,197 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BreachSettingsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/datavault-connection": {
+      "get": {
+        "tags": [
+          "datavault"
+        ],
+        "summary": "Where DataVault is reached, and whether it is on",
+        "operationId": "get_connection_datavault_connection_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionOut"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "datavault"
+        ],
+        "summary": "Set DataVault's address, its key, and switch it on",
+        "operationId": "put_connection_datavault_connection_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{request_uuid}/datavault": {
+      "get": {
+        "tags": [
+          "datavault"
+        ],
+        "summary": "What DataVault last said it holds of this request's person",
+        "operationId": "request_datavault_requests__request_uuid__datavault_get",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestDataVaultOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{request_uuid}/datavault/check": {
+      "post": {
+        "tags": [
+          "datavault"
+        ],
+        "summary": "Check in DataVault: ask it now what it holds of this request's person",
+        "description": "One call to DataVault, made while the caller waits and recorded whether\nor not it is answered. No transaction is open during the call.",
+        "operationId": "check_in_datavault_requests__request_uuid__datavault_check_post",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestDataVaultOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tickets/{holder_uuid}/datavault": {
+      "get": {
+        "tags": [
+          "datavault"
+        ],
+        "summary": "On a DCO Admin's ticket: the assets DataVault listed for their project",
+        "description": "Bounded by the holder's own account, as every ticket route is: a ticket\naddressed to somebody else, or one that is not a project's DCO Admin's,\nanswers with nothing listed.",
+        "operationId": "ticket_datavault_tickets__holder_uuid__datavault_get",
+        "parameters": [
+          {
+            "name": "holder_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Holder Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketDataVaultOut"
                 }
               }
             }
@@ -28243,6 +28452,77 @@
         ],
         "title": "ChannelOut"
       },
+      "CheckOut": {
+        "properties": {
+          "check_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Check Uuid"
+          },
+          "asked_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Asked At"
+          },
+          "automatic": {
+            "type": "boolean",
+            "title": "Automatic"
+          },
+          "asked_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Asked By Name"
+          },
+          "outcome": {
+            "type": "string",
+            "title": "Outcome"
+          },
+          "failure": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure"
+          },
+          "failure_said": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Said"
+          },
+          "asset_count": {
+            "type": "integer",
+            "title": "Asset Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "check_uuid",
+          "asked_at",
+          "automatic",
+          "asked_by_name",
+          "outcome",
+          "failure",
+          "failure_said",
+          "asset_count"
+        ],
+        "title": "CheckOut"
+      },
       "Checklist": {
         "properties": {
           "publishable": {
@@ -28891,6 +29171,121 @@
         "additionalProperties": false,
         "type": "object",
         "title": "ConfirmHolderIn"
+      },
+      "ConnectionIn": {
+        "properties": {
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          },
+          "clear_api_key": {
+            "type": "boolean",
+            "title": "Clear Api Key",
+            "default": false
+          },
+          "api_key_header": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key Header"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ConnectionIn"
+      },
+      "ConnectionOut": {
+        "properties": {
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "api_key_set": {
+            "type": "boolean",
+            "title": "Api Key Set"
+          },
+          "api_key_header": {
+            "type": "string",
+            "title": "Api Key Header"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "base_url",
+          "api_key_set",
+          "api_key_header",
+          "enabled",
+          "updated_at",
+          "updated_by_name"
+        ],
+        "title": "ConnectionOut"
       },
       "ConsentArtefactOut": {
         "properties": {
@@ -30743,6 +31138,129 @@
           "version"
         ],
         "title": "Health"
+      },
+      "HeldAssetOut": {
+        "properties": {
+          "asset_ref": {
+            "type": "string",
+            "title": "Asset Ref"
+          },
+          "consent_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Ref"
+          },
+          "project_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Ref"
+          },
+          "consent_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Uuid"
+          },
+          "consent_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent No"
+          },
+          "project_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Uuid"
+          },
+          "project_no": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project No"
+          },
+          "project_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Name"
+          },
+          "mid": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mid"
+          },
+          "datapath": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Datapath"
+          }
+        },
+        "type": "object",
+        "required": [
+          "asset_ref",
+          "consent_ref",
+          "project_ref",
+          "consent_uuid",
+          "consent_no",
+          "project_uuid",
+          "project_no",
+          "project_name",
+          "mid",
+          "datapath"
+        ],
+        "title": "HeldAssetOut"
       },
       "HolderIn": {
         "properties": {
@@ -37482,6 +38000,66 @@
         ],
         "title": "ReopenIn"
       },
+      "RequestDataVaultOut": {
+        "properties": {
+          "configured": {
+            "type": "boolean",
+            "title": "Configured"
+          },
+          "may_check": {
+            "type": "boolean",
+            "title": "May Check"
+          },
+          "why_not": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Why Not"
+          },
+          "answer": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CheckOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/HeldAssetOut"
+            },
+            "type": "array",
+            "title": "Assets"
+          },
+          "last_failure": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CheckOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "configured",
+          "may_check",
+          "why_not",
+          "answer",
+          "assets",
+          "last_failure"
+        ],
+        "title": "RequestDataVaultOut"
+      },
       "RequestDetail": {
         "properties": {
           "request_uuid": {
@@ -41324,6 +41902,36 @@
         ],
         "title": "ThreadOut"
       },
+      "TicketDataVaultOut": {
+        "properties": {
+          "asked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Asked At"
+          },
+          "assets": {
+            "items": {
+              "$ref": "#/components/schemas/HeldAssetOut"
+            },
+            "type": "array",
+            "title": "Assets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "asked_at",
+          "assets"
+        ],
+        "title": "TicketDataVaultOut",
+        "description": "What DataVault listed for the project a DCO Admin's ticket is about.\n`asked_at` null: not such a ticket, or DataVault has not answered yet."
+      },
       "TicketDateIn": {
         "properties": {
           "due_at": {
@@ -43230,6 +43838,11 @@
           "filterable_by_uuid": {
             "type": "boolean",
             "title": "Filterable By Uuid"
+          },
+          "with_parts": {
+            "type": "boolean",
+            "title": "With Parts",
+            "default": false
           }
         },
         "type": "object",

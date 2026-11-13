@@ -91,6 +91,7 @@ celery_app.conf.update(
         "cmp.imports.*": {"queue": "documents"},
         "cmp.reports.*": {"queue": "reports"},
         "cmp.maintenance.*": {"queue": "default"},
+        "cmp.datavault.*": {"queue": "default"},
     },
     # --- Beat. Exactly one instance; two produce duplicate scheduled work.
     beat_schedule={
@@ -132,6 +133,7 @@ celery_app.autodiscover_tasks(
         "cmp.tasks.notifications",
         "cmp.tasks.maintenance",
         "cmp.tasks.exchange",
+        "cmp.tasks.datavault",
     ],
     force=True,
 )

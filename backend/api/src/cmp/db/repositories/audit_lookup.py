@@ -41,6 +41,7 @@ _KEYS: Final[dict[str, _Key]] = {
     "project_site": _Key("project_site", "site_id", "site_uuid"),
     "project_approval": _Key("project_approval", "approval_id", "approval_uuid"),
     "notice": _Key("notice", "notice_id", "notice_uuid"),
+    "notice_template": _Key("notice_template", "template_id", "template_uuid"),
     "consent_link": _Key("consent_link", "link_id", "link_uuid"),
     "consent_artefact": _Key("consent_artefact", "consent_id", "consent_uuid"),
     "import_batch": _Key("import_batch", "batch_id", "batch_uuid"),
@@ -48,6 +49,8 @@ _KEYS: Final[dict[str, _Key]] = {
     "export_log": _Key("export_log", "export_id", "export_uuid"),
     "delegation": _Key("delegation", "delegation_id", "delegation_uuid"),
     "rights_request": _Key("rights_request", "request_id", "request_uuid"),
+    # One holder's ticket on a request: its own trail, from the ticket (2026-11-12).
+    "rights_request_holder": _Key("rights_request_holder", "holder_id", "holder_uuid"),
     "nomination": _Key("nomination", "nomination_id", "nomination_uuid"),
     "breach": _Key("breach", "breach_id", "breach_uuid"),
     "breach_ticket": _Key("breach_ticket", "ticket_id", "ticket_uuid"),

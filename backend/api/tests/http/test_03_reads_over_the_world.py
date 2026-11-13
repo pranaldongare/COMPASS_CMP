@@ -225,6 +225,31 @@ class TestTheOfficeReadsConsents:
             params={"site": world.site_uuid, "to": "2000-01-01T00:00:00Z"},
         )
         assert none.json()["items"] == []
+        # By the data subject (2026-11-12): part of the name, or a whole
+        # contact; a name too short to search for is refused, not answered
+        # with nothing.
+        for term in ("Principal", world.principal_email, world.principal_mobile):
+            hers = await call(
+                http,
+                "GET",
+                "/consents",
+                session=world.dpo,
+                params={"q": term, "project": world.project_uuid},
+            )
+            assert hers.json()["items"], f"her consent is found by {term!r}"
+            assert {r["subject_uuid"] for r in hers.json()["items"]} == {world.principal.uuid}
+        nobody = await call(
+            http,
+            "GET",
+            "/consents",
+            session=world.dpo,
+            params={"q": "nobody.of.that.address@cmp.test", "project": world.project_uuid},
+        )
+        assert nobody.json()["items"] == []
+        short = await call(
+            http, "GET", "/consents", session=world.dpo, params={"q": "Pr"}, expect=422
+        )
+        assert short.json()["error"]["field"] == "q"
         await call(
             http, "GET", f"/consents/{c}", template="/consents/{consent_uuid}", session=world.dpo
         )

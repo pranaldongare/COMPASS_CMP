@@ -16,7 +16,7 @@ from pydantic import Field
 
 from cmp.api.dependencies import Paging, RequireResource, RequireRole, reject_unknown_filters
 from cmp.api.uploads import generated
-from cmp.core.errors import NotFound
+from cmp.core.errors import NotFound, ValidationFailed
 from cmp.core.pagination import PageRequest
 from cmp.core.permissions import Role
 from cmp.core.security import unseal_token
@@ -233,12 +233,23 @@ async def list_all_consents(
     site: Annotated[UUID | None, Query()] = None,
     date_from: Annotated[datetime | None, Query(alias="from")] = None,
     date_to: Annotated[datetime | None, Query(alias="to")] = None,
+    #: The data subject: part of the name, or a whole email or mobile.
+    q: Annotated[str | None, Query(max_length=255)] = None,
 ) -> dict[str, Any]:
     """Every current consent in scope. Status is derived, never stored:
     consented (every purpose), partial (some), declined, withdrawn. Filtered
     by project, site, status, and when it was given (`from` and `to`,
-    both inclusive)."""
-    reject_unknown_filters(request, {"status", "project", "site", "from", "to"})
+    both inclusive).
+
+    `q` finds one data subject's records: three or more letters of the name,
+    or a whole email address or mobile number. A name is sealed and is found
+    by its parts, so a shorter term cannot be searched for and is refused
+    (422) rather than answered with an empty list that would read as "no such
+    person"."""
+    reject_unknown_filters(request, {"status", "project", "site", "from", "to", "q"})
+    term = (q or "").strip()
+    if term and "@" not in term and not any(c.isdigit() for c in term) and len(term) < 3:
+        raise ValidationFailed("Enter three or more letters of the name", field="q")
     async with connection() as conn:
         items, cursor, total = await repo.list_all_consents(
             conn,
@@ -250,6 +261,7 @@ async def list_all_consents(
             site_uuid=str(site) if site else None,
             date_from=date_from,
             date_to=date_to,
+            person=term or None,
         )
     return {"items": items, "next_cursor": cursor, "total": total}
 

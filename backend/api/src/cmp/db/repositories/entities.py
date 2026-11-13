@@ -342,6 +342,13 @@ _SPECS: dict[str, _Spec] = {
         href=None,
         noun="Breach settings",
     ),
+    "datavault_connection": _Spec(
+        sql="""SELECT connection_id::int AS id, NULL::text AS uuid,
+                      'DataVault connection' AS label
+               FROM datavault_connection WHERE connection_id = ANY(%s)""",
+        href=None,
+        noun="DataVault connection",
+    ),
     "restricted_country": _Spec(
         sql="""SELECT country_id AS id, country_uuid::text AS uuid,
                       'Restricted country ' || country_code AS label

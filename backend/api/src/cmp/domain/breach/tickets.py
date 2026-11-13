@@ -165,7 +165,14 @@ async def _trail(
         entity_id=int(ticket["ticket_id"]),
         actor_user_id=actor_id,
         subject_user_id=int(ticket["holder_user_id"]),
-        detail={"ticket": str(ticket["ticket_uuid"]), **detail},
+        # The breach by its reference, as every row on the breach carries it:
+        # asked about the breach, the trail reads its tickets' rows too
+        # (`audit._PARTS`), and each then says which breach it is on.
+        detail={
+            "ticket": str(ticket["ticket_uuid"]),
+            **({"reference": ticket["breach_reference"]} if ticket.get("breach_reference") else {}),
+            **detail,
+        },
     )
 
 

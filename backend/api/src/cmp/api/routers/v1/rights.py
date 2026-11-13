@@ -1287,18 +1287,56 @@ async def assign_reviewer(
 async def transition(
     request_uuid: UUID, body: TransitionIn, principal: RightsWriter
 ) -> dict[str, Any]:
+    """Move a request along its path; the state machine is the gate.
+
+    Starting it - received to in progress, which needs identity verified, the
+    request classified and an office holding it - also reads the records for
+    who holds the person's data, as `POST .../holders/derive` does, for an
+    access or erasure request with a person behind it. The holders found are
+    not confirmed: the office still does that."""
     async with transaction() as conn:
         row = await _load(conn, request_uuid, principal)
-        return _with_clock(
-            await service.transition(
-                conn,
-                row,
-                to=body.to,
-                reason=body.reason,
-                role=principal.role,
-                actor_id=principal.user_id,
-            )
+        before = str(row["status"])
+        moved = await service.transition(
+            conn,
+            row,
+            to=body.to,
+            reason=body.reason,
+            role=principal.role,
+            actor_id=principal.user_id,
         )
+    # Work has begun on a request the office found valid: the platform finds
+    # who holds her data by itself (2026-11-13). After the commit and apart
+    # from it, so the move stands whatever becomes of the reading.
+    return _with_clock(await _holders_at_start(before, moved, principal))
+
+
+async def _holders_at_start(before: str, row: dict[str, Any], principal: Any) -> dict[str, Any]:
+    """What "Find who holds the data" does, done as the request starts
+    (`service.finds_holders_at_start`), in a transaction of its own. It can
+    fail nothing: a reading that could not be made leaves the request started
+    and the button where it was. The request as it then stands is returned, so
+    the answer carries the holders found."""
+    if not service.finds_holders_at_start(before, row):
+        return row
+    try:
+        async with transaction() as conn:
+            holders = await service.derive_holders(
+                conn, row, role=principal.role, actor_id=principal.user_id, automatic=True
+            )
+            found = await service.reload(conn, row)
+    except Exception as failed:
+        from cmp.core.logging import get_logger
+
+        get_logger("cmp.api.rights").warning(
+            "rights.holders_not_found_at_start",
+            reference=row.get("reference"),
+            error=type(failed).__name__,
+        )
+        return row
+    # A DCO Admin among them: DataVault is asked too, as after the button.
+    await _datavault_after_holders(found, holders)
+    return found
 
 
 # ------------------------------------------------------------ staff: holders
@@ -1313,8 +1351,29 @@ async def transition(
 async def derive_holders(request_uuid: UUID, principal: RightsWriter) -> list[dict[str, Any]]:
     async with transaction() as conn:
         row = await _load(conn, request_uuid, principal)
-        return await service.derive_holders(
+        holders = await service.derive_holders(
             conn, row, role=principal.role, actor_id=principal.user_id
+        )
+    # A DCO Admin among them: the platform asks DataVault by itself (0070).
+    # After the commit and apart from it, so nothing here can undo the above.
+    await _datavault_after_holders(row, holders)
+    return holders
+
+
+async def _datavault_after_holders(row: dict[str, Any], holders: list[dict[str, Any]]) -> None:
+    try:
+        from cmp.domain.datavault import checks
+        from cmp.tasks.datavault import check_request
+        from cmp.tasks.dispatch import dispatch_optional
+
+        async with connection() as conn:
+            if await checks.wanted_automatically(conn, row, holders):
+                dispatch_optional(check_request, int(row["request_id"]))
+    except Exception:
+        from cmp.core.logging import get_logger
+
+        get_logger("cmp.api.rights").warning(
+            "datavault.automatic_check_not_queued", reference=row.get("reference")
         )
 
 
