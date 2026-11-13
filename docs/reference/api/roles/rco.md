@@ -17,6 +17,7 @@ Navigation returned after sign-in: `dashboard`, `projects`, `sites`, `sources`, 
 | `collection` | Yes | No | `scoped` | Assigned project/organisational rows |
 | `consent` | Yes | No | `scoped` | Assigned project/organisational rows |
 | `data_source` | Yes | Yes | `all` | All rows |
+| `datavault_connection` | No | No | `none` | Denied |
 | `export` | Yes | Yes | `scoped` | Assigned project/organisational rows |
 | `hr_category` | No | No | `none` | Denied |
 | `import` | Yes | Yes | `scoped` | Assigned project/organisational rows |

@@ -54,9 +54,9 @@ member of staff who acted.
 
 ## Where it lives: the database
 
-76 objects - 74 application tables, `alembic_version` and the view
+79 objects - 77 application tables, `alembic_version` and the view
 `v_current_consent` - of which **42 tables and the view carry personal data**
-and 33 tables do not ([the generated list](pii-fields-and-endpoints.md)).
+and 36 tables do not ([the generated list](pii-fields-and-endpoints.md)).
 Each table below lists only its personal-data columns; the full column list, with types,
 defaults, constraints and triggers, is in
 [docs/reference/database/table_reference.md](../reference/database/table_reference.md).
@@ -176,6 +176,12 @@ rights the nominee may exercise), with `nominee_email_hash`,
 `nominee_mobile_hash` and `nominee_name_ngrams` - keyed hashes of the sealed
 contact and name, for finding the nomination. A nominee is a second living person on the
 row.
+
+**DataVault checks (0070).** `datavault_check` and `datavault_check_asset`
+hold no name or contact, but each row belongs to a rights request and so to a
+person: DataVault's asset identifier, the consent and project it named, its
+`mid` and its `datapath`. They go when the request does. `datavault_connection`
+holds the address and the encrypted key, and nothing about anybody.
 
 ### Collection and disclosure
 
@@ -415,7 +421,7 @@ JavaScript cannot read.
 
 ## The API, endpoint by endpoint
 
-289 of 401 operations accept or return personal data. Each table gives the
+294 of 406 operations accept or return personal data. Each table gives the
 fields by name, so "which call would expose a mobile number" is a search rather
 than a reading.
 
@@ -880,6 +886,18 @@ selected.
 |---|---|---|---|---|
 | POST | `/breach-tickets/{ticket_uuid}/colleagues` | DPO own rows, Admin own rows, DCO own rows, DCO Admin own rows, RCO own rows, R&D own rows, Temporary holder own rows, Legal PoC own rows, HR PoC own rows | `email`, `full_name`, `mobile` | `author_name`, `body`, `evidence_hash`, `evidence_name`, `instruction` |
 
+### DataVault: the connection, and what it holds of a request's person
+
+5 operations carry personal data.
+
+| Method | Endpoint | Who may call it | Personal data in | Personal data out |
+|---|---|---|---|---|
+| GET | `/datavault-connection` | Admin every row | — | `updated_by_name` |
+| PUT | `/datavault-connection` | Admin every row | — | `updated_by_name` |
+| GET | `/requests/{request_uuid}/datavault` | DPO every row, Admin rows in scope, Legal PoC every row | — | `asked_by_name`, `consent_no`, `consent_uuid` |
+| POST | `/requests/{request_uuid}/datavault/check` | DPO every row, Admin rows in scope, Legal PoC every row | — | `asked_by_name`, `consent_no`, `consent_uuid` |
+| GET | `/tickets/{holder_uuid}/datavault` | any signed-in session, own record | — | `consent_no`, `consent_uuid` |
+
 ### Public_information
 
 9 operations carry personal data.
@@ -896,7 +914,7 @@ selected.
 | GET | `/holder-tickets/{token}/ticket` | **public** — the request carries its own credential (password, link token, one-time code) | `token` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | POST | `/holder-tickets/{token}/verify` | **public** — the request carries its own credential (password, link token, one-time code) | `code`, `token` | — |
 
-<!-- 289 of 401 operations carry personal data; 35 of them need no session. -->
+<!-- 294 of 406 operations carry personal data; 35 of them need no session. -->
 
 ## The public surface
 

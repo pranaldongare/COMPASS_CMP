@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict OH6n2SXoV5cmm66XenU7PNTNK3n0TPHTDmGXH3U8gFRJiih2sWEWr2ENsfpG4Q8
+\restrict naDbUe2VGOds25TK9tQzFiNlHOqiqSr2SeZQYIjiU5OsVN7kquCp3Abk72vUw5c
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -3848,6 +3848,215 @@ ALTER SEQUENCE public.data_source_source_id_seq OWNED BY public.data_source.sour
 
 
 --
+-- Name: datavault_check; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.datavault_check (
+    check_id integer NOT NULL,
+    check_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    request_id integer NOT NULL,
+    asked_by integer,
+    asked_at timestamp with time zone DEFAULT now() NOT NULL,
+    outcome text NOT NULL,
+    failure text,
+    asset_count integer DEFAULT 0 NOT NULL,
+    CONSTRAINT datavault_check_failure_whole CHECK (((outcome = 'failed'::text) = (failure IS NOT NULL))),
+    CONSTRAINT datavault_check_outcome CHECK ((outcome = ANY (ARRAY['answered'::text, 'failed'::text])))
+);
+
+ALTER TABLE ONLY public.datavault_check FORCE ROW LEVEL SECURITY;
+
+
+--
+-- Name: TABLE datavault_check; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.datavault_check IS 'One call to DataVault for a rights request: what it holds of the person';
+
+
+--
+-- Name: COLUMN datavault_check.asked_by; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_check.asked_by IS 'Who pressed Check in DataVault; NULL: the platform, when holders were found';
+
+
+--
+-- Name: COLUMN datavault_check.failure; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_check.failure IS 'Why it was not answered, as a short code (timeout, status_503, unreadable); never a body';
+
+
+--
+-- Name: datavault_check_asset; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.datavault_check_asset (
+    row_id integer NOT NULL,
+    check_id integer NOT NULL,
+    "position" integer NOT NULL,
+    asset_ref text NOT NULL,
+    consent_ref text,
+    project_ref text,
+    consent_id integer,
+    project_id integer,
+    mid text,
+    datapath text
+);
+
+ALTER TABLE ONLY public.datavault_check_asset FORCE ROW LEVEL SECURITY;
+
+
+--
+-- Name: TABLE datavault_check_asset; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.datavault_check_asset IS 'An asset DataVault listed in answer to a check';
+
+
+--
+-- Name: COLUMN datavault_check_asset.asset_ref; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_check_asset.asset_ref IS 'DataVault''s own identifier for the asset';
+
+
+--
+-- Name: COLUMN datavault_check_asset.consent_ref; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_check_asset.consent_ref IS 'The consent as DataVault named it';
+
+
+--
+-- Name: COLUMN datavault_check_asset.project_ref; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_check_asset.project_ref IS 'The project as DataVault named it';
+
+
+--
+-- Name: COLUMN datavault_check_asset.consent_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_check_asset.consent_id IS 'Our consent, where what DataVault named is one of this person''s; NULL otherwise';
+
+
+--
+-- Name: COLUMN datavault_check_asset.project_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_check_asset.project_id IS 'Our project, where what DataVault named is one; NULL otherwise';
+
+
+--
+-- Name: COLUMN datavault_check_asset.mid; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_check_asset.mid IS 'DataVault''s mid for the asset, as sent';
+
+
+--
+-- Name: COLUMN datavault_check_asset.datapath; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_check_asset.datapath IS 'Where DataVault keeps the asset, as sent';
+
+
+--
+-- Name: datavault_check_asset_row_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.datavault_check_asset_row_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: datavault_check_asset_row_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.datavault_check_asset_row_id_seq OWNED BY public.datavault_check_asset.row_id;
+
+
+--
+-- Name: datavault_check_check_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.datavault_check_check_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: datavault_check_check_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.datavault_check_check_id_seq OWNED BY public.datavault_check.check_id;
+
+
+--
+-- Name: datavault_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.datavault_connection (
+    connection_id smallint DEFAULT 1 NOT NULL,
+    base_url text,
+    api_key_sealed bytea,
+    api_key_header text DEFAULT 'X-API-Key'::text NOT NULL,
+    enabled boolean DEFAULT false NOT NULL,
+    updated_by integer,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT datavault_connection_enabled_has_url CHECK (((NOT enabled) OR (base_url IS NOT NULL))),
+    CONSTRAINT datavault_connection_one_row CHECK ((connection_id = 1))
+);
+
+
+--
+-- Name: TABLE datavault_connection; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.datavault_connection IS 'One row: where DataVault is reached and with what key; kept by the administrator';
+
+
+--
+-- Name: COLUMN datavault_connection.base_url; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_connection.base_url IS 'The address the lookup is appended to; NULL: not set up';
+
+
+--
+-- Name: COLUMN datavault_connection.api_key_sealed; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_connection.api_key_sealed IS 'The key DataVault asks for, encrypted with the application key; never served';
+
+
+--
+-- Name: COLUMN datavault_connection.api_key_header; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_connection.api_key_header IS 'The header the key is sent in';
+
+
+--
+-- Name: COLUMN datavault_connection.enabled; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_connection.enabled IS 'Whether the platform may call DataVault at all';
+
+
+--
 -- Name: delegation; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -6301,6 +6510,20 @@ ALTER TABLE ONLY public.data_source ALTER COLUMN source_code SET DEFAULT ('SRC-'
 
 
 --
+-- Name: datavault_check check_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_check ALTER COLUMN check_id SET DEFAULT nextval('public.datavault_check_check_id_seq'::regclass);
+
+
+--
+-- Name: datavault_check_asset row_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_check_asset ALTER COLUMN row_id SET DEFAULT nextval('public.datavault_check_asset_row_id_seq'::regclass);
+
+
+--
 -- Name: delegation delegation_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7266,6 +7489,38 @@ ALTER TABLE ONLY public.data_source
 
 ALTER TABLE ONLY public.data_source
     ADD CONSTRAINT data_source_source_uuid_key UNIQUE (source_uuid);
+
+
+--
+-- Name: datavault_check_asset datavault_check_asset_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_check_asset
+    ADD CONSTRAINT datavault_check_asset_pkey PRIMARY KEY (row_id);
+
+
+--
+-- Name: datavault_check datavault_check_check_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_check
+    ADD CONSTRAINT datavault_check_check_uuid_key UNIQUE (check_uuid);
+
+
+--
+-- Name: datavault_check datavault_check_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_check
+    ADD CONSTRAINT datavault_check_pkey PRIMARY KEY (check_id);
+
+
+--
+-- Name: datavault_connection datavault_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_connection
+    ADD CONSTRAINT datavault_connection_pkey PRIMARY KEY (connection_id);
 
 
 --
@@ -8277,6 +8532,20 @@ CREATE INDEX idx_collection_project ON public.collection USING btree (project_id
 --
 
 CREATE INDEX idx_consent_link_office ON public.consent_link USING btree (office_id);
+
+
+--
+-- Name: idx_datavault_check_asset_check; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_datavault_check_asset_check ON public.datavault_check_asset USING btree (check_id, "position");
+
+
+--
+-- Name: idx_datavault_check_request; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_datavault_check_request ON public.datavault_check USING btree (request_id, check_id DESC);
 
 
 --
@@ -10213,6 +10482,54 @@ ALTER TABLE ONLY public.data_source
 
 
 --
+-- Name: datavault_check datavault_check_asked_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_check
+    ADD CONSTRAINT datavault_check_asked_by_fkey FOREIGN KEY (asked_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: datavault_check_asset datavault_check_asset_check_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_check_asset
+    ADD CONSTRAINT datavault_check_asset_check_id_fkey FOREIGN KEY (check_id) REFERENCES public.datavault_check(check_id) ON DELETE CASCADE;
+
+
+--
+-- Name: datavault_check_asset datavault_check_asset_consent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_check_asset
+    ADD CONSTRAINT datavault_check_asset_consent_id_fkey FOREIGN KEY (consent_id) REFERENCES public.consent_artefact(consent_id);
+
+
+--
+-- Name: datavault_check_asset datavault_check_asset_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_check_asset
+    ADD CONSTRAINT datavault_check_asset_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(project_id);
+
+
+--
+-- Name: datavault_check datavault_check_request_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_check
+    ADD CONSTRAINT datavault_check_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.rights_request(request_id) ON DELETE CASCADE;
+
+
+--
+-- Name: datavault_connection datavault_connection_updated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_connection
+    ADD CONSTRAINT datavault_connection_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES public.auth_user(id);
+
+
+--
 -- Name: delegation delegation_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11357,6 +11674,18 @@ ALTER TABLE public.consent_purpose_grant ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.data_asset ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: datavault_check; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.datavault_check ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: datavault_check_asset; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.datavault_check_asset ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: export_line; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -11734,6 +12063,28 @@ CREATE POLICY office_isolation ON public.data_asset USING (((current_setting('ap
   WHERE (p.collection_id = data_asset.collection_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
    FROM public.collection p
   WHERE (p.collection_id = data_asset.collection_id)))));
+
+
+--
+-- Name: datavault_check office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.datavault_check USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.rights_request p
+  WHERE (p.request_id = datavault_check.request_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.rights_request p
+  WHERE (p.request_id = datavault_check.request_id)))));
+
+
+--
+-- Name: datavault_check_asset office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.datavault_check_asset USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.datavault_check p
+  WHERE (p.check_id = datavault_check_asset.check_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.datavault_check p
+  WHERE (p.check_id = datavault_check_asset.check_id)))));
 
 
 --
@@ -12148,5 +12499,5 @@ ALTER TABLE public.template_version_purpose ENABLE ROW LEVEL SECURITY;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict OH6n2SXoV5cmm66XenU7PNTNK3n0TPHTDmGXH3U8gFRJiih2sWEWr2ENsfpG4Q8
+\unrestrict naDbUe2VGOds25TK9tQzFiNlHOqiqSr2SeZQYIjiU5OsVN7kquCp3Abk72vUw5c
 

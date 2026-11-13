@@ -17,6 +17,7 @@ Navigation returned after sign-in: `dashboard`, `projects`, `approvals`, `notice
 | `collection` | Yes | No | `all` | All rows |
 | `consent` | Yes | No | `all` | All rows |
 | `data_source` | Yes | Yes | `all` | All rows |
+| `datavault_connection` | No | No | `none` | Denied |
 | `export` | Yes | Yes | `all` | All rows |
 | `hr_category` | No | No | `none` | Denied |
 | `import` | Yes | Yes | `all` | All rows |

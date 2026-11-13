@@ -17,6 +17,7 @@ Navigation returned after sign-in: `dashboard`, `requests`, `breaches`, `breach-
 | `collection` | No | No | `none` | Denied |
 | `consent` | Yes | No | `all` | All rows |
 | `data_source` | No | No | `none` | Denied |
+| `datavault_connection` | No | No | `none` | Denied |
 | `export` | Yes | Yes | `all` | All rows |
 | `hr_category` | Yes | Yes | `all` | All rows |
 | `import` | No | No | `none` | Denied |

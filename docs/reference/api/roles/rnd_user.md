@@ -17,6 +17,7 @@ Navigation returned after sign-in: `dashboard`, `projects`, `notices`, `processo
 | `collection` | Yes | No | `own` | Own or addressed rows |
 | `consent` | Yes | No | `own` | Own or addressed rows |
 | `data_source` | Yes | No | `all` | All rows |
+| `datavault_connection` | No | No | `none` | Denied |
 | `export` | No | No | `none` | Denied |
 | `hr_category` | No | No | `none` | Denied |
 | `import` | Yes | No | `own` | Own or addressed rows |

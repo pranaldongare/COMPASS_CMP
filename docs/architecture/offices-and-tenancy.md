@@ -36,8 +36,9 @@ through `notice_template`; `project_site`, `project_processor`, `project_approva
 `data_asset` through `collection` and `asset_consent` through `data_asset`
 (half its rows name no consent, so not through the link); `rights_request_holder`,
 `rights_request_item`, `rights_item_execution`, `rights_ticket_message`,
-`rights_response_file`, `rights_request_attachment` through
-`rights_request`; every `breach_*` table through `breach`, but for those
+`rights_response_file`, `rights_request_attachment` and `datavault_check`
+(0070) through `rights_request`, and `datavault_check_asset` through
+`datavault_check`; every `breach_*` table through `breach`, but for those
 named below (0059 adds `breach_report` through `breach`, and
 `breach_report_section` and `breach_report_delivery` through `breach_report`;
 0064 adds `breach_report_addressee`, who each version went to, through

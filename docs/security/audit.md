@@ -115,6 +115,19 @@ Credentials, one-time codes, consent link tokens, and the contents of a data
 asset. The trail says *what was done to which record by whom*, not what the
 record contained.
 
+**A record is read with its parts** (2026-11-12). The trail names the table a
+row was written against, so a breach's tickets, a request's holders and a
+project's sites are entity types of their own. Filtered to one breach, rights
+request or project (`entity_type` with `entity` or `entity_id`), the list, the
+summary and the export also read the rows of what belongs to it
+(`db/repositories/audit.py`, `_PARTS`): a breach's tickets and the public
+report it began as; a request's holders, items and nomination; a project's
+status history, approvals, sites, links, notices, exports and imports. Left
+out on purpose: `breach_notice.delivered` (one row per person told), a
+project's consents, and `link.opened`. The type alone is still the table
+alone, and a ticket's own trail (`breach_ticket`, `rights_request_holder`) is
+only the ticket's. `GET /audit/vocabulary` marks these types `with_parts`.
+
 And, since 21 September 2026, **nothing a person could ask to have erased**
 ([ADR 0015](../decisions/0015-nothing-erasable-in-a-trail-nobody-can-erase.md)).
 The trail can never be edited, so anything personal written into it would

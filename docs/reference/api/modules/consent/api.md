@@ -117,6 +117,12 @@ consented (every purpose), partial (some), declined, withdrawn. Filtered
 by project, site, status, and when it was given (`from` and `to`,
 both inclusive).
 
+`q` finds one data subject's records: three or more letters of the name,
+or a whole email address or mobile number. A name is sealed and is found
+by its parts, so a shorter term cannot be searched for and is refused
+(422) rather than answered with an empty list that would read as "no such
+person".
+
 ### Validation
 
 | Parameter | Location | Required | Type | Constraints | Description |
@@ -126,6 +132,7 @@ both inclusive).
 | `site` | query | No | `string` or `null` | format: `uuid` | — |
 | `from` | query | No | `string` or `null` | format: `date-time` | — |
 | `to` | query | No | `string` or `null` | format: `date-time` | — |
+| `q` | query | No | `string` or `null` | max length: `255` | — |
 | `limit` | query | No | `integer` or `null` | minimum: `1`; maximum: `200` | — |
 | `cursor` | query | No | `string` or `null` | max length: `512` | — |
 | `sort` | query | No | `string` or `null` | max length: `64` | — |

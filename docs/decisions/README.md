@@ -43,6 +43,7 @@ one stays and points forward.
 | [0034](0034-an-employee-link-signs-in-through-the-organisations-sso.md) | An employee consent link signs in through the organisation's SSO, and the account is matched on the employee ID | proposed 2026-10-27 |
 | [0035](0035-a-public-request-reaches-the-inside-only-when-the-inside-collects-it.md) | A public request reaches the inside only when the inside collects it from a queue, sealed | proposed 2026-10-23 |
 | [0037](0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md) | A public report waits apart, the organisation's board is told on a yes by the platform's mail, and a regulator's duty completes only with proof | accepted; amended 2026-11-07 (a CERT-In mark set aside, and the review), and again 2026-11-07 (the product owner's six answers: who a report goes to, CERT-In at any time, what a yes finds done, a dismissed reporter's rights, a report to CERT-In held for a yes); corrected 2026-11-08 (the review of that build, its second review: an email counts once a code to it came back, and its third: a nomination stamps only an account it makes, a report's mail says why the *yes* withheld it) |
+| [0038](0038-datavault-is-asked-by-the-platform-at-an-address-the-administrator-sets.md) | DataVault is asked by the platform, at an address the administrator sets | accepted |
 
 ## Writing one
 

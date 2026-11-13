@@ -17,6 +17,7 @@ Navigation returned after sign-in: `tickets`, `notifications`, `profile`.
 | `collection` | No | No | `none` | Denied |
 | `consent` | No | No | `none` | Denied |
 | `data_source` | No | No | `none` | Denied |
+| `datavault_connection` | No | No | `none` | Denied |
 | `export` | No | No | `none` | Denied |
 | `hr_category` | No | No | `none` | Denied |
 | `import` | No | No | `none` | Denied |

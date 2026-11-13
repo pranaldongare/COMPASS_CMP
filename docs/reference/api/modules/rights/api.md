@@ -2731,6 +2731,14 @@ Request body required: **yes**.
 - **Operation ID:** `transition_requests__request_uuid__transition_post`
 - **Access:** Role-controlled `rights` operation. See [`../../roles/README.md`](../../roles/README.md).
 
+Move a request along its path; the state machine is the gate.
+
+Starting it - received to in progress, which needs identity verified, the
+request classified and an office holding it - also reads the records for
+who holds the person's data, as `POST .../holders/derive` does, for an
+access or erasure request with a person behind it. The holders found are
+not confirmed: the office still does that.
+
 ### Validation
 
 | Parameter | Location | Required | Type | Constraints | Description |

@@ -170,6 +170,18 @@ Roles refer to the **effective session role**. A staff account signed in through
 | GET | `/notifications` | NO | COND | COND | COND | COND | COND | COND | COND | COND | COND | COND |
 | POST | `/notifications/{log_uuid}/resend` | NO | COND | NO | COND | NO | NO | NO | NO | NO | NO | NO |
 
+## DataVault
+
+[Conditions and source evidence](modules/datavault.md)
+
+| Method | Endpoint | Anonymous | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| GET | `/datavault-connection` | NO | NO | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
+| PUT | `/datavault-connection` | NO | NO | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
+| GET | `/requests/{request_uuid}/datavault` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
+| POST | `/requests/{request_uuid}/datavault/check` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
+| GET | `/tickets/{holder_uuid}/datavault` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | NO | NO |
+
 ## Delegations
 
 [Conditions and source evidence](modules/delegations.md)

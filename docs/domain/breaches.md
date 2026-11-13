@@ -89,10 +89,58 @@ are sent), **People & notices** (the people affected and what they are told),
 **Tickets**, **Assessment**, **Attachments** and **Activity** (every close and
 reopening, with its reason). A tab's count says how much is there; **Duties**
 turns red when a duty is late and **Tickets** when one is past its resolve-by
-date, whichever tab is open. Until it is validated, a prompt above the tabs
-leads to Validation. The address names the tab (`#tickets`, `#people`,
+date, whichever tab is open. The address names the tab (`#tickets`, `#people`,
 `#reports`), so the bell's links and older addresses such as `#notices` open the
 right one.
+
+**The next step** (2026-11-13, the product owner: "we have this in Rights,
+good to have it in Breach as well"). Above everything but the header, a bar
+names the one step to take next, with its clock, the button that takes it or
+the tab it is taken on, and what else is due beside it. It is the bar a rights
+request has, and it replaces the prompt that led to Validation. The page said
+what stood in the way of closing and each duty's clock, and left the reader to
+choose among them. The console chooses, from the same answers the cards draw
+(`features/breach/components/next-bar.tsx`); the server is asked nothing new
+and decides everything it decided before. The order:
+
+1. **Record the validation**, on an incident not yet recorded as a breach: a
+   yes is what starts the duties. CERT-In stands on its own test, so if its
+   clock is already running it is named beside this step.
+2. **A duty the office can act on**, in the order the work runs: the
+   organisation's board and CERT-In first, whichever of the two runs out
+   sooner; then the first intimation to the DPDP Board; then the people
+   affected; and last the 72-hour report, which accounts for the rest. A clock
+   that has run out does not jump this order - a late 72-hour report is not
+   written before the intimation it follows - and is said beside its duty
+   ("Also due: ... (overdue by 1 d 19 h)"). Each duty is walked along its own
+   path: a regulator's report is drafted, finalised, then *sent by the office
+   and recorded as sent* (with the proof of approval, the mail sent and the
+   reference returned); the people are listed, the notice drafted, approved
+   and sent; the board's report offers **Notify Organization Board** from the
+   bar itself, and a report being written from there stays open when the step
+   moves on. Two states of the notice need a send that nothing else supplies,
+   and the bar asks for it: deliveries still queued after a quarter of an
+   hour, which were lost before they went (`STALE_AFTER`); and everybody told
+   while the duty still stands, which is a yes bringing the duty back after a
+   no - no delivery completes it then. The second is said only once the breach
+   has been read again, since the worker completes the duty in the same write
+   as the last delivery's outcome.
+3. **Record the validation** again, where a recorded breach is being
+   validated anew: a pending validation changes no duty, so those are taken
+   first - each saying that the validation follows it - and the question is
+   settled before the record can close.
+4. **A ticket's answer to review.**
+5. **What is only waited for**: the board's mail on its way, the notice going
+   out, a ticket with its holder. The bar says what it waits on. Of a notice
+   it says how many people every delivery has been *tried* for - a delivery
+   that failed after its retries has had its outcome too, and the duty
+   completes on outcomes, not on anybody being reached.
+6. **Ready to close**, once the server allows it, with the same question the
+   Close card asks, and a word about a closure report left unwritten or
+   unfinished.
+
+A closed breach has no next step. The assessment is not one either: nothing
+waits on it.
 
 ## Logging an incident
 
@@ -1014,6 +1062,12 @@ breach's page.
   holder* and *Answered - review* to the office, *To answer* and *Answered -
   with the Privacy Office* to the holder.
 
+- **On the breach's trail** (2026-11-12). A ticket's rows are written against
+  the ticket, and each carries the breach's reference; the breach's audit
+  trail reads them with its own ([audit.md](../security/audit.md)), so a
+  ticket assigned, answered, sent back or re-dated is found from the breach.
+  The **Audit trail** button in the ticket's window shows the ticket alone.
+
 | From | Event | To | Who |
 |---|---|---|---|
 | (assignment) | | issued | officer |
@@ -1134,7 +1188,7 @@ Every change writes an audit row against `breach`: `breach.recorded` (an
 incident logged - the key predates the incident-first order), `.determined`,
 `.confirmed` (recorded as a breach, with its BR), `.assessed`, `.cert_in_marked`, `.cert_in_set_aside` (that a reason was given), `.obligation_created`,
 `.obligation_completed`, `.obligation_not_applicable`,
-`.obligation_reinstated`, `.obligation_extended`, `.affected_revised` (with the counts, and nobody's name or id), `.affected_uploaded` (a list taken: its kind and counts), `.obligation_reopened`, `.notice_drafted`, `.notice_edited`, `.notice_approved`, `.notice_sent` (with counts), `.closed`, `.reopened`, `.attachment_added` (the kind, never the name), `.attachment_read`, `.report_drafted`, `.report_edited`, `.report_finalised` (how many addresses were mailed, whether it is held, how many were added for that report and how many on the list were left out), `.report_resent` (how many it queued, how many of them for the first time and how many again, and only if it queued any), `.report_released` (a report to CERT-In held for the first *yes* and sent then: how many queued, how many left out because taken off the list), `.report_withheld` (the same report not sent at that *yes*: `why` is `cert_in_set_aside`, CERT-In being set aside then, or `nobody_on_the_list`, everybody it was chosen for having been taken off the list since, with how many were left out), `.report_proof_added`, `.report_filed`, `.report_read` (each with the kind and the version). `.obligation_completed` says which duty, whether late, and `by` - `delivery`, `earlier_mail`, `try_again` (a person's press, who is the actor), `filing` or `filed_report` - with the report's version where a report did it, and for the board how many were reached; never whom. A report from the public link is against `incident_report`: `incident_report.received`, `.claimed` (with the office), `.dismissed` (that a reason was given), `.reporter_erased` (its reporter's name and email blanked under a rights request: the request's reference and the INC, never a name or an address; it carries the request's office, not the report's, so it is on that office's trail and the person's own when they have an account, and never on the other office's). A change under Breach settings is `breach_settings.changed`, with what changed - an address added or removed, made mandatory or optional again - and the entry's uuid, never naming an address. A breach ticket's events are against `breach_ticket`, with the holder as subject: `breach_ticket.assigned`, `.message`, `.returned` (with the outcome), `.sent_back`, `.closed`, `.withdrawn`, `.reopened`, `.date_changed` (with the two dates), `.file_read`, `.colleague_added` (with the adder's ticket's uuid); the administrator's trail names them by the breach reference only. A breach-only login's grant and end are against the account: `user.temporary_access_granted` and `user.temporary_access_ended`, with the breach reference and the cause, never a name or an address. Each person whose account a notice is written to gets `breach_notice.delivered` against her, naming the breach reference (the BR) and the version: that is her portal's notification, and the only breach event she is shown. The
+`.obligation_reinstated`, `.obligation_extended`, `.affected_revised` (with the counts, and nobody's name or id), `.affected_uploaded` (a list taken: its kind and counts), `.obligation_reopened`, `.notice_drafted`, `.notice_edited`, `.notice_approved`, `.notice_sent` (with counts), `.closed`, `.reopened`, `.attachment_added` (the kind, never the name), `.attachment_read`, `.report_drafted`, `.report_edited`, `.report_finalised` (how many addresses were mailed, whether it is held, how many were added for that report and how many on the list were left out), `.report_resent` (how many it queued, how many of them for the first time and how many again, and only if it queued any), `.report_released` (a report to CERT-In held for the first *yes* and sent then: how many queued, how many left out because taken off the list), `.report_withheld` (the same report not sent at that *yes*: `why` is `cert_in_set_aside`, CERT-In being set aside then, or `nobody_on_the_list`, everybody it was chosen for having been taken off the list since, with how many were left out), `.report_proof_added`, `.report_filed`, `.report_read` (each with the kind and the version). `.obligation_completed` says which duty, whether late, and `by` - `delivery`, `earlier_mail`, `try_again` (a person's press, who is the actor), `filing` or `filed_report` - with the report's version where a report did it, and for the board how many were reached; never whom. A report from the public link is against `incident_report`: `incident_report.received`, `.claimed` (with the office), `.dismissed` (that a reason was given), `.reporter_erased` (its reporter's name and email blanked under a rights request: the request's reference and the INC, never a name or an address; it carries the request's office, not the report's, so it is on that office's trail and the person's own when they have an account, and never on the other office's). A change under Breach settings is `breach_settings.changed`, with what changed - an address added or removed, made mandatory or optional again - and the entry's uuid, never naming an address. A breach ticket's events are against `breach_ticket`, with the holder as subject: `breach_ticket.assigned`, `.message`, `.returned` (with the outcome), `.sent_back`, `.closed`, `.withdrawn`, `.reopened`, `.date_changed` (with the two dates), `.file_read`, `.colleague_added` (with the adder's ticket's uuid); the administrator's trail names them by the breach reference only. A breach-only login's grant and end are against the account: `user.temporary_access_granted` and `user.temporary_access_ended`, with the breach reference and the cause, never a name or an address. Each person whose account a notice is written to gets `breach_notice.delivered` against her, naming the breach reference (the BR) and the version: that is her portal's notification, and the only breach event she is shown. The Since 2026-11-12 each mail of a report leaves `.report_delivered` or `.report_failed` when it goes or fails: the worker's entry, with the report's kind and version, the attempt, the list entry's uuid (`recipient`) and, on a failure, the error's class - never the address.
 detail carries the reference, the outcome, which duty, a due time and that a
 reason was given - never the office's words, which are sealed on their rows
 ([ADR 0015](../decisions/0015-nothing-erasable-in-a-trail-nobody-can-erase.md)).

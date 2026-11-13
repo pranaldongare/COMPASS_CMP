@@ -52,7 +52,7 @@ IDENTITY = {
     "confirmed_by_name",
     "approved_by_name",
     # Breach tickets (S3-08): the holder, who assigned it, who added them.
-    "holder_name", "assigned_by_name", "added_by_name",
+    "holder_name", "assigned_by_name", "added_by_name", "asked_by_name",
     # Rights tickets (2026-10-08): who accepted a holder's answer.
     "accepted_by_name",
     # Who answers for a processor on an HR category (0052).
@@ -352,6 +352,7 @@ TITLE = {
     "incident reports": "Reporting an incident with no account — `/incident-reports/*`",
     "cross-border transfers": "Cross-border transfers — `/restricted-countries/*`",
     "tickets": "Tickets a holder answers — `/tickets/*`",
+    "datavault": "DataVault: the connection, and what it holds of a request's person",
     "consent": "Consents and links, the office's side",
     "exchange": "Exports, imports, collections and assets",
     "users": "The staff register — `/users/*`",

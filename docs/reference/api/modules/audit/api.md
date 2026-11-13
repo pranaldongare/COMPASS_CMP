@@ -226,7 +226,8 @@ No request body.
     {
       "value": "string",
       "label": "string",
-      "filterable_by_uuid": true
+      "filterable_by_uuid": true,
+      "with_parts": false
     }
   ],
   "event_groups": [
@@ -621,6 +622,7 @@ No request body.
 | `value` | `string` | Yes | — | — |
 | `label` | `string` | Yes | — | — |
 | `filterable_by_uuid` | `boolean` | Yes | — | — |
+| `with_parts` | `boolean` | No | default: `False` | — |
 
 <a id="schema-vocabularygroup"></a>
 #### `VocabularyGroup`

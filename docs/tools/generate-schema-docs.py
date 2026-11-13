@@ -95,6 +95,10 @@ MODULES: dict[str, list[str]] = {
         "rights_item_execution",
         "legal_hold",
         "nomination",
+        # Asking DataVault what it holds of a request's person (0070).
+        "datavault_connection",
+        "datavault_check",
+        "datavault_check_asset",
     ],
     "breach": [
         "breach",

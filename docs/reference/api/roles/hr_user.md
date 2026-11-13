@@ -17,6 +17,7 @@ Navigation returned after sign-in: `dashboard`, `hr-activities`, `hr-categories`
 | `collection` | No | No | `none` | Denied |
 | `consent` | Yes | No | `scoped` | Assigned project/organisational rows |
 | `data_source` | No | No | `none` | Denied |
+| `datavault_connection` | No | No | `none` | Denied |
 | `export` | Yes | Yes | `scoped` | Assigned project/organisational rows |
 | `hr_category` | Yes | No | `scoped` | Assigned project/organisational rows |
 | `import` | No | No | `none` | Denied |

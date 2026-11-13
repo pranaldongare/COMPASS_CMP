@@ -199,6 +199,26 @@ has been sent to it. Each confirmed holder gets one **ticket**: the
 instruction to return what it holds, addressed to a **respondent** of that
 processor.
 
+**The platform finds the holders as the request starts** (the product owner,
+2026-11-13). The reading is the same every time and needs no judgement, so
+it is no longer something the office presses for first: when the DPO or the
+Legal PoC moves a request from received to in progress - which the state
+machine allows only once identity is verified, the request is classified, an
+office has it and, for an erasure, she has said she means erasure - the
+platform reads the records then, in a transaction of its own after the move
+has been saved. It is what *Find who holds the data* does, and that button
+stays, to read again for anything recorded since. The holders found are not
+confirmed: choosing who answers and sending the tickets are still the
+office's. The trail says the platform read them (`rights.holders_derived`
+with `automatic`), under the officer who started the work.
+
+Not for a grievance, which asks no holder anything. Not for a request with no
+person behind it, which has no records to read: its holders are added by
+hand. And not on the way back from collating. If the reading cannot be made,
+the request is started all the same and the button is where it was. Where the
+records name nobody the page says so and asks for a holder to be added, or
+for the request to be moved on with nothing to ask anyone.
+
 **Where no record names a processor, a DCO Admin or the HR owner is asked**
 (0069, 2026-11-12). Every consent is given against a project or an activity,
 and until something has been exported or an asset registered - or where an HR
@@ -254,6 +274,34 @@ change them for that holder until the ticket is sent (`PUT
 items that holder holds and what to do with each - erase it, remove the person
 from it, keep it until a date, or set it aside - including items found before
 the holder was, which become its own when it is asked.
+
+### What DataVault holds
+
+DataVault is the store the labs' assets live in
+([ADR 0038](../decisions/0038-datavault-is-asked-by-the-platform-at-an-address-the-administrator-sets.md)).
+On the Holders tab the DPO or the Legal PoC presses **Check in DataVault**, and
+the platform asks it what it holds of the request's person: `GET
+{address}/lookup?request_id=<the request's reference>&person_id=<Person ID>`.
+The card lists each asset with its consent, project, MID and data path. A
+consent or project DataVault names is linked to ours only when it is one of
+this person's own, in the request's own office; anything else - somebody
+else's, or her consent in the other office's project - is shown as sent and
+marked as not found.
+
+The platform asks by itself whenever holders are found - as the request
+starts, or on a press of *Find who holds the data* - if a project's DCO Admin
+is among them and DataVault has not answered for the request yet. So for such
+a request, starting it is all the office does: the holders are listed and the
+assets follow on the card a moment later, which looks again by itself for a
+short while. That DCO Admin then sees, on their own ticket, the assets listed
+for the project they answer for.
+
+A check needs a person behind the request and an open request. A check that
+fails says why in a short sentence and leaves an earlier answer in place.
+Nothing else on the request changes: no holder is added and no ticket moves.
+Where DataVault is reached is the administrator's to set, under **DataVault
+connection**; until it is set and switched on, the card says so and offers no
+button.
 
 ### How a holder is reached
 
@@ -633,6 +681,12 @@ escalations.
   the day, and then every day while it is overdue and unanswered.
 - **Notifications** go out through the Celery `notifications` queue and, in
   development, land in the outbox file.
+- **Finding the holders**, as a request moves from received to in progress
+  (in the same call, after the move has been saved). Not for a grievance or
+  a request with no person behind it.
+- The **DataVault check** (queue `default`) whenever holders are found and a
+  project's DCO Admin is among them: tried again three times, two minutes
+  apart, if DataVault does not answer.
 - The **dashboard** shows the office the requests past a checkpoint, the
   tickets awaiting it, and the unread messages by request; it shows a
   respondent the tickets awaiting them.

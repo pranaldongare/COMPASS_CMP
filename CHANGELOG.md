@@ -8,6 +8,86 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **The next step, on an incident or a breach** (2026-11-13). The bar a
+  rights request has, above the tabs of a breach's page: the one step to take
+  next, its clock, the button that takes it or the tab it is taken on, and
+  what else is due beside it. Validation first on an incident; then the
+  organisation's board and CERT-In, whichever runs out sooner, the first
+  intimation, the people affected and the 72-hour report, each walked along
+  its own path (a regulator's report is drafted, finalised, sent by the office
+  and recorded as sent); then a ticket's answer to review, what is only waited
+  for, and closing once nothing stands in the way. It replaces the "Not
+  validated yet" prompt. Console only: the server is asked nothing new. The
+  bar's look is now one shared component (`components/layout/next-step.tsx`)
+  used by both pages, and closing is one shared button with its question.
+- **The holders are found as a rights request starts** (2026-11-13). The
+  office no longer presses "Find who holds the data" first: when the DPO or
+  the Legal PoC moves a request from received to in progress, the platform
+  reads the records for who holds the person's data then, for an access or
+  erasure request with a person behind it. Where a project's DCO Admin is
+  among them DataVault is asked as well, and the DataVault card fills in a
+  moment later without a reload. The holders found are not confirmed, and
+  the button stays, to read again. Where the records name nobody, the next
+  step asks for a holder to be added rather than for a reading already made.
+  The trail says the platform read them. `POST /requests/{uuid}/transition`
+  is otherwise unchanged; a reading that cannot be made leaves the request
+  started.
+- **Check in DataVault** (2026-11-13, migration 0070, ADR 0038). On a rights
+  request's Holders tab the DPO or the Legal PoC asks DataVault what it holds
+  of the person; the card lists each asset with its consent, project, MID and
+  data path. The platform asks by itself after Find holders when a project's
+  DCO Admin is among the holders, and that DCO Admin sees their project's
+  assets on their ticket. The administrator sets DataVault's address and key
+  under **DataVault connection**; until then nothing is called and every
+  screen behaves as before. What is sent: the request's reference and the
+  person's Person ID. Routes: `GET`/`PUT /datavault-connection`,
+  `GET /requests/{uuid}/datavault`, `POST /requests/{uuid}/datavault/check`,
+  `GET /tickets/{uuid}/datavault`. The worker gains the task
+  `cmp.datavault.check_request` on the `default` queue.
+- **Asked first: a pop-up before anything is sent outside, or ended for good**
+  (2026-11-12). Closing a breach took one click; so did sending a report to
+  the organisation's board, releasing a response to a data principal and
+  closing a project. Each now raises a pop-up that says who is written to and
+  what cannot be taken back, with the verb on its button; Cancel does nothing
+  and keeps what was typed (`useConfirm`).
+  - Breach: close the breach; a validation of Yes (the reference is issued
+    once, the duties start, a held CERT-In report is mailed to the board);
+    finalise a report and send or re-send it to the board; claim a public
+    report; approve a notice; remove an address from the board's list.
+  - Rights: send a verification code; confirm or record identity as verified;
+    close as not verified; handle as a withdrawal; accept or refuse a
+    nominee's event; escalate to the administrators; refuse and close; send
+    tickets; apply an erasure decision; release a legal hold; release a
+    response; decide a grievance.
+  - Projects and the rest: submit a project for approval; close a project;
+    revoke or replace a consent link; upgrade an HR activity (and whether its
+    participants are asked again); end staff or temporary access, deactivate
+    an account; suspend a processor or a source from its list.
+  - Left as they were, because they already ask: a notice sent to the people
+    affected, a ticket move (each opens a panel saying what it does), a
+    project approved or returned, a notice published, a purpose retired.
+- **A breach's audit trail is the whole of it** (2026-11-12). Asked about a
+  breach, the trail answered with the rows written against the breach and
+  left out its tickets - assigned, answered, sent back, a date changed - and
+  the public report it began as. Filtered to one breach, request or project
+  the trail now also reads the rows of what belongs to it (`with_parts` in
+  the vocabulary; the chip says "and everything on it"). Each mail of a
+  report leaves a row when it goes or fails (`breach.report_delivered`,
+  `breach.report_failed`: the worker's, naming the list's entry by its uuid
+  and never the address). A ticket's rows carry the breach's reference. And
+  every event of the breach module reads as a sentence built from its row -
+  which duty, which report and version, how many addresses, what the holder
+  said they did.
+- **"Audit trail" from every record** (2026-11-12): a processor, a purpose, a
+  data source, an account, an HR activity and category, a notice template, a
+  collection and an import batch gain the button a project, a request, a
+  breach, a consent and a notice had; and a breach ticket and a rights ticket
+  have it inside their window (`rights_request_holder` and `notice_template`
+  can be filtered by uuid).
+- **Consents, searched by the data subject** (2026-11-12): a search box on the
+  register finds a person's records by three or more letters of the name, or
+  a whole email or mobile (`GET /consents?q=`; a shorter name is refused with
+  422). The column reads **Projects/HR Activity**.
 - **Consent ID, Person ID and Project ID, as numbers** (2026-11-12). The three
   numbers the Data Collection Tool needs are shown in the console and written
   to what a collection owner exports: columns on the consent register, on a
@@ -1421,6 +1501,15 @@ as a release yet.
   completes only by filing a report with both proofs.
 
 ### Fixed
+- **"End staff access" on an account not yet signed in** (2026-11-12). An
+  invited account whose password had not been set showed the button and, when
+  it was pressed, was activated instead of ended: the console took anything
+  not `active` for already ended. It ends the access now, and asks first.
+- **A ticket's reminder line named its respondent in ciphertext**
+  (2026-11-12). "Reminder sent to ..." and "Sent to ... instead", on a rights
+  ticket's messages, carried the sealed name as stored. The name is opened
+  before the line is written. Lines written before this keep the old text:
+  the thread is not edited.
 - **What the review of the six answers' build found** (2026-11-08, 285d077; ADR 0037,
   [breaches.md](docs/domain/breaches.md#open-questions) for what it left open):
   - An account's own email finds, packages and erases dismissed reports only once proved; never beside a mobile proved alone, as a nominee's account is made. (Its reading of an account with neither stamp as one from before the stamps is gone since 0923a5b, below.)

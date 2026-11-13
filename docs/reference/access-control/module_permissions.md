@@ -14,6 +14,7 @@ Each cell is **GET / non-GET endpoint counts** for which that role is eligible. 
 | [Consent](modules/consent.md) | 15 | 12 / 3 | 0 / 0 | 12 / 3 | 12 / 3 | 12 / 3 | 6 / 0 | 0 / 0 | 0 / 0 | 12 / 3 | 12 / 3 |
 | [Cross-border transfers](modules/cross_border_transfers.md) | 3 | 1 / 2 | 1 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
 | [Dashboard](modules/dashboard.md) | 3 | 2 / 1 | 2 / 0 | 2 / 1 | 2 / 0 | 2 / 0 | 2 / 0 | 2 / 0 | 2 / 0 | 1 / 0 | 1 / 0 |
+| [DataVault](modules/datavault.md) | 5 | 2 / 1 | 3 / 2 | 1 / 0 | 1 / 0 | 1 / 0 | 1 / 0 | 0 / 0 | 1 / 0 | 1 / 1 | 0 / 0 |
 | [Delegations](modules/delegations.md) | 6 | 4 / 2 | 4 / 2 | 3 / 2 | 3 / 1 | 3 / 1 | 3 / 1 | 2 / 0 | 2 / 0 | 0 / 0 | 0 / 0 |
 | [Exchange](modules/exchange.md) | 20 | 16 / 4 | 3 / 0 | 16 / 4 | 15 / 4 | 15 / 4 | 9 / 0 | 3 / 0 | 0 / 0 | 5 / 2 | 5 / 2 |
 | [HR activities](modules/hr_activities.md) | 6 | 2 / 0 | 0 / 0 | 2 / 0 | 2 / 0 | 2 / 0 | 2 / 0 | 0 / 0 | 0 / 0 | 2 / 1 | 3 / 3 |

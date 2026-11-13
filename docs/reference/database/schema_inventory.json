@@ -1,6 +1,6 @@
 {
-  "commit": "c98fcbb1256384c3ac5cd53baddfca80d9c91118",
-  "migration_head": "0069",
+  "commit": "aae904f00d7883e06b235421fdf1410fa9a42749",
+  "migration_head": "0070",
   "migrations": [
     {
       "revision": "0001",
@@ -273,6 +273,10 @@
     {
       "revision": "0069",
       "source": "backend/api/migrations/versions/0069_holders_by_project_owner.py"
+    },
+    {
+      "revision": "0070",
+      "source": "backend/api/migrations/versions/0070_datavault_check.py"
     }
   ],
   "postgres_version": "16.15",
@@ -466,6 +470,21 @@
       "name": "data_source",
       "kind": "r",
       "comment": null
+    },
+    {
+      "name": "datavault_check",
+      "kind": "r",
+      "comment": "One call to DataVault for a rights request: what it holds of the person"
+    },
+    {
+      "name": "datavault_check_asset",
+      "kind": "r",
+      "comment": "An asset DataVault listed in answer to a check"
+    },
+    {
+      "name": "datavault_connection",
+      "kind": "r",
+      "comment": "One row: where DataVault is reached and with what key; kept by the administrator"
     },
     {
       "name": "delegation",
@@ -4159,6 +4178,231 @@
       "not_null": false,
       "default_value": null,
       "comment": "The DCO or RCO accountable for this source. One answer, here, because the same rig serving three projects had its owner recorded three times when this lived on project_site - and nothing stopped those three disagreeing."
+    },
+    {
+      "table_name": "datavault_check",
+      "name": "check_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('datavault_check_check_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "datavault_check",
+      "name": "check_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "datavault_check",
+      "name": "request_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "datavault_check",
+      "name": "asked_by",
+      "position": 4,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Who pressed Check in DataVault; NULL: the platform, when holders were found"
+    },
+    {
+      "table_name": "datavault_check",
+      "name": "asked_at",
+      "position": 5,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "datavault_check",
+      "name": "outcome",
+      "position": 6,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "datavault_check",
+      "name": "failure",
+      "position": 7,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Why it was not answered, as a short code (timeout, status_503, unreadable); never a body"
+    },
+    {
+      "table_name": "datavault_check",
+      "name": "asset_count",
+      "position": 8,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "0",
+      "comment": null
+    },
+    {
+      "table_name": "datavault_check_asset",
+      "name": "row_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('datavault_check_asset_row_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "datavault_check_asset",
+      "name": "check_id",
+      "position": 2,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "datavault_check_asset",
+      "name": "position",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "datavault_check_asset",
+      "name": "asset_ref",
+      "position": 4,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": "DataVault's own identifier for the asset"
+    },
+    {
+      "table_name": "datavault_check_asset",
+      "name": "consent_ref",
+      "position": 5,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The consent as DataVault named it"
+    },
+    {
+      "table_name": "datavault_check_asset",
+      "name": "project_ref",
+      "position": 6,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The project as DataVault named it"
+    },
+    {
+      "table_name": "datavault_check_asset",
+      "name": "consent_id",
+      "position": 7,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Our consent, where what DataVault named is one of this person's; NULL otherwise"
+    },
+    {
+      "table_name": "datavault_check_asset",
+      "name": "project_id",
+      "position": 8,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Our project, where what DataVault named is one; NULL otherwise"
+    },
+    {
+      "table_name": "datavault_check_asset",
+      "name": "mid",
+      "position": 9,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "DataVault's mid for the asset, as sent"
+    },
+    {
+      "table_name": "datavault_check_asset",
+      "name": "datapath",
+      "position": 10,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Where DataVault keeps the asset, as sent"
+    },
+    {
+      "table_name": "datavault_connection",
+      "name": "connection_id",
+      "position": 1,
+      "type": "smallint",
+      "not_null": true,
+      "default_value": "1",
+      "comment": null
+    },
+    {
+      "table_name": "datavault_connection",
+      "name": "base_url",
+      "position": 2,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The address the lookup is appended to; NULL: not set up"
+    },
+    {
+      "table_name": "datavault_connection",
+      "name": "api_key_sealed",
+      "position": 3,
+      "type": "bytea",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The key DataVault asks for, encrypted with the application key; never served"
+    },
+    {
+      "table_name": "datavault_connection",
+      "name": "api_key_header",
+      "position": 4,
+      "type": "text",
+      "not_null": true,
+      "default_value": "'X-API-Key'::text",
+      "comment": "The header the key is sent in"
+    },
+    {
+      "table_name": "datavault_connection",
+      "name": "enabled",
+      "position": 5,
+      "type": "boolean",
+      "not_null": true,
+      "default_value": "false",
+      "comment": "Whether the platform may call DataVault at all"
+    },
+    {
+      "table_name": "datavault_connection",
+      "name": "updated_by",
+      "position": 6,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "datavault_connection",
+      "name": "updated_at",
+      "position": 7,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
     },
     {
       "table_name": "delegation",
@@ -12862,6 +13106,230 @@
       "initially_deferred": false
     },
     {
+      "table_name": "datavault_check",
+      "name": "datavault_check_asked_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (asked_by) REFERENCES auth_user(id)",
+      "columns": [
+        "asked_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_check",
+      "name": "datavault_check_check_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (check_uuid)",
+      "columns": [
+        "check_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_check",
+      "name": "datavault_check_failure_whole",
+      "kind": "c",
+      "definition": "CHECK (((outcome = 'failed'::text) = (failure IS NOT NULL)))",
+      "columns": [
+        "outcome",
+        "failure"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_check",
+      "name": "datavault_check_outcome",
+      "kind": "c",
+      "definition": "CHECK ((outcome = ANY (ARRAY['answered'::text, 'failed'::text])))",
+      "columns": [
+        "outcome"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_check",
+      "name": "datavault_check_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (check_id)",
+      "columns": [
+        "check_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_check",
+      "name": "datavault_check_request_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (request_id) REFERENCES rights_request(request_id) ON DELETE CASCADE",
+      "columns": [
+        "request_id"
+      ],
+      "referenced_table": "rights_request",
+      "referenced_columns": [
+        "request_id"
+      ],
+      "delete_action": "c",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_check_asset",
+      "name": "datavault_check_asset_check_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (check_id) REFERENCES datavault_check(check_id) ON DELETE CASCADE",
+      "columns": [
+        "check_id"
+      ],
+      "referenced_table": "datavault_check",
+      "referenced_columns": [
+        "check_id"
+      ],
+      "delete_action": "c",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_check_asset",
+      "name": "datavault_check_asset_consent_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (consent_id) REFERENCES consent_artefact(consent_id)",
+      "columns": [
+        "consent_id"
+      ],
+      "referenced_table": "consent_artefact",
+      "referenced_columns": [
+        "consent_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_check_asset",
+      "name": "datavault_check_asset_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (row_id)",
+      "columns": [
+        "row_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_check_asset",
+      "name": "datavault_check_asset_project_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (project_id) REFERENCES project(project_id)",
+      "columns": [
+        "project_id"
+      ],
+      "referenced_table": "project",
+      "referenced_columns": [
+        "project_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_connection",
+      "name": "datavault_connection_enabled_has_url",
+      "kind": "c",
+      "definition": "CHECK (((NOT enabled) OR (base_url IS NOT NULL)))",
+      "columns": [
+        "enabled",
+        "base_url"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_connection",
+      "name": "datavault_connection_one_row",
+      "kind": "c",
+      "definition": "CHECK ((connection_id = 1))",
+      "columns": [
+        "connection_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_connection",
+      "name": "datavault_connection_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (connection_id)",
+      "columns": [
+        "connection_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_connection",
+      "name": "datavault_connection_updated_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (updated_by) REFERENCES auth_user(id)",
+      "columns": [
+        "updated_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "delegation",
       "name": "delegation_created_by_fkey",
       "kind": "f",
@@ -18026,6 +18494,36 @@
       "definition": "CREATE INDEX idx_source_owner ON public.data_source USING btree (owner_user_id) WHERE (owner_user_id IS NOT NULL)"
     },
     {
+      "table_name": "datavault_check",
+      "name": "datavault_check_check_uuid_key",
+      "definition": "CREATE UNIQUE INDEX datavault_check_check_uuid_key ON public.datavault_check USING btree (check_uuid)"
+    },
+    {
+      "table_name": "datavault_check",
+      "name": "datavault_check_pkey",
+      "definition": "CREATE UNIQUE INDEX datavault_check_pkey ON public.datavault_check USING btree (check_id)"
+    },
+    {
+      "table_name": "datavault_check",
+      "name": "idx_datavault_check_request",
+      "definition": "CREATE INDEX idx_datavault_check_request ON public.datavault_check USING btree (request_id, check_id DESC)"
+    },
+    {
+      "table_name": "datavault_check_asset",
+      "name": "datavault_check_asset_pkey",
+      "definition": "CREATE UNIQUE INDEX datavault_check_asset_pkey ON public.datavault_check_asset USING btree (row_id)"
+    },
+    {
+      "table_name": "datavault_check_asset",
+      "name": "idx_datavault_check_asset_check",
+      "definition": "CREATE INDEX idx_datavault_check_asset_check ON public.datavault_check_asset USING btree (check_id, \"position\")"
+    },
+    {
+      "table_name": "datavault_connection",
+      "name": "datavault_connection_pkey",
+      "definition": "CREATE UNIQUE INDEX datavault_connection_pkey ON public.datavault_connection USING btree (connection_id)"
+    },
+    {
       "table_name": "delegation",
       "name": "delegation_delegation_uuid_key",
       "definition": "CREATE UNIQUE INDEX delegation_delegation_uuid_key ON public.delegation USING btree (delegation_uuid)"
@@ -19712,6 +20210,12 @@
       "name": "data_source_source_id_seq"
     },
     {
+      "name": "datavault_check_asset_row_id_seq"
+    },
+    {
+      "name": "datavault_check_check_id_seq"
+    },
+    {
       "name": "delegation_delegation_id_seq"
     },
     {
@@ -19973,13 +20477,13 @@
     }
   ],
   "counts": {
-    "application_tables": 74,
+    "application_tables": 77,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 891,
-    "foreign_keys": 221,
+    "table_columns": 916,
+    "foreign_keys": 227,
     "enums": 39,
     "triggers": 82,
-    "checks": 133
+    "checks": 137
   }
 }

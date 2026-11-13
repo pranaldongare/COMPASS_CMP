@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 401,
-  "registered_business_and_system_operations": 404,
+  "documented_operations": 406,
+  "registered_business_and_system_operations": 409,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -8902,7 +8902,8 @@
       "conditions": [
         "DPO can read all requests. Admin can read requests where about_dpo is true; this predicate is not limited to the assigned reviewer. Mutations apply action/state checks. This is distinct from personal /me/requests.",
         "Available actions depend on request type, verification, intent, nominee evidence, reviewer, holder tickets and current state.",
-        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it.",
+        "Starting a request - received to in progress - also reads the records for who holds the person's data (2026-11-13), as POST /requests/{request_uuid}/holders/derive does, for an access or erasure request with a person behind it: after the move has been saved and apart from it, so a reading that cannot be made leaves the request started. The holders found are not confirmed. Where a project's DCO Admin is among them the platform's DataVault check is queued, as after the button. No guard changed."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/1757d5069ba723f260c88c45419c1286261a127f/backend/api/src/cmp/api/routers/v1/rights.py#L945",
@@ -16757,6 +16758,216 @@
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
       ]
+    },
+    {
+      "module": "datavault",
+      "method": "GET",
+      "path": "/datavault-connection",
+      "summary": "Where DataVault is reached, and whether it is on",
+      "function": "get_connection",
+      "operation_id": "get_connection_datavault_connection_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "DataVaultConnectionReader",
+      "resolved_gate": "RequireResource(datavault_connection)",
+      "route_roles": [
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "datavault_connection",
+      "write_gate": false,
+      "access": {
+        "dpo": "NO",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "Resource `datavault_connection`, the administrator's alone (0070): every other role is answered 403. Where DataVault is reached, the header its key is sent in, whether a key is stored and whether the platform may call it. The key is encrypted with the application key and never served; the trail records that the address or key changed, never either."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/datavault.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/datavault/checks.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/datavault/connection.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
+    },
+    {
+      "module": "datavault",
+      "method": "PUT",
+      "path": "/datavault-connection",
+      "summary": "Set DataVault's address, its key, and switch it on",
+      "function": "put_connection",
+      "operation_id": "put_connection_datavault_connection_put",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "DataVaultConnectionWriter",
+      "resolved_gate": "RequireResource(datavault_connection, write=True)",
+      "route_roles": [
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "datavault_connection",
+      "write_gate": true,
+      "access": {
+        "dpo": "NO",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "Resource `datavault_connection`, the administrator's alone (0070): every other role is answered 403. Where DataVault is reached, the header its key is sent in, whether a key is stored and whether the platform may call it. The key is encrypted with the application key and never served; the trail records that the address or key changed, never either. The address must be http or https with a host and no user, query or fragment (422); it cannot be switched on without one. `api_key` left out keeps the stored key; `clear_api_key` removes it."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/datavault.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/datavault/checks.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/datavault/connection.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
+    },
+    {
+      "module": "datavault",
+      "method": "GET",
+      "path": "/requests/{request_uuid}/datavault",
+      "summary": "What DataVault last said it holds of this request's person",
+      "function": "request_datavault",
+      "operation_id": "request_datavault_requests_request_uuid_datavault_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RightsReader",
+      "resolved_gate": "RequireResource(rights_request, write=False)",
+      "route_roles": [
+        "admin",
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "rights_request",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "SCOPED",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "As every read of a request: the scoped lookup, so a request outside the caller's office is 404. Whether DataVault is set up, whether this caller may ask now, the last answered check with its assets (DataVault's asset identifier, the consent and project as it named them and ours where they are this person's own in the request's office, mid, datapath) and the last attempt if it failed. The name of who asked is sealed."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/datavault.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/datavault/checks.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/datavault/connection.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
+    },
+    {
+      "module": "datavault",
+      "method": "POST",
+      "path": "/requests/{request_uuid}/datavault/check",
+      "summary": "Check in DataVault: ask it now what it holds of this request's person",
+      "function": "check_in_datavault",
+      "operation_id": "check_in_datavault_requests_request_uuid_datavault_check_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RightsWriter",
+      "resolved_gate": "RequireResource(rights_request, write=True)",
+      "route_roles": [
+        "admin",
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "rights_request",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "SCOPED",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "The scoped lookup, then the state machine's `may_act` (403 for a request that is not the caller's to act on). 409 `datavault_not_configured` while DataVault is off or has no address; 409 `datavault_not_askable` for a request with no person behind it or a closed one. One outbound call, `GET {address}/lookup?request_id=<reference>&person_id=<Person ID>`, with no transaction open; recorded whether or not it is answered (`datavault.checked`). A failure is a short code and never DataVault's body. Changes nothing else on the request. The platform makes the same call unattended whenever holders are found - as the request starts (POST /requests/{request_uuid}/transition to in_progress) or on POST /requests/{request_uuid}/holders/derive - when a project's DCO Admin is among them and DataVault has not answered for the request yet."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/datavault.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/datavault/checks.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/datavault/connection.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
+    },
+    {
+      "module": "datavault",
+      "method": "GET",
+      "path": "/tickets/{holder_uuid}/datavault",
+      "summary": "On a DCO Admin's ticket: the assets DataVault listed for their project",
+      "function": "ticket_datavault",
+      "operation_id": "ticket_datavault_tickets_holder_uuid_datavault_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(ticket)",
+      "resolved_gate": "RequireResource(ticket, write=False)",
+      "route_roles": [
+        "admin",
+        "dco",
+        "dco_admin",
+        "dpo",
+        "rco",
+        "rnd_user",
+        "breach_holder"
+      ],
+      "inline_role_checks": [],
+      "resource": "ticket",
+      "write_gate": false,
+      "access": {
+        "dpo": "OWN",
+        "admin": "OWN",
+        "dco": "OWN",
+        "dco_admin": "OWN",
+        "rco": "OWN",
+        "rnd_user": "OWN",
+        "data_subject": "NO",
+        "breach_holder": "OWN",
+        "legal": "NO",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "Bounded by the holder's own account, as every ticket route is. Lists the assets of the last answered check whose project is the one the ticket's holder answers for, and only for a holder found as a project's DCO Admin (0069); any other ticket, one addressed to somebody else, or one DataVault has not answered for, answers 200 with nothing listed."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/datavault.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/datavault/checks.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/datavault/connection.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
     }
   ],
   "amended": [
@@ -16954,6 +17165,16 @@
       "on": "2026-11-12",
       "commit": "A rights ticket's date, changed with the reason",
       "note": "Three operations added: POST /requests/{request_uuid}/holders/{holder_uuid}/answer-by (dpo, legal, admin scoped; RightsWriter), POST /tickets/{holder_uuid}/answer-by (the member of staff the ticket is addressed to; TicketWriter) and POST /holder-tickets/{token}/answer-by (the ticket's link and its code). Either side moves the date a ticket is to be answered by, with the reason, never past the response's own date; the trail (rights.ticket_date_changed) marks that a reason was given and names the ticket message that keeps it, and an audit entry served to staff carries `reason`, read from that message (GET /audit, GET /audit/{log_uuid}; GET /audit/export.csv gains a `reason` column). GET /users/staff corrected: the Legal PoC has been in its guard since the offices were separated, and `role` narrows the list (0069). POST /requests/{request_uuid}/refuse is multipart and may carry documents. No guard changed."
+    },
+    {
+      "on": "2026-11-13",
+      "commit": "Check in DataVault (0070), uncommitted",
+      "note": "Five operations added, module datavault: GET/PUT /datavault-connection (resource datavault_connection, the administrator alone), GET /requests/{request_uuid}/datavault and POST /requests/{request_uuid}/datavault/check (as the rights routes: RightsReader / RightsWriter), and GET /tickets/{holder_uuid}/datavault (the ticket's own holder). No existing guard changed. Evidence links point at HEAD."
+    },
+    {
+      "on": "2026-11-13",
+      "commit": "Holders found as a request starts, uncommitted",
+      "note": "No operation added or removed, and no guard changed. POST /requests/{request_uuid}/transition: the move from received to in progress also reads the records for who holds the person's data, as POST /requests/{request_uuid}/holders/derive does (access and erasure requests with a person behind them; not a grievance), after the move has been saved; the trail marks it (rights.holders_derived with automatic). The platform's DataVault check follows either reading."
     }
   ]
 }
