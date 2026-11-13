@@ -9,7 +9,7 @@
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { DeterminationCard, DutiesCard } from "@/features/breach/components/cards";
+import { BreachTransitions, DeterminationCard, DutiesCard } from "@/features/breach/components/cards";
 import { render, screen, within } from "@/test/render";
 import { API, server } from "@/test/server";
 import type { Breach, BreachDocuments, BreachDuty, BreachDutyEvent } from "@/types";
@@ -282,6 +282,9 @@ describe("validation", () => {
     await user.type(screen.getByLabelText(/^Became aware at/), "2026-11-06T09:30");
     await user.type(screen.getByLabelText(/^Reasoning/), "Names were exposed after all");
     await user.click(screen.getByRole("button", { name: "Record the validation" }));
+    // A Yes is asked about first (2026-11-12): it starts the duties again.
+    const question = await screen.findByRole("dialog", { name: "Record the validation as Yes?" });
+    await user.click(within(question).getByRole("button", { name: "Record the validation" }));
   }
 
   it("names the duties a later yes found already done, and says nothing was sent again", async () => {
@@ -329,5 +332,85 @@ describe("validation", () => {
     await validateYes(recorded([board("not_applicable")]), recorded([board("outstanding")]));
 
     await vi.waitFor(() => expect(toast.success).toHaveBeenCalledWith("Validation recorded", "A personal data breach"));
+  });
+});
+
+describe("closing a breach", () => {
+  const closable = () =>
+    breach({
+      reference: "BR-2026-0200",
+      transitions: [{ to: "closed", allowed: true, blocked_by: null, reason_required: false, blockers: [] }],
+    } as Partial<Breach>);
+
+  it("asks first, says what closing means, and closes only on the second click", async () => {
+    // 2026-11-12: one click on a button at the head of the page closed it.
+    const sent: unknown[] = [];
+    server.use(
+      http.post(`${API}/breaches/${BREACH}/transition`, async ({ request }) => {
+        sent.push(await request.json());
+        return HttpResponse.json(breach({ status: "closed" }));
+      }),
+    );
+    const { user } = render(<BreachTransitions breach={closable()} />);
+
+    await user.click(screen.getByRole("button", { name: "Close the breach" }));
+    const dialog = await screen.findByRole("dialog", { name: "Close BR-2026-0200?" });
+    expect(within(dialog).getByText(/Nothing more can be recorded, sent or\s+assigned on it/)).toBeInTheDocument();
+    expect(within(dialog).getByText(/It can be reopened later, with a reason/)).toBeInTheDocument();
+    expect(sent).toEqual([]);
+
+    await user.click(within(dialog).getByRole("button", { name: "Close the breach" }));
+    await vi.waitFor(() => expect(sent).toEqual([{ to: "closed", reason: null }]));
+    expect(toast.success).toHaveBeenCalledWith("Breach closed");
+    await vi.waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  });
+
+  it("closes nothing when the question is cancelled", async () => {
+    const sent: unknown[] = [];
+    server.use(
+      http.post(`${API}/breaches/${BREACH}/transition`, async ({ request }) => {
+        sent.push(await request.json());
+        return HttpResponse.json(breach({ status: "closed" }));
+      }),
+    );
+    const { user } = render(<BreachTransitions breach={closable()} />);
+    await user.click(screen.getByRole("button", { name: "Close the breach" }));
+    await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Cancel" }));
+    await vi.waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(sent).toEqual([]);
+  });
+});
+
+describe("the first Yes", () => {
+  it("asks before the breach is recorded, says what starts and what cannot be undone, and records nothing on Cancel", async () => {
+    // 2026-11-12: the reference is issued once and the clocks start.
+    const sent: Array<{ outcome: string }> = [];
+    server.use(
+      http.post(`${API}/breaches/${BREACH}/determinations`, async ({ request }) => {
+        sent.push((await request.json()) as { outcome: string });
+        return HttpResponse.json(
+          breach({ breach_reference: "BR-2026-0200", determination: "yes", determinations: [], obligations: [] }),
+        );
+      }),
+    );
+    const { user } = render(
+      <DeterminationCard breach={breach({ determination: "pending", determinations: [], obligations: [] })} />,
+    );
+    await user.type(screen.getByLabelText(/^Became aware at/), "2026-11-06T09:30");
+    await user.type(screen.getByLabelText(/^Reasoning/), "Names and mobiles were on the share");
+
+    await user.click(screen.getByRole("button", { name: "Record the validation" }));
+    const question = await screen.findByRole("dialog", { name: "Record this incident as a personal data breach?" });
+    expect(within(question).getByText(/given its breach reference, once and for good/)).toBeInTheDocument();
+    expect(within(question).getByText(/the organisation's board within 30 minutes/)).toBeInTheDocument();
+    await user.click(within(question).getByRole("button", { name: "Cancel" }));
+    await vi.waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(sent).toEqual([]);
+    // What was typed is still there to send.
+    expect(screen.getByLabelText(/^Reasoning/)).toHaveValue("Names and mobiles were on the share");
+
+    await user.click(screen.getByRole("button", { name: "Record the validation" }));
+    await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Record as a breach" }));
+    await vi.waitFor(() => expect(sent.map((s) => s.outcome)).toEqual(["yes"]));
   });
 });

@@ -112,6 +112,7 @@ const ROLES = [
       "/sources",
       "/requests",
       "/breach-settings",
+      "/datavault",
       "/audit",
       "/delegate",
       "/messages",

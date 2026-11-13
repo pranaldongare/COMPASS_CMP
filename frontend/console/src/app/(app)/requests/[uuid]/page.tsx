@@ -54,6 +54,7 @@ import {
   Skeleton,
 } from "@/components/ui/primitives";
 import { Tab, TabList, TabPanel, Tabs, useHashTab } from "@/components/ui/tabs";
+import { RequestDataVaultCard } from "@/features/datavault/components/request-datavault-card";
 import { ClockColumn } from "@/features/rights/components/clock-column";
 import { ConsentScope } from "@/features/rights/components/consent-scope";
 import {
@@ -482,6 +483,15 @@ export default function RequestDetailPage() {
         {withHolders && (
           <TabPanel value="holders" className="space-y-6">
             <HoldersCard request={r} />
+            {/* What DataVault holds of the person (0070): asked by the office,
+                or by the platform when a DCO Admin is among the holders. */}
+            <RequestDataVaultCard
+              requestUuid={r.request_uuid}
+              platformAsks={r.holders.some(
+                (h) => h.derived_from === "project_owner" && h.is_activity === false,
+              )}
+              holdersReadAt={r.holders_derived_at ?? null}
+            />
             {erasure && (
               <div id="scope" className="scroll-mt-20">
                 <ScopeCard request={r} />

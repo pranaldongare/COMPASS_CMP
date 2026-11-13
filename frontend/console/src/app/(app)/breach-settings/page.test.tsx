@@ -14,6 +14,14 @@ import { render, screen, within } from "@/test/render";
 import { API, server } from "@/test/server";
 import type { BreachBoardRecipient, BreachSettings } from "@/types";
 
+/** Taking an address off the board's list is asked about first (2026-11-12):
+ *  the pop-up says reports stop going to it and who is told. This says yes. */
+async function yesRemove(user: ReturnType<typeof render>["user"]) {
+  const question = await screen.findByRole("dialog", { name: "Remove meera@cmp.local from the board's list?" });
+  expect(within(question).getByText(/Reports to the organisation's board no longer go to this address/)).toBeInTheDocument();
+  await user.click(within(question).getByRole("button", { name: "Remove from the list" }));
+}
+
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() }));
 vi.mock("@/providers", () => ({ useToast: () => toast }));
 
@@ -190,6 +198,7 @@ describe("Breach settings", () => {
     const { user } = render(<BreachSettingsPage />);
 
     await user.click(await screen.findByRole("button", { name: "Remove meera@cmp.local" }));
+    await yesRemove(user);
 
     await vi.waitFor(() => expect(removed).toBe(true));
     expect(await screen.findByText("Nobody is on the list")).toBeInTheDocument();
@@ -263,6 +272,7 @@ describe("Breach settings", () => {
     const { user } = render(<BreachSettingsPage />);
 
     await user.click(await screen.findByRole("button", { name: "Remove meera@cmp.local" }));
+    await yesRemove(user);
 
     await vi.waitFor(() => expect(toast.error).toHaveBeenCalledWith("Not removed", sentence));
     expect(screen.getByText("meera@cmp.local")).toBeInTheDocument();
@@ -294,6 +304,7 @@ describe("Breach settings", () => {
           name: `${control === "Remove" ? "Remove" : "Mandatory:"} meera@cmp.local`,
         }),
       );
+      if (control === "Remove") await yesRemove(user);
 
       await vi.waitFor(() => expect(toast.error).toHaveBeenCalled());
       if (status === 404) {

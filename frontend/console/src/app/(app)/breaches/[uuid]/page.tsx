@@ -1,9 +1,10 @@
 /**
  * One incident or breach, as one workspace - the project page's shape.
  *
- * Above the tabs, where it stands: closing (or reopening) it, with exactly
- * what still stands in the way, beside the facts it was logged with. Under
- * the tabs, the work in the order it runs: the duties and their clocks first,
+ * Above the tabs, the next move (2026-11-13) and where it stands: closing (or
+ * reopening) it, with exactly what still stands in the way, beside the facts
+ * it was logged with. Under the tabs, the work in the order it runs: the
+ * duties and their clocks first,
  * because they are what runs out; then validation, the reports (0059), the
  * people affected and what they are told, the tickets, the assessment, the
  * files kept with it (2026-10-06), and its history. A tab whose duties are
@@ -69,6 +70,7 @@ import {
   OutcomeBadge,
   locationText,
 } from "@/features/breach/components/copy";
+import { BreachNextBar } from "@/features/breach/components/next-bar";
 import { NoticesCard } from "@/features/breach/components/notices-card";
 import { NotifyBoardButton, ReportsCard } from "@/features/breach/components/reports-card";
 import { TicketsCard } from "@/features/breach/components/tickets-card";
@@ -200,6 +202,11 @@ export default function BreachPage() {
         ]}
       />
 
+      {/* The next move, whichever tab is open (2026-11-13), as on a rights
+          request: the page said what stood in the way of closing and each
+          duty's clock, and left the reader to pick which to take up first. */}
+      <BreachNextBar breach={b} tickets={tickets.data} tab={tab} onGo={setTab} />
+
       {/* Where it stands before anything else: closing it, or exactly what
           still stands in the way, beside the facts it was logged with.
           Everything under the tabs is the work behind it. On a phone the
@@ -212,17 +219,6 @@ export default function BreachPage() {
           <DetailsCard breach={b} />
         </div>
       </div>
-
-      {/* The step that starts the statutory clocks, wherever the reader is. */}
-      {b.status === "open" && b.determination === "pending" && tab !== "validation" && (
-        <Alert tone="info" title="Not validated yet" className="mb-6">
-          Is it a personal data breach under s.2(u)? A yes records it, starts the DPDP duties
-          and gives 30 minutes to tell the organisation&apos;s board.{" "}
-          <a href="#validation" className="font-medium text-accent-text hover:underline">
-            Record the validation
-          </a>
-        </Alert>
-      )}
 
       <Tabs value={tab} onValueChange={setTab} label="Breach sections" layout="underline">
         <TabList>
@@ -364,8 +360,9 @@ function DetailsCard({ breach: b }: { breach: Breach }) {
   );
 }
 
-/** Every open, close and reopening, with the reason a reopening gives. A
- *  ticket has its own trail, so a date moved on one is found from here too. */
+/** Every open, close and reopening, with the reason a reopening gives. The
+ *  breach's trail reads its tickets' rows too (2026-11-12); one ticket's own
+ *  trail is still a click away, for the reader who wants only that. */
 function HistoryCard({ breach: b, tickets }: { breach: Breach; tickets: BreachTicket[] }) {
   const { me } = useAuth();
   return (
@@ -375,8 +372,9 @@ function HistoryCard({ breach: b, tickets }: { breach: Breach; tickets: BreachTi
           <CardTitle>History</CardTitle>
           <p className="mt-0.5 text-xs text-text-muted">
             Append-only. Every close and reopening, who made it, and why. Everything else
-            done to the breach is in its audit trail; what happens on a ticket, such as a
-            changed date, is on that ticket&apos;s own trail.
+            done on the breach is in its audit trail: the validation, each report and what
+            became of its mail, the notices, and every ticket - assigned, answered, or its
+            date changed.
           </p>
         </div>
         <HistoryIcon className="size-4 text-text-subtle" aria-hidden="true" />

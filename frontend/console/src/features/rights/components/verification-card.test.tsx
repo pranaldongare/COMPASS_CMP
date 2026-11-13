@@ -14,7 +14,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { VerificationCard } from "@/features/rights/components/staff-actions";
 import { makeMe, makeRequestDetail } from "@/test/fixtures";
-import { render, screen } from "@/test/render";
+import { render, screen, within } from "@/test/render";
 import { API, server } from "@/test/server";
 import type { Me, RightsRequestDetail } from "@/types";
 
@@ -96,6 +96,13 @@ describe("VerificationCard", () => {
     expect(box).toBeInTheDocument();
     expect(confirm).toBeInTheDocument();
     await user.click(send as HTMLElement);
+    // Asked first (2026-11-12): the pop-up says where the code goes, and
+    // nothing is sent until the yes.
+    const question = await screen.findByRole("dialog", { name: "Send a verification code?" });
+    expect(within(question).getByText(/A one-time code goes to the requester now\./)).toBeInTheDocument();
+    expect(within(question).getByText(/never to what was typed on the form/)).toBeInTheDocument();
+    expect(asked).toBe(0);
+    await user.click(within(question).getByRole("button", { name: "Send the code" }));
 
     await vi.waitFor(() => expect(asked).toBe(1));
     await vi.waitFor(() => expect(toast.success).toHaveBeenCalledWith("Code sent"));
@@ -186,6 +193,13 @@ describe("VerificationCard", () => {
         await user.type(offered().box as HTMLElement, "123456");
       }
       await user.click(screen.getByRole("button", { name: pressed }));
+      // Asked first (2026-11-12): what goes to the requester is said in a pop-up.
+      const question = await screen.findByRole("dialog");
+      await user.click(
+        within(question).getByRole("button", {
+          name: pressed === "Confirm" ? "Confirm identity" : "Send the code",
+        }),
+      );
 
       await vi.waitFor(() =>
         expect(toast.error).toHaveBeenCalledWith("Not done", OFFICERS_ONLY),

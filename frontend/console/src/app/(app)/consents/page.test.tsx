@@ -64,6 +64,51 @@ describe("Consents filters", () => {
   });
 });
 
+describe("Consents, by the data subject", () => {
+  it("searches by name on Enter, keeps it in the address, and Clear filters takes it off", async () => {
+    // 2026-11-12: the first question asked with a person in front of you.
+    const asked: URLSearchParams[] = [];
+    server.use(
+      http.get(`${API}/consents`, ({ request }) => {
+        asked.push(new URL(request.url).searchParams);
+        return HttpResponse.json({ items: [], next_cursor: null, total: 0 });
+      }),
+      http.get(`${API}/projects`, () => HttpResponse.json({ items: [], next_cursor: null, total: 0 })),
+    );
+    const { user } = render(<ConsentsPage />);
+
+    const box = screen.getByRole("searchbox", { name: "Data subject" });
+    await user.type(box, "Meera");
+    // Not as it is typed: a fragment of a contact is not sent anywhere.
+    expect(asked.every((a) => !a.has("q"))).toBe(true);
+    await user.keyboard("{Enter}");
+    await vi.waitFor(() => expect(asked.at(-1)!.get("q")).toBe("Meera"));
+    expect(new URLSearchParams(window.location.search).get("q")).toBe("Meera");
+    expect(await screen.findByText("No consents match")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Clear filters" }));
+    await vi.waitFor(() => expect(asked.at(-1)!.has("q")).toBe(false));
+    expect(box).toHaveValue("");
+  });
+
+  it("says what the server says when the name is too short to search for", async () => {
+    server.use(
+      http.get(`${API}/consents`, ({ request }) =>
+        new URL(request.url).searchParams.get("q") === "Me"
+          ? HttpResponse.json(
+              { error: { code: "validation_failed", message: "Enter three or more letters of the name", field: "q" } },
+              { status: 422 },
+            )
+          : HttpResponse.json({ items: [], next_cursor: null, total: 0 }),
+      ),
+      http.get(`${API}/projects`, () => HttpResponse.json({ items: [], next_cursor: null, total: 0 })),
+    );
+    const { user } = render(<ConsentsPage />);
+    await user.type(screen.getByRole("searchbox", { name: "Data subject" }), "Me{Enter}");
+    expect(await screen.findByText("Enter three or more letters of the name")).toBeInTheDocument();
+  });
+});
+
 describe("Consents register", () => {
   it("shows the consent's, the person's and the project's IDs as numbers, beside the names", async () => {
     // 2026-11-12: the three numbers the Data Collection Tool is given, and
@@ -81,7 +126,8 @@ describe("Consents register", () => {
     render(<ConsentsPage />);
 
     const row = (await screen.findByRole("link", { name: "Meera Iyer" })).closest("tr") as HTMLElement;
-    for (const heading of ["Consent ID", "Person ID", "Project ID"]) {
+    // A row may be a project's or an HR activity's, and the column says so.
+    for (const heading of ["Consent ID", "Person ID", "Projects/HR Activity", "Project ID"]) {
       expect(screen.getByRole("columnheader", { name: heading })).toBeInTheDocument();
     }
     const cells = within(row).getAllByRole("cell").map((c) => c.textContent);

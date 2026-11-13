@@ -18,15 +18,16 @@
 import { ArrowRight } from "lucide-react";
 import * as React from "react";
 
+import { NextStepBar } from "@/components/layout/next-step";
 import { Button } from "@/components/ui/primitives";
 import { STATUS_COPY } from "@/features/rights/components/copy";
 import {
   AUTOMATIC,
   holdersNotYetFound,
   nextMove,
+  nobodyOnRecord,
 } from "@/features/rights/components/request-summary";
 import { useClaimRequest, useTransitionRequest } from "@/features/rights/mutations";
-import { cn } from "@/lib/format";
 import { useToast } from "@/providers";
 import type { RightsRequestDetail } from "@/types";
 
@@ -72,7 +73,10 @@ export function nextStep(r: RightsRequestDetail): NextStep | null {
         title: "Start the work",
         why: "Everything before work begins is settled.",
         move: "in_progress",
-        then: grievance ? "Then: respond" : "Then: Holders - find who holds the data",
+        // The platform reads the records as the request starts (2026-11-13).
+        then: grievance
+          ? "Then: respond"
+          : "Then: the platform finds who holds the data → confirm who answers",
       };
     }
     const why = start.blocked_by ?? null;
@@ -122,6 +126,14 @@ export function nextStep(r: RightsRequestDetail): NextStep | null {
   }
 
   // At work: the holders first, then the move forward the server offers.
+  if (nobodyOnRecord(r)) {
+    return {
+      title: "Add who holds the data",
+      why: "The records were read and name nobody.",
+      go: "holders",
+      then: "Nothing to ask anyone? Move it to collating from Overview instead.",
+    };
+  }
   if (holdersNotYetFound(r)) {
     return {
       title: "Find who holds the data",
@@ -209,25 +221,5 @@ export function NextBar({
     );
   }
 
-  return (
-    <section
-      aria-label="Next step"
-      className={cn(
-        "mb-5 flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-accent-border",
-        "bg-surface px-4 py-3 shadow-[inset_4px_0_0_var(--accent),var(--shadow-xs)]",
-      )}
-    >
-      <div className="min-w-0 pl-1">
-        <p className="text-2xs font-semibold tracking-wider text-accent-text uppercase">
-          Next
-        </p>
-        <p className="text-sm">
-          <span className="font-semibold">{step.title}</span>
-          {step.why && <span className="text-text-muted"> - {step.why}</span>}
-        </p>
-        {step.then && <p className="mt-0.5 text-xs text-text-muted">{step.then}</p>}
-      </div>
-      {action}
-    </section>
-  );
+  return <NextStepBar title={step.title} why={step.why} then={step.then} action={action} />;
 }

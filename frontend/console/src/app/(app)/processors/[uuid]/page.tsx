@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { Tab, TabList, TabPanel, Tabs, useHashTab } from "@/components/ui/tabs";
+import { AuditTrailLink } from "@/components/data-display/audit-link";
 import { ProcessorForm } from "@/features/registry/components/forms";
 import { RespondentsPanel } from "@/features/registry/components/respondents";
 import { useProcessor, useSources } from "@/features/registry";
@@ -106,18 +107,21 @@ export default function ProcessorDetailPage() {
           </>
         }
         actions={
-          canEdit && (
-            <>
-              <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
-                <Pencil className="size-4" />
-                Edit
-              </Button>
-              {/* The register's Suspend, here too (2026-11-11). */}
-              {p.status === "active" && (
-                <SuspendRecord kind="processor" uuid={p.processor_uuid} name={p.legal_name} />
-              )}
-            </>
-          )
+          <>
+            <AuditTrailLink entityType="processor" uuid={p.processor_uuid} label={p.legal_name} />
+            {canEdit && (
+              <>
+                <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+                  <Pencil className="size-4" />
+                  Edit
+                </Button>
+                {/* The register's Suspend, here too (2026-11-11). */}
+                {p.status === "active" && (
+                  <SuspendRecord kind="processor" uuid={p.processor_uuid} name={p.legal_name} />
+                )}
+              </>
+            )}
+          </>
         }
         facts={[
           {

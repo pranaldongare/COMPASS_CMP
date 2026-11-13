@@ -45,6 +45,7 @@ import {
   Tr,
 } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
+import { AuditTrailLink } from "@/components/data-display/audit-link";
 import { useImportBatch, useImportErrors } from "@/features/exchange";
 import { formatDateTime, shortHash } from "@/lib/format";
 
@@ -125,6 +126,13 @@ export default function ImportDetailPage() {
               {record.source_name} · received {formatDateTime(record.received_at)}
             </span>
           </>
+        }
+        actions={
+          <AuditTrailLink
+            entityType="import_batch"
+            uuid={record.batch_uuid}
+            label={record.file_name}
+          />
         }
         facts={[
           { label: "Declared", value: record.declared_rows, icon: ListOrdered, tint: 0 },

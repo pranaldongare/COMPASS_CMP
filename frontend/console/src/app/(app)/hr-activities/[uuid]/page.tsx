@@ -15,6 +15,7 @@ import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
 import { RecordHeader } from "@/components/layout/record-header";
+import { useConfirm } from "@/components/ui/confirm";
 import { ConfirmDialog, Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import {
   Alert,
@@ -33,6 +34,7 @@ import {
 } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { Tab, TabList, TabPanel, Tabs, useHashTab } from "@/components/ui/tabs";
+import { AuditTrailLink } from "@/components/data-display/audit-link";
 import { CopyLinkButton } from "@/features/consent/components/copy-link";
 import { ProjectConsents } from "@/features/consent/components/project-consents";
 import { useRemintLink, useRevokeLink } from "@/features/consent/mutations";
@@ -106,6 +108,7 @@ export default function HrActivityPage() {
         }
         actions={
           <>
+            <AuditTrailLink entityType="project" uuid={a.activity_uuid} label={a.name} />
             {running && isPoc && (
               <Button variant="secondary" size="sm" onClick={() => setUpgrading(true)}>
                 Upgrade
@@ -236,6 +239,7 @@ function LinkCard({ activity: a }: { activity: HrActivityDetail }) {
   const toast = useToast();
   const remint = useRemintLink();
   const revoke = useRevokeLink();
+  const asking = useConfirm();
   const link = a.link;
   return (
     <Card>
@@ -273,6 +277,17 @@ function LinkCard({ activity: a }: { activity: HrActivityDetail }) {
                   size="sm"
                   loading={remint.isPending}
                   onClick={async () => {
+                    // The old address dies for everyone holding it (2026-11-12): asked first.
+                    if (
+                      !(await asking.ask({
+                        title: "Replace this activity's link?",
+                        consequence:
+                          "The link in use stops working at once for everyone who holds it, and a new one with a new address takes its place. Whoever was given the old link needs the new one.",
+                        confirmLabel: "Replace the link",
+                        tone: "danger",
+                      }))
+                    )
+                      return;
                     try {
                       await remint.mutateAsync(link.link_uuid);
                       toast.success("Link replaced", "The old one no longer works.");
@@ -288,6 +303,16 @@ function LinkCard({ activity: a }: { activity: HrActivityDetail }) {
                   size="sm"
                   loading={revoke.isPending}
                   onClick={async () => {
+                    if (
+                      !(await asking.ask({
+                        title: "Revoke this activity's link?",
+                        consequence:
+                          "It stops working at once for everyone who holds it, so nobody can give consent to this activity through it. A revoked link cannot be restored.",
+                        confirmLabel: "Revoke the link",
+                        tone: "danger",
+                      }))
+                    )
+                      return;
                     try {
                       await revoke.mutateAsync(link.link_uuid);
                       toast.success("Link revoked");
@@ -302,6 +327,7 @@ function LinkCard({ activity: a }: { activity: HrActivityDetail }) {
             )}
           </>
         )}
+        {asking.dialog}
       </CardBody>
     </Card>
   );
@@ -322,7 +348,21 @@ function UpgradeForm({ activity: a, onDone }: { activity: HrActivityDetail; onDo
         .map((p) => p.purpose_uuid)
     : [];
 
+  // An upgrade publishes at once, and a version that asks participants
+  // again writes to every one of them (2026-11-12): asked first.
+  const asking = useConfirm();
+
   async function submit() {
+    if (
+      !(await asking.ask({
+        title: `Upgrade ${a.name}${version ? ` to version ${version.version}` : ""}?`,
+        consequence: version?.reconsent_required
+          ? "The new notice is published on the activity's link at once. This version asks participants again: everyone with a current consent is emailed to consent again. Neither can be undone."
+          : "The new notice is published on the activity's link at once, and is what people consent to from now on. Nobody is emailed. It cannot be undone.",
+        confirmLabel: "Upgrade the activity",
+      }))
+    )
+      return;
     try {
       const done = await upgrade.mutateAsync({
         template_version_uuid: versionUuid,
@@ -389,6 +429,7 @@ function UpgradeForm({ activity: a, onDone }: { activity: HrActivityDetail; onDo
           Upgrade
         </Button>
       </DialogFooter>
+      {asking.dialog}
     </div>
   );
 }

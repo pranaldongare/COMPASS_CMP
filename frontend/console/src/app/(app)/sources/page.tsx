@@ -12,6 +12,7 @@ import { Ban, Building2, Eye, FileSpreadsheet, Pencil, Plus, UserRoundCog } from
 import Link from "next/link";
 import * as React from "react";
 
+import { useConfirm } from "@/components/ui/confirm";
 import { PageHeader } from "@/components/layout/app-shell";
 import {
   FilterBar,
@@ -82,6 +83,8 @@ export default function SourcesPage() {
   const [editing, setEditing] = React.useState<DataSource | null>(null);
   const [assigning, setAssigning] = React.useState<DataSource | null>(null);
   const suspend = useSuspendSource();
+  // Asked first, as on the record's own page (2026-11-12): there is no un-suspend.
+  const asking = useConfirm();
 
   const { data: enums } = useEnums();
   // No cast: `useSources` is typed `Page<DataSource>`. The `as unknown as`
@@ -110,6 +113,15 @@ export default function SourcesPage() {
     canSuspend || me?.role === "dco_admin" || (collector && !collectsForNone);
 
   async function onSuspend(uuid: string, name: string) {
+    if (
+      !(await asking.ask({
+        title: `Suspend ${name}?`,
+        consequence: "Imports from it are refused from now on. A suspended source cannot be brought back from the console.",
+        confirmLabel: "Suspend",
+        tone: "danger",
+      }))
+    )
+      return;
     try {
       await suspend.mutateAsync(uuid);
       toast.success("Source suspended", `Imports from ${name} are now refused.`);
@@ -358,6 +370,7 @@ export default function SourcesPage() {
       </Dialog>
 
       <AssignSourceOwnerDialog source={assigning} onClose={() => setAssigning(null)} />
+      {asking.dialog}
     </>
   );
 }

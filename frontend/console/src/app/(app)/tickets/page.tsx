@@ -55,6 +55,7 @@ import { useMyBreachTickets } from "@/features/breach/queries";
 import { ChangeDate } from "@/components/data-display/change-date";
 import { ReplyBox, Thread, UnreadBadge } from "@/components/data-display/thread";
 import { BriefPanel } from "@/features/rights/components/thread";
+import { TicketDataVault } from "@/features/datavault/components/ticket-datavault";
 import { TicketItems } from "@/features/rights/components/ticket-items";
 import { useChangeMyTicketDate, useMessageOffice, useReturnMyTicket } from "@/features/rights/mutations";
 import { useMyTicket, useMyTickets } from "@/features/rights/queries";
@@ -403,6 +404,8 @@ function Respond({ ticket: t, onDone }: { ticket: MyTicket; onDone: () => void }
         </details>
       )}
       {detail.data?.items && <TicketItems items={detail.data.items} />}
+      {/* A project's DCO Admin: what DataVault listed for it (0070). */}
+      <TicketDataVault holderUuid={t.holder_uuid} />
       {/* More time, with the reason, as on a breach ticket (2026-11-12): no
           approval is asked, and the Privacy Office is told. */}
       {t.may_change_date && (

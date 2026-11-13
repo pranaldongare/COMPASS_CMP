@@ -17,6 +17,20 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { statePath } from "./support/session";
 
+/** Asked first (2026-11-12): whatever mails the board or a requester, or
+ *  cannot be undone, raises a pop-up titled as a question. This says yes to
+ *  it - its last button - and is a no-op where nothing was asked. */
+async function yes(page: Page): Promise<void> {
+  const question = page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: /\?$/ }) });
+  try {
+    await question.waitFor({ state: "visible", timeout: 3_000 });
+  } catch {
+    return;
+  }
+  await question.getByRole("button").last().click();
+  await question.waitFor({ state: "hidden" });
+}
+
 test.describe.configure({ mode: "serial" });
 
 /** A `datetime-local` value for a moment `hours` ago, in the browser's zone. */
@@ -58,6 +72,12 @@ test.describe("the DPO", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^INC-\d{4}-\d{4}$/);
     const incident = (await page.getByRole("heading", { level: 1 }).textContent()) ?? "";
     await expect(page.getByText(title)).toBeVisible();
+    // The next step, on every tab (2026-11-13): the validation, which is what
+    // starts the duties.
+    const next = page.locator('section[aria-label="Next step"]');
+    await expect(next).toContainText("Record the validation");
+    await expect(next).toContainText("A yes records it, starts the DPDP duties");
+    await expect(next.getByRole("button", { name: "Go to Validation" })).toBeVisible();
     await openTab(page, "Attachments");
     await expect(page.locator("#attachments").getByText("report.eml")).toBeVisible();
     await expect(page.locator("#attachments").getByText("Email", { exact: true })).toBeVisible();
@@ -77,17 +97,26 @@ test.describe("the DPO", () => {
     // A mark made in error may be set aside before anybody has validated it
     // (2026-11-07). Not pressed: the journey needs the duty outstanding.
     await expect(certIn.getByRole("button", { name: "Not reportable to CERT-In" })).toBeVisible();
+    // Still the validation first, with the clock now running named beside it.
+    await expect(next).toContainText("Record the validation");
+    await expect(next).toContainText(/Also due: Report to CERT-In \(\d+ min left\)/);
 
     await openTab(page, "Validation");
     await page.getByLabel(/^Became aware at/).fill(hoursAgo(4));
     await page.getByLabel(/^Reasoning/).fill("Names and mobile numbers were on the copy");
     await page.getByRole("button", { name: "Record the validation" }).click();
+    await yes(page);
     // The yes records it: a BR reference, with the INC it was logged as kept.
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^BR-\d{4}-\d{4}$/);
     await expect(page.getByText("Personal data breach", { exact: true })).toBeVisible();
     // In the Details card: beside the close card on a wide screen, after the
     // tabs on a phone - one of the two placements is shown.
     await expect(page.getByText(incident, { exact: true }).filter({ visible: true })).toBeVisible();
+    // The yes started the duties: the organisation's board is next, with its
+    // thirty minutes, and the bar offers the same button the header does.
+    await expect(next).toContainText(/Notify the organisation's board - (29|30) min left, due /);
+    await expect(next.getByRole("button", { name: "Notify Organization Board" })).toBeVisible();
+    await expect(next).toContainText("Also due: Report to CERT-In");
     await openTab(page, "Duties");
     // Thirty minutes from the yes, not from when it was noticed five hours ago.
     await expect(page.getByRole("row", { name: /Organisation's board/ }).getByText(/^(29|30) min left$/)).toBeVisible();
@@ -124,6 +153,7 @@ test.describe("the DPO", () => {
     await page.getByRole("button", { name: "Save draft" }).click();
     await expect(page.getByText("Draft saved")).toBeVisible();
     await page.getByRole("button", { name: "Approve", exact: true }).click();
+    await yes(page);
     // One button, and it asks first.
     await page.getByRole("button", { name: "Send to 1 affected person" }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Send to 1 affected person" }).click();

@@ -14,6 +14,7 @@ import {
   Building2,
   ClipboardCheck,
   Database,
+  DatabaseZap,
   FileCheck,
   FileStack,
   FileText,
@@ -195,6 +196,14 @@ export const SECTIONS: NavSection[] = [
         label: "Breach settings",
         icon: Settings2,
         keywords: "organisation board public link report recipients",
+      },
+      // Where DataVault is reached (0070): the administrator's.
+      {
+        key: "datavault",
+        href: "/datavault",
+        label: "DataVault connection",
+        icon: DatabaseZap,
+        keywords: "datavault databank address api key lookup assets",
       },
       {
         key: "audit",

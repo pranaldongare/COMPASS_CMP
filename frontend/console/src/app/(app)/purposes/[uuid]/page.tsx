@@ -53,6 +53,7 @@ import {
 } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { Tab, TabList, TabPanel, Tabs, useHashTab } from "@/components/ui/tabs";
+import { AuditTrailLink } from "@/components/data-display/audit-link";
 import {
   useActivatePurpose,
   usePurpose,
@@ -152,25 +153,28 @@ export default function PurposeDetailPage() {
           </>
         }
         actions={
-          canWrite && (record.status === "draft" || record.status === "active") ? (
-            record.status === "draft" ? (
-              <>
-                <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
-                  <Pencil className="size-4" />
-                  Edit
+          <>
+            <AuditTrailLink entityType="purpose" uuid={record.purpose_uuid} label={record.name} />
+            {canWrite && (record.status === "draft" || record.status === "active") ? (
+              record.status === "draft" ? (
+                <>
+                  <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+                    <Pencil className="size-4" />
+                    Edit
+                  </Button>
+                  <Button variant="primary" size="sm" loading={activate.isPending} onClick={onActivate}>
+                    <CheckCircle2 className="size-4" />
+                    Activate
+                  </Button>
+                </>
+              ) : retirable !== false ? (
+                <Button variant="danger" size="sm" onClick={() => setRetiring(true)}>
+                  <XCircle className="size-4" />
+                  Retire
                 </Button>
-                <Button variant="primary" size="sm" loading={activate.isPending} onClick={onActivate}>
-                  <CheckCircle2 className="size-4" />
-                  Activate
-                </Button>
-              </>
-            ) : retirable !== false ? (
-              <Button variant="danger" size="sm" onClick={() => setRetiring(true)}>
-                <XCircle className="size-4" />
-                Retire
-              </Button>
-            ) : null
-          ) : null
+              ) : null
+            ) : null}
+          </>
         }
         facts={[
           {

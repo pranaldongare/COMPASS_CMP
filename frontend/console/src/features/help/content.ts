@@ -493,9 +493,10 @@ export const SECTIONS: HelpSection[] = [
         items: [
           "Check identity: a request made signed in, or verified by code, is already verified.",
           "Classify it in [[A valid … request?]] and click [[Confirm classification]]. For an erasure, confirm [[They mean erasure]] - erasure is not withdrawal. Not a rights request, or one that cannot be met? Click [[Refuse this request]], write the reason and click [[Refuse and close]] - the person is told why, with the grievance route. A document the refusal rests on - a letter, the retention schedule - goes with it: click [[Attach files]] before you refuse, and the person downloads it from their account.",
-          "Under [[Next step]], click [[In progress]].",
-          "Holders and tickets: [[Find who holds the data]], then for each holder [[Confirm who answers]], then [[Send tickets]]. Click a holder to open its ticket: what it was asked, its answer and its messages. The main action is the button on its row; the rest are under [[More]].",
-          "[[Find who holds the data]] reads the records for the processors that hold the person's data: an export, an asset, an activity's processors. Where a project or activity has none of those yet, it names who answers for it instead: a DCO Admin for a project, the HR PoC who runs an activity. They answer in the console. Where there is more than one DCO Admin, choose one under [[Which DCO Admin answers]] when you [[Confirm who answers]]. A consent with nobody to ask is listed under the holders: [[Add a holder]] for it.",
+          "Under [[Next step]], click [[In progress]]. As the request starts, the platform reads the records for who holds the person's data by itself; you do not press for it.",
+          "Holders and tickets: the holders found are already listed. For each holder [[Confirm who answers]], then [[Send tickets]]. Click a holder to open its ticket: what it was asked, its answer and its messages. The main action is the button on its row; the rest are under [[More]].",
+          "The reading finds the processors that hold the person's data: an export, an asset, an activity's processors. Where a project or activity has none of those yet, it names who answers for it instead: a DCO Admin for a project, the HR PoC who runs an activity. They answer in the console. Where there is more than one DCO Admin, choose one under [[Which DCO Admin answers]] when you [[Confirm who answers]]. A consent with nobody to ask is listed under the holders: [[Add a holder]] for it. [[Find who holds the data]] reads the records again, for anything recorded since. A request with no account behind it has no records to read: [[Add a holder]] for whoever holds the data. If the records name nobody and there is nothing to ask anyone, move the request to collating from [[Overview]].",
+          "[[DataVault]], under the holders, lists what DataVault holds of the person: each asset with its consent, project, MID and data path. Click [[Check in DataVault]] to ask now. Where a project's DCO Admin is among the holders the platform asks by itself as the holders are found, and that DCO Admin sees their project's assets on their ticket. A consent or project DataVault names that is not this person's is shown as sent, with [[Not found among this person's records]]. A check that is not answered says why and leaves an earlier answer in place. If the card says DataVault is not set up, an administrator sets it under [[DataVault connection]].",
           "Before sending, open a holder to read or change [[What their ticket will ask]] - the standard words for the request, which you can make that holder's own. For an erasure the ticket also lists each item that holder holds and what to do with it.",
           "How each holder answers is settled as the ticket goes: a colleague with a console login answers in their [[My tasks]]; one inside the organisation without a login is given a temporary login; anyone outside - a vendor, a processor - is emailed a link, opens it with a code sent to the same address, and answers on the portal. Their row says which.",
           "When an answer comes, the holder shows [[Answered - review]]. Open it, read it, then [[Accept the answer]] to count it, or [[Send back]] - the button beside it - with what is missing. Only an accepted answer counts toward closing the request.",
@@ -648,7 +649,7 @@ export const SECTIONS: HelpSection[] = [
       {
         kind: "tip",
         title: "Finding your way on a breach's page",
-        text: "[[Close the breach]] sits at the top, with a list of what still stands in the way. Below it the work is in tabs, in the order it runs: [[Duties]], [[Validation]], [[Reports]], [[People & notices]], [[Tickets]], [[Assessment]], [[Attachments]] and [[Activity]]. A red count on [[Duties]] or [[Tickets]] means something there is late.",
+        text: "[[Next]], at the top, names the one step to take now, with its clock: the validation first, then each duty in the order the work runs - the organisation's board and CERT-In, whichever runs out sooner, the first intimation, the people affected, then the 72-hour report - then a ticket's answer to review, and closing once nothing stands in the way. Its button takes the step, or opens the tab it is taken on; [[Also due]] lists what else is running, and says what is overdue. Where it says something is on its way, nothing is needed from you. [[Close the breach]] sits under it, with a list of everything that still stands in the way. Below that the work is in tabs, in the order it runs: [[Duties]], [[Validation]], [[Reports]], [[People & notices]], [[Tickets]], [[Assessment]], [[Attachments]] and [[Activity]]. A red count on [[Duties]] or [[Tickets]] means something there is late.",
       },
       {
         kind: "steps",
@@ -710,6 +711,28 @@ export const SECTIONS: HelpSection[] = [
     ],
   },
   {
+    id: "datavault-connection",
+    title: "DataVault connection",
+    summary:
+      "Where the platform asks DataVault what it holds of a person, for a rights request.",
+    roles: ["admin"],
+    blocks: [
+      {
+        kind: "list",
+        items: [
+          "[[DataVault address]] is where the platform reaches DataVault; it adds /lookup to it. The DataVault team gives the address.",
+          "[[API key]] is the key DataVault asks for. It is stored encrypted and never shown again: type a new one to replace it, or tick [[Remove the stored key]].",
+          "[[Header the key is sent in]] stays X-API-Key unless the DataVault team named another.",
+          "Tick [[Switched on]] and click [[Save]]. Switched off, the platform calls nothing and a rights request says DataVault is not set up.",
+        ],
+      },
+      {
+        kind: "note",
+        text: "On a check the platform sends the request's reference and the person's Person ID, and nothing else. Every check, and every change made here, is on the audit trail; the address and the key never are.",
+      },
+    ],
+  },
+  {
     id: "temporary-holder",
     title: "If you were given a login for a ticket",
     summary:
@@ -763,7 +786,7 @@ export const SECTIONS: HelpSection[] = [
         items: [
           "[[My tasks]] in the sidebar shows a count of tickets with something unread.",
           "Rights tickets are in three groups: [[To do]], [[Waiting on the Privacy Office]] and [[Done]].",
-          "Click [[Answer]] on a ticket. It shows what the platform already knows and opens on [[Answer the ticket]].",
+          "Click [[Answer]] on a ticket. It shows what the platform already knows and opens on [[Answer the ticket]]. A DCO Admin answering for a project also sees [[Held in DataVault for this project]]: the assets DataVault lists for the person under that project, with where each is kept.",
           "When your work is done, choose what was done, say what you hold and did, attach any proof, and click [[Submit answer]]. This is what answers the ticket.",
           "To ask a question first, open [[Messages]], write it, attach a file if needed, and click [[Send message]]. Your message is on the ticket and the window stays open. A message does not answer the ticket.",
           "The Privacy Office reviews it. Accepted, it moves to [[Done]]; sent back, it returns to [[To do]] with what is missing and a new date. While a ticket is overdue you are reminded by email every day.",

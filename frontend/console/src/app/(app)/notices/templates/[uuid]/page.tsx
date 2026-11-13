@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
 import { Tab, TabList, TabPanel, Tabs, useHashTab } from "@/components/ui/tabs";
+import { AuditTrailLink } from "@/components/data-display/audit-link";
 import { useEnums } from "@/features/meta";
 import { TemplateForm } from "@/features/notice-templates/components/template-form";
 import { TemplateStatusBadge } from "@/features/notice-templates/components/templates-panel";
@@ -149,6 +150,7 @@ export default function NoticeTemplatePage() {
         }
         actions={
           <>
+            <AuditTrailLink entityType="notice_template" uuid={t.template_uuid} label={t.title} />
             <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
               <Pencil className="size-4" />
               Edit details

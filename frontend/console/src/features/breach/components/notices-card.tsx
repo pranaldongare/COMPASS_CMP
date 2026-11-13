@@ -20,6 +20,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, FilePlus2, Megaphone, Save, Send } from "lucide-react";
 import * as React from "react";
 
+import { useConfirm } from "@/components/ui/confirm";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import {
   Alert,
@@ -172,6 +173,7 @@ export function NoticesCard({ breach }: { breach: Breach }) {
     onSuccess: after,
   });
   const approve = useMutation({ mutationFn: () => approveNotice(breach.breach_uuid, draft!.notice_uuid), onSuccess: after });
+  const asking = useConfirm();
   const send = useMutation({ mutationFn: () => sendNotice(breach.breach_uuid), onSuccess: after });
 
   async function act(what: () => Promise<unknown>, ok: string, detail?: string) {
@@ -301,7 +303,18 @@ export function NoticesCard({ breach }: { breach: Breach }) {
                   size="sm"
                   disabled={words !== null}
                   loading={approve.isPending}
-                  onClick={() => act(() => approve.mutateAsync(), "Notice approved", "Send it when you are ready.")}
+                  onClick={async () => {
+                    // Approving freezes the words (2026-11-12): asked first.
+                    if (
+                      await asking.ask({
+                        title: `Approve version ${draft.version} of the notice?`,
+                        consequence:
+                          "An approved notice cannot be edited: a change after this is a new version. Nothing is sent yet - sending it to the people affected is a separate step.",
+                        confirmLabel: "Approve the notice",
+                      })
+                    )
+                      await act(() => approve.mutateAsync(), "Notice approved", "Send it when you are ready.");
+                  }}
                 >
                   <CheckCircle2 className="size-4" />
                   Approve
@@ -372,6 +385,7 @@ export function NoticesCard({ breach }: { breach: Breach }) {
             onConfirm={() => void sendNow(approved.version)}
           />
         )}
+        {asking.dialog}
       </CardBody>
     </Card>
   );

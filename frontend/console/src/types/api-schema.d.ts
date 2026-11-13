@@ -3773,6 +3773,12 @@ export interface paths {
          *     consented (every purpose), partial (some), declined, withdrawn. Filtered
          *     by project, site, status, and when it was given (`from` and `to`,
          *     both inclusive).
+         *
+         *     `q` finds one data subject's records: three or more letters of the name,
+         *     or a whole email address or mobile number. A name is sealed and is found
+         *     by its parts, so a shorter term cannot be searched for and is refused
+         *     (422) rather than answered with an empty list that would read as "no such
+         *     person".
          */
         get: operations["list_all_consents_consents_get"];
         put?: never;
@@ -4867,7 +4873,16 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Transition */
+        /**
+         * Transition
+         * @description Move a request along its path; the state machine is the gate.
+         *
+         *     Starting it - received to in progress, which needs identity verified, the
+         *     request classified and an office holding it - also reads the records for
+         *     who holds the person's data, as `POST .../holders/derive` does, for an
+         *     access or erasure request with a person behind it. The holders found are
+         *     not confirmed: the office still does that.
+         */
         post: operations["transition_requests__request_uuid__transition_post"];
         delete?: never;
         options?: never;
@@ -6544,6 +6559,84 @@ export interface paths {
         get?: never;
         /** Make an address on the organisation's board mandatory, or optional again */
         put: operations["set_board_recipient_mandatory_breach_settings_board_recipients__recipient_uuid__mandatory_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/datavault-connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Where DataVault is reached, and whether it is on */
+        get: operations["get_connection_datavault_connection_get"];
+        /** Set DataVault's address, its key, and switch it on */
+        put: operations["put_connection_datavault_connection_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/datavault": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What DataVault last said it holds of this request's person */
+        get: operations["request_datavault_requests__request_uuid__datavault_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/datavault/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check in DataVault: ask it now what it holds of this request's person
+         * @description One call to DataVault, made while the caller waits and recorded whether
+         *     or not it is answered. No transaction is open during the call.
+         */
+        post: operations["check_in_datavault_requests__request_uuid__datavault_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tickets/{holder_uuid}/datavault": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * On a DCO Admin's ticket: the assets DataVault listed for their project
+         * @description Bounded by the holder's own account, as every ticket route is: a ticket
+         *     addressed to somebody else, or one that is not a project's DCO Admin's,
+         *     answers with nothing listed.
+         */
+        get: operations["ticket_datavault_tickets__holder_uuid__datavault_get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -9395,6 +9488,31 @@ export interface components {
             /** Updated By Name */
             updated_by_name: string | null;
         };
+        /** CheckOut */
+        CheckOut: {
+            /**
+             * Check Uuid
+             * Format: uuid
+             */
+            check_uuid: string;
+            /**
+             * Asked At
+             * Format: date-time
+             */
+            asked_at: string;
+            /** Automatic */
+            automatic: boolean;
+            /** Asked By Name */
+            asked_by_name: string | null;
+            /** Outcome */
+            outcome: string;
+            /** Failure */
+            failure: string | null;
+            /** Failure Said */
+            failure_said: string | null;
+            /** Asset Count */
+            asset_count: number;
+        };
         /** Checklist */
         Checklist: {
             /** Publishable */
@@ -9672,6 +9790,40 @@ export interface components {
             responder_name?: string | null;
             /** Responder Contact */
             responder_contact?: string | null;
+        };
+        /** ConnectionIn */
+        ConnectionIn: {
+            /** Base Url */
+            base_url?: string | null;
+            /** Api Key */
+            api_key?: string | null;
+            /**
+             * Clear Api Key
+             * @default false
+             */
+            clear_api_key: boolean;
+            /** Api Key Header */
+            api_key_header?: string | null;
+            /**
+             * Enabled
+             * @default false
+             */
+            enabled: boolean;
+        };
+        /** ConnectionOut */
+        ConnectionOut: {
+            /** Base Url */
+            base_url: string | null;
+            /** Api Key Set */
+            api_key_set: boolean;
+            /** Api Key Header */
+            api_key_header: string;
+            /** Enabled */
+            enabled: boolean;
+            /** Updated At */
+            updated_at: string | null;
+            /** Updated By Name */
+            updated_by_name: string | null;
         };
         /**
          * ConsentArtefactOut
@@ -10441,6 +10593,29 @@ export interface components {
             service: string;
             /** Version */
             version: string;
+        };
+        /** HeldAssetOut */
+        HeldAssetOut: {
+            /** Asset Ref */
+            asset_ref: string;
+            /** Consent Ref */
+            consent_ref: string | null;
+            /** Project Ref */
+            project_ref: string | null;
+            /** Consent Uuid */
+            consent_uuid: string | null;
+            /** Consent No */
+            consent_no: number | null;
+            /** Project Uuid */
+            project_uuid: string | null;
+            /** Project No */
+            project_no: number | null;
+            /** Project Name */
+            project_name: string | null;
+            /** Mid */
+            mid: string | null;
+            /** Datapath */
+            datapath: string | null;
         };
         /** HolderIn */
         HolderIn: {
@@ -12670,6 +12845,19 @@ export interface components {
              */
             due_on: string;
         };
+        /** RequestDataVaultOut */
+        RequestDataVaultOut: {
+            /** Configured */
+            configured: boolean;
+            /** May Check */
+            may_check: boolean;
+            /** Why Not */
+            why_not: string | null;
+            answer: components["schemas"]["CheckOut"] | null;
+            /** Assets */
+            assets: components["schemas"]["HeldAssetOut"][];
+            last_failure: components["schemas"]["CheckOut"] | null;
+        };
         /** RequestDetail */
         RequestDetail: {
             /**
@@ -13847,6 +14035,17 @@ export interface components {
             messages: components["schemas"]["cmp__api__routers__v1__rights__MessageOut"][];
         };
         /**
+         * TicketDataVaultOut
+         * @description What DataVault listed for the project a DCO Admin's ticket is about.
+         *     `asked_at` null: not such a ticket, or DataVault has not answered yet.
+         */
+        TicketDataVaultOut: {
+            /** Asked At */
+            asked_at: string | null;
+            /** Assets */
+            assets: components["schemas"]["HeldAssetOut"][];
+        };
+        /**
          * TicketDateIn
          * @description A new date for a ticket to be answered by, and why (2026-11-12).
          */
@@ -14496,6 +14695,11 @@ export interface components {
             label: string;
             /** Filterable By Uuid */
             filterable_by_uuid: boolean;
+            /**
+             * With Parts
+             * @default false
+             */
+            with_parts: boolean;
         };
         /** VocabularyEventType */
         VocabularyEventType: {
@@ -21640,6 +21844,7 @@ export interface operations {
                 site?: string | null;
                 from?: string | null;
                 to?: string | null;
+                q?: string | null;
                 limit?: number | null;
                 cursor?: string | null;
                 sort?: string | null;
@@ -26952,6 +27157,152 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BreachSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_connection_datavault_connection_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionOut"];
+                };
+            };
+        };
+    };
+    put_connection_datavault_connection_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnectionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_datavault_requests__request_uuid__datavault_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestDataVaultOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_in_datavault_requests__request_uuid__datavault_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestDataVaultOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ticket_datavault_tickets__holder_uuid__datavault_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                holder_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketDataVaultOut"];
                 };
             };
             /** @description Validation Error */

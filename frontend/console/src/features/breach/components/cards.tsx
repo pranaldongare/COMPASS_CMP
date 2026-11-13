@@ -14,7 +14,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CalendarPlus, CircleSlash, FileText, Lock, Plus, RotateCcw, Trash2 } from "lucide-react";
 import * as React from "react";
 
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useConfirm } from "@/components/ui/confirm";
+import { ConfirmDialog, Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   Alert,
   Button,
@@ -337,8 +338,29 @@ export function DeterminationCard({ breach }: { breach: Breach }) {
   );
   const awareAt = instant(aware);
   const ready = reasoning.trim() !== "" && (outcome !== "yes" || awareAt !== null);
+  // A Yes cannot be taken back - the breach reference is issued once - and it
+  // starts the clocks and may mail the board: asked first (2026-11-12).
+  const asking = useConfirm();
 
   async function save() {
+    if (outcome === "yes") {
+      const held =
+        " If a report to CERT-In was finalised earlier and is held, it is emailed now to the board addresses chosen for it.";
+      const agreed = await asking.ask(
+        recorded
+          ? {
+              title: "Record the validation as Yes?",
+              consequence: `The DPDP duties stand again from this validation.${held}`,
+              confirmLabel: "Record the validation",
+            }
+          : {
+              title: "Record this incident as a personal data breach?",
+              consequence: `It is given its breach reference, once and for good, and the DPDP duties start now: the organisation's board within 30 minutes, the Data Protection Board and the people affected without delay.${held}`,
+              confirmLabel: "Record as a breach",
+            },
+      );
+      if (!agreed) return;
+    }
     try {
       const fresh = await write.mutateAsync({
         outcome,
@@ -433,6 +455,7 @@ export function DeterminationCard({ breach }: { breach: Breach }) {
             </div>
           </div>
         )}
+        {asking.dialog}
       </CardBody>
     </Card>
   );
@@ -620,20 +643,82 @@ export function AssessmentCard({ breach }: { breach: Breach }) {
 
 /* ------------------------------------------------------------ open, closed */
 
-export function BreachTransitions({ breach }: { breach: Breach }) {
+/** Closing, asked first (2026-11-12): the button and its question, wherever
+ *  closing is offered - on the Close card, and on the next step once nothing
+ *  stands in the way (2026-11-13). The question and what it does are the same
+ *  in both places; `label` is what the button says there. */
+export function CloseBreachButton({
+  breach,
+  label = "Close the breach",
+  size,
+}: {
+  breach: Breach;
+  label?: string;
+  size?: "sm";
+}) {
   const toast = useToast();
-  const [reason, setReason] = React.useState("");
-  const write = useBreachWrite(breach, (uuid, a: { to: "open" | "closed"; reason: string | null }) =>
-    transitionBreach(uuid, a),
-  );
+  // Closing ends the work on the record, and one click on a button at the
+  // head of the page was all it took.
+  const [confirming, setConfirming] = React.useState(false);
+  const write = useBreachWrite(breach, (uuid, a: { to: "closed"; reason: null }) => transitionBreach(uuid, a));
   const [move] = breach.transitions;
-  if (!move) return null;
+  const allowed = move?.to === "closed" && move.allowed;
 
   async function go() {
     try {
-      await write.mutateAsync({ to: move.to, reason: reason.trim() || null });
+      await write.mutateAsync({ to: "closed", reason: null });
+      setConfirming(false);
+      toast.success("Breach closed");
+    } catch (err) {
+      setConfirming(false);
+      toast.error("Not moved", messageOf(err, "The server refused."));
+    }
+  }
+
+  return (
+    <>
+      <Button
+        variant="primary"
+        size={size}
+        disabled={!allowed}
+        loading={write.isPending && !confirming}
+        onClick={() => setConfirming(true)}
+      >
+        <Lock className="size-4" />
+        {label}
+      </Button>
+      <ConfirmDialog
+        open={confirming}
+        onOpenChange={setConfirming}
+        title={`Close ${breach.reference}?`}
+        consequence={
+          <>
+            Closing ends the work on this record. Nothing more can be recorded, sent or
+            assigned on it while it is closed, and the close is on its history with your name.
+            It can be reopened later, with a reason.
+          </>
+        }
+        confirmLabel="Close the breach"
+        tone="primary"
+        loading={write.isPending}
+        onConfirm={go}
+      />
+    </>
+  );
+}
+
+export function BreachTransitions({ breach }: { breach: Breach }) {
+  const toast = useToast();
+  const [reason, setReason] = React.useState("");
+  const write = useBreachWrite(breach, (uuid, a: { to: "open"; reason: string | null }) => transitionBreach(uuid, a));
+  const [move] = breach.transitions;
+  if (!move) return null;
+
+  async function reopen() {
+    try {
+      await write.mutateAsync({ to: "open", reason: reason.trim() || null });
       setReason("");
-      toast.success(move.to === "closed" ? "Breach closed" : "Breach reopened");
+      toast.success("Breach reopened");
     } catch (err) {
       toast.error("Not moved", messageOf(err, "The server refused."));
     }
@@ -659,15 +744,19 @@ export function BreachTransitions({ breach }: { breach: Breach }) {
             {(p) => <Textarea {...p} value={reason} onChange={(e) => setReason(e.target.value)} />}
           </Field>
         )}
-        <Button
-          variant={move.to === "closed" ? "primary" : "secondary"}
-          disabled={!move.allowed || (move.reason_required && !reason.trim())}
-          loading={write.isPending}
-          onClick={go}
-        >
-          {move.to === "closed" ? <Lock className="size-4" /> : <RotateCcw className="size-4" />}
-          {move.to === "closed" ? "Close the breach" : "Reopen the breach"}
-        </Button>
+        {move.to === "closed" ? (
+          <CloseBreachButton breach={breach} />
+        ) : (
+          <Button
+            variant="secondary"
+            disabled={!move.allowed || (move.reason_required && !reason.trim())}
+            loading={write.isPending}
+            onClick={reopen}
+          >
+            <RotateCcw className="size-4" />
+            Reopen the breach
+          </Button>
+        )}
       </CardBody>
     </Card>
   );

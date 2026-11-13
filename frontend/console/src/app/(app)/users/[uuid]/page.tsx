@@ -54,6 +54,7 @@ import {
 } from "@/components/ui/primitives";
 import { StatusBadge, statusLabel } from "@/components/ui/status";
 import { Tab, TabList, TabPanel, Tabs, useHashTab } from "@/components/ui/tabs";
+import { AuditTrailLink } from "@/components/data-display/audit-link";
 import { UserCategoriesForm } from "@/features/hr-categories/components/user-categories";
 import { useAccountActions } from "@/features/users/components/account-actions";
 import { UserForm } from "@/features/users/components/forms";
@@ -126,29 +127,32 @@ export default function UserDetailPage() {
           </>
         }
         actions={
-          isAdmin && (
-            <>
-              <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
-                <Pencil className="size-4" />
-                Edit
-              </Button>
-              {/* The register's row menu, as buttons; the destructive one last. */}
-              {[...account.actionsFor(u)]
-                .sort((a, b) => Number(Boolean(a.destructive)) - Number(Boolean(b.destructive)))
-                .map((a) => (
-                  <Button
-                    key={a.label}
-                    variant={a.destructive ? "danger" : "secondary"}
-                    size="sm"
-                    disabled={a.disabled}
-                    onClick={a.onSelect}
-                  >
-                    {a.icon && <a.icon className="size-4" />}
-                    {a.label}
-                  </Button>
-                ))}
-            </>
-          )
+          <>
+            <AuditTrailLink entityType="auth_user" uuid={u.uuid} label={u.full_name} />
+            {isAdmin && (
+              <>
+                <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+                  <Pencil className="size-4" />
+                  Edit
+                </Button>
+                {/* The register's row menu, as buttons; the destructive one last. */}
+                {[...account.actionsFor(u)]
+                  .sort((a, b) => Number(Boolean(a.destructive)) - Number(Boolean(b.destructive)))
+                  .map((a) => (
+                    <Button
+                      key={a.label}
+                      variant={a.destructive ? "danger" : "secondary"}
+                      size="sm"
+                      disabled={a.disabled}
+                      onClick={a.onSelect}
+                    >
+                      {a.icon && <a.icon className="size-4" />}
+                      {a.label}
+                    </Button>
+                  ))}
+              </>
+            )}
+          </>
         }
         facts={[
           { label: "Role", value: statusLabel("role", u.role), icon: BadgeCheck, tint: 0 },

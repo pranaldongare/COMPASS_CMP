@@ -28,6 +28,7 @@ import {
   Select,
   Textarea,
 } from "@/components/ui/primitives";
+import { type Question, useConfirm } from "@/components/ui/confirm";
 import { REQUEST_TYPE_COPY, STATUS_COPY } from "@/features/rights/components/copy";
 import { ReleaseFiles } from "@/features/rights/components/release-files";
 import {
@@ -47,6 +48,7 @@ import {
 import {
   AUTOMATIC,
   holdersNotYetFound,
+  nobodyOnRecord,
 } from "@/features/rights/components/request-summary";
 import { useUsers } from "@/features/users";
 import { isApiError } from "@/lib/errors";
@@ -145,6 +147,13 @@ export function VerificationCard({ request: r }: { request: RightsRequestDetail 
     }
   }
 
+  // What is sent to the requester, or cannot be undone, is asked about first
+  // in a pop-up that says so (2026-11-12).
+  const asking = useConfirm();
+  async function ask<T>(question: Question, fn: () => Promise<T>, title: string) {
+    if (await asking.ask(question)) await run(fn, title);
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -186,7 +195,17 @@ export function VerificationCard({ request: r }: { request: RightsRequestDetail 
                     variant="secondary"
                     size="sm"
                     loading={send.isPending}
-                    onClick={() => run(() => send.mutateAsync(), "Code sent")}
+                    onClick={() =>
+                      ask(
+                        {
+                          title: "Send a verification code?",
+                          consequence: `A one-time code goes to the requester now. ${channel.says}`,
+                          confirmLabel: "Send the code",
+                        },
+                        () => send.mutateAsync(),
+                        "Code sent",
+                      )
+                    }
                   >
                     Send a code
                   </Button>
@@ -207,7 +226,18 @@ export function VerificationCard({ request: r }: { request: RightsRequestDetail 
                     size="sm"
                     disabled={code.length < 4}
                     loading={confirm.isPending}
-                    onClick={() => run(() => confirm.mutateAsync(code), "Identity verified")}
+                    onClick={() =>
+                      ask(
+                        {
+                          title: "Confirm the requester's identity?",
+                          consequence:
+                            "The request is recorded as verified, which cannot be undone, and the requester is emailed an acknowledgement with the date a response is due.",
+                          confirmLabel: "Confirm identity",
+                        },
+                        () => confirm.mutateAsync(code),
+                        "Identity verified",
+                      )
+                    }
                   >
                     Confirm
                   </Button>
@@ -226,7 +256,18 @@ export function VerificationCard({ request: r }: { request: RightsRequestDetail 
                   size="sm"
                   disabled={note.trim().length < 3}
                   loading={manual.isPending}
-                  onClick={() => run(() => manual.mutateAsync(note.trim()), "Identity verified")}
+                  onClick={() =>
+                    ask(
+                      {
+                        title: "Record the identity as verified?",
+                        consequence:
+                          "Your note is kept on the request and in the audit trail. Verification cannot be undone, and the requester is emailed an acknowledgement with the date a response is due.",
+                        confirmLabel: "Record as verified",
+                      },
+                      () => manual.mutateAsync(note.trim()),
+                      "Identity verified",
+                    )
+                  }
                 >
                   Record as verified
                 </Button>
@@ -245,7 +286,19 @@ export function VerificationCard({ request: r }: { request: RightsRequestDetail 
                     size="sm"
                     className="mt-2"
                     loading={fail.isPending}
-                    onClick={() => run(() => fail.mutateAsync(note.trim() || null), "Closed as not verified")}
+                    onClick={() =>
+                      ask(
+                        {
+                          title: `Close ${r.reference} as not verified?`,
+                          consequence:
+                            "The request closes. The requester is sent a neutral message that it was closed without being verified, and may make a new request.",
+                          confirmLabel: "Close as not verified",
+                          tone: "danger",
+                        },
+                        () => fail.mutateAsync(note.trim() || null),
+                        "Closed as not verified",
+                      )
+                    }
                   >
                     Close as not verified
                   </Button>
@@ -254,6 +307,7 @@ export function VerificationCard({ request: r }: { request: RightsRequestDetail 
             </div>
           </div>
         )}
+        {asking.dialog}
       </CardBody>
     </Card>
   );
@@ -292,6 +346,13 @@ export function ClassificationCard({ request: r }: { request: RightsRequestDetai
     } catch (err) {
       toast.error("Not done", messageOf(err, "The server refused."));
     }
+  }
+
+  // What is sent to the requester, or cannot be undone, is asked about first
+  // in a pop-up that says so (2026-11-12).
+  const asking = useConfirm();
+  async function ask<T>(question: Question, fn: () => Promise<T>, title: string) {
+    if (await asking.ask(question)) await run(fn, title);
   }
 
   return (
@@ -358,7 +419,19 @@ export function ClassificationCard({ request: r }: { request: RightsRequestDetai
               <Button variant="primary" size="sm" loading={intent.isPending} onClick={() => run(() => intent.mutateAsync(), "Erasure confirmed")}>
                 They mean erasure
               </Button>
-              <Button variant="secondary" size="sm" loading={withdrawal.isPending} onClick={() => run(() => withdrawal.mutateAsync(note || null), "Handled as withdrawal")}>
+              <Button variant="secondary" size="sm" loading={withdrawal.isPending} onClick={() =>
+                  ask(
+                    {
+                      title: `Handle ${r.reference} as a withdrawal?`,
+                      consequence:
+                        "The request closes without erasing anything. The requester is emailed that it was taken as a withdrawal of consent, and how to withdraw from their consent record.",
+                      confirmLabel: "Handle as withdrawal",
+                    },
+                    () => withdrawal.mutateAsync(note || null),
+                    "Handled as withdrawal",
+                  )
+                }
+              >
                 They meant withdrawal
               </Button>
             </div>
@@ -377,10 +450,37 @@ export function ClassificationCard({ request: r }: { request: RightsRequestDetai
               {r.trigger_evidence_hash && " Evidence was attached - download it from the header."}
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
-              <Button variant="primary" size="sm" loading={event.isPending} onClick={() => run(() => event.mutateAsync({ evidenced: true, note: note || null }), "Event evidenced")}>
+              <Button variant="primary" size="sm" loading={event.isPending} onClick={() =>
+                  ask(
+                    {
+                      title: "Accept the event as evidenced?",
+                      consequence:
+                        r.trigger_event === "death"
+                          ? "The nominee may then act for the principal on this request. Because the event is a death, the principal's account is deactivated and its sessions end. This cannot be undone here."
+                          : "The nominee may then act for the principal on this request. This cannot be undone here.",
+                      confirmLabel: "Accept as evidenced",
+                    },
+                    () => event.mutateAsync({ evidenced: true, note: note || null }),
+                    "Event evidenced",
+                  )
+                }
+              >
                 Evidenced to our standard
               </Button>
-              <Button variant="secondary" size="sm" loading={event.isPending} onClick={() => run(() => event.mutateAsync({ evidenced: false, note: note || null }), "Refused - not evidenced")}>
+              <Button variant="secondary" size="sm" loading={event.isPending} onClick={() =>
+                  ask(
+                    {
+                      title: `Refuse ${r.reference} as not evidenced?`,
+                      consequence:
+                        "The request is refused and closes. The nominee is emailed that the event was not evidenced to the standard required, with your note if you wrote one.",
+                      confirmLabel: "Refuse and close",
+                      tone: "danger",
+                    },
+                    () => event.mutateAsync({ evidenced: false, note: note || null }),
+                    "Refused - not evidenced",
+                  )
+                }
+              >
                 Not evidenced - refuse
               </Button>
             </div>
@@ -428,7 +528,19 @@ export function ClassificationCard({ request: r }: { request: RightsRequestDetai
                     The DPO owns grievances, including ones about the DPO&apos;s own decisions - and that is a
                     real conflict. Recuse if this concerns your handling.
                   </p>
-                  <Button variant="subtle" size="sm" className="mt-2" loading={escalate.isPending} onClick={() => run(() => escalate.mutateAsync(), "Escalated to an independent reviewer")}>
+                  <Button variant="subtle" size="sm" className="mt-2" loading={escalate.isPending} onClick={() =>
+                      ask(
+                        {
+                          title: "Escalate to an independent reviewer?",
+                          consequence:
+                            "Every administrator is emailed that this grievance concerns the DPO's own handling and needs a reviewer. It cannot be taken back once sent.",
+                          confirmLabel: "Escalate",
+                        },
+                        () => escalate.mutateAsync(),
+                        "Escalated to an independent reviewer",
+                      )
+                    }
+                  >
                     Escalate (about me)
                   </Button>
                 </div>
@@ -488,7 +600,17 @@ export function ClassificationCard({ request: r }: { request: RightsRequestDetai
                     disabled={reason.trim().length < 3}
                     loading={refuse.isPending}
                     onClick={() =>
-                      run(
+                      ask(
+                        {
+                          title: `Refuse ${r.reference} and close it?`,
+                          consequence: `The requester is emailed your reason${
+                            refusalFiles.length
+                              ? ` and the name${refusalFiles.length === 1 ? "" : "s"} of the ${refusalFiles.length} document${refusalFiles.length === 1 ? "" : "s"} attached`
+                              : ""
+                          }, with the grievance route, and the request closes. A refusal sent cannot be recalled.`,
+                          confirmLabel: "Refuse and close",
+                          tone: "danger",
+                        },
                         () => refuse.mutateAsync({ reason: reason.trim(), files: refusalFiles }),
                         refusalFiles.length
                           ? `Refused, with reasons and ${refusalFiles.length} document${refusalFiles.length === 1 ? "" : "s"}`
@@ -503,6 +625,7 @@ export function ClassificationCard({ request: r }: { request: RightsRequestDetai
             </div>
           </div>
         )}
+        {asking.dialog}
       </CardBody>
     </Card>
   );
@@ -533,6 +656,8 @@ export function RequestTransitions({ request: r }: { request: RightsRequestDetai
   // Started with nobody asked yet: finding the holders comes first, and
   // collating straight away is the exception for nothing to ask anyone.
   const notFound = holdersNotYetFound(r);
+  // Read already - by the platform as the request started - and nobody named.
+  const nobody = nobodyOnRecord(r);
 
   async function run(to: string, reason?: string) {
     try {
@@ -555,10 +680,13 @@ export function RequestTransitions({ request: r }: { request: RightsRequestDetai
         {notFound && (
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-accent-border bg-accent-subtle px-4 py-3">
             <div className="min-w-0">
-              <p className="text-sm font-medium">Find who holds the data</p>
+              <p className="text-sm font-medium">
+                {nobody ? "Add who holds the data" : "Find who holds the data"}
+              </p>
               <p className="mt-1 text-xs text-text-muted">
-                From the records, or add one you know of; then confirm who answers and send the
-                tickets.
+                {nobody
+                  ? "The records were read and name nobody. Add a holder you know of; then confirm who answers and send the tickets."
+                  : "From the records, or add one you know of; then confirm who answers and send the tickets."}
               </p>
             </div>
             <Button asChild variant="primary" size="sm">

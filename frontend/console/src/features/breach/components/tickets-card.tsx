@@ -30,6 +30,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ChevronRight, ClipboardList, ExternalLink, Undo2, UserPlus } from "lucide-react";
 import * as React from "react";
 
+import { AuditTrailLink } from "@/components/data-display/audit-link";
 import { ChangeDate } from "@/components/data-display/change-date";
 import { ReplyBox, Thread, UnreadBadge } from "@/components/data-display/thread";
 import { FileInput } from "@/components/forms";
@@ -453,6 +454,14 @@ function TicketDialog({
                   onSave={({ date, reason: why }) => redate.mutateAsync({ answer_by: date, reason: why })}
                 />
               )}
+              {/* Everything done on this ticket, for whoever may read the trail. */}
+              <span className="ml-auto">
+                <AuditTrailLink
+                  entityType="breach_ticket"
+                  uuid={t.ticket_uuid}
+                  label={`Ticket on ${breach.reference}`}
+                />
+              </span>
             </div>
 
             {answer && (

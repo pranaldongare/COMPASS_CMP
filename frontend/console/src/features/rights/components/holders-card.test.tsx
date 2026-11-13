@@ -12,8 +12,10 @@ import { render, screen, within } from "@/test/render";
 import { API, server } from "@/test/server";
 import type { RightsHolder, TicketMove } from "@/types";
 
+// The reader has the audit section, as the officers who open a ticket do.
 vi.mock("@/providers", () => ({
   useToast: () => ({ success: vi.fn(), error: vi.fn() }),
+  useAuth: () => ({ me: { nav: ["audit"] } }),
 }));
 
 const REQUEST = "11111111-1111-4111-8111-111111111111";
@@ -132,6 +134,14 @@ describe("HoldersCard", () => {
     await user.click(screen.getByRole("button", { name: /read 2 new messages from samsung/i }));
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByText("Messages")).toBeInTheDocument();
+    // The ticket's own trail is one click from the ticket (2026-11-12).
+    const trail = new URL(
+      within(dialog).getByRole("link", { name: "Audit trail" }).getAttribute("href") ?? "",
+      "http://cmp.local",
+    );
+    expect(trail.pathname).toBe("/audit");
+    expect(trail.searchParams.get("entity_type")).toBe("rights_request_holder");
+    expect(trail.searchParams.get("entity")).toBe(HOLDER);
   });
 
   it("puts the other moves under More, and none the server did not send", async () => {
@@ -431,6 +441,50 @@ describe("HoldersCard", () => {
     render(<HoldersCard request={request([holder({ moves: [] })], "closed")} />);
     expect(screen.queryByRole("button", { name: /find who holds the data/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Send tickets" })).not.toBeInTheDocument();
+  });
+
+  it("asks before tickets are sent, says who is written to, and sends nothing on Cancel", async () => {
+    // 2026-11-12: a ticket is an email, and to a processor's respondent it
+    // leaves the organisation.
+    const ready = (uuid: string, channel: "portal" | "email") =>
+      holder({
+        holder_uuid: uuid,
+        channel,
+        ticket_status: "pending",
+        issued_at: null,
+        returned_at: null,
+        return_summary: null,
+        return_outcome: null,
+        state: "not_sent",
+        state_label: "Not sent",
+        moves: [move("remove", "Remove")],
+      });
+    let sent = 0;
+    server.use(
+      http.post(`${API}/requests/${REQUEST}/tickets`, () => {
+        sent += 1;
+        return HttpResponse.json(request([]));
+      }),
+    );
+    const { user } = render(
+      <HoldersCard request={request([ready(HOLDER, "email"), ready("33333333-3333-4333-8333-333333333333", "portal")])} />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Send tickets" }));
+    await user.click(screen.getByRole("button", { name: "Send 2 tickets" }));
+    const question = await screen.findByRole("dialog", { name: "Send 2 tickets?" });
+    expect(within(question).getByText(/All 2 holders are emailed now, each with their own ticket\./)).toBeInTheDocument();
+    expect(
+      within(question).getByText(/One is reached by an email address alone: .* an outside processor's respondent - a link to the ticket\./),
+    ).toBeInTheDocument();
+    expect(within(question).getByText(/the email cannot be recalled/)).toBeInTheDocument();
+    await user.click(within(question).getByRole("button", { name: "Cancel" }));
+    await vi.waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(sent).toBe(0);
+
+    await user.click(screen.getByRole("button", { name: "Send 2 tickets" }));
+    await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Send 2 tickets" }));
+    await vi.waitFor(() => expect(sent).toBe(1));
   });
 
   it("says how each holder answers: a temporary login, or a link for an outside holder", () => {

@@ -193,6 +193,32 @@ describe("NoticesCard", () => {
       await screen.findByLabelText(/What happened/);
       expect(screen.queryByRole("button", { name: /Send/ })).not.toBeInTheDocument();
     });
+
+    it("asks before a draft is approved, because approved words cannot be edited", async () => {
+      // 2026-11-12: one click froze the notice.
+      let approvedNow = 0;
+      serve(notices(withVersions({ ...draft, version: 1 })));
+      server.use(
+        http.post(`${API}/breaches/${UUID}/notices/${DRAFT}/approve`, () => {
+          approvedNow += 1;
+          return HttpResponse.json(notices(withVersions({ ...approved, notice_uuid: DRAFT })));
+        }),
+      );
+      const { user } = render(<NoticesCard breach={breach} />);
+      await screen.findByLabelText(/What happened/);
+
+      await user.click(screen.getByRole("button", { name: "Approve" }));
+      const question = await screen.findByRole("dialog", { name: "Approve version 1 of the notice?" });
+      expect(within(question).getByText(/An approved notice cannot be edited/)).toBeInTheDocument();
+      expect(within(question).getByText(/Nothing is sent yet/)).toBeInTheDocument();
+      await user.click(within(question).getByRole("button", { name: "Cancel" }));
+      await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+      expect(approvedNow).toBe(0);
+
+      await user.click(screen.getByRole("button", { name: "Approve" }));
+      await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Approve the notice" }));
+      await waitFor(() => expect(approvedNow).toBe(1));
+    });
   });
 
   describe("a first draft", () => {

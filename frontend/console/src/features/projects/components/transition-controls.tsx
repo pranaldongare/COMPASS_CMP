@@ -40,6 +40,7 @@ import {
   Skeleton,
   Textarea,
 } from "@/components/ui/primitives";
+import { type Question, useConfirm } from "@/components/ui/confirm";
 import { statusLabel } from "@/components/ui/status";
 import { useTransition, useTransitions } from "@/features/projects";
 import type { ProjectStatus, TransitionOption } from "@/types";
@@ -55,6 +56,23 @@ const PROJECT_ACTIONS: Record<string, string> = {
   approved: "Approve project",
   in_draft: "Return to draft",
   closed: "Close project",
+};
+
+/** The one-click moves that are asked about first, and what each one does. */
+const ASKED_FIRST: Partial<Record<string, Question>> = {
+  pending_approval: {
+    title: "Submit this project for approval?",
+    consequence:
+      "Every DPO is emailed that it is waiting for a decision. It cannot be edited while it waits: the DPO approves it, or returns it to draft with a reason.",
+    confirmLabel: "Submit for approval",
+  },
+  closed: {
+    title: "Close this project?",
+    consequence:
+      "Closing is final: a closed project cannot be reopened. Its consent links stop working at once, so nobody can give consent on it any more, and the project's owner is emailed.",
+    confirmLabel: "Close project",
+    tone: "danger",
+  },
 };
 
 function actionFor(to: string): string {
@@ -86,6 +104,10 @@ export function TransitionControls({
   const [pending, setPending] = React.useState<TransitionOption | null>(null);
   const [reason, setReason] = React.useState("");
   const [reasonError, setReasonError] = React.useState<string | null>(null);
+  // A move made on one click is asked about first where it writes to people
+  // or cannot be undone (2026-11-12). The moves that need a reason, or publish
+  // the notice, already open a panel that says what they do.
+  const asking = useConfirm();
 
   if (isLoading) {
     return (
@@ -142,7 +164,7 @@ export function TransitionControls({
     }
   }
 
-  function onClick(option: TransitionOption) {
+  async function onClick(option: TransitionOption) {
     if (!option.allowed) return;
     if (option.reason_required || option.publishes_notice) {
       setPending(option);
@@ -150,6 +172,8 @@ export function TransitionControls({
       setReasonError(null);
       return;
     }
+    const question = ASKED_FIRST[option.to];
+    if (question && !(await asking.ask(question))) return;
     void run(option, "");
   }
 
@@ -310,6 +334,7 @@ export function TransitionControls({
             </div>
           </div>
         )}
+        {asking.dialog}
       </CardBody>
     </Card>
   );

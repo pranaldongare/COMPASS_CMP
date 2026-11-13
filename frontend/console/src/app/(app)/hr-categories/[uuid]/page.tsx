@@ -27,6 +27,7 @@ import * as React from "react";
 import { PageHeader } from "@/components/layout/app-shell";
 import { RecordHeader } from "@/components/layout/record-header";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { AuditTrailLink } from "@/components/data-display/audit-link";
 import {
   Alert,
   Button,
@@ -121,15 +122,22 @@ export default function HrCategoryPage() {
           </>
         }
         actions={
-          canWrite ? (
-            <>
-              <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
-                <Pencil className="size-4" />
-                Edit
-              </Button>
-              <RetireButton category={c} />
-            </>
-          ) : null
+          <>
+            <AuditTrailLink
+              entityType="hr_category"
+              uuid={c.category_uuid}
+              label={c.name}
+            />
+            {canWrite ? (
+              <>
+                <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+                  <Pencil className="size-4" />
+                  Edit
+                </Button>
+                <RetireButton category={c} />
+              </>
+            ) : null}
+          </>
         }
         facts={[
           { label: "Code", value: c.category_code, icon: Hash, tint: 0 },

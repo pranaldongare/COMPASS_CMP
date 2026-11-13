@@ -36,6 +36,7 @@ import Link from "next/link";
 import * as React from "react";
 
 import { FileInput } from "@/components/forms";
+import { useConfirm } from "@/components/ui/confirm";
 import { ConfirmDialog, Dialog, DialogContent, DialogSaved } from "@/components/ui/dialog";
 import {
   Alert,
@@ -106,7 +107,7 @@ const STATE: Record<BreachDocumentState, { label: string; tone: "info" | "warnin
 /** Mail the worker may yet reach. What has sat queued too long was lost, and
  *  only Try again moves it; one to an address taken off the list is not waited
  *  for at all, and one held for the first yes is not on its way. */
-const onItsWay = (mail: BreachDocumentMail) =>
+export const onItsWay = (mail: BreachDocumentMail) =>
   mail.recipients.filter((r) => r.status === "queued" && !r.removed).length - mail.stale;
 
 /** The version sending again is about: a later one has replaced the words. */
@@ -118,7 +119,7 @@ const newestSent = (view: BreachDocumentKindView) => view.versions.find((v) => v
  *  is only the fallback for a settling that failed: a yes after a no completes
  *  the duty by itself from the first version whose mail has run its course and
  *  reached somebody. */
-function mayTryAgain(view: BreachDocumentKindView, doc: BreachDocument) {
+export function mayTryAgain(view: BreachDocumentKindView, doc: BreachDocument) {
   if (doc.mail.retryable > 0) return true;
   return (
     view.kind === "org_board" &&
@@ -212,6 +213,9 @@ function ReportEditor({
   const qc = useQueryClient();
   const after = useAfter(breach);
   const toBoard = doc.kind === "org_board";
+  // Finalising freezes the words and mails the organisation's board: asked
+  // first, saying how many addresses and what cannot be taken back (2026-11-12).
+  const asking = useConfirm();
   // The list is read while the window is open, and afresh every time it opens:
   // only names and addresses are needed, and only here.
   const list = useQuery({
@@ -283,6 +287,25 @@ function ReportEditor({
   async function go() {
     if (!board) return;
     const { body, count: sending } = chosen(board, pick);
+    const frozen = `Version ${doc.version} is frozen as it reads now: a finalised report cannot be changed, and a correction is a new version.`;
+    const question = toBoard
+      ? {
+          title: "Send this report to the organisation's board?",
+          consequence: `${frozen} It is emailed to ${addressCount(sending)} now, with the report attached. An email sent cannot be recalled.`,
+          confirmLabel: "Send to the board",
+        }
+      : holdsMail
+        ? {
+            title: "Finalise this report and hold it?",
+            consequence: `${frozen} Nothing is emailed now: the ${addressCount(sending)} chosen ${sending === 1 ? "is" : "are"} told at the first validation of Yes.`,
+            confirmLabel: "Finalise and hold",
+          }
+        : {
+            title: "Finalise this report and tell the board?",
+            consequence: `${frozen} ${addressCount(sending)} on the organisation's board ${sending === 1 ? "is" : "are"} emailed now that a report for the regulator is ready. Nothing is sent to the regulator from here.`,
+            confirmLabel: "Finalise and tell the board",
+          };
+    if (!(await asking.ask(question))) return;
     try {
       const fresh = await finalise.mutateAsync(body);
       // What the server did, not what was asked: the version as it now stands.
@@ -424,6 +447,7 @@ function ReportEditor({
             </Button>
           </div>
         </div>
+        {asking.dialog}
       </DialogContent>
     </Dialog>
   );
@@ -821,6 +845,7 @@ function MailLine({
     mutationFn: () => resendBreachDocument(breach.breach_uuid, doc.report_uuid),
     onSuccess: after,
   });
+  const asking = useConfirm();
   const { delivered, queued, failed, unsent, stale, retryable, recipients } = doc.mail;
   // An address taken off the list is in no count, and its line still says so.
   if (delivered + queued + failed === 0 && recipients.length === 0) return null;
@@ -847,9 +872,20 @@ function MailLine({
   const went = recipients.some((r) => r.attempt > 0);
   const why = notGoneBecause(view, doc);
 
-  // A press says what it did: a re-queued mail, or none at all, can look the
-  // same on the screen as a press that went nowhere.
+  // A press mails the board, so it asks first (2026-11-12). And it says what
+  // it did: a re-queued mail, or none at all, can look the same on the screen
+  // as a press that went nowhere.
   async function press() {
+    if (
+      !(await asking.ask({
+        title: first ? "Send this report to the organisation's board?" : "Send this report to the board again?",
+        consequence: `${doc.title}, version ${doc.version}, is emailed ${
+          first ? "to every address it was chosen for" : "again to each address it was chosen for and has not reached"
+        }, if still on the board's list. An email sent cannot be recalled.`,
+        confirmLabel: first ? "Send to the board" : "Send again",
+      }))
+    )
+      return;
     try {
       const fresh = await again.mutateAsync();
       const done = fresh.kinds.find((k) => k.kind === view.kind)?.duty_state === "done";
@@ -907,6 +943,7 @@ function MailLine({
           </ul>
         </details>
       )}
+      {asking.dialog}
     </div>
   );
 }
@@ -1302,8 +1339,10 @@ export function ReportsCard({ breach }: { breach: Breach }) {
  *  mailing. Where nobody the last version went to is still on the list, Try
  *  again can reach nobody, so the button offers a new version, which goes to
  *  whoever is chosen then. An editor already open stays, whatever happens to
- *  the duty. */
-export function NotifyBoardButton({ breach }: { breach: Breach }) {
+ *  the duty. `quiet` shows no button and keeps the editor: for a place that
+ *  offers the button in some states only - the next step (2026-11-13) - and
+ *  must not lose a report being written from it when the step moves on. */
+export function NotifyBoardButton({ breach, quiet = false }: { breach: Breach; quiet?: boolean }) {
   const toast = useToast();
   const qc = useQueryClient();
   const after = useAfter(breach);
@@ -1372,7 +1411,7 @@ export function NotifyBoardButton({ breach }: { breach: Breach }) {
 
   return (
     <>
-      {control()}
+      {quiet ? null : control()}
       {editingDoc && (
         <ReportEditor
           breach={breach}

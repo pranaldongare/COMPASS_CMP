@@ -22,6 +22,7 @@ import {
   useFilterParam,
 } from "@/components/data-display/resource-list";
 import { AgentForm, ProjectFilter } from "@/features/projects/components";
+import { useConfirm } from "@/components/ui/confirm";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { RowActions } from "@/components/ui/overlay";
 import { EmptyLink } from "@/components/ui/graphics";
@@ -44,6 +45,7 @@ function LinksPageView() {
     { siteUuid: string; siteLabel: string } | null
   >(null);
   const revoke = useRevokeLink();
+  const asking = useConfirm();
 
   const { data: enums } = useEnums();
   const query = useAllLinks({
@@ -54,6 +56,18 @@ function LinksPageView() {
   });
 
   async function onRevoke(uuid: string, label: string) {
+    // Revoking stops collection there for everyone holding the link, and a
+    // revoked link is not brought back (2026-11-12): asked first.
+    if (
+      !(await asking.ask({
+        title: `Revoke the link for ${label}?`,
+        consequence:
+          "It stops working at once for everyone who holds it - a printed poster, a message already sent - so nobody can give consent through it. A revoked link cannot be restored; a new one has a new address.",
+        confirmLabel: "Revoke the link",
+        tone: "danger",
+      }))
+    )
+      return;
     try {
       await revoke.mutateAsync(uuid);
       toast.success("Link revoked", `${label} no longer resolves for anyone holding it.`);
@@ -201,6 +215,7 @@ function LinksPageView() {
           {reissue && <AgentForm siteUuid={reissue.siteUuid} onDone={() => setReissue(null)} />}
         </DialogContent>
       </Dialog>
+      {asking.dialog}
     </>
   );
 }

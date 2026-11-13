@@ -401,12 +401,16 @@ export function describeFilters(
       value: f.label || f.actor.slice(0, 8),
       onClear: () => clear(["actor", "label"]),
     });
-  if (f.entity && f.entity_type)
+  if (f.entity && f.entity_type) {
+    // A breach, a request, a project: the trail reads what belongs to the
+    // record too - its tickets, its sites, its notices - and the chip says so.
+    const whole = vocabulary?.entity_types.find((e) => e.value === f.entity_type)?.with_parts;
     chips.push({
       label: nounOf(f.entity_type),
-      value: f.label || f.entity.slice(0, 8),
+      value: `${f.label || f.entity.slice(0, 8)}${whole ? " and everything on it" : ""}`,
       onClear: () => clear(["entity", "entity_type", "label"]),
     });
+  }
   else if (f.entity_type)
     chips.push({
       label: "Record type",

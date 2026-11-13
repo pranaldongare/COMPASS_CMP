@@ -33,6 +33,7 @@ import {
   Select,
   Textarea,
 } from "@/components/ui/primitives";
+import { useConfirm } from "@/components/ui/confirm";
 import { ConfinedNote } from "@/features/rights/components/consent-scope";
 import {
   useApplyItem,
@@ -198,7 +199,29 @@ function ItemRow({ request: r, item, canWork }: { request: RightsRequestDetail; 
     }
   }
 
+  // Carrying out a decision, and releasing what holds one back, cannot be
+  // undone: asked first, saying what happens to the data (2026-11-12).
+  const asking = useConfirm();
+
   async function doApply() {
+    const destroys = item.decision === "erase" || item.decision === "redact";
+    const what =
+      item.decision === "erase"
+        ? "It is taken out of use now and erased once every store holding it has confirmed. Erased data cannot be recovered."
+        : item.decision === "redact"
+          ? `The requester is removed from it once every store holding it has confirmed; the ${item.other_subjects === 1 ? "other person" : "others"} in it ${item.other_subjects === 1 ? "is" : "are"} kept. What is removed cannot be recovered.`
+          : item.decision === "retain"
+            ? "It is kept, and the decision and its basis stand on the record. Nothing is erased."
+            : "It is taken out of use and kept. Nothing is erased.";
+    if (
+      !(await asking.ask({
+        title: `Apply the decision to ${item.source_asset_ref}?`,
+        consequence: `${what} Once applied, the decision stands.`,
+        confirmLabel: destroys ? (item.decision === "erase" ? "Apply and erase" : "Apply and redact") : "Apply",
+        tone: destroys ? "danger" : "primary",
+      }))
+    )
+      return;
     try {
       const result = await apply.mutateAsync(item.item_uuid);
       toast.success(
@@ -233,6 +256,16 @@ function ItemRow({ request: r, item, canWork }: { request: RightsRequestDetail; 
   }
 
   async function doRelease(holdUuid: string) {
+    if (
+      !(await asking.ask({
+        title: `Release the legal hold on ${item.source_asset_ref}?`,
+        consequence:
+          "What the hold was stopping is carried out at once: the erasure or redaction decided for this item goes ahead and cannot be undone.",
+        confirmLabel: "Release the hold",
+        tone: "danger",
+      }))
+    )
+      return;
     try {
       await releaseHold.mutateAsync(holdUuid);
       toast.success("Hold released", "What it was stopping carries on.");
@@ -360,6 +393,7 @@ function ItemRow({ request: r, item, canWork }: { request: RightsRequestDetail; 
           </div>
         </div>
       )}
+      {asking.dialog}
     </li>
   );
 }

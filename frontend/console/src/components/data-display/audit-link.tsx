@@ -20,6 +20,12 @@ export function auditTrailHref(entityType: string, uuid: string, label: string):
   return `/audit?${params.toString()}`;
 }
 
+/** Whether this reader was given the audit section: the link renders for nobody else. */
+export function useMayReadTrail(): boolean {
+  const { me } = useAuth();
+  return Boolean(me?.nav.includes("audit"));
+}
+
 export function AuditTrailLink({
   entityType,
   uuid,
@@ -29,8 +35,8 @@ export function AuditTrailLink({
   uuid: string;
   label: string;
 }) {
-  const { me } = useAuth();
-  if (!me?.nav.includes("audit")) return null;
+  const may = useMayReadTrail();
+  if (!may) return null;
   return (
     <Button variant="secondary" size="sm" asChild>
       <Link href={auditTrailHref(entityType, uuid, label)}>

@@ -30,8 +30,19 @@ export function holdersNotYetFound(r: RightsRequestDetail): boolean {
   return r.status === "in_progress" && r.request_type !== "grievance" && r.holders.length === 0;
 }
 
+/**
+ * The same, once the records have been read and named nobody. The platform
+ * reads them as a request starts (2026-11-13), so "Find who holds the data"
+ * is no longer the next thing to do there: the office adds whoever holds the
+ * data, or moves on with nothing to ask anyone.
+ */
+export function nobodyOnRecord(r: RightsRequestDetail): boolean {
+  return holdersNotYetFound(r) && Boolean(r.holders_derived_at);
+}
+
 /** What the office does next on the holders card, if anything. */
 function holdersMove(r: RightsRequestDetail): string | null {
+  if (nobodyOnRecord(r)) return "Add who holds the data";
   if (holdersNotYetFound(r)) return "Find who holds the data";
   if (!["in_progress", "awaiting_holders", "collating"].includes(r.status)) return null;
   const n = (state: string) => r.holders.filter((h) => h.state === state).length;

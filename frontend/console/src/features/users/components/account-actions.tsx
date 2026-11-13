@@ -16,6 +16,7 @@
 import { KeyRound, Send, ShieldEllipsis, UserCheck, UserX } from "lucide-react";
 import * as React from "react";
 
+import { type Question, useConfirm } from "@/components/ui/confirm";
 import { ConfirmDialog, Dialog, DialogContent } from "@/components/ui/dialog";
 import type { RowAction } from "@/components/ui/overlay";
 import {
@@ -51,8 +52,42 @@ export function useAccountActions(): {
   const [changingRole, setChangingRole] = React.useState<User | null>(null);
   const [resettingMfa, setResettingMfa] = React.useState<User | null>(null);
 
+  // Ending somebody's access happens at once, and for a member of staff it
+  // is not undone from here (2026-11-12): asked first, saying what they lose.
+  const asking = useConfirm();
+
   async function toggle(user: User) {
-    const active = user.status === "active";
+    // Anything not switched off is ended - an invited account that never
+    // signed in too. "Active" alone sent a pending account's End staff access
+    // down the other branch, which activated it (fixed 2026-11-12).
+    const active = user.status !== "deactivated";
+    if (active) {
+      const question: Question =
+        user.role === "data_subject"
+          ? {
+              title: `Deactivate ${user.full_name}'s account?`,
+              consequence:
+                "They can no longer sign in, and every session they have open ends now. Their consent records are kept, and the account can be reactivated.",
+              confirmLabel: "Deactivate",
+              tone: "danger",
+            }
+          : user.role === "breach_holder"
+            ? {
+                title: `End temporary access for ${user.full_name}?`,
+                consequence:
+                  "Their breach-only sign-in ends now and their password is cleared. The tickets they held stay on the record.",
+                confirmLabel: "End temporary access",
+                tone: "danger",
+              }
+            : {
+                title: `End staff access for ${user.full_name}?`,
+                consequence:
+                  "They lose their role and the assignments that came with it, their password is cleared and every session ends now. They are emailed that their staff access has ended. The account stays as a data principal's, and staff access is not given back from here.",
+                confirmLabel: "End staff access",
+                tone: "danger",
+              };
+      if (!(await asking.ask(question))) return;
+    }
     try {
       if (active) {
         const result = await deactivate.mutateAsync(user.uuid);
@@ -168,6 +203,7 @@ export function useAccountActions(): {
           }
         }}
       />
+      {asking.dialog}
     </>
   );
 

@@ -18,6 +18,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, Trash2 } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/app-shell";
+import { useConfirm } from "@/components/ui/confirm";
 import {
   Alert,
   Button,
@@ -138,6 +139,7 @@ function refusal(err: unknown): string {
 
 function BoardList({ settings }: { settings: BreachSettings }) {
   const toast = useToast();
+  const asking = useConfirm();
   const qc = useQueryClient();
   const stored = (fresh: BreachSettings) => qc.setQueryData(keys.breach.settings(), fresh);
   // A refusal may say the page is behind the list (gone, already there,
@@ -167,7 +169,17 @@ function BoardList({ settings }: { settings: BreachSettings }) {
       return false;
     }
   }
-  async function takeOff(uuid: string) {
+  async function takeOff(uuid: string, email: string) {
+    // The list is who every report to the board goes to (2026-11-12): asked first.
+    if (
+      !(await asking.ask({
+        title: `Remove ${email} from the board's list?`,
+        consequence: `Reports to the organisation's board no longer go to this address, and a report still on its way to it is stopped. ${TOLD}`,
+        confirmLabel: "Remove from the list",
+        tone: "danger",
+      }))
+    )
+      return;
     try {
       await remove.mutateAsync(uuid);
       toast.success("Removed from the list", TOLD);
@@ -257,7 +269,7 @@ function BoardList({ settings }: { settings: BreachSettings }) {
                       disabled={r.mandatory}
                       title={r.mandatory ? "Make it optional before removing it" : undefined}
                       loading={remove.isPending && remove.variables === r.recipient_uuid}
-                      onClick={() => takeOff(r.recipient_uuid)}
+                      onClick={() => takeOff(r.recipient_uuid, r.email)}
                     >
                       <Trash2 className="size-4" />
                     </Button>
@@ -271,6 +283,7 @@ function BoardList({ settings }: { settings: BreachSettings }) {
           <p className="text-xs text-text-subtle">A mandatory address cannot be removed. Untick Mandatory first.</p>
         )}
         <BoardAddressForm submitLabel="Add" pending={add.isPending} onAdd={save} />
+        {asking.dialog}
       </CardBody>
     </Card>
   );

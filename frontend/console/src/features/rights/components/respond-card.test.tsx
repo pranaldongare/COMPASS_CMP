@@ -3,12 +3,14 @@
  * The card reads `complete_blocked_by` and holds no copy of the rule: when the
  * server names a reason, Complete cannot be chosen and the reason is shown.
  */
-import { describe, expect, it } from "vitest";
+import { HttpResponse, http } from "msw";
+import { describe, expect, it, vi } from "vitest";
 
 import { RespondCard } from "@/features/rights/components/respond-card";
 import { ToastProvider } from "@/providers/toast-provider";
 import { makeRequestDetail } from "@/test/fixtures";
-import { fireEvent, render, screen } from "@/test/render";
+import { fireEvent, render, screen, within } from "@/test/render";
+import { API, server } from "@/test/server";
 import type { RightsRequestDetail } from "@/types";
 
 const collating = {
@@ -60,5 +62,76 @@ describe("RespondCard", () => {
 
     await user.click(screen.getByRole("button", { name: "Remove extract.csv" }));
     expect(screen.queryByText("extract.csv")).not.toBeInTheDocument();
+  });
+
+  it("asks before a response is released, says what the requester is sent, and sends nothing on Cancel", async () => {
+    // 2026-11-12: whatever goes to a data principal is asked about first.
+    let released = 0;
+    server.use(
+      http.post(`${API}/requests/:uuid/respond`, () => {
+        released += 1;
+        return HttpResponse.json(makeRequestDetail({ status: "closed" }));
+      }),
+    );
+    const { user } = card({ reference: "RR-2026-0042" });
+    await user.type(screen.getByLabelText(/The response/), "Everything was erased on 3 November.");
+    await user.upload(
+      screen.getByLabelText(/Files released with the response/),
+      new File(["a,b\n"], "extract.csv", { type: "text/csv" }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "Release and close" }));
+    const question = await screen.findByRole("dialog", {
+      name: "Release the response to RR-2026-0042 and close it?",
+    });
+    expect(
+      within(question).getByText(
+        /The requester is emailed that the response is ready, and 1 file is released to their account\./,
+      ),
+    ).toBeInTheDocument();
+    expect(within(question).getByText(/A response sent cannot be recalled\./)).toBeInTheDocument();
+    await user.click(within(question).getByRole("button", { name: "Cancel" }));
+    await vi.waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(released).toBe(0);
+    // What was typed and attached is still there.
+    expect(screen.getByLabelText(/The response/)).toHaveValue("Everything was erased on 3 November.");
+    expect(screen.getByText("extract.csv")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Release and close" }));
+    await user.click(
+      within(await screen.findByRole("dialog")).getByRole("button", { name: "Release and close" }),
+    );
+    await vi.waitFor(() => expect(released).toBe(1));
+  });
+
+  it("asks before a grievance is decided, and says when the earlier request is run again", async () => {
+    let decided: unknown = null;
+    server.use(
+      http.post(`${API}/requests/:uuid/decide`, async ({ request }) => {
+        decided = await request.json();
+        return HttpResponse.json({ ...makeRequestDetail({ status: "closed" }), rerun_reference: "RR-2026-0099" });
+      }),
+    );
+    const { user } = card({
+      reference: "RR-2026-0050",
+      request_type: "grievance",
+      linked_reference: "RR-2026-0042",
+      transitions: [],
+    });
+    await user.type(screen.getByLabelText(/What was found, and why/), "The first answer left out the March files.");
+    await user.type(screen.getByLabelText(/Remedy/), "The request is run again, at no cost.");
+
+    await user.click(screen.getByRole("button", { name: "Decide and close" }));
+    const question = await screen.findByRole("dialog", {
+      name: "Decide RR-2026-0050 as upheld and close it?",
+    });
+    expect(
+      within(question).getByText(/The requester is emailed your decision and the remedy, and the grievance closes\./),
+    ).toBeInTheDocument();
+    expect(within(question).getByText(/RR-2026-0042 is run again as a new request/)).toBeInTheDocument();
+    expect(decided).toBeNull();
+
+    await user.click(within(question).getByRole("button", { name: "Decide and close" }));
+    await vi.waitFor(() => expect(decided).toMatchObject({ upheld: true, rerun: true }));
   });
 });

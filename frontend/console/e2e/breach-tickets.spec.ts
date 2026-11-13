@@ -20,6 +20,20 @@ import { expect, test, type Page } from "@playwright/test";
 import { freshCode } from "./support/outbox";
 import { STATE_DIR, statePath } from "./support/session";
 
+/** Asked first (2026-11-12): whatever mails the board or a requester, or
+ *  cannot be undone, raises a pop-up titled as a question. This says yes to
+ *  it - its last button - and is a no-op where nothing was asked. */
+async function yes(page: Page): Promise<void> {
+  const question = page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: /\?$/ }) });
+  try {
+    await question.waitFor({ state: "visible", timeout: 3_000 });
+  } catch {
+    return;
+  }
+  await question.getByRole("button").last().click();
+  await question.waitFor({ state: "hidden" });
+}
+
 test.describe.configure({ mode: "serial" });
 
 function minutesAgo(minutes: number): string {
@@ -64,6 +78,7 @@ test.describe("the DPO asks", () => {
     await page.getByLabel(/^Became aware at/).fill(minutesAgo(10));
     await page.getByLabel(/^Reasoning/).fill("Contact details were on the drive");
     await page.getByRole("button", { name: "Record the validation" }).click();
+    await yes(page);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^BR-\d{4}-\d{4}$/);
     shared.reference = ((await page.getByRole("heading", { level: 1 }).textContent()) ?? "").trim();
     shared.url = bare(page.url());
@@ -90,7 +105,8 @@ test.describe("the DPO asks", () => {
     await opened.getByLabel(/^New resolve by date/).fill(daysAhead(3));
     await opened.getByLabel(/^Reason/).fill("The log rotates on Friday");
     await opened.getByRole("button", { name: "Change the date" }).click();
-    await expect(page.getByText("Date changed")).toBeVisible();
+    // The toast, not the line the ticket keeps of it.
+    await expect(page.getByRole("region", { name: "Notifications" }).getByText("Date changed")).toBeVisible();
     await expect(opened.getByText(/Resolve by changed/).first()).toBeVisible();
     await page.keyboard.press("Escape");
     await expect(page.getByText(/not saved/i)).toHaveCount(0);
@@ -150,6 +166,7 @@ test.describe("the DPO closes", () => {
     await page.getByRole("combobox", { name: /^Validation/ }).selectOption("no");
     await page.getByLabel(/^Reasoning/).fill("The drive held test accounts only");
     await page.getByRole("button", { name: "Record the validation" }).click();
+    await yes(page);
     await expect(page.getByText("Validation recorded")).toBeVisible();
     await expect(page.getByText("1 breach ticket is still open")).toHaveCount(0);
     const close = page.getByRole("button", { name: "Close the breach" });
@@ -162,6 +179,7 @@ test.describe("the DPO closes", () => {
     // card around it; the keyboard presses the same button.
     await close.focus();
     await page.keyboard.press("Enter");
+    await yes(page);
     await expect(page.getByText("Breach closed")).toBeVisible();
   });
 });
@@ -201,6 +219,7 @@ test.describe("a temporary holder", () => {
     await page.getByLabel(/^Became aware at/).fill(minutesAgo(10));
     await page.getByLabel(/^Reasoning/).fill("Contact details were on the drive");
     await page.getByRole("button", { name: "Record the validation" }).click();
+    await yes(page);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^BR-\d{4}-\d{4}$/);
     temp.reference = ((await page.getByRole("heading", { level: 1 }).textContent()) ?? "").trim();
     temp.url = bare(page.url());
@@ -307,6 +326,7 @@ test.describe("a temporary holder", () => {
     await page.getByRole("combobox", { name: /^Validation/ }).selectOption("no");
     await page.getByLabel(/^Reasoning/).fill("The drive held test accounts only");
     await page.getByRole("button", { name: "Record the validation" }).click();
+    await yes(page);
     await expect(page.getByText("Validation recorded")).toBeVisible();
     const close = page.getByRole("button", { name: "Close the breach" });
     await expect(close).toBeEnabled({ timeout: 15_000 });
@@ -315,6 +335,7 @@ test.describe("a temporary holder", () => {
     });
     await close.focus();
     await page.keyboard.press("Enter");
+    await yes(page);
     await expect(page.getByText("Breach closed")).toBeVisible();
     await openTab(page, "Tickets");
     await expect(holder.getByText("Temporary login · read only")).toBeVisible();

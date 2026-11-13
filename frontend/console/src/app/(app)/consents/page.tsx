@@ -18,6 +18,7 @@ import {
   FilterDate,
   FilterSelect,
   ResourceList,
+  SearchBox,
   useCursorStack,
   useFilterParam,
 } from "@/components/data-display/resource-list";
@@ -46,10 +47,13 @@ function ConsentsPageView() {
   const [site, setSite] = useFilterParam("site");
   const [from, setFrom] = useFilterParam("from");
   const [to, setTo] = useFilterParam("to");
+  // Whose consent it is (2026-11-12): part of the name, or a whole contact.
+  const [person, setPerson] = useFilterParam("q");
   const sites = useSites(project || undefined);
-  const filtered = Boolean(status || project || site || from || to);
+  const filtered = Boolean(status || project || site || from || to || person);
 
   const query = useAllConsents({
+    q: person || undefined,
     status: status || undefined,
     project: project || undefined,
     site: site || undefined,
@@ -86,6 +90,16 @@ function ConsentsPageView() {
       />
 
       <FilterBar>
+        {/* On Enter, not as it is typed: a name is found by three letters or
+            more, and a contact only whole - a fragment of somebody's email
+            has no business in a request. */}
+        <SearchBox
+          label="Data subject"
+          value={person}
+          instant={false}
+          placeholder="Name, or a whole email or mobile"
+          onSubmit={(term) => set(() => setPerson(term))}
+        />
         <ProjectFilter
           value={project}
           onChange={(v) =>
@@ -133,6 +147,7 @@ function ConsentsPageView() {
                   setSite("");
                   setFrom("");
                   setTo("");
+                  setPerson("");
                 })
               }
             >
@@ -152,7 +167,7 @@ function ConsentsPageView() {
           "Consent ID",
           "Data subject",
           "Person ID",
-          "Project",
+          "Projects/HR Activity",
           "Project ID",
           "Site",
           "Status",

@@ -25,6 +25,8 @@ import {
   Mono,
 } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
+import { breachSentence } from "@/components/data-display/audit-breach-words";
+import { datavaultSentence } from "@/components/data-display/audit-datavault-words";
 import type { AuditEntry } from "@/types";
 import { formatDate, formatDateTime, humanise } from "@/lib/format";
 
@@ -103,11 +105,38 @@ function dateChanged(entry: AuditEntry): string | null {
   return `${who} changed a ticket's answer-by date from ${day(detail.date_before)} to ${day(detail.date_after)}.${why}`;
 }
 
+/**
+ * The records were read for who holds a person's data: by the platform as the
+ * request started (2026-11-13), or by a press of "Find who holds the data".
+ * The row says which, and how many holders the reading added.
+ */
+function holdersRead(entry: AuditEntry): string {
+  const detail = (entry.detail ?? {}) as Record<string, unknown>;
+  const added = typeof detail.added === "number" ? detail.added : null;
+  const found =
+    added === null
+      ? ""
+      : added === 0
+        ? " Nobody new was found."
+        : ` ${added} ${added === 1 ? "holder was" : "holders were"} added.`;
+  return detail.automatic
+    ? `The platform read the records for who holds the person's data as the request started.${found}`
+    : `The records were read for who holds the person's data.${found}`;
+}
+
 export function eventSentence(entry: AuditEntry): string {
   if (entry.event_type === "rights.ticket_date_changed") {
     const said = dateChanged(entry);
     if (said) return said;
   }
+  if (entry.event_type === "rights.holders_derived") return holdersRead(entry);
+  // A request checked in DataVault, and where DataVault is reached (0070).
+  const datavault = datavaultSentence(entry);
+  if (datavault) return datavault;
+  // An incident, a breach, its reports, notices and tickets: said from what
+  // each row carries (2026-11-12).
+  const breach = breachSentence(entry);
+  if (breach) return breach;
   return (
     EVENT_SENTENCES[entry.event_type] ?? humanise(entry.event_type.replace(/\./g, " "))
   );

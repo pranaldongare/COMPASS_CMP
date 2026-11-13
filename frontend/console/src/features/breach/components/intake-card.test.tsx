@@ -20,6 +20,14 @@ import { act, render, screen, within } from "@/test/render";
 import { API, server } from "@/test/server";
 import type { DismissedReport, IncidentReport, IncidentReportPage, IncidentReportRow } from "@/types";
 
+/** A claim cannot be given back, so it is asked about first (2026-11-12): the
+ *  pop-up says the other office stops seeing the report. This says yes. */
+async function yesClaim(user: ReturnType<typeof render>["user"]) {
+  const question = await screen.findByRole("dialog", { name: "Claim this report for your office?" });
+  expect(within(question).getByText(/the other office no longer sees it\. A claim cannot be undone\./)).toBeInTheDocument();
+  await user.click(within(question).getByRole("button", { name: "Claim for this office" }));
+}
+
 const push = vi.hoisted(() => vi.fn());
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), warning: vi.fn() }));
 vi.mock("next/navigation", () => ({
@@ -165,6 +173,7 @@ describe("IntakeCard", () => {
     expect(within(dialog).getByRole("status", { name: "Reading the report" })).toBeInTheDocument();
 
     await user.click(within(dialog).getByRole("button", { name: "Claim for this office" }));
+    await yesClaim(user);
     await vi.waitFor(() => expect(claimed).toBe(true));
     release();
   });
@@ -227,6 +236,7 @@ describe("IntakeCard", () => {
 
     const dialog = await openIt(user);
     await user.click(within(dialog).getByRole("button", { name: "Claim for this office" }));
+    await yesClaim(user);
 
     await vi.waitFor(() => expect(push).toHaveBeenCalledWith(`/breaches/${BREACH}`));
     expect(claimed).toBe(true);
@@ -242,6 +252,7 @@ describe("IntakeCard", () => {
 
     const dialog = await openIt(user);
     await user.click(within(dialog).getByRole("button", { name: "Claim for this office" }));
+    await yesClaim(user);
 
     await vi.waitFor(() =>
       expect(toast.error).toHaveBeenCalledWith("Not claimed", "The other office has already claimed it"),
@@ -286,6 +297,7 @@ describe("IntakeCard", () => {
 
     const dialog = await openIt(user);
     await user.click(within(dialog).getByRole("button", { name: "Claim for this office" }));
+    await yesClaim(user);
     await vi.waitFor(() => expect(push).toHaveBeenCalled());
     await polled(queryClient);
 
@@ -310,6 +322,7 @@ describe("IntakeCard", () => {
     const dialog = await openIt(user);
     await within(dialog).findByText(/open to anyone with the link/);
     await user.click(within(dialog).getByRole("button", { name: "Claim for this office" }));
+    await yesClaim(user);
     await vi.waitFor(() => expect(world.rows).toEqual([]));
     await polled(queryClient);
     expect(toast.warning).not.toHaveBeenCalled();
@@ -331,6 +344,7 @@ describe("IntakeCard", () => {
 
     const dialog = await openIt(user);
     await user.click(within(dialog).getByRole("button", { name: "Claim for this office" }));
+    await yesClaim(user);
     await vi.waitFor(() => expect(toast.error).toHaveBeenCalled());
     await polled(queryClient);
 

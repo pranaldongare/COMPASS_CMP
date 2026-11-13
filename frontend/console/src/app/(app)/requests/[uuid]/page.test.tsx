@@ -142,6 +142,11 @@ describe("RequestPage", () => {
     expect(screen.getByRole("button", { name: "Attach more files" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Refuse and close" }));
+    // Asked first (2026-11-12), saying what the requester is sent; nothing goes before the yes.
+    const question = await screen.findByRole("dialog", { name: /Refuse .* and close it\?/ });
+    expect(within(question).getByText(/The requester is emailed your reason and the name of the 1 document attached/)).toBeInTheDocument();
+    expect(sent).toBeNull();
+    await user.click(within(question).getByRole("button", { name: "Refuse and close" }));
     await vi.waitFor(() => expect(sent).not.toBeNull());
     expect(sent).toMatch(/name="reason"\r\n\r\nThe retention floor has not passed\./);
     // The file is a part of the form. Its name is not asserted: this test's

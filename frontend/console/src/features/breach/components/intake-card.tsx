@@ -18,6 +18,7 @@ import { Archive, Inbox } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 
+import { useConfirm } from "@/components/ui/confirm";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   Alert,
@@ -59,6 +60,7 @@ function ReportDialog({ report, onClose }: { report: IncidentReportRow; onClose:
   const [dismissing, setDismissing] = React.useState(false);
   const [reason, setReason] = React.useState("");
   const refresh = () => void qc.invalidateQueries({ queryKey: keys.breach.intake() });
+  const asking = useConfirm();
   const claim = useMutation({
     mutationFn: () => claimIncidentReport(report.report_uuid),
     onSuccess: (breach) => {
@@ -168,12 +170,28 @@ function ReportDialog({ report, onClose }: { report: IncidentReportRow; onClose:
               <Button variant="secondary" onClick={() => setDismissing(true)}>
                 Dismiss
               </Button>
-              <Button variant="primary" loading={claim.isPending} onClick={() => claim.mutate()}>
+              <Button
+                variant="primary"
+                loading={claim.isPending}
+                onClick={async () => {
+                  // A claim cannot be given back (2026-11-12): asked first.
+                  if (
+                    await asking.ask({
+                      title: "Claim this report for your office?",
+                      consequence:
+                        "It is logged as an incident in your office's register, and the other office no longer sees it. A claim cannot be undone.",
+                      confirmLabel: "Claim for this office",
+                    })
+                  )
+                    claim.mutate();
+                }}
+              >
                 Claim for this office
               </Button>
             </div>
           )}
         </div>
+        {asking.dialog}
       </DialogContent>
     </Dialog>
   );

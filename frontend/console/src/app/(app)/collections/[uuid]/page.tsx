@@ -28,6 +28,7 @@ import { PageHeader } from "@/components/layout/app-shell";
 import { RecordHeader } from "@/components/layout/record-header";
 import { Meter } from "@/components/ui/charts";
 import { EmptyRecords } from "@/components/ui/graphics";
+import { AuditTrailLink } from "@/components/data-display/audit-link";
 import {
   Alert,
   Badge,
@@ -119,6 +120,13 @@ export default function CollectionDetailPage() {
               {record.project_name} · collected {formatDate(record.collected_on)}
             </span>
           </>
+        }
+        actions={
+          <AuditTrailLink
+            entityType="collection"
+            uuid={record.collection_uuid}
+            label={record.source_collection_ref}
+          />
         }
         facts={[
           {

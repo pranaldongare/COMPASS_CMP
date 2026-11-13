@@ -18,6 +18,7 @@
 import { Download, Paperclip, Send } from "lucide-react";
 import * as React from "react";
 
+import { useConfirm } from "@/components/ui/confirm";
 import { Alert, Button, Card, CardBody, CardHeader, CardTitle, Field, Select, Textarea } from "@/components/ui/primitives";
 import { downloadResponse, downloadResponseFile } from "@/features/rights/api";
 import { OUTCOME_COPY } from "@/features/rights/components/copy";
@@ -39,6 +40,9 @@ export function RespondCard({ request: r }: { request: RightsRequestDetail }) {
   const decide = useDecideGrievance(r.request_uuid);
   const closure = r.transitions.find((t) => t.via === "respond");
   const blocked = r.complete_blocked_by;
+  // A response, or a decision, goes to the requester and closes the request:
+  // asked first, in a pop-up that says so (2026-11-12).
+  const asking = useConfirm();
 
   const [outcome, setOutcome] = React.useState(blocked ? "partial" : "complete");
   const [text, setText] = React.useState("");
@@ -167,6 +171,19 @@ export function RespondCard({ request: r }: { request: RightsRequestDetail }) {
             disabled={text.trim().length < 3 || (upheld && remedy.trim().length < 3)}
             loading={decide.isPending}
             onClick={async () => {
+              const again = upheld && rerun && r.linked_reference;
+              if (
+                !(await asking.ask({
+                  title: `Decide ${r.reference} as ${upheld ? "upheld" : "not upheld"} and close it?`,
+                  consequence: `The requester is emailed your decision${upheld ? " and the remedy" : ""}, and the grievance closes.${
+                    again
+                      ? ` ${r.linked_reference} is run again as a new request, and the requester is sent its acknowledgement.`
+                      : ""
+                  } A decision sent cannot be recalled.`,
+                  confirmLabel: "Decide and close",
+                }))
+              )
+                return;
               try {
                 const result = await decide.mutateAsync({ upheld, remedy_text: upheld ? remedy : null, response_text: text, rerun: upheld && rerun });
                 toast.success(
@@ -181,6 +198,7 @@ export function RespondCard({ request: r }: { request: RightsRequestDetail }) {
             <Send className="size-4" />
             Decide and close
           </Button>
+          {asking.dialog}
         </CardBody>
       </Card>
     );
@@ -239,6 +257,18 @@ export function RespondCard({ request: r }: { request: RightsRequestDetail }) {
           disabled={!closure.allowed || text.trim().length < 3}
           loading={respond.isPending}
           onClick={async () => {
+            if (
+              !(await asking.ask({
+                title: `Release the response to ${r.reference} and close it?`,
+                consequence: `The requester is emailed that the response is ready${
+                  files.length
+                    ? `, and ${files.length} file${files.length === 1 ? " is" : "s are"} released to their account`
+                    : ""
+                }. The request closes; a holder who has not answered is recorded as a gap. A response sent cannot be recalled.`,
+                confirmLabel: "Release and close",
+              }))
+            )
+              return;
             try {
               await respond.mutateAsync({ outcome, response_text: text, files });
               setFiles([]);
@@ -251,6 +281,7 @@ export function RespondCard({ request: r }: { request: RightsRequestDetail }) {
           <Send className="size-4" />
           Release and close
         </Button>
+        {asking.dialog}
       </CardBody>
     </Card>
   );

@@ -43,6 +43,20 @@ import { entriesSince, freshCode, latestCodeFor, outboxMark, type OutboxEntry } 
 import { statePath } from "./support/session";
 import { workbook } from "./support/workbook";
 
+/** Asked first (2026-11-12): whatever mails the board or a requester, or
+ *  cannot be undone, raises a pop-up titled as a question. This says yes to
+ *  it - its last button - and is a no-op where nothing was asked. */
+async function yes(page: Page): Promise<void> {
+  const question = page.getByRole("dialog").filter({ has: page.getByRole("heading", { name: /\?$/ }) });
+  try {
+    await question.waitFor({ state: "visible", timeout: 3_000 });
+  } catch {
+    return;
+  }
+  await question.getByRole("button").last().click();
+  await question.waitFor({ state: "hidden" });
+}
+
 test.describe.configure({ mode: "serial" });
 
 const API = process.env.E2E_API_URL ?? "http://127.0.0.1:8000";
@@ -279,6 +293,7 @@ async function validate(page: Page, outcome: "yes" | "no", aware = minutesAgo(10
   if (outcome === "yes") await page.getByLabel(/^Became aware at/).fill(aware);
   await page.getByLabel(/^Reasoning/).fill(`Reasoned ${outcome}`);
   await page.getByRole("button", { name: "Record the validation" }).click();
+  await yes(page);
   await expect(page.getByRole("listitem").filter({ hasText: /Reasoned (yes|no)/ })).toHaveCount(before + 1);
 }
 
@@ -508,6 +523,7 @@ test.describe("the public link", () => {
       await expect(dialog.getByText("No clock has started", { exact: false })).toBeVisible();
       await snap(page, "03-read-report");
       await dialog.getByRole("button", { name: "Claim for this office" }).click();
+      await yes(page);
 
       await page.waitForURL(/\/breaches\/[0-9a-f-]{36}/);
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(world.incident);
@@ -571,6 +587,7 @@ test.describe("the DPO's office", () => {
     await page.getByLabel(/^Became aware at/).fill(minutesAgo(-1));
     await page.getByLabel(/^Reasoning/).fill("Names and mail IDs were on the drive");
     await page.getByRole("button", { name: "Record the validation" }).click();
+    await yes(page);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^BR-\d{4}-\d{4}$/);
     world.reference = ((await page.getByRole("heading", { level: 1 }).textContent()) ?? "").trim();
 
@@ -612,6 +629,7 @@ test.describe("the DPO's office", () => {
 
     const mark = outboxMark();
     await dialog.getByRole("button", { name: "Send to the board" }).click();
+    await yes(page);
     await expect(page.getByText("Sent to the organisation's board")).toBeVisible();
 
     const chosen = [world.board, world.oneOff].sort();
@@ -865,6 +883,7 @@ test.describe("the DPO's office", () => {
     await page.getByRole("button", { name: "Save draft" }).click();
     await expect(page.getByText("Draft saved")).toBeVisible();
     await page.getByRole("button", { name: "Approve", exact: true }).click();
+    await yes(page);
     await expect(page.getByText("Notice approved")).toBeVisible();
 
     const send = page.getByRole("button", { name: "Send to all 3 affected people" });
@@ -1147,6 +1166,7 @@ test.describe("the trail and the close", () => {
 
     await close.focus();
     await page.keyboard.press("Enter");
+    await yes(page);
     await expect(page.getByText("Breach closed")).toBeVisible();
     await expect(page.getByTestId("report-closure").getByRole("button", { name: "New version" })).toHaveCount(0);
   });
@@ -1235,6 +1255,7 @@ test.describe("what a validation does to the board's duty", () => {
     const { row, dialog } = await draft(page, "org_board", []);
     const mark = outboxMark();
     await dialog.getByRole("button", { name: "Send to the board" }).click();
+    await yes(page);
     await expect(page.getByText("Sent to the organisation's board")).toBeVisible();
     const toBoard = (e: OutboxEntry[]) =>
       about(e, reference).filter((m) => m.subject.includes("Report to the organisation's board"));
@@ -1395,6 +1416,7 @@ test.describe("the Legal office's own breach", () => {
     const row = page.getByTestId("incident-intake").getByRole("listitem").filter({ hasText: own.title });
     await row.getByRole("button", { name: "Open report" }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Claim for this office" }).click();
+    await yes(page);
     await page.waitForURL(/\/breaches\/[0-9a-f-]{36}/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(own.incident);
     own.url = page.url().split("#")[0];
@@ -1413,6 +1435,7 @@ test.describe("the Legal office's own breach", () => {
     await page.getByLabel(/^Became aware at/).fill(minutesAgo(-1));
     await page.getByLabel(/^Reasoning/).fill("Pay details went to the wrong person");
     await page.getByRole("button", { name: "Record the validation" }).click();
+    await yes(page);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^BR-/);
 
     await page.getByRole("button", { name: "Notify Organization Board" }).first().click();
@@ -1420,6 +1443,7 @@ test.describe("the Legal office's own breach", () => {
     await expect(report.getByLabel(/^What happened/)).toHaveValue("A payslip went astray");
     const mark = outboxMark();
     await report.getByRole("button", { name: "Send to the board" }).click();
+    await yes(page);
     await expect(page.getByText("Sent to the organisation's board")).toBeVisible();
     await arrivals(mark, (e) => e.some((m) => m.to === world.board && m.subject.includes("Report to the organisation's board")));
 
@@ -1490,11 +1514,13 @@ test.describe("the Legal office's own breach", () => {
     await page.getByRole("combobox", { name: /^Validation/ }).selectOption("no");
     await page.getByLabel(/^Reasoning/).fill("It stayed inside the team");
     await page.getByRole("button", { name: "Record the validation" }).click();
+    await yes(page);
     await expect(page.getByText("Validation recorded")).toBeVisible();
     const close = page.getByRole("button", { name: "Close the breach" });
     await expect(close).toBeEnabled({ timeout: 15_000 });
     await close.focus();
     await page.keyboard.press("Enter");
+    await yes(page);
     await expect(page.getByText("Breach closed")).toBeVisible();
   });
 });

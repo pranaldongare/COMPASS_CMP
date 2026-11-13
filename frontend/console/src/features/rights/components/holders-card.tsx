@@ -36,8 +36,10 @@ import Link from "next/link";
 import * as React from "react";
 
 import { FileInput } from "@/components/forms";
+import { AuditTrailLink, useMayReadTrail } from "@/components/data-display/audit-link";
 import { ChangeDate } from "@/components/data-display/change-date";
 import { ReplyBox, Thread, UnreadBadge } from "@/components/data-display/thread";
+import { useConfirm } from "@/components/ui/confirm";
 import { Dialog, DialogContent, DialogFooter, useDialogPart } from "@/components/ui/dialog";
 import { Menu, MenuItem } from "@/components/ui/menu";
 import {
@@ -497,6 +499,12 @@ function describe(h: RightsHolder): string {
 function SendTickets({ request: r, count }: { request: RightsRequestDetail; count: number }) {
   const toast = useToast();
   const issue = useIssueTickets(r.request_uuid);
+  // A ticket is an email, and to a processor's respondent it leaves the
+  // organisation: asked first, saying who is written to (2026-11-12).
+  const asking = useConfirm();
+  // Reached by an address alone: inside the organisation that is a console
+  // login, anywhere else a link - which is decided as the ticket is sent.
+  const byAddress = r.holders.filter((h) => h.state === "not_sent" && h.channel !== "portal").length;
   const [open, setOpen] = React.useState(false);
   const [dueOn, setDueOn] = React.useState("");
   return (
@@ -522,6 +530,18 @@ function SendTickets({ request: r, count }: { request: RightsRequestDetail; coun
               size="sm"
               loading={issue.isPending}
               onClick={async () => {
+                if (
+                  !(await asking.ask({
+                    title: count === 1 ? "Send the ticket?" : `Send ${count} tickets?`,
+                    consequence: `${count === 1 ? "The holder is" : `All ${count} holders are`} emailed now, each with their own ticket.${
+                      byAddress
+                        ? ` ${byAddress === 1 ? "One is" : `${byAddress} are`} reached by an email address alone: inside the organisation that is a console login, anywhere else - an outside processor's respondent - a link to the ticket.`
+                        : ""
+                    } A ticket can be withdrawn later; the email cannot be recalled.`,
+                    confirmLabel: count === 1 ? "Send the ticket" : `Send ${count} tickets`,
+                  }))
+                )
+                  return;
                 try {
                   await issue.mutateAsync({ instruction: null, due_at: dueOn ? endOfDay(dueOn) : null });
                   toast.success(count === 1 ? "Ticket sent" : `${count} tickets sent`, "You will see each answer here when it comes.");
@@ -545,6 +565,7 @@ function SendTickets({ request: r, count }: { request: RightsRequestDetail; coun
           Send tickets
         </Button>
       )}
+      {asking.dialog}
     </div>
   );
 }
@@ -570,6 +591,7 @@ function TicketPanel({
   // The date is moved beside the date itself, as on a breach ticket
   // (2026-11-12), not from the menu.
   const mayChangeDate = h.moves.some((m) => m.move === "change_date");
+  const mayReadTrail = useMayReadTrail();
   const changeDate = useChangeTicketDate(r.request_uuid);
   const others = h.moves.filter(
     (m) => m !== main && m.move !== "message" && m.move !== "change_date",
@@ -642,21 +664,34 @@ function TicketPanel({
 
   return (
     <div className="space-y-5">
-      {mayChangeDate && (
+      {(mayChangeDate || mayReadTrail) && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
-          <span className={h.overdue ? "font-medium text-danger-text" : "text-text-muted"}>
-            {h.due_at ? `Answer by ${formatDate(h.due_at)}` : "No answer-by date"}
+          {mayChangeDate && (
+            <>
+              <span className={h.overdue ? "font-medium text-danger-text" : "text-text-muted"}>
+                {h.due_at ? `Answer by ${formatDate(h.due_at)}` : "No answer-by date"}
+              </span>
+              <ChangeDate
+                label="Answer by"
+                current={h.due_at ? todayLocal(new Date(h.due_at)) : null}
+                latest={{ date: lastDayBy(r.due_at), hint: "No later than the request's own response date" }}
+                told={`${h.responder_user_name ?? h.responder_name ?? h.label} is told.`}
+                pending={changeDate.isPending}
+                onSave={({ date, reason }) =>
+                  changeDate.mutateAsync({ holderUuid: h.holder_uuid, due_at: endOfDay(date), reason })
+                }
+              />
+            </>
+          )}
+          {/* Everything done on this ticket (2026-11-12): the request's own
+              trail has it too, among the rest. */}
+          <span className="ml-auto">
+            <AuditTrailLink
+              entityType="rights_request_holder"
+              uuid={h.holder_uuid}
+              label={`${h.label} on ${r.reference}`}
+            />
           </span>
-          <ChangeDate
-            label="Answer by"
-            current={h.due_at ? todayLocal(new Date(h.due_at)) : null}
-            latest={{ date: lastDayBy(r.due_at), hint: "No later than the request's own response date" }}
-            told={`${h.responder_user_name ?? h.responder_name ?? h.label} is told.`}
-            pending={changeDate.isPending}
-            onSave={({ date, reason }) =>
-              changeDate.mutateAsync({ holderUuid: h.holder_uuid, due_at: endOfDay(date), reason })
-            }
-          />
         </div>
       )}
 

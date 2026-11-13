@@ -77,7 +77,9 @@ export interface AuditLookupHit {
 
 /** What the trail can be filtered by. Served, never typed on the client. */
 export interface AuditVocabulary {
-  entity_types: { value: string; label: string; filterable_by_uuid: boolean }[];
+  /** `with_parts`: filtered to one record of this type, the trail also reads
+   *  what belongs to it - a breach's tickets, a request's holders. */
+  entity_types: { value: string; label: string; filterable_by_uuid: boolean; with_parts?: boolean }[];
   event_groups: { value: string; label: string }[];
   event_types: { value: string; group: string; group_label: string; label: string }[];
   lookups: { kind: string; label: string; filter: "subject" | "actor" | "entity" }[];

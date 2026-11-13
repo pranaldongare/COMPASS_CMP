@@ -75,6 +75,31 @@ describe("nextStep", () => {
     ).toMatchObject({ title: "Find who holds the data", go: "holders" });
   });
 
+  it("says the platform finds the holders as the request starts", () => {
+    expect(nextStep(received())?.then).toBe(
+      "Then: the platform finds who holds the data → confirm who answers",
+    );
+    // A grievance asks no holder anything.
+    expect(nextStep(received({ request_type: "grievance" }))?.then).toBe("Then: respond");
+  });
+
+  it("does not ask for a reading the platform has made: nobody on record is said as that", () => {
+    const step = nextStep(
+      received({
+        status: "in_progress",
+        holders: [],
+        holders_derived_at: "2026-11-13T09:00:00Z",
+        transitions: [{ to: "collating", allowed: true, via: "transition" }],
+      }),
+    );
+    expect(step).toMatchObject({
+      title: "Add who holds the data",
+      why: "The records were read and name nobody.",
+      go: "holders",
+    });
+    expect(step?.then).toMatch(/Nothing to ask anyone\? Move it to collating/);
+  });
+
   it("is not there for a closed request, or for someone offered no move", () => {
     expect(nextStep(received({ status: "closed" }))).toBeNull();
     expect(nextStep(received({ transitions: [] }))).toBeNull();

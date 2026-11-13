@@ -4,12 +4,14 @@
  * erased; a hold says so and offers its release; a carried-out item shows its
  * disposition and nothing left to retry.
  */
-import { describe, expect, it } from "vitest";
+import { HttpResponse, http } from "msw";
+import { describe, expect, it, vi } from "vitest";
 
 import { ScopeCard } from "@/features/rights/components/scope-card";
 import { ToastProvider } from "@/providers/toast-provider";
 import { makeRequestDetail } from "@/test/fixtures";
-import { render, screen } from "@/test/render";
+import { render, screen, within } from "@/test/render";
+import { API, server } from "@/test/server";
 import type { RightsItemExecution, RightsScopeItem } from "@/types";
 
 function item(overrides: Partial<RightsScopeItem> = {}): RightsScopeItem {
@@ -107,5 +109,50 @@ describe("ScopeCard execution", () => {
     expect(screen.getByText(/legal hold: released/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /release hold/i })).not.toBeInTheDocument();
     expect(screen.getByText("erased")).toBeInTheDocument();
+  });
+
+  it("asks before a decision is applied, says erased data cannot be recovered, and applies nothing on Cancel", async () => {
+    // 2026-11-12: one click on Apply started an erasure.
+    let applied = 0;
+    server.use(
+      http.post(`${API}/requests/:uuid/scope/:item/apply`, () => {
+        applied += 1;
+        return HttpResponse.json(item());
+      }),
+    );
+    const { user } = card(item({ state: "decided", decision: "erase", applied_at: null, disposition: null }));
+
+    await user.click(screen.getByRole("button", { name: "Apply" }));
+    const question = await screen.findByRole("dialog", { name: "Apply the decision to ASSET-7?" });
+    expect(within(question).getByText(/Erased data cannot be recovered\./)).toBeInTheDocument();
+    await user.click(within(question).getByRole("button", { name: "Cancel" }));
+    await vi.waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(applied).toBe(0);
+
+    await user.click(screen.getByRole("button", { name: "Apply" }));
+    await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Apply and erase" }));
+    await vi.waitFor(() => expect(applied).toBe(1));
+  });
+
+  it("asks before a legal hold is released, because the erasure it stopped then runs", async () => {
+    let released = 0;
+    server.use(
+      http.post(`${API}/legal-holds/:hold/release`, () => {
+        released += 1;
+        return HttpResponse.json({});
+      }),
+    );
+    const { user } = card(
+      item({
+        execution: [{ store: "legal_hold", status: "held", detail: { hold: "dddddddd-dddd-4ddd-8ddd-dddddddddddd" }, attempted_at: at }],
+      }),
+    );
+
+    await user.click(screen.getByRole("button", { name: /release hold/i }));
+    const question = await screen.findByRole("dialog", { name: "Release the legal hold on ASSET-7?" });
+    expect(within(question).getByText(/carried out at once/)).toBeInTheDocument();
+    expect(released).toBe(0);
+    await user.click(within(question).getByRole("button", { name: "Release the hold" }));
+    await vi.waitFor(() => expect(released).toBe(1));
   });
 });

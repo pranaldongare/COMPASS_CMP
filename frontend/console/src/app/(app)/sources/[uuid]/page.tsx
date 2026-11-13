@@ -40,6 +40,7 @@ import {
   Skeleton,
 } from "@/components/ui/primitives";
 import { StatusBadge } from "@/components/ui/status";
+import { AuditTrailLink } from "@/components/data-display/audit-link";
 import { SourceForm } from "@/features/registry/components/forms";
 import { SourceOwner } from "@/features/registry/components/source-owner";
 import { useSource } from "@/features/registry";
@@ -93,18 +94,21 @@ export default function SourceDetailPage() {
           </>
         }
         actions={
-          canEdit && (
-            <>
-              <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
-                <Pencil className="size-4" />
-                Edit
-              </Button>
-              {/* The register's Suspend, here too (2026-11-11). */}
-              {s.status === "active" && (
-                <SuspendRecord kind="source" uuid={s.source_uuid} name={s.name} />
-              )}
-            </>
-          )
+          <>
+            <AuditTrailLink entityType="data_source" uuid={s.source_uuid} label={s.name} />
+            {canEdit && (
+              <>
+                <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+                  <Pencil className="size-4" />
+                  Edit
+                </Button>
+                {/* The register's Suspend, here too (2026-11-11). */}
+                {s.status === "active" && (
+                  <SuspendRecord kind="source" uuid={s.source_uuid} name={s.name} />
+                )}
+              </>
+            )}
+          </>
         }
         facts={[
           {

@@ -91,4 +91,22 @@ describe("Started, with nobody asked yet", () => {
     expect(screen.getByText(/nothing to ask anyone\? move to collating/i)).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /move to collating/i })).not.toBeInTheDocument();
   });
+
+  it("once the records were read and named nobody, asks for a holder to be added instead", () => {
+    // The platform reads them as the request starts (2026-11-13).
+    const read = { ...started, holders_derived_at: "2026-11-13T09:00:00Z" };
+    render(
+      <>
+        <NextBar request={read} tab="overview" onGo={vi.fn()} />
+        <RequestSummary request={read} actionsHref="#actions" />
+        <RequestTransitions request={read} />
+      </>,
+    );
+    expect(screen.getAllByText("Add who holds the data").length).toBe(3);
+    expect(screen.queryByText("Find who holds the data")).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/The records were read and name nobody\. Add a holder you know of/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/nothing to ask anyone\? move to collating/i)).toBeInTheDocument();
+  });
 });

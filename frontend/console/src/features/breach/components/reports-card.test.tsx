@@ -33,6 +33,14 @@ import type {
   Me,
 } from "@/types";
 
+/** Asked first (2026-11-12): finalising a report, and sending one again, mail
+ *  the organisation's board, so a pop-up says how many addresses and what
+ *  cannot be taken back. This says yes to it - its last button, after Cancel. */
+async function yes(user: ReturnType<typeof render>["user"]) {
+  const question = await screen.findByRole("dialog", { name: /\?$/ });
+  await user.click(within(question).getAllByRole("button").at(-1)!);
+}
+
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() }));
 const auth = vi.hoisted(() => ({ me: null as Me | null }));
 vi.mock("@/providers", () => ({ useToast: () => toast }));
@@ -384,6 +392,7 @@ describe("ReportsCard", () => {
     await user.type(within(dialog).getByLabelText(/likely impact/i), "Contact details of 40 people");
     expect(finalise).toBeEnabled();
     await user.click(finalise);
+    await yes(user);
 
     await vi.waitFor(() => expect(order).toEqual(["saved", "finalised"]));
     expect(written).toEqual({
@@ -417,6 +426,7 @@ describe("ReportsCard", () => {
 
     await user.click(await screen.findByRole("button", { name: "Continue the draft" }));
     await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Finalise and tell the board" }));
+    await yes(user);
 
     await vi.waitFor(() => expect(order).toEqual(["saved", "finalised"]));
   });
@@ -516,6 +526,7 @@ describe("ReportsCard", () => {
     await user.click(await screen.findByRole("button", { name: "Continue the draft" }));
     const dialog = await screen.findByRole("dialog");
     await user.click(within(dialog).getByRole("button", { name: "Finalise and tell the board" }));
+    await yes(user);
     await vi.waitFor(() => expect(world.now.kinds[0].versions[0].state).toBe("finalised"));
 
     await polled(queryClient);
@@ -586,6 +597,7 @@ describe("ReportsCard", () => {
     await user.click(within(dialog).getByRole("button", { name: "Add for this report" }));
     expect(go).toBeEnabled();
     await user.click(go);
+    await yes(user);
 
     await vi.waitFor(() => expect(to).toEqual({ recipients: [], extra: [{ full_name: null, email: "secretary@cmp.local" }] }));
   });
@@ -1134,6 +1146,7 @@ describe("ReportsCard", () => {
 
       expect(await screen.findByText(/1 held up/)).toBeInTheDocument();
       await user.click(screen.getByRole("button", { name: "Try again" }));
+      await yes(user);
 
       expect(await screen.findByText(/1 on the way/)).toBeInTheDocument();
       expect(screen.queryByText(/held up/)).not.toBeInTheDocument();
@@ -1153,6 +1166,7 @@ describe("ReportsCard", () => {
       const { user } = render(<ReportsCard breach={breach()} />);
 
       await user.click(await screen.findByRole("button", { name: "Try again" }));
+      await yes(user);
 
       await vi.waitFor(() => expect(toast.success).toHaveBeenCalledWith("Sending again", "Mailing 2 addresses."));
     });
@@ -1167,6 +1181,7 @@ describe("ReportsCard", () => {
       const { user } = render(<ReportsCard breach={breach()} />);
 
       await user.click(await screen.findByRole("button", { name: "Try again" }));
+      await yes(user);
 
       await vi.waitFor(() => expect(toast.info).toHaveBeenCalledWith("Nothing to send", expect.any(String)));
       expect(toast.success).not.toHaveBeenCalled();
@@ -1185,6 +1200,7 @@ describe("ReportsCard", () => {
       const { user } = render(<ReportsCard breach={breach()} />);
 
       await user.click(await screen.findByRole("button", { name: "Try again" }));
+      await yes(user);
 
       await vi.waitFor(() =>
         expect(toast.error).toHaveBeenCalledWith("Not sent", "A later version of this report has been finalised"),
@@ -1209,6 +1225,7 @@ describe("ReportsCard", () => {
 
       const button = await screen.findByRole("button", { name: "Try again" });
       await user.click(button);
+      await yes(user);
       await vi.waitFor(() => expect(button).toBeDisabled());
       await user.click(button);
       expect(button).toBeDisabled();
@@ -1229,6 +1246,7 @@ describe("ReportsCard", () => {
       const { user, queryClient } = render(<ReportsCard breach={breach()} />);
 
       await user.click(await screen.findByRole("button", { name: "Try again" }));
+      await yes(user);
       await vi.waitFor(() => expect(toast.info).toHaveBeenCalled());
 
       await vi.waitFor(() => expect(pollEvery(queryClient)).toBe(2_000));
@@ -1345,6 +1363,7 @@ describe("ReportsCard", () => {
         const { user } = render(<ReportsCard breach={breach()} />);
 
         await user.click(await screen.findByRole("button", { name: "Try again" }));
+        await yes(user);
 
         await vi.waitFor(() => expect(toast.success).toHaveBeenCalledWith("Duty completed", expect.any(String)));
         await vi.waitFor(() => expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument());
@@ -1492,6 +1511,7 @@ describe("ReportsCard", () => {
       await user.click(within(dialog).getByRole("button", { name: "Add for this report" }));
       expect(within(dialog).getByText("Goes to 3 addresses.")).toBeInTheDocument();
       await user.click(within(dialog).getByRole("button", { name: "Finalise and tell the board" }));
+      await yes(user);
 
       await vi.waitFor(() =>
         expect(sent).toEqual([
@@ -1525,6 +1545,7 @@ describe("ReportsCard", () => {
       expect(within(dialog).getByRole("checkbox", { name: "deputy@cmp.local" })).not.toBeChecked();
       expect(within(dialog).getByText("ravi@cmp.local")).toBeInTheDocument();
       await user.click(within(dialog).getByRole("button", { name: "Finalise and tell the board" }));
+      await yes(user);
 
       await vi.waitFor(() =>
         expect(sent).toEqual([{ recipients: [CHAIR, SECRETARY], extra: [{ full_name: null, email: "ravi@cmp.local" }] }]),
@@ -1548,6 +1569,7 @@ describe("ReportsCard", () => {
       expect(deputy).toBeDisabled();
       expect(within(dialog).getByText("Mandatory")).toBeInTheDocument();
       await user.click(within(dialog).getByRole("button", { name: "Finalise and tell the board" }));
+      await yes(user);
 
       await vi.waitFor(() => expect(sent).toEqual([{ recipients: [CHAIR, DEPUTY], extra: [] }]));
     });
@@ -1579,6 +1601,7 @@ describe("ReportsCard", () => {
       await user.click(within(dialog).getByRole("button", { name: "Add for this report" }));
 
       await user.click(within(dialog).getByRole("button", { name: "Finalise and tell the board" }));
+      await yes(user);
 
       await vi.waitFor(() => expect(toast.error).toHaveBeenCalledWith("Not done", sentence));
       expect(sent).toHaveLength(1);
@@ -1628,6 +1651,7 @@ describe("ReportsCard", () => {
       }
 
       await user.click(within(dialog).getByRole("button", { name: "Finalise and tell the board" }));
+      await yes(user);
 
       const added = within(dialog).getByRole("list", { name: "Added for this report" });
       const [first, second] = within(added).getAllByRole("listitem");
@@ -1717,6 +1741,7 @@ describe("ReportsCard", () => {
       await user.click(await screen.findByRole("button", { name: "Continue the draft" }));
       const dialog = await screen.findByRole("dialog");
       await user.click(await within(dialog).findByRole("button", { name: "Finalise and hold for validation" }));
+      await yes(user);
 
       await vi.waitFor(() => expect(toast.success).toHaveBeenCalledWith("Finalised", HELD_TOAST));
       expect(toast.success).not.toHaveBeenCalledWith("Finalised", expect.stringContaining("has been mailed"));
@@ -1927,6 +1952,7 @@ describe("ReportsCard", () => {
       expect(await screen.findByText(/CERT-In was set aside when the incident was validated/)).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
       await user.click(screen.getByRole("button", { name: "Send to the board" }));
+      await yes(user);
 
       await vi.waitFor(() => expect(toast.success).toHaveBeenCalledWith("Sending to the board", "Mailing 1 address."));
       expect(await screen.findByText(/1 on the way/)).toBeInTheDocument();
@@ -2053,6 +2079,21 @@ describe("NotifyBoardButton", () => {
     expect(await within(dialog).findByRole("checkbox", { name: "Asha Rao, chair@cmp.local" })).toBeChecked();
     expect(within(dialog).getByRole("checkbox", { name: "deputy@cmp.local" })).toBeChecked();
     await user.click(within(dialog).getByRole("button", { name: "Send to the board" }));
+    // Asked first (2026-11-12): how many addresses, and what cannot be taken
+    // back. Nothing is frozen or mailed before the yes; Cancel keeps the draft.
+    const question = await screen.findByRole("dialog", { name: "Send this report to the organisation's board?" });
+    expect(within(question).getByText(/It is emailed to 2 addresses now, with the report attached\./)).toBeInTheDocument();
+    expect(within(question).getByText(/a finalised report cannot be changed/)).toBeInTheDocument();
+    expect(within(question).getByText(/An email sent cannot be recalled\./)).toBeInTheDocument();
+    await user.click(within(question).getByRole("button", { name: "Cancel" }));
+    await vi.waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Send this report to the organisation's board?" })).not.toBeInTheDocument(),
+    );
+    expect(to).toBeNull();
+    expect(within(dialog).getByLabelText(/what happened/i)).toHaveValue("A list was exposed");
+
+    await user.click(within(dialog).getByRole("button", { name: "Send to the board" }));
+    await yes(user);
 
     await vi.waitFor(() => expect(to).toEqual({ recipients: [CHAIR, DEPUTY], extra: [] }));
     await vi.waitFor(() =>

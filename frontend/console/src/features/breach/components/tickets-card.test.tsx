@@ -32,7 +32,8 @@ import { API, server } from "@/test/server";
 import type { Breach, BreachTicket, MyBreachTicket } from "@/types";
 
 const toast = vi.hoisted(() => ({ success: vi.fn(), error: vi.fn(), warning: vi.fn() }));
-vi.mock("@/providers", () => ({ useToast: () => toast }));
+// The reader has the audit section, as the officers who open this window do.
+vi.mock("@/providers", () => ({ useToast: () => toast, useAuth: () => ({ me: { nav: ["audit"] } }) }));
 
 const BREACH = "66666666-6666-4666-8666-666666666666";
 const TICKET = "77777777-7777-4777-8777-777777777777";
@@ -165,6 +166,16 @@ describe("TicketsCard", () => {
     const dialog = await screen.findByRole("dialog");
     expect(await within(dialog).findByRole("button", { name: "Withdraw" })).toBeInTheDocument();
     expect(within(dialog).queryByText("Their answer")).not.toBeInTheDocument();
+    // The ticket's own trail is one click from the ticket (2026-11-12), and
+    // the address names the breach, never the holder.
+    const trail = new URL(
+      within(dialog).getByRole("link", { name: "Audit trail" }).getAttribute("href") ?? "",
+      "http://cmp.local",
+    );
+    expect(trail.pathname).toBe("/audit");
+    expect(trail.searchParams.get("entity_type")).toBe("breach_ticket");
+    expect(trail.searchParams.get("entity")).toBe(TICKET);
+    expect(trail.searchParams.get("label")).not.toContain("Arun");
   });
 
   it("marks a temporary login and its state", async () => {

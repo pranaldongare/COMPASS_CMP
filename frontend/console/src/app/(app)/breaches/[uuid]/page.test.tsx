@@ -159,7 +159,7 @@ afterEach(() => {
 describe("the breach page", () => {
   it("puts closing and the facts above the tabs, and opens on the duties", async () => {
     serve(breach());
-    render(<BreachPage />);
+    const { user } = render(<BreachPage />);
 
     expect(await screen.findByRole("button", { name: "Close the breach" })).toBeDisabled();
     expect(screen.getByText("It has not been validated")).toBeInTheDocument();
@@ -178,10 +178,17 @@ describe("the breach page", () => {
     ]);
     expect(within(tabs).getByRole("tab", { name: /Duties/ })).toHaveAttribute("aria-selected", "true");
     expect(screen.getByRole("columnheader", { name: "Due" })).toBeVisible();
-    // Not validated yet: the way to the step that starts the clocks.
-    const validate = screen.getByRole("link", { name: "Record the validation" });
-    expect(validate).toHaveAttribute("href", "#validation");
-    expect(validate.parentElement).toHaveTextContent("gives 30 minutes to tell the organisation's board");
+    // Not validated yet: the next step names the validation, which starts the
+    // clocks, and opens its tab (2026-11-13: the bar a rights request has).
+    const next = screen.getByRole("region", { name: "Next step" });
+    expect(next).toHaveTextContent("Record the validation");
+    expect(next).toHaveTextContent("Is it a personal data breach under s.2(u)?");
+    // CERT-In stands on its own test, and is already running here.
+    expect(next).toHaveTextContent("Also due: Report to CERT-In (10 min left)");
+    await user.click(within(next).getByRole("button", { name: "Go to Validation" }));
+    expect(within(tabs).getByRole("tab", { name: /Validation/ })).toHaveAttribute("aria-selected", "true");
+    // On its tab, the bar has no button to bring the reader there.
+    expect(within(next).queryByRole("button")).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Documents for the Board/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: /Brief for the organisation's board/ })).not.toBeInTheDocument();
   });
@@ -198,13 +205,31 @@ describe("the breach page", () => {
     expect(await screen.findByText("Report to the organisation's board")).toBeVisible();
   });
 
-  it("offers Notify Organization Board in the header and on the duty, while the duty stands", async () => {
+  it("offers Notify Organization Board in the header, on the duty and as the next step, while the duty stands", async () => {
     serve(breach({ determination: "yes", breach_reference: "BR-2026-0042", obligations: [ORG_BOARD] }));
     render(<BreachPage />);
 
     const buttons = await screen.findAllByRole("button", { name: "Notify Organization Board" });
-    expect(buttons).toHaveLength(2);
+    expect(buttons).toHaveLength(3);
     expect(screen.queryByRole("link", { name: "Open the report" })).not.toBeInTheDocument();
+    // The next step is that duty, with its clock, and the same button makes it.
+    const next = screen.getByRole("region", { name: "Next step" });
+    expect(next).toHaveTextContent("Notify the organisation's board - 10 min left, due");
+    expect(within(next).getByRole("button", { name: "Notify Organization Board" })).toBeInTheDocument();
+  });
+
+  it("shows no next step on a closed breach", async () => {
+    serve(
+      breach({
+        status: "closed",
+        determination: "no",
+        obligations: [],
+        transitions: [{ to: "open", allowed: true, blocked_by: null, blockers: [], reason_required: true }],
+      }),
+    );
+    render(<BreachPage />);
+    expect(await screen.findByRole("button", { name: "Reopen the breach" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Next step" })).not.toBeInTheDocument();
   });
 
   it("does not ask to tell the board before a yes, and says no clock is running", async () => {
@@ -302,7 +327,7 @@ describe("the breach page", () => {
     expect(await screen.findByText("Could not load this incident")).toBeInTheDocument();
   });
 
-  it("says a ticket's changes are on its own trail, and goes there from Activity", async () => {
+  it("says the breach's trail has its tickets too, and still goes to one ticket's own from Activity", async () => {
     const TICKET = "88888888-8888-4888-8888-888888888888";
     serve(breach());
     server.use(
@@ -315,7 +340,14 @@ describe("the breach page", () => {
     window.history.replaceState(null, "", "/#activity");
     render(<BreachPage />);
 
-    expect(await screen.findByText(/on that ticket's own trail/)).toBeVisible();
+    // 2026-11-12: a ticket assigned, answered or re-dated is on the breach's trail.
+    expect(await screen.findByText(/every ticket - assigned, answered, or its\s+date changed/)).toBeVisible();
+    const whole = new URL(
+      screen.getAllByRole("link", { name: "Audit trail" })[0]!.getAttribute("href") ?? "",
+      "http://cmp.local",
+    );
+    expect(whole.searchParams.get("entity_type")).toBe("breach");
+    expect(whole.searchParams.get("entity")).toBe(UUID);
     const history = document.getElementById("history") as HTMLElement;
     const row = (await within(history).findByText("Arun Shetty")).closest("li") as HTMLElement;
     const link = within(row).getByRole("link", { name: "Audit trail" });

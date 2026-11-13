@@ -14,6 +14,7 @@ import { Ban, Eye, FileSpreadsheet, Pencil, Plus, UsersRound } from "lucide-reac
 import Link from "next/link";
 import * as React from "react";
 
+import { useConfirm } from "@/components/ui/confirm";
 import { PageHeader } from "@/components/layout/app-shell";
 import {
   FilterBar,
@@ -49,6 +50,8 @@ export default function ProcessorsPage() {
   const [editing, setEditing] = React.useState<Processor | null>(null);
   const [respondentsFor, setRespondentsFor] = React.useState<Processor | null>(null);
   const suspend = useSuspendProcessor();
+  // Asked first, as on the record's own page (2026-11-12): there is no un-suspend.
+  const asking = useConfirm();
 
   const { data: enums } = useEnums();
   const query = useProcessors({
@@ -63,6 +66,15 @@ export default function ProcessorsPage() {
   const canImport = me?.role === "admin";
 
   async function onSuspend(uuid: string, name: string) {
+    if (
+      !(await asking.ask({
+        title: `Suspend ${name}?`,
+        consequence: "It can no longer be assigned to a site. A suspended processor cannot be brought back from the console.",
+        confirmLabel: "Suspend",
+        tone: "danger",
+      }))
+    )
+      return;
     try {
       await suspend.mutateAsync(uuid);
       toast.success("Processor suspended", `${name} can no longer be assigned to a site.`);
@@ -236,6 +248,7 @@ export default function ProcessorsPage() {
           {editing && <ProcessorForm processor={editing} onDone={() => setEditing(null)} />}
         </DialogContent>
       </Dialog>
+      {asking.dialog}
     </>
   );
 }
