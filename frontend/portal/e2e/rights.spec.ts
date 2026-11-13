@@ -174,7 +174,7 @@ test.describe("public rights page", () => {
     // A wrong code, a spent one and one never sent read alike, and the way to
     // a new one is said in words true whether or not a code went anywhere.
     await form.getByLabel(/the code we sent/i).fill("000000");
-    await form.getByRole("button", { name: /confirm it is me/i }).click();
+    await form.getByRole("button", { name: /verify identity/i }).click();
     await expect(form.getByText("Invalid or expired code")).toBeVisible({
       timeout: 10_000,
     });
@@ -214,7 +214,7 @@ test.describe("public rights page", () => {
     await expect(form.getByText(/^RR-\d{4}-\d{6}$/)).toBeVisible({ timeout: 10_000 });
     await expect(form).toContainText(/if we hold records for the contact you gave/i);
     await form.getByLabel(/the code we sent/i).fill(await freshCode(email, before));
-    await form.getByRole("button", { name: /confirm it is me/i }).click();
+    await form.getByRole("button", { name: /verify identity/i }).click();
     await expect(page.getByText("Verified", { exact: true })).toBeVisible({
       timeout: 10_000,
     });
@@ -227,7 +227,7 @@ test.describe("public rights page", () => {
     // a fixed placeholder would be a sixth attempt by the sixth run.
     await page.getByLabel(/nomination reference/i).fill(crypto.randomUUID());
     await page.getByLabel(/your email or mobile/i).fill("nobody@example.org");
-    await page.getByRole("button", { name: /send me a code/i }).click();
+    await page.getByRole("button", { name: /^send code$/i }).click();
     await expect(page.getByText(/if that nomination is in place/i)).toBeVisible({
       timeout: 10_000,
     });
@@ -336,7 +336,7 @@ test.describe("nominee", () => {
     // in the same outbox.
     const before = latestCodeFor(NOMINEE_MOBILE);
     await page.getByRole("radio", { name: /mobile/i }).check();
-    await page.getByRole("button", { name: /send me a code/i }).click();
+    await page.getByRole("button", { name: /^send code$/i }).click();
     await page.getByLabel(/six-digit code/i).fill(await freshCode(NOMINEE_MOBILE, before));
     await page.getByRole("button", { name: /accept the nomination/i }).click();
     await expect(page.getByText(/^accepted$/i)).toBeVisible({ timeout: 10_000 });
@@ -367,7 +367,7 @@ test.describe("nominee", () => {
     // contact the principal recorded - never to whatever is typed here.
     const before = latestCodeFor(NOMINEE_MOBILE);
     await page.getByLabel(/your email or mobile/i).fill(NOMINEE_MOBILE);
-    await page.getByRole("button", { name: /send me a code/i }).click();
+    await page.getByRole("button", { name: /^send code$/i }).click();
 
     // Step two. Incapacity rather than death on purpose: an evidenced death
     // closes the principal's account, and this suite shares her with every
@@ -407,7 +407,7 @@ test.describe("nominee", () => {
     await page.goto("/sign-in");
     await page.getByRole("radio", { name: /^email$/i }).check();
     await page.getByLabel(/email address/i).fill(NOMINEE);
-    await page.getByRole("button", { name: /send me a code/i }).click();
+    await page.getByRole("button", { name: /^send code$/i }).click();
     await page.getByLabel(/six-digit code/i).fill(await freshCode(NOMINEE, before));
     await page.getByRole("button", { name: /^verify$/i }).click();
     await page.waitForURL(/\/home/, { timeout: 20_000 });

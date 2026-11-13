@@ -33,7 +33,7 @@ test("a stranger reports an incident and is given a reference", async ({ page },
   await page.getByLabel(/where it started/i).fill("The sales team");
   await page.getByRole("radio", { name: /not sure/i }).check();
   await expectNoSidewaysScroll(page);
-  await page.getByRole("button", { name: /send me a code/i }).click();
+  await page.getByRole("button", { name: /^send code$/i }).click();
 
   const box = page.getByLabel(/the code we sent/i);
   await expect(box).toBeVisible({ timeout: 10_000 });
@@ -57,5 +57,5 @@ test("the rights page links to it, and it asks for no session", async ({ page })
   await page.goto("/rights");
   await page.getByRole("link", { name: /report an incident/i }).click();
   await expect(page).toHaveURL(/\/report-incident$/);
-  await expect(page.getByRole("button", { name: /send me a code/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^send code$/i })).toBeVisible();
 });

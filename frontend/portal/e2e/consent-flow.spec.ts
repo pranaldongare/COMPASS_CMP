@@ -210,7 +210,7 @@ test.describe("sign-in", () => {
     await page.goto("/sign-in");
     await page.getByRole("radio", { name: /^email$/i }).check();
     await page.getByLabel(/email address/i).fill("definitely-not-a-user@example.org");
-    await page.getByRole("button", { name: /send me a code/i }).click();
+    await page.getByRole("button", { name: /^send code$/i }).click();
 
     // The same screen whether or not the contact exists. Anything more
     // specific turns the form into an oracle for who consented to a project.

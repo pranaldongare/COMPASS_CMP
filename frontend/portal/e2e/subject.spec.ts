@@ -58,4 +58,31 @@ test.describe("data subject", () => {
       await expect(page.getByText(/not part of your account/i)).toHaveCount(0);
     }
   });
+
+  test("a consent opens beside the list: its purposes, the notice she was given, its history and its record", async ({
+    page,
+  }) => {
+    // My consents is a list and a detail (2026-11-12). Each tab reads from the
+    // API when it is opened, and the record is a file: all four are calls a
+    // portal on the far side of the relay has to be able to make.
+    await page.goto("/my-consents");
+    const list = page.getByRole("list", { name: "Your consents" });
+    test.skip((await list.count()) === 0, "the seeded data principal has no consent on this database");
+    await expect(page.getByRole("tab", { name: /^Purposes/ })).toBeVisible();
+
+    const ok = (part: string) =>
+      page.waitForResponse((r) => new URL(r.url()).pathname.endsWith(part) && r.request().method() === "GET");
+    const [notice] = await Promise.all([ok("/notice"), page.getByRole("tab", { name: "Notice" }).click()]);
+    expect(notice.status()).toBe(200);
+    const [trail] = await Promise.all([ok("/trail"), page.getByRole("tab", { name: "History" }).click()]);
+    expect(trail.status()).toBe(200);
+
+    const [file] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "Download record" }).click(),
+    ]);
+    expect(file.suggestedFilename()).toMatch(/\.pdf$/);
+    // Nothing she is shown is ciphertext, on either side of the relay.
+    await expect(page.locator("main")).not.toContainText("SE::");
+  });
 });
