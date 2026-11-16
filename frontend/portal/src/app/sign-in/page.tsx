@@ -8,16 +8,14 @@
  * Staff do not sign in here. Their console, with its password and second
  * factor, is a separate deployment; a link to it sits in the footer.
  *
- * Every failure message is identical by design. The server refuses to say
- * whether a contact is registered, and repeating a friendlier message here
- * would undo that.
+ * A contact no account carries is said to be that (2026-11-16, the product
+ * owner's decision): the server answers `account_not_found`, and she is taken
+ * to sign-up with the contact filled in and the reason at the top. Before,
+ * the reply was the same sentence either way and somebody who had never
+ * registered waited for a code that was never coming.
  *
- * A failure to *send* is not such a message, and is shown. The server answers
- * a registered contact and a stranger alike - the same sentence on success,
- * a rate limit counted before anybody is looked up, a 503 for everybody when
- * the broker is down - so saying "we could not send a code" tells nobody who
- * is registered, and saying nothing left people waiting for a code that was
- * never coming (review UX-3).
+ * A wrong code, a spent one and one never sent still get one refusal, and a
+ * failure to *send* - a rate limit, the broker down - is shown as it is.
  */
 "use client";
 
@@ -29,6 +27,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { AuthLayout } from "@/components/layout/auth-layout";
+import { ReportIncidentLink } from "@/components/layout/report-incident-link";
 import { AuthPageGate } from "@/components/security";
 import { Alert, Button, Field, Input } from "@/components/ui/primitives";
 import { requestOtp, verifyOtp } from "@/features/auth";
@@ -59,20 +58,13 @@ export default function SignInPage() {
       }
       footer={
         <div className="space-y-3">
+          <ReportIncidentLink />
           <p className="text-center text-xs text-text-subtle">
             <Link
               href="/rights"
               className="underline underline-offset-2 hover:text-text-muted"
             >
               Your rights and how to exercise them
-            </Link>
-          </p>
-          <p className="text-center text-xs text-text-subtle">
-            <Link
-              href="/report-incident"
-              className="underline underline-offset-2 hover:text-text-muted"
-            >
-              Report a personal data incident
             </Link>
           </p>
           <p className="text-center text-xs text-text-subtle">
@@ -119,6 +111,7 @@ function FormSkeleton() {
 }
 
 function SubjectForm() {
+  const router = useRouter();
   const hydrated = useHydrated();
   const params = useSearchParams();
   const [sent, setSent] = React.useState(false);
@@ -142,13 +135,18 @@ function SubjectForm() {
   });
 
   const onSubmit = form.handleSubmit(async (values) => {
-    // Success says nothing about the contact: the endpoint answers identically
-    // whether or not it is registered. A failure says nothing either - see the
-    // file comment - so it is shown, and she can try again.
     setFailed(null);
     try {
       await requestOtp(values);
     } catch (err) {
+      if (err instanceof ApiError && err.code === "account_not_found") {
+        // No account: to sign-up, which says why and has the contact filled in.
+        const to = new URLSearchParams({ contact: values.contact.trim(), unregistered: "1" });
+        const next = params.get("next");
+        if (next) to.set("next", next);
+        router.push(`/sign-up?${to.toString()}`);
+        return;
+      }
       setFailed(
         err instanceof ApiError ? err.userMessage() : "We could not send a code just now.",
       );
@@ -165,8 +163,8 @@ function SubjectForm() {
             sent get the same refusal, so the page says once, for all, that
             five wrong tries cancel a code (2026-11-08). */}
         <Alert tone="info" title="Check your messages">
-          If <strong>{contact}</strong> is registered with us, a six-digit code is on its
-          way. It expires in ten minutes, or after five wrong tries; then ask for another.
+          A six-digit code is on its way to <strong>{contact}</strong>. It expires in ten
+          minutes, or after five wrong tries; then ask for another.
         </Alert>
         <SubjectVerifyForm contact={contact} next={params.get("next")} />
         <Button variant="ghost" className="w-full" onClick={() => setSent(false)}>

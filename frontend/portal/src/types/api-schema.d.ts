@@ -6688,6 +6688,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/portal-address": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The address portal links start with */
+        get: operations["get_portal_address_portal_address_get"];
+        /** Set the address portal links start with */
+        put: operations["put_portal_address_portal_address_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/tickets": {
         parameters: {
             query?: never;
@@ -11633,6 +11651,8 @@ export interface components {
             session_expires_at: string;
             /** Nav */
             nav: string[];
+            /** Portal Url */
+            portal_url?: string | null;
             /** Writes */
             writes?: string[];
         };
@@ -12482,6 +12502,24 @@ export interface components {
             name: string;
             /** Status */
             status: string;
+        };
+        /** PortalAddressIn */
+        PortalAddressIn: {
+            /** Portal Url */
+            portal_url?: string | null;
+        };
+        /** PortalAddressOut */
+        PortalAddressOut: {
+            /** Portal Url */
+            portal_url: string | null;
+            /** Configured Url */
+            configured_url: string;
+            /** In Use */
+            in_use: string;
+            /** Updated At */
+            updated_at: string | null;
+            /** Updated By Name */
+            updated_by_name: string | null;
         };
         /** PreviewOut */
         PreviewOut: {
@@ -27481,6 +27519,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TicketDataVaultOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_portal_address_portal_address_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalAddressOut"];
+                };
+            };
+        };
+    };
+    put_portal_address_portal_address_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PortalAddressIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortalAddressOut"];
                 };
             };
             /** @description Validation Error */

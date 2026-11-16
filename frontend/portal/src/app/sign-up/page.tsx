@@ -48,9 +48,12 @@ type Values = z.infer<typeof schema>;
 
 export default function SignUpPage() {
   return (
-    <AuthPageGate>
-      <SignUpFlow />
-    </AuthPageGate>
+    // `SignUpFlow` reads the URL, which Next wants inside a suspense boundary.
+    <React.Suspense fallback={null}>
+      <AuthPageGate>
+        <SignUpFlow />
+      </AuthPageGate>
+    </React.Suspense>
   );
 }
 
@@ -66,9 +69,22 @@ function SignUpFlow() {
     value: string;
   } | null>(null);
 
+  // Sent here by sign-in or a consent link that found no account for a
+  // contact (2026-11-16): it is filled in, and the reason is said once. It
+  // only populates a field; codes still have to arrive where she says.
+  const params = useSearchParams();
+  const arrivedWith = (params.get("contact") ?? "").trim().slice(0, 254);
+  const unregistered = params.get("unregistered") === "1" && arrivedWith !== "";
+  const arrivedByEmail = arrivedWith.includes("@");
+
   const form = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { full_name: "", mobile: "", email: "", dob: "" },
+    defaultValues: {
+      full_name: "",
+      mobile: arrivedByEmail ? "" : arrivedWith,
+      email: arrivedByEmail ? arrivedWith : "",
+      dob: "",
+    },
   });
 
   const onSubmit = form.handleSubmit(async (values) => {
@@ -130,6 +146,22 @@ function SignUpFlow() {
     >
       <form method="post" onSubmit={onSubmit} noValidate className="space-y-4">
         {error && <Alert tone="danger">{error}</Alert>}
+        {unregistered && !taken && (
+          <Alert tone="warning" title="No account exists for that contact">
+            <p>
+              We have no account for <strong>{arrivedWith}</strong>. Register below to create
+              one{arrivedByEmail ? "; you will need a mobile number too" : ""}. If you
+              registered with another contact,{" "}
+              <Link
+                href="/sign-in"
+                className="font-medium text-accent-text underline underline-offset-2"
+              >
+                sign in with that one
+              </Link>
+              .
+            </p>
+          </Alert>
+        )}
         {taken && (
           <Alert tone="warning" title={`That ${taken.field} is already registered`}>
             <p>

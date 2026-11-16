@@ -37,6 +37,37 @@ describe("copyText", () => {
     expect(document.querySelector("textarea")).toBeNull(); // cleaned up
   });
 
+  /**
+   * A dialog keeps the focus inside itself, so the hidden field is put in
+   * the open dialog, where it can hold the selection (2026-11-16).
+   */
+  it("puts the hidden field inside the open dialog, and gives the focus back", async () => {
+    vi.stubGlobal("navigator", {});
+    const dialog = document.createElement("div");
+    dialog.setAttribute("role", "dialog");
+    const button = document.createElement("button");
+    dialog.appendChild(button);
+    document.body.appendChild(dialog);
+    button.focus();
+    let host: Element | null = null;
+    let selected = "";
+    Object.defineProperty(document, "execCommand", {
+      value: () => {
+        const field = document.querySelector("textarea");
+        host = field?.parentElement ?? null;
+        selected = field && document.activeElement === field ? field.value : "";
+        return true;
+      },
+      configurable: true,
+    });
+
+    expect(await copyText("https://portal/c/abc")).toBe(true);
+    expect(host).toBe(dialog);
+    expect(selected).toBe("https://portal/c/abc");
+    expect(document.activeElement).toBe(button);
+    dialog.remove();
+  });
+
   it("never throws, and says when the copy did not happen", async () => {
     vi.stubGlobal("navigator", {
       clipboard: { writeText: vi.fn().mockRejectedValue(new Error("denied")) },

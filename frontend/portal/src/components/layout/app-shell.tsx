@@ -19,6 +19,7 @@ import {
   House,
   Menu,
   Scale,
+  ShieldAlert,
   UserRound,
   X,
 } from "lucide-react";
@@ -68,6 +69,12 @@ const SECTIONS: NavSection[] = [
       // account menu, with sign-out (UX review 2026-10-05).
       { key: "notifications", href: "/notifications", label: "Updates", icon: Bell },
     ],
+  },
+  {
+    // The public reporting page (ADR 0037), which had no way in but the link
+    // the Privacy Office hands out (2026-11-16). No key: it is everybody's.
+    title: "Something wrong?",
+    items: [{ href: "/report-incident", label: "Report an incident", icon: ShieldAlert }],
   },
 ];
 

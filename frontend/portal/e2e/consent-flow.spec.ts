@@ -206,20 +206,24 @@ test.describe("sign-in", () => {
     await expect(page.getByRole("link", { name: /sign in to the console/i })).toBeVisible();
   });
 
-  test("does not reveal whether a contact is registered", async ({ page }) => {
+  test("takes a contact nobody registered to sign-up, and says why", async ({ page }) => {
     await page.goto("/sign-in");
     await page.getByRole("radio", { name: /^email$/i }).check();
     await page.getByLabel(/email address/i).fill("definitely-not-a-user@example.org");
     await page.getByRole("button", { name: /^send code$/i }).click();
 
-    // The same screen whether or not the contact exists. Anything more
-    // specific turns the form into an oracle for who consented to a project.
-    // An informational notice, not an error: role="status", because nothing
-    // went wrong from the visitor's point of view whichever way it went.
-    const notice = page.locator("main").getByRole("status").first();
-    await expect(notice).toBeVisible();
-    await expect(notice).toContainText(/if .* is registered/i);
-    await expect(notice).not.toContainText(/no such|not found|does not exist|unknown/i);
+    // Since 2026-11-16 (ADR 0040): no "a code is on its way" for an address
+    // nobody holds. Sign-up opens with the address filled in and the reason.
+    await page.waitForURL(/\/sign-up\?/);
+    await expect(page.getByText("No account exists for that contact")).toBeVisible();
+    await expect(page.getByLabel(/email/i)).toHaveValue("definitely-not-a-user@example.org");
+  });
+
+  test("offers the way to report an incident on the sign-in card", async ({ page }) => {
+    await page.goto("/sign-in");
+    await page.getByRole("link", { name: /report a personal data incident/i }).click();
+    await page.waitForURL(/\/report-incident/);
+    await expect(page.getByRole("heading", { name: "Report an incident" })).toBeVisible();
   });
 });
 

@@ -100,12 +100,21 @@ export default function ReportIncidentPage() {
           </div>
         )}
 
-        <p className="mt-8 text-center text-xs">
+        {/* Two ways back: this page is reached from the signed-in menu and
+            from the sign-in card as well as by its link (2026-11-16). `/home`
+            sends somebody with no session to sign-in. */}
+        <p className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-center text-xs">
           <Link
-            href="/rights"
+            href="/home"
             className="inline-flex items-center gap-1 text-text-subtle underline underline-offset-2 hover:text-text-muted"
           >
             <ArrowLeft className="size-3.5" aria-hidden="true" />
+            Home or sign in
+          </Link>
+          <Link
+            href="/rights"
+            className="text-text-subtle underline underline-offset-2 hover:text-text-muted"
+          >
             Your rights
           </Link>
         </p>

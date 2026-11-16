@@ -29,6 +29,7 @@
 "use client";
 
 import { Globe } from "lucide-react";
+import { useRouter } from "next/navigation";
 import * as React from "react";
 
 import {
@@ -66,6 +67,7 @@ export function IdentifyStep({
   language?: LanguageCode;
   onLanguageChange?: (next: LanguageCode) => void;
 }) {
+  const router = useRouter();
   const [medium, setMedium] = React.useState<Medium>("mobile");
   const [contact, setContact] = React.useState("");
   const [busy, setBusy] = React.useState(false);
@@ -78,6 +80,17 @@ export function IdentifyStep({
       await requestOtp(token, contact);
       onDone(contact);
     } catch (err) {
+      if (err instanceof ApiError && err.code === "account_not_found") {
+        // No account for that contact (2026-11-16): to sign-up, which says so,
+        // has it filled in, and comes back to this link afterwards.
+        const to = new URLSearchParams({
+          contact: contact.trim(),
+          unregistered: "1",
+          next: `/c/${token}`,
+        });
+        router.push(`/sign-up?${to.toString()}`);
+        return;
+      }
       onError(err instanceof ApiError ? err.userMessage() : "Could not send a code.");
     } finally {
       setBusy(false);

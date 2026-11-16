@@ -75,7 +75,7 @@ export const SECTIONS: HelpSection[] = [
       {
         kind: "list",
         items: [
-          "A code works for ten minutes. For your safety we say the same thing whether or not a contact is registered.",
+          "A code works for ten minutes. If we have no account for the mobile or email you type, we say so and take you to [[Register]].",
           "You are signed out after 30 minutes without activity. [[Sign out]] is at the bottom of the menu.",
           "If we do not yet have your date of birth, we ask for it before you give a new consent. You can still withdraw a consent or make a request without it.",
         ],
