@@ -45,6 +45,8 @@ export interface Me {
   /** What this role may navigate to. Rendered from here, not from a local copy
    *  of the permission matrix that would drift from the server's. */
   nav: string[];
+  /** The address links to the data principal's portal start with (0072). */
+  portal_url?: string | null;
   /** Resources the role may write; controls are offered from this, not from the role. */
   writes: string[];
 }

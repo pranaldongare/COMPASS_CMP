@@ -712,6 +712,24 @@ export const SECTIONS: HelpSection[] = [
     ],
   },
   {
+    id: "portal-address",
+    title: "Portal address",
+    summary:
+      "The address every link to the data principal's portal starts with: copied consent links, the breach reporting link, and links in mail.",
+    roles: ["admin"],
+    blocks: [
+      {
+        kind: "list",
+        items: [
+          "[[Portal address]] is where people reach the portal: http:// or https://, a host, and a port if it has one, with nothing after it. For example http://10.20.30.40:3001.",
+          "[[Save]] takes effect within a few seconds; nothing is restarted. Links already handed out keep the address they were copied with, so replace them if the address has moved.",
+          "[[Use the configured address]] goes back to the address the platform was installed with.",
+          "Every change is on the [[Audit trail]], with the address before and after.",
+        ],
+      },
+    ],
+  },
+  {
     id: "datavault-connection",
     title: "DataVault connection",
     summary:

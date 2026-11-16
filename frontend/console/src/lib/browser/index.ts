@@ -37,6 +37,12 @@ export function uid(): string {
  * route every browser still supports - select the text in a hidden field
  * and ask for a copy. Never throws: a copy that did not happen is reported,
  * so the button can say so, rather than failing the page around it.
+ *
+ * The hidden field goes inside the open dialog when there is one. A dialog
+ * keeps the focus within itself, so a field put on the body beside it never
+ * held the selection, and the copy took nothing - which is how "Copy link"
+ * did nothing over plain http, where the older route is the only one
+ * (2026-11-16).
  */
 export async function copyText(text: string): Promise<boolean> {
   try {
@@ -53,13 +59,20 @@ export async function copyText(text: string): Promise<boolean> {
   field.setAttribute("readonly", "");
   field.style.position = "fixed";
   field.style.opacity = "0";
-  document.body.appendChild(field);
+  field.style.top = "0";
+  field.style.left = "0";
+  const before = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  const host = before?.closest<HTMLElement>('[role="dialog"], [role="alertdialog"]') ?? document.body;
+  host.appendChild(field);
+  field.focus({ preventScroll: true });
   field.select();
+  field.setSelectionRange(0, text.length);
   try {
     return document.execCommand("copy");
   } catch {
     return false;
   } finally {
     field.remove();
+    before?.focus({ preventScroll: true });
   }
 }

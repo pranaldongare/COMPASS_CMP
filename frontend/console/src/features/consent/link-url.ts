@@ -24,9 +24,14 @@
  * bare origin.
  */
 
-import { config } from "@/lib/config";
+import { portalUrl } from "@/features/portal-address";
 
+/**
+ * Since 0072 the origin is the one the administrator keeps on the Portal
+ * address page, which the server tells every signed-in tab (`portalUrl()`);
+ * `config.subjectPortalUrl` is what it falls back to.
+ */
 export function consentLinkUrl(urlPath: string | null | undefined): string {
   if (!urlPath) return "";
-  return `${config.subjectPortalUrl.replace(/\/+$/, "")}${urlPath}`;
+  return `${portalUrl()}${urlPath}`;
 }

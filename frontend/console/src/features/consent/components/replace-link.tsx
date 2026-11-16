@@ -130,6 +130,7 @@ function ReplaceLinkBody({ link, onClose }: { link: ConsentLink; onClose: () => 
  */
 function MintedPanel({ link, onDone }: { link: RemintedLink; onDone: () => void }) {
   const [copied, setCopied] = React.useState(false);
+  const [failed, setFailed] = React.useState(false);
   const url = consentLinkUrl(link.url_path);
 
   return (
@@ -149,7 +150,12 @@ function MintedPanel({ link, onDone }: { link: RemintedLink; onDone: () => void 
         variant="secondary"
         className="mt-3"
         onClick={async () => {
-          await copyText(url);
+          // The link is on the page above, to select by hand if this fails.
+          if (!(await copyText(url))) {
+            setFailed(true);
+            return;
+          }
+          setFailed(false);
           setCopied(true);
           window.setTimeout(() => setCopied(false), 2000);
         }}
@@ -157,6 +163,11 @@ function MintedPanel({ link, onDone }: { link: RemintedLink; onDone: () => void 
         {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
         {copied ? "Copied" : "Copy link"}
       </Button>
+      {failed && (
+        <p role="alert" className="mt-2 text-xs text-danger-text">
+          Your browser refused to copy. Select the link above and copy it by hand.
+        </p>
+      )}
 
       <p className="mt-4 text-xs text-text-muted">
         Give this to the field agent. Anyone holding it can open the notice and consent, so

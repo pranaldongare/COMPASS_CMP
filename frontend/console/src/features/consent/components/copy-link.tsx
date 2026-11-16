@@ -69,14 +69,16 @@ export function CopyLinkButton({
       size={size}
       onClick={async () => {
         const url = consentLinkUrl(link.url_path);
-        try {
-          await copyText(url);
+        // `copyText` answers whether the link got there and never throws. It
+        // used to be awaited as if it threw, so a refused copy still said
+        // "Copied" with nothing on the clipboard (2026-11-16). The link is in
+        // the message, to select by hand where the browser refuses.
+        if (await copyText(url)) {
           setCopied(true);
           setTimeout(() => setCopied(false), 2000);
-        } catch {
-          // Clipboard access is refused in some browsers and contexts. Saying
-          // so beats a button that silently does nothing.
-          toast.error("Could not copy", "Your browser refused clipboard access.");
+          toast.success("Link copied", "The consent link is on the clipboard.");
+        } else {
+          toast.error("Could not copy", `Your browser refused. Copy it by hand: ${url}`);
         }
       }}
       title="Copy the collection URL on the data principal's portal. Anyone with it can open the consent form for this site."

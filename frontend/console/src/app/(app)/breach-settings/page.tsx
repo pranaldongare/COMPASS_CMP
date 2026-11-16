@@ -15,7 +15,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Trash2 } from "lucide-react";
+import { Copy, ExternalLink, Trash2 } from "lucide-react";
 
 import { PageHeader } from "@/components/layout/app-shell";
 import { useConfirm } from "@/components/ui/confirm";
@@ -41,6 +41,7 @@ import {
 } from "@/features/breach/api";
 import { BoardAddressForm, type BoardAddress } from "@/features/breach/components/board-picker";
 import { messageOf } from "@/features/breach/components/record-breach";
+import { copyText } from "@/lib/browser";
 import { isApiError } from "@/lib/errors";
 import { formatDateTime } from "@/lib/format";
 import { keys } from "@/lib/query";
@@ -50,12 +51,11 @@ import type { BreachSettings } from "@/types";
 function PublicLink({ link }: { link: string }) {
   const toast = useToast();
   async function copy() {
-    try {
-      await navigator.clipboard.writeText(link);
-      toast.success("Link copied");
-    } catch {
-      toast.error("Not copied", "Select the link and copy it yourself.");
-    }
+    // `copyText`, not `navigator.clipboard`: the browser leaves that out when
+    // the console is opened over plain http by address, and the button then
+    // copied nothing (2026-11-16).
+    if (await copyText(link)) toast.success("Link copied", "The reporting link is on the clipboard.");
+    else toast.error("Not copied", "The browser refused. Select the link and copy it yourself.");
   }
   return (
     <Card>
@@ -67,11 +67,28 @@ function PublicLink({ link }: { link: string }) {
         </p>
       </CardHeader>
       <CardBody className="flex flex-wrap items-center gap-2">
-        <code className="min-w-0 flex-1 rounded-md bg-bg-inset px-3 py-2 text-sm break-all">{link}</code>
+        {/* A read-only field, so the link can be selected in one click and
+            copied by hand where the button is refused. */}
+        <input
+          readOnly
+          aria-label="The public reporting link"
+          value={link}
+          onFocus={(e) => e.currentTarget.select()}
+          className="min-w-0 flex-1 rounded-md border border-border bg-bg-inset px-3 py-2 font-mono text-sm"
+        />
         <Button variant="secondary" size="sm" onClick={copy}>
           <Copy className="size-4" />
-          Copy
+          Copy link
         </Button>
+        <a
+          href={link}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1 text-sm text-accent-text underline underline-offset-2"
+        >
+          <ExternalLink className="size-4" aria-hidden="true" />
+          Open
+        </a>
       </CardBody>
     </Card>
   );

@@ -17,6 +17,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 
+import { setPortalUrl } from "@/features/portal-address";
 import { apiGet, apiPost, setUnauthenticatedHandler } from "@/lib/api";
 import { config } from "@/lib/config";
 import { ApiError } from "@/lib/errors";
@@ -145,6 +146,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [queryClient, router]);
 
   const me = query.data ?? null;
+  // The address consent links start with (0072), as the server holds it now.
+  // Set while rendering, not in an effect: a link drawn in this same pass
+  // must already have it.
+  setPortalUrl(me?.portal_url);
 
   const can = React.useCallback(
     (section: string) => Boolean(me?.nav.includes(section)),

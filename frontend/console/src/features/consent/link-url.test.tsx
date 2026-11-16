@@ -63,6 +63,21 @@ describe("the copy button", () => {
     expect(await navigator.clipboard.readText()).toBe(`${config.subjectPortalUrl}${PATH}`);
   });
 
+  /**
+   * `copyText` answers false and never throws; the button awaited it as if it
+   * threw, so a refused copy still said "Copied" (2026-11-16).
+   */
+  it("does not say Copied when the browser refused", async () => {
+    const { user } = render(<CopyLinkButton link={{ url_path: PATH, status: "active" }} />);
+    vi.stubGlobal("navigator", {});
+    Object.defineProperty(document, "execCommand", { value: () => false, configurable: true });
+    await user.click(screen.getByRole("button", { name: /copy link/i }));
+
+    expect(screen.queryByRole("button", { name: /copied/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /copy link/i })).toBeInTheDocument();
+    vi.unstubAllGlobals();
+  });
+
   it("offers nothing to copy where the URL was never kept", () => {
     render(<CopyLinkButton link={{ url_path: null, status: "active" }} />);
 

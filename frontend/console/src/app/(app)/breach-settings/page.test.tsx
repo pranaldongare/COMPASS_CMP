@@ -86,8 +86,40 @@ describe("Breach settings", () => {
     serve(settings());
     render(<BreachSettingsPage />);
 
-    expect(await screen.findByText("https://portal.cmp.local/report-incident")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Copy" })).toBeInTheDocument();
+    const field = await screen.findByLabelText("The public reporting link");
+    expect(field).toHaveValue("https://portal.cmp.local/report-incident");
+    expect(screen.getByRole("button", { name: "Copy link" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open" })).toHaveAttribute(
+      "href",
+      "https://portal.cmp.local/report-incident",
+    );
+  });
+
+  /**
+   * Over plain http by address the browser has no `navigator.clipboard`, and
+   * the button, which called it directly, copied nothing (2026-11-16). It
+   * goes through `copyText`, whose older route works there, and says which
+   * way it went.
+   */
+  it("copies the link where the browser has no clipboard API, and says so when it cannot", async () => {
+    serve(settings());
+    const { user } = render(<BreachSettingsPage />);
+    const button = await screen.findByRole("button", { name: "Copy link" });
+
+    vi.stubGlobal("navigator", {});
+    const exec = vi.fn().mockReturnValue(true);
+    Object.defineProperty(document, "execCommand", { value: exec, configurable: true });
+    await user.click(button);
+    expect(exec).toHaveBeenCalledWith("copy");
+    expect(toast.success).toHaveBeenCalledWith("Link copied", "The reporting link is on the clipboard.");
+
+    exec.mockReturnValue(false);
+    await user.click(button);
+    expect(toast.error).toHaveBeenCalledWith(
+      "Not copied",
+      "The browser refused. Select the link and copy it yourself.",
+    );
+    vi.unstubAllGlobals();
   });
 
   it("keeps the two officers ticked, whatever is chosen", async () => {

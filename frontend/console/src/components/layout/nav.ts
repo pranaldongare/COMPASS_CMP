@@ -23,6 +23,7 @@ import {
   HandHelping,
   Inbox,
   Layers,
+  Globe,
   Link2,
   MapPin,
   MessageSquareText,
@@ -204,6 +205,14 @@ export const SECTIONS: NavSection[] = [
         label: "DataVault connection",
         icon: DatabaseZap,
         keywords: "datavault databank address api key lookup assets",
+      },
+      // The address links to the portal start with (0072): the administrator's.
+      {
+        key: "portal-address",
+        href: "/portal-address",
+        label: "Portal address",
+        icon: Globe,
+        keywords: "portal address url ip domain link consent link starting host",
       },
       {
         key: "audit",
