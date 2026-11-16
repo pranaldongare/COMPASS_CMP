@@ -124,6 +124,18 @@ celery_app.conf.update(
             "task": "cmp.maintenance.alert_breach_duties",
             "schedule": crontab(minute="*/5"),
         },
+        # DataVault is told of consent changes (0071): read what changed and
+        # deliver what is due, every minute - the net under the nudge each
+        # saved consent gives - and nightly, the consents whose validity ran
+        # out, after the retention sweep. Both do nothing while it is off.
+        "datavault-consent-changes": {
+            "task": "cmp.datavault.deliver_consent_changes",
+            "schedule": crontab(minute="*"),
+        },
+        "datavault-consent-lapses": {
+            "task": "cmp.datavault.queue_consent_lapses",
+            "schedule": crontab(hour="2", minute="15"),
+        },
     },
 )
 

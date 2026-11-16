@@ -19691,6 +19691,94 @@
         }
       }
     },
+    "/requests/{request_uuid}/datavault/erase": {
+      "post": {
+        "tags": [
+          "datavault"
+        ],
+        "summary": "Erase in DataVault: tell it to erase the assets its last check listed",
+        "description": "On an erasure request that has been started, with a check on record and\nno legal hold on the person. The instruction is saved before it is sent,\nso one that is never answered can be asked about again. Nothing about\nthis runs by itself.",
+        "operationId": "erase_in_datavault_requests__request_uuid__datavault_erase_post",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestDataVaultOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/requests/{request_uuid}/datavault/erase/status": {
+      "post": {
+        "tags": [
+          "datavault"
+        ],
+        "summary": "Check status: ask DataVault how far each asset it was told to erase has got",
+        "description": "Repeats every instruction with an asset still pending or unanswered:\nthe same `erasure_id` and the same assets, which starts nothing new.",
+        "operationId": "erasure_status_requests__request_uuid__datavault_erase_status_post",
+        "parameters": [
+          {
+            "name": "request_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Request Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestDataVaultOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/tickets/{holder_uuid}/datavault": {
       "get": {
         "tags": [
@@ -29186,6 +29274,18 @@
             ],
             "title": "Base Url"
           },
+          "erasure_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Erasure Url"
+          },
           "api_key": {
             "anyOf": [
               {
@@ -29221,6 +29321,23 @@
             "type": "boolean",
             "title": "Enabled",
             "default": false
+          },
+          "id_format": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id Format"
+          },
+          "consent_changes": {
+            "type": "boolean",
+            "title": "Consent Changes",
+            "default": false
           }
         },
         "additionalProperties": false,
@@ -29240,6 +29357,17 @@
             ],
             "title": "Base Url"
           },
+          "erasure_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Erasure Url"
+          },
           "api_key_set": {
             "type": "boolean",
             "title": "Api Key Set"
@@ -29251,6 +29379,44 @@
           "enabled": {
             "type": "boolean",
             "title": "Enabled"
+          },
+          "id_format": {
+            "type": "string",
+            "title": "Id Format",
+            "default": "numeric"
+          },
+          "consent_changes": {
+            "type": "boolean",
+            "title": "Consent Changes",
+            "default": false
+          },
+          "consent_changes_waiting": {
+            "type": "integer",
+            "title": "Consent Changes Waiting",
+            "default": 0
+          },
+          "consent_changes_last_delivered_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Changes Last Delivered At"
+          },
+          "consent_changes_last_failure": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Changes Last Failure"
           },
           "updated_at": {
             "anyOf": [
@@ -30728,6 +30894,97 @@
         ],
         "title": "DisputeIn"
       },
+      "ErasureOut": {
+        "properties": {
+          "may_erase": {
+            "type": "boolean",
+            "title": "May Erase"
+          },
+          "why_not": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Why Not"
+          },
+          "to_send": {
+            "type": "integer",
+            "title": "To Send"
+          },
+          "left_out": {
+            "type": "integer",
+            "title": "Left Out"
+          },
+          "open": {
+            "type": "integer",
+            "title": "Open"
+          },
+          "may_check_status": {
+            "type": "boolean",
+            "title": "May Check Status"
+          },
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Counts"
+          },
+          "last_asked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Asked At"
+          },
+          "last_failure": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Failure"
+          },
+          "last_failure_said": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Failure Said"
+          }
+        },
+        "type": "object",
+        "required": [
+          "may_erase",
+          "why_not",
+          "to_send",
+          "left_out",
+          "open",
+          "may_check_status",
+          "counts",
+          "last_asked_at",
+          "last_failure",
+          "last_failure_said"
+        ],
+        "title": "ErasureOut",
+        "description": "What may be done about erasing in DataVault now, on an erasure request."
+      },
       "EvidenceIn": {
         "properties": {
           "evidenced": {
@@ -31245,6 +31502,57 @@
               }
             ],
             "title": "Datapath"
+          },
+          "in_scope": {
+            "type": "boolean",
+            "title": "In Scope",
+            "default": true
+          },
+          "erasure_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Erasure Status"
+          },
+          "erasure_status_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Erasure Status At"
+          },
+          "erasure_completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Erasure Completed At"
+          },
+          "erasure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Erasure Reason"
           }
         },
         "type": "object",
@@ -38042,6 +38350,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/CheckOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "erasure": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErasureOut"
               },
               {
                 "type": "null"

@@ -1,12 +1,28 @@
-"""The call to DataVault reads its answer strictly and says little when it fails (0070)."""
+"""The calls to DataVault read its answers strictly and say little when they
+fail (0070, 0071)."""
 
 from __future__ import annotations
+
+import json
+from datetime import UTC, datetime
+from typing import Any
 
 import httpx
 import pytest
 
-from cmp.infrastructure.datavault import DataVaultFailed, lookup, usable_base_url
-from cmp.infrastructure.datavault.client import MAX_ASSETS, read
+from cmp.infrastructure.datavault import (
+    DataVaultFailed,
+    consent_change,
+    erase,
+    lookup,
+    usable_base_url,
+)
+from cmp.infrastructure.datavault.client import (
+    MAX_ASSETS,
+    read,
+    read_change_result,
+    read_outcomes,
+)
 
 SAMPLE = {
     "person_id": "7c9e6679-7425-40de-944b-e07fc1f90ae7",
@@ -93,8 +109,8 @@ async def _ask(handler: httpx.MockTransport, key: str | None = "k-123") -> objec
         base_url="https://datavault.internal/api",
         api_key=key,
         api_key_header="X-API-Key",
-        request_ref="RR-2026-0007",
-        person_no=42,
+        request_id="RR-2026-0007",
+        person_id="42",
         transport=handler,
     )
 
@@ -157,3 +173,239 @@ async def test_no_answer_in_time_and_no_way_there() -> None:
     with pytest.raises(DataVaultFailed) as failed:
         await _ask(httpx.MockTransport(gone))
     assert failed.value.code == "unreachable"
+
+
+def test_whether_a_consent_came_as_a_number_is_kept() -> None:
+    """An erasure sends each asset back with the consent as DataVault gave it,
+    so the type it came in is read with the value."""
+    as_number, as_text, as_digits, none = read(
+        {
+            "assets": [
+                {"asset_id": "A", "consent_id": 311},
+                {"asset_id": "B", "consent_id": "9b2f4c1d-6e3a-4b7f-8d1c-2e5a9f0b3c71"},
+                {"asset_id": "C", "consent_id": "311"},
+                {"asset_id": "D"},
+            ]
+        }
+    )
+    assert (as_number.consent_ref, as_number.consent_is_number) == ("311", True)
+    assert as_text.consent_is_number is False
+    assert (as_digits.consent_ref, as_digits.consent_is_number) == ("311", False)
+    assert none.consent_ref is None and none.consent_is_number is False
+
+
+# ------------------------------------------------------------------- erasures
+ERASE_URL = "https://datavault-erase.internal/api/v1"
+ASSETS: list[dict[str, Any]] = [
+    {"asset_id": "DV-IMG-000101", "consent_id": 311},
+    {"asset_id": "DV-VID-000102", "consent_id": 311},
+]
+
+
+async def _erase(handler: httpx.MockTransport, **changes: Any) -> Any:
+    values: dict[str, Any] = {
+        "erasure_url": ERASE_URL + "/",
+        "api_key": "k-123",
+        "api_key_header": "X-API-Key",
+        "erasure_id": "5d1c9a7e-3b2f-4e8d-a6c1-0f9b7e3d2a55",
+        "request_id": "RR-2026-0007",
+        "person_id": 42,
+        "assets": ASSETS,
+        **changes,
+    }
+    return await erase(transport=handler, **values)
+
+
+async def test_an_erasure_is_the_agreed_call() -> None:
+    seen: list[httpx.Request] = []
+
+    def answer(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(
+            200,
+            json={
+                "erasure_id": "5d1c9a7e-3b2f-4e8d-a6c1-0f9b7e3d2a55",
+                "assets": [
+                    {
+                        "asset_id": "DV-IMG-000101",
+                        "status": "erased",
+                        "completed_at": "2026-11-04T09:30:12Z",
+                        "reason": None,
+                    },
+                    {
+                        "asset_id": "DV-VID-000102",
+                        "status": "pending",
+                        "completed_at": None,
+                        "reason": None,
+                    },
+                ],
+            },
+        )
+
+    erased, pending = await _erase(httpx.MockTransport(answer))
+    [request] = seen
+    assert request.method == "POST"
+    assert str(request.url) == ERASE_URL + "/erasures", "the address, then /erasures"
+    assert request.headers["X-API-Key"] == "k-123"
+    assert request.headers["content-type"] == "application/json"
+    assert json.loads(request.content) == {
+        "erasure_id": "5d1c9a7e-3b2f-4e8d-a6c1-0f9b7e3d2a55",
+        "request_id": "RR-2026-0007",
+        "person_id": 42,
+        "assets": ASSETS,
+    }, "what it is given, and nothing else"
+    assert (erased.asset_ref, erased.status) == ("DV-IMG-000101", "erased")
+    assert erased.completed_at == datetime(2026, 11, 4, 9, 30, 12, tzinfo=UTC)
+    assert (pending.asset_ref, pending.status) == ("DV-VID-000102", "pending")
+    assert pending.completed_at is None and pending.reason is None
+
+
+def test_each_of_the_four_answers_is_read_and_only_with_what_belongs_to_it() -> None:
+    erased, pending, failed, not_held = read_outcomes(
+        {
+            "assets": [
+                # A time that is not one, and a reason on an asset that was erased.
+                {"asset_id": "A", "status": "erased", "completed_at": "soon", "reason": "x"},
+                {"asset_id": "B", "status": "pending", "completed_at": "2026-11-04T09:30:12Z"},
+                {"asset_id": "C", "status": "failed", "reason": "  Under a litigation hold  "},
+                {"asset_id": "D", "status": "not_held", "reason": "never had it"},
+            ]
+        }
+    )
+    assert erased.completed_at is None and erased.reason is None
+    assert pending.completed_at is None, "a time belongs to an asset that is erased"
+    assert failed.reason == "Under a litigation hold"
+    assert not_held.reason is None, "a reason belongs to an asset that failed"
+
+
+def test_an_entry_that_says_nothing_readable_is_passed_over() -> None:
+    """The asset stays as it stood and is asked about again."""
+    [only] = read_outcomes(
+        {
+            "assets": [
+                {"asset_id": "A", "status": "deleted"},
+                {"status": "erased"},
+                {"asset_id": "B", "status": "erased"},
+            ]
+        }
+    )
+    assert only.asset_ref == "B"
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        None,
+        [],
+        {},
+        {"assets": "done"},
+        {"assets": ["DV-IMG-000101"]},
+        # Something came back, and none of it can be read.
+        {"assets": [{"asset_id": "A", "status": "deleted"}]},
+    ],
+)
+def test_an_erasure_answer_nothing_can_be_read_from_is_unreadable(body: object) -> None:
+    with pytest.raises(DataVaultFailed) as failed:
+        read_outcomes(body)
+    assert failed.value.code == "unreadable"
+
+
+def test_an_erasure_answer_that_lists_nothing_is_an_answer() -> None:
+    assert read_outcomes({"erasure_id": "x", "assets": []}) == []
+
+
+@pytest.mark.parametrize(
+    ("response", "code"),
+    [
+        (httpx.Response(409, json={"error": "erasure_id_reused"}), "status_409"),
+        (
+            httpx.Response(400, json={"error": "invalid_request", "detail": "person 42"}),
+            "status_400",
+        ),
+        (httpx.Response(503, text="down"), "status_503"),
+        (httpx.Response(200, text="ok"), "unreadable"),
+    ],
+)
+async def test_an_erasure_that_fails_is_a_code(response: httpx.Response, code: str) -> None:
+    with pytest.raises(DataVaultFailed) as failed:
+        await _erase(httpx.MockTransport(lambda _: response))
+    assert failed.value.code == code and str(failed.value) == code
+
+
+# ------------------------------------------------------------ consent changes
+MESSAGE: dict[str, Any] = {
+    "message_id": "6e0b4d2a-9c7f-4e1b-a3d5-8f2c6a0e4b91",
+    "sequence": 1042,
+    "person_id": 42,
+    "project_id": 7,
+    "consent_id": 312,
+    "consent_ids": [311, 312],
+    "change": "partly_withdrawn",
+    "action": "restrict",
+    "purposes_granted": ["RND-IMG-01"],
+    "purposes_removed": ["RND-VID-02"],
+    "effective_at": "2026-11-04T10:02:45+00:00",
+}
+
+
+async def test_a_consent_change_is_the_agreed_call() -> None:
+    seen: list[httpx.Request] = []
+
+    def answer(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(
+            200,
+            json={"message_id": MESSAGE["message_id"], "result": "applied", "assets_affected": 2},
+        )
+
+    result = await consent_change(
+        erasure_url=ERASE_URL,
+        api_key="k-123",
+        api_key_header="X-DV-Token",
+        message=MESSAGE,
+        transport=httpx.MockTransport(answer),
+    )
+    [request] = seen
+    assert request.method == "POST"
+    assert str(request.url) == ERASE_URL + "/consent-changes", "the erasure address, then the path"
+    assert request.headers["X-DV-Token"] == "k-123"
+    assert json.loads(request.content) == MESSAGE, "the message as it was queued"
+    assert (result.result, result.assets_affected) == ("applied", 2)
+
+
+@pytest.mark.parametrize("result", ["applied", "duplicate", "stale"])
+def test_each_answer_that_means_datavault_has_it_is_read(result: str) -> None:
+    read_ = read_change_result({"message_id": "m", "result": result, "assets_affected": 0})
+    assert (read_.result, read_.assets_affected) == (result, 0)
+
+
+@pytest.mark.parametrize("affected", [None, "2", -1, 2.5, True])
+def test_a_count_that_is_not_one_reads_as_none_affected(affected: object) -> None:
+    read_ = read_change_result({"result": "applied", "assets_affected": affected})
+    assert read_.assets_affected == 0
+
+
+@pytest.mark.parametrize("body", [None, [], {}, {"result": "ok"}, {"result": None}, "applied"])
+def test_any_other_answer_to_a_consent_change_is_not_a_delivery(body: object) -> None:
+    with pytest.raises(DataVaultFailed) as failed:
+        read_change_result(body)
+    assert failed.value.code == "unreadable"
+
+
+async def test_a_consent_change_that_fails_is_a_code() -> None:
+    def refused(_: httpx.Request) -> httpx.Response:
+        return httpx.Response(401, json={"error": "unauthorized"})
+
+    def gone(_: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("refused")
+
+    for handler, code in ((refused, "status_401"), (gone, "unreachable")):
+        with pytest.raises(DataVaultFailed) as failed:
+            await consent_change(
+                erasure_url=ERASE_URL,
+                api_key=None,
+                api_key_header="X-API-Key",
+                message=MESSAGE,
+                transport=httpx.MockTransport(handler),
+            )
+        assert failed.value.code == code

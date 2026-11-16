@@ -1,4 +1,4 @@
-"""DataVault over HTTP (0070).
+"""DataVault over HTTP (0070, 0071).
 
 The administrator alone keeps the connection, and its key never comes back.
 The DPO checks a rights request in DataVault - the call itself is answered
@@ -11,6 +11,11 @@ And how a request starts (2026-11-13): as the office moves it to in progress
 the platform finds who holds her data by itself, and where a project's DCO
 Admin is among them it asks DataVault too - the task is seen queued here, and
 run in `tests/integration/test_datavault_check.py`.
+
+And the two calls after it (0071): on an erasure request the DPO presses
+"Erase in DataVault" and "Check status" - DataVault is a stand-in again - and a
+withdrawal has the worker look at once to tell DataVault of it (the task is
+seen queued; it is run in `tests/integration/test_datavault_consent_changes.py`).
 """
 
 from __future__ import annotations
@@ -37,6 +42,9 @@ RIGHTS = "/requests/{request_uuid}"
 KEY = "dv-http-key-0123456789"
 #: The platform's own call to DataVault, as the worker would be asked for it.
 CHECK = "cmp.datavault.check_request"
+#: The worker's run that tells DataVault of consent changes.
+CHANGES = "cmp.datavault.deliver_consent_changes"
+ERASE_URL = "https://datavault-erase.test/api/v1"
 
 
 @pytest.fixture(scope="module")
@@ -141,7 +149,8 @@ async def test_the_connection_is_the_administrator_s_and_a_request_is_checked(
             session=world.dpo,
         )
         [sent] = asked
-        assert sent["request_ref"] == reference and isinstance(sent["person_no"], int)
+        # Numeric to start: the request's reference and the Person ID.
+        assert sent["request_id"] == reference and sent["person_id"].isdigit()
         assert sent["api_key"] == KEY and sent["base_url"] == "https://datavault.test/api"
         body = checked.json()
         assert body["answer"]["outcome"] == "answered" and body["answer"]["asset_count"] == 2
@@ -408,3 +417,206 @@ async def test_as_work_begins_the_platform_finds_the_holders_and_asks_datavault(
         assert read.json()["holders"] == [] and read.json()["holders_derived_at"] is None
     finally:
         await _connection(http, world, on=False)
+
+
+# ------------------------------------------------- erasure and consent changes
+async def _erasure_started(http: httpx.AsyncClient, world: World, her: Session) -> dict[str, Any]:
+    """Her erasure request, classified, "she means erasure" confirmed, and
+    moved to in progress: the point at which DataVault may be told to erase."""
+    made = await call(
+        http,
+        "POST",
+        "/me/requests",
+        session=her,
+        expect=201,
+        json={"request_type": "erasure", "request_text": f"Erase what you hold {fresh()}"},
+    )
+    ruuid = made.json()["request_uuid"]
+    await call(
+        http,
+        "POST",
+        f"/requests/{ruuid}/classify",
+        template=RIGHTS + "/classify",
+        session=world.dpo,
+        json={"request_type": "erasure"},
+    )
+    await call(
+        http, "POST", f"/requests/{ruuid}/intent", template=RIGHTS + "/intent", session=world.dpo
+    )
+    moved = await call(
+        http,
+        "POST",
+        f"/requests/{ruuid}/transition",
+        template=RIGHTS + "/transition",
+        session=world.dpo,
+        json={"to": "in_progress"},
+    )
+    assert moved.json()["status"] == "in_progress"
+    return dict(moved.json())
+
+
+async def test_the_office_erases_in_datavault_and_a_withdrawal_is_told_by_itself(
+    http: httpx.AsyncClient,
+    world: World,
+    queued: Any,
+    session_for: SessionFactory,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    her = await _newcomer(http, world, queued, session_for)
+    try:
+        # The connection: the erasure address, the naming, and consent changes.
+        saved = await call(
+            http,
+            "PUT",
+            CONNECTION,
+            session=world.admin,
+            json={
+                "base_url": "https://datavault.test/api",
+                "erasure_url": ERASE_URL + "/",
+                "api_key": KEY,
+                "enabled": True,
+                "id_format": "numeric",
+                "consent_changes": True,
+            },
+        )
+        shown = saved.json()
+        assert shown["erasure_url"] == ERASE_URL and shown["id_format"] == "numeric"
+        assert shown["consent_changes"] is True and KEY not in saved.text
+        assert isinstance(shown["consent_changes_waiting"], int)
+        refused = await call(
+            http,
+            "PUT",
+            CONNECTION,
+            session=world.admin,
+            expect=422,
+            json={"base_url": "https://datavault.test/api", "enabled": True, "id_format": "x"},
+        )
+        assert "numeric" in refused.text.lower()
+
+        row = await _erasure_started(http, world, her)
+        ruuid, reference = row["request_uuid"], row["reference"]
+        before = await call(
+            http,
+            "GET",
+            f"/requests/{ruuid}/datavault",
+            template=RIGHTS + "/datavault",
+            session=world.dpo,
+        )
+        erasure = before.json()["erasure"]
+        assert erasure["may_erase"] is False and erasure["why_not"].startswith("Check in")
+        nothing = await call(
+            http,
+            "POST",
+            f"/requests/{ruuid}/datavault/erase",
+            template=RIGHTS + "/datavault/erase",
+            session=world.dpo,
+            expect=409,
+        )
+        assert nothing.json()["error"]["code"] == "datavault_erasure_not_now"
+
+        async def listed(**kwargs: Any) -> list[dv.Held]:
+            # Her project, with consents DataVault numbers its own way; and an
+            # asset it gives no consent for, which cannot be sent back.
+            return [
+                dv.Held("DV-IMG-000101", "311", world.project_uuid, None, None, True),
+                dv.Held("DV-VID-000102", "312", world.project_uuid, None, None, True),
+                dv.Held("DV-AUD-000103", None, world.project_uuid, None, None),
+            ]
+
+        monkeypatch.setattr(dv, "lookup", listed)
+        await call(
+            http,
+            "POST",
+            f"/requests/{ruuid}/datavault/check",
+            template=RIGHTS + "/datavault/check",
+            session=world.dpo,
+        )
+
+        told: list[dict[str, Any]] = []
+
+        async def erase(**kwargs: Any) -> list[dv.Outcome]:
+            told.append(kwargs)
+            first = "erased" if len(told) > 1 else "pending"
+            return [
+                dv.Outcome(a["asset_id"], first if i == 0 else "erased", None, None)
+                for i, a in enumerate(kwargs["assets"])
+            ]
+
+        monkeypatch.setattr(dv, "erase", erase)
+        # Only the office that answers the request.
+        for who in (world.rnd, world.dco_admin):
+            await call(
+                http,
+                "POST",
+                f"/requests/{ruuid}/datavault/erase",
+                template=RIGHTS + "/datavault/erase",
+                session=who,
+                expect=(403, 404),
+            )
+        assert told == []
+
+        erased = await call(
+            http,
+            "POST",
+            f"/requests/{ruuid}/datavault/erase",
+            template=RIGHTS + "/datavault/erase",
+            session=world.dpo,
+        )
+        [sent] = told
+        assert sent["erasure_url"] == ERASE_URL and sent["api_key"] == KEY
+        assert sent["request_id"] == reference and type(sent["person_id"]) is int
+        assert sent["assets"] == [
+            {"asset_id": "DV-IMG-000101", "consent_id": 311},
+            {"asset_id": "DV-VID-000102", "consent_id": 312},
+        ], "each asset with the consent DataVault gave for it, as it gave it"
+        body = erased.json()
+        assert [(a["asset_ref"], a["in_scope"], a["erasure_status"]) for a in body["assets"]] == [
+            ("DV-IMG-000101", True, "pending"),
+            ("DV-VID-000102", True, "erased"),
+            ("DV-AUD-000103", False, None),
+        ]
+        assert body["erasure"]["left_out"] == 1
+        assert body["erasure"]["open"] == 1 and body["erasure"]["may_check_status"] is True
+        assert body["erasure"]["may_erase"] is False and body["erasure"]["to_send"] == 0
+
+        status = await call(
+            http,
+            "POST",
+            f"/requests/{ruuid}/datavault/erase/status",
+            template=RIGHTS + "/datavault/erase/status",
+            session=world.dpo,
+        )
+        first, again = told
+        assert again["erasure_id"] == first["erasure_id"] and again["assets"] == first["assets"]
+        assert status.json()["erasure"]["open"] == 0
+        assert status.json()["erasure"]["counts"]["erased"] == 2
+        await call(
+            http,
+            "POST",
+            f"/requests/{ruuid}/datavault/erase/status",
+            template=RIGHTS + "/datavault/erase/status",
+            session=world.dpo,
+            expect=409,
+        )
+
+        # She withdraws: saved as ever, and the worker is asked to look now.
+        mine = await call(http, "GET", "/me/consents", session=her)
+        [current] = mine.json()
+        queued.clear()
+        await call(
+            http,
+            "POST",
+            f"/me/consents/{current['consent_uuid']}/withdraw",
+            template="/me/consents/{consent_uuid}/withdraw",
+            session=her,
+            json={"all": True},
+        )
+        assert [name for name, _ in queued].count(CHANGES) == 1
+    finally:
+        await call(
+            http,
+            "PUT",
+            CONNECTION,
+            session=world.admin,
+            json={"base_url": None, "enabled": False, "clear_api_key": True},
+        )

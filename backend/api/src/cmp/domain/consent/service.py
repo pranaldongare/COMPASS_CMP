@@ -652,6 +652,12 @@ async def capture(
             },
         )
 
+    if existing:
+        # A second decision on the same notice may change what DataVault may
+        # use her assets for (0071). The worker works that out from what was
+        # saved; this only has it look now. It cannot fail the capture.
+        _datavault_look_soon()
+
     log.info(
         "consent.captured",
         consent=str(artefact["consent_uuid"]),
@@ -659,6 +665,19 @@ async def capture(
         total=len(grants),
     )
     return {**artefact, "project_name": link["project_name"], "notice_uuid": link["notice_uuid"]}
+
+
+def _datavault_look_soon() -> None:
+    """Have the worker read this consent for DataVault once it is saved,
+    instead of at the next minute's run (`cmp.domain.datavault.consent_changes`).
+    Nothing of DataVault's is read or written here, and nothing here can
+    raise: the consent is saved whatever becomes of this."""
+    try:
+        from cmp.domain.datavault import consent_changes
+
+        consent_changes.nudge()
+    except Exception:
+        log.warning("consent.datavault_nudge_failed")
 
 
 async def _tell_hr_respondents(
@@ -817,6 +836,9 @@ async def withdraw(
         stopped=stopped,
         continuing=continuing,
     )
+    # DataVault is told to restrict the assets held under it (0071): by the
+    # worker, from what was saved here. This only has it look now.
+    _datavault_look_soon()
 
     return {
         "consent_uuid": artefact["consent_uuid"],

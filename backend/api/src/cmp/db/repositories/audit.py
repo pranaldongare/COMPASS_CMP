@@ -139,6 +139,12 @@ def office_clause(office: str | None) -> tuple[str, list[Any]]:
 #: notification, thousands on one breach; `breach.notice_sent` on the breach
 #: carries the count), a project's consents (each person's own record), and
 #: `link.opened` (every visit to a consent link).
+#:
+#: One thing about a project's consents is read with the project: that
+#: DataVault was told of a change to one (0071). What DataVault may use the
+#: project's assets for is the project's business as well as hers, and the
+#: product owner asked for it on all three trails (2026-11-13) - the
+#: consent's, the person's and the project's.
 _PARTS: Final[dict[str, tuple[str, ...]]] = {
     "breach": (
         "l.entity_type = 'breach' AND l.entity_id = %s",
@@ -174,6 +180,11 @@ _PARTS: Final[dict[str, tuple[str, ...]]] = {
              (SELECT export_id FROM export_log WHERE project_id = %s)""",
         """l.entity_type = 'import_batch' AND l.entity_id IN
              (SELECT batch_id FROM import_batch WHERE project_id = %s)""",
+        """l.event_type IN ('datavault.consent_change_queued',
+                               'datavault.consent_change_delivered')
+           AND l.entity_type = 'consent_artefact' AND l.entity_id IN
+             (SELECT ca.consent_id FROM consent_artefact ca
+                JOIN notice n ON n.notice_id = ca.notice_id WHERE n.project_id = %s)""",
     ),
 }
 

@@ -74,6 +74,10 @@ EVENT_LABELS: Final[dict[str, str]] = {
     "incident_report.reporter_erased": "Reporter's name and email erased",
     "datavault.checked": "Checked in DataVault",
     "datavault.connection_changed": "DataVault connection changed",
+    "datavault.erasure_sent": "DataVault told to erase",
+    "datavault.erasure_checked": "DataVault asked how far an erasure has got",
+    "datavault.consent_change_queued": "Consent change to tell DataVault",
+    "datavault.consent_change_delivered": "DataVault told of a consent change",
 }
 
 #: Which pickers the console offers, and the plain name of each.

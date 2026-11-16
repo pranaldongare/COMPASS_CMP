@@ -38,7 +38,7 @@ from cmp.db.repositories import datavault as repo
 from cmp.db.sql import Conn
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
-from cmp.domain.datavault import connection
+from cmp.domain.datavault import connection, erasures, ids
 from cmp.domain.rights import service as rights
 from cmp.domain.rights import state_machine as sm
 from cmp.infrastructure import datavault as client
@@ -76,6 +76,10 @@ class Ask:
     base_url: str
     api_key: str | None
     api_key_header: str
+    #: The request and the person as the call names them: by reference and
+    #: Person ID, or by uuid - the administrator's switch (`ids`).
+    request_named: str
+    person_named: str
     consents: list[Row]
 
 
@@ -99,7 +103,7 @@ async def prepare(conn: Conn, row: Row, *, role: Role | str | None) -> Ask:
     if why_not:
         raise Conflict(why_not, code="datavault_not_askable")
     ready = await connection.ready(conn)
-    if ready is None:
+    if ready is None or ready.base_url is None:
         raise Conflict(
             "DataVault is not set up. An administrator sets its address under "
             "DataVault connection.",
@@ -109,9 +113,15 @@ async def prepare(conn: Conn, row: Row, *, role: Role | str | None) -> Ask:
         request_id=int(row["request_id"]),
         reference=str(row["reference"]),
         subject_user_id=int(row["subject_user_id"]),
-        base_url=ready["base_url"],
-        api_key=ready["api_key"],
-        api_key_header=ready["api_key_header"],
+        base_url=ready.base_url,
+        api_key=ready.api_key,
+        api_key_header=ready.api_key_header,
+        request_named=ids.request(
+            ready.id_format, reference=row["reference"], uuid=row["request_uuid"]
+        ),
+        person_named=str(
+            ids.of(ready.id_format, no=row["subject_user_id"], uuid=row["subject_uuid"])
+        ),
         consents=await repo.consents_of_person(
             conn, int(row["subject_user_id"]), office_id=row.get("office_id")
         ),
@@ -125,8 +135,8 @@ async def ask(what: Ask, *, transport: Any = None) -> list[client.Held] | str:
             base_url=what.base_url,
             api_key=what.api_key,
             api_key_header=what.api_key_header,
-            request_ref=what.reference,
-            person_no=what.subject_user_id,
+            request_id=what.request_named,
+            person_id=what.person_named,
             transport=transport,
         )
     except client.DataVaultFailed as failed:
@@ -154,6 +164,7 @@ def _matched(what: Ask, held: list[client.Held]) -> list[Row]:
             {
                 "asset_ref": h.asset_ref,
                 "consent_ref": h.consent_ref,
+                "consent_ref_is_number": h.consent_is_number if h.consent_ref else None,
                 "project_ref": h.project_ref,
                 "consent_id": int(consent["consent_id"]) if consent else None,
                 "project_id": project_id,
@@ -216,6 +227,16 @@ def _asset(a: Row) -> Row:
     }
 
 
+#: An asset's place in an erasure, on a request that is not one.
+_NOT_AN_ERASURE: Row = {
+    "in_scope": True,
+    "erasure_status": None,
+    "erasure_status_at": None,
+    "erasure_completed_at": None,
+    "erasure_reason": None,
+}
+
+
 def _check(k: Row) -> Row:
     return {
         "check_uuid": k["check_uuid"],
@@ -236,17 +257,20 @@ async def overview(conn: Conn, row: Row, *, role: Role | str) -> Row:
     why_not = _askable(row)
     answered = await repo.last_answer(conn, int(row["request_id"]))
     last = await repo.last_check(conn, int(row["request_id"]))
+    assets = await repo.assets_of(conn, int(answered["check_id"])) if answered else []
+    # On an erasure request: where each asset stands in DataVault, and
+    # whether the office may tell it to erase now (0071).
+    standing, erasure = await erasures.state(conn, row, role=role, check=answered, assets=assets)
     return {
         "configured": configured,
         "may_check": configured and why_not is None and sm.may_act(role, rights.facts_of(row)),
         "why_not": why_not if configured else None,
         "answer": _check(answered) if answered else None,
-        "assets": (
-            [_asset(a) for a in await repo.assets_of(conn, int(answered["check_id"]))]
-            if answered
-            else []
-        ),
+        "assets": [
+            {**_asset(a), **standing.get(str(a["asset_ref"]), _NOT_AN_ERASURE)} for a in assets
+        ],
         "last_failure": _check(last) if last and last["outcome"] == "failed" else None,
+        "erasure": erasure,
     }
 
 
@@ -263,7 +287,10 @@ async def for_ticket(conn: Conn, holder_uuid: str, user_id: int) -> Row | None:
     assets = await repo.assets_of(
         conn, int(answered["check_id"]), project_id=int(holder["project_id"])
     )
-    return {"asked_at": answered["asked_at"], "assets": [_asset(a) for a in assets]}
+    return {
+        "asked_at": answered["asked_at"],
+        "assets": [{**_asset(a), **_NOT_AN_ERASURE} for a in assets],
+    }
 
 
 def names_a_dco_admin(holders: list[Row]) -> bool:

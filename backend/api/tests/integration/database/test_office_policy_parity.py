@@ -63,6 +63,12 @@ CHILDREN = {
     # A request's checks in DataVault, and what each listed (0070).
     "datavault_check",
     "datavault_check_asset",
+    # What DataVault was told to erase on a request, and the consent changes
+    # it is told of, each through the consent (0071).
+    "datavault_erasure",
+    "datavault_erasure_asset",
+    "datavault_consent_change",
+    "datavault_consent_noted",
     "breach_affected",
     "breach_affected_revision",
     "breach_assessment",

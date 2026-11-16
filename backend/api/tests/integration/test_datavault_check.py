@@ -79,17 +79,17 @@ async def test_the_connection_is_saved_and_its_key_is_never_served(
     assert KEY not in repr(shown)
     stored = await repo.connection(conn)
     assert KEY.encode() not in bytes(stored["api_key_sealed"]), "encrypted where it is kept"
-    assert await connection.ready(conn) == {
-        "base_url": URL,
-        "api_key": KEY,
-        "api_key_header": "X-API-Key",
-    }
+    ready = await connection.ready(conn)
+    assert ready is not None
+    assert (ready.base_url, ready.api_key, ready.api_key_header) == (URL, KEY, "X-API-Key")
+    # As it starts: the numbers the console shows, and nothing sent by itself.
+    assert (ready.id_format, ready.erasure_url, ready.consent_changes) == ("numeric", None, False)
 
     # Saved again without a key: the one that is there stays.
     await _on(conn, seeded, api_key=None, api_key_header="X-DV-Token")
     ready = await connection.ready(conn)
-    assert ready is not None and ready["api_key"] == KEY
-    assert ready["api_key_header"] == "X-DV-Token"
+    assert ready is not None and ready.api_key == KEY
+    assert ready.api_key_header == "X-DV-Token"
     # Removed on purpose.
     shown = await _on(conn, seeded, api_key=None, clear_api_key=True)
     assert shown["api_key_set"] is False

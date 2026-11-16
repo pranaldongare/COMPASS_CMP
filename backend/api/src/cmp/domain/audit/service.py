@@ -401,6 +401,14 @@ class Event:
     #: administrator's change to where it is reached.
     DATAVAULT_CHECKED = "datavault.checked"
     DATAVAULT_CONNECTION_CHANGED = "datavault.connection_changed"
+    #: DataVault told to erase assets on an erasure request, and each time it
+    #: was asked how far that has got (0071).
+    DATAVAULT_ERASURE_SENT = "datavault.erasure_sent"
+    DATAVAULT_ERASURE_CHECKED = "datavault.erasure_checked"
+    #: A consent change DataVault must be told of, and DataVault told: on the
+    #: consent, against the person, and read with the project's trail (0071).
+    DATAVAULT_CONSENT_CHANGE_QUEUED = "datavault.consent_change_queued"
+    DATAVAULT_CONSENT_CHANGE_DELIVERED = "datavault.consent_change_delivered"
     RIGHTS_RESPONDED = "rights.responded"
     RIGHTS_RESPONSE_DOWNLOADED = "rights.response_downloaded"
     #: A document the requester sent with the request, and every read of one.
