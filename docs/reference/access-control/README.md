@@ -16,7 +16,7 @@ This folder answers: **which role can call each API, on which records, and under
 - [Implementation notes](implementation_notes.md): places where generic documentation and implemented controls differ.
 - [Machine-readable endpoint inventory](endpoint_permissions.json): guards, roles, conditions and source references.
 
-**Coverage: 26 modules, 408 documented operations over 358 OpenAPI paths, plus 3 registered system operations excluded from OpenAPI (411 total operations).** The breach module (S3-01 onward) is recorded in `endpoint_permissions.json`'s `amended` list; its evidence links point at `HEAD`. No framework-generated Swagger/ReDoc/OpenAPI routes or middleware-generated OPTIONS responses are counted.
+**Coverage: 27 modules, 410 documented operations over 359 OpenAPI paths, plus 3 registered system operations excluded from OpenAPI (413 total operations).** The breach module (S3-01 onward) is recorded in `endpoint_permissions.json`'s `amended` list; its evidence links point at `HEAD`. No framework-generated Swagger/ReDoc/OpenAPI routes or middleware-generated OPTIONS responses are counted.
 
 ## Module details
 
@@ -40,6 +40,7 @@ This folder answers: **which role can call each API, on which records, and under
 | Me | 30 | [Open module](modules/me.md) |
 | Messages | 6 | [Open module](modules/messages.md) |
 | Notices | 44 | [Open module](modules/notices.md) |
+| Portal address | 2 | [Open module](modules/portal_address.md) |
 | Projects | 27 | [Open module](modules/projects.md) |
 | Public Consent | 9 | [Open module](modules/public_consent.md) |
 | Public Information | 18 | [Open module](modules/public_information.md) |
@@ -61,7 +62,7 @@ Paths here are backend paths as declared, without an invented `/v1` prefix. A fr
 
 ## Validation and maintenance
 
-The inventory was matched by method and path against every operation in `backend/api/openapi.json` and the registered router source. All 408 documented operations match exactly once; the three excluded system routes are separately identified. Role dependencies were resolved against `core/permissions.py`, explicit route-role denials were applied, and the service/repository exceptions in the notes were reviewed. This is static source validation, not execution against a live database or a complete security audit.
+The inventory was matched by method and path against every operation in `backend/api/openapi.json` and the registered router source. All 410 documented operations match exactly once; the three excluded system routes are separately identified. Role dependencies were resolved against `core/permissions.py`, explicit route-role denials were applied, and the service/repository exceptions in the notes were reviewed. This is static source validation, not execution against a live database or a complete security audit.
 
 The portals' own `POST /dkms/decrypt` is served by Next.js, not the API, and is outside this inventory; see [implementation notes](implementation_notes.md#the-portals-decrypt-route-is-not-an-api-operation).
 

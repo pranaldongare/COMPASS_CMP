@@ -8,6 +8,23 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Portal address, set by the administrator** (2026-11-16, migration 0072,
+  ADR 0041). A new console page, **Portal address**, holds the address every
+  link to the data principal's portal starts with: consent links copied in
+  the console, the public link for reporting a breach, a holder's ticket link
+  and the links in mail. It was `PUBLIC_BASE_URL` and the console's
+  `NEXT_PUBLIC_SUBJECT_PORTAL_URL`, fixed at start-up; it now follows a
+  changing IP within a few seconds, with nothing restarted, and falls back to
+  the configured address while empty. `GET`/`PUT /portal-address` are the
+  administrator's alone; `GET /auth/me` tells every session the address in
+  use (`portal_url`). Each change is on the audit trail.
+- **The way to report an incident, shown on the portal** (2026-11-16). The
+  public reporting page was reachable only by the link the Privacy Office hands
+  out and one small line under sign-in. It is now a row on the sign-in card
+  ("Report a personal data incident", no account needed) and an entry in the
+  signed-in menu ("Report an incident"); the page links back to Home or
+  sign-in. On Breach settings the link sits in a field that selects in one
+  click, with **Copy link** and **Open**.
 - **Erase in DataVault, and consent changes told to DataVault** (2026-11-13,
   migration 0071, ADR 0039). On an erasure request in progress, the DPO or the
   Legal PoC presses **Erase in DataVault** on the DataVault card: a pop-up
@@ -1245,6 +1262,17 @@ as a release yet.
 - `CONTRIBUTING.md`.
 
 ### Changed
+- **Signing in with a contact nobody registered says so** (2026-11-16, ADR
+  0040). `POST /auth/otp/request` and `POST /c/{token}/otp` answer
+  `404 account_not_found`, and the portal takes the person to sign-up with the
+  contact filled in and the reason at the top; from a consent link, sign-up
+  comes back to the link. Until now the reply was "if that contact is
+  registered, a code has been sent" either way. The limits per contact are
+  still counted first, and the refusals of a code are unchanged.
+- **The organisation sign-in's stand-in follows the browser** (2026-11-16).
+  With `SSO_MOCK` on, the stand-in's page and its way back are paths, so an
+  `sso` link works where the portal is opened by IP or through the relay, and
+  an address already on an account signs that account in.
 - **A pop-up asks about unsaved changes only when there are some**
   (2026-11-12). The Respondents window after a respondent was added, and a
   ticket after it was sent back or a move was cancelled, went on saying "You
@@ -1525,6 +1553,13 @@ as a release yet.
   completes only by filing a report with both proofs.
 
 ### Fixed
+- **Copy link copies** (2026-11-16). Over plain http by address a browser has
+  no clipboard API. The Breach settings button called it directly and copied
+  nothing; the consent link buttons fell back to the older route, which took
+  nothing inside a dialog (the hidden field sat outside it and never held the
+  selection), and said "Copied" regardless. All go through `copyText`, which
+  puts its field inside the open dialog, and each says so when the browser
+  refuses.
 - **"End staff access" on an account not yet signed in** (2026-11-12). An
   invited account whose password had not been set showed the button and, when
   it was pressed, was activated instead of ended: the console took anything

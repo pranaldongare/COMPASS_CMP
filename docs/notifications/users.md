@@ -35,7 +35,7 @@ Key `mfa_code` · channels: email
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_mfa_code` (`backend/api/src/cmp/tasks/authentication/otp.py:43`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/service.py:156`, `backend/api/src/cmp/auth/authentication/service.py:242` |
+| Queued from | `backend/api/src/cmp/auth/authentication/service.py:158`, `backend/api/src/cmp/auth/authentication/service.py:244` |
 | Variables | `code` (The six-digit one-time code.), `minutes` (How many minutes the code is valid for.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{code} is your {organisation} sign-in code`
@@ -64,7 +64,7 @@ Key `login_code` · channels: email, sms
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_login_code` (`backend/api/src/cmp/tasks/authentication/otp.py:48`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/service.py:285` |
+| Queued from | `backend/api/src/cmp/auth/authentication/service.py:292` |
 | Variables | `code` (The six-digit one-time code.), `minutes` (How many minutes the code is valid for.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{code} is your sign-in code`
@@ -101,7 +101,7 @@ Key `registration_code` · channels: email, sms
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_registration_code` (`backend/api/src/cmp/tasks/authentication/otp.py:54`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/service.py:1020` |
+| Queued from | `backend/api/src/cmp/auth/authentication/service.py:1030` |
 | Variables | `code` (The six-digit one-time code.), `minutes` (How many minutes the code is valid for.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{code} confirms this email address`
@@ -138,7 +138,7 @@ Key `consent_code` · channels: email, sms
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_consent_code` (`backend/api/src/cmp/tasks/authentication/otp.py:61`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/sso.py:256`, `backend/api/src/cmp/auth/authentication/sso_mock.py:50`, `backend/api/src/cmp/domain/consent/service.py:305` |
+| Queued from | `backend/api/src/cmp/auth/authentication/sso.py:262`, `backend/api/src/cmp/auth/authentication/sso_mock.py:50`, `backend/api/src/cmp/domain/consent/service.py:310` |
 | Variables | `code` (The six-digit one-time code.), `minutes` (How many minutes the code is valid for.), `project_name` (The project the notice belongs to.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{code} confirms your contact details`
@@ -175,7 +175,7 @@ Key `password_reset` · channels: email
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_password_reset` (`backend/api/src/cmp/tasks/authentication/otp.py:81`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/service.py:461` |
+| Queued from | `backend/api/src/cmp/auth/authentication/service.py:468` |
 | Variables | `code` (The six-digit one-time code.), `minutes` (How many minutes the code is valid for.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Reset your {organisation} password`
@@ -204,7 +204,7 @@ Key `staff_invitation` · channels: email
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_staff_invitation` (`backend/api/src/cmp/tasks/notifications/staff.py:50`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/service.py:566` |
+| Queued from | `backend/api/src/cmp/auth/authentication/service.py:573` |
 | Variables | `full_name` (The new member of staff's name.), `role_title` (The role they have been given.), `code` (The six-digit one-time code.), `hours` (How many hours the code is valid for.), `reset_url` (The console page where they set their password, with their address filled in.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Set your password for the {organisation} console`
@@ -240,7 +240,7 @@ Key `contact_confirmation` · channels: email, sms
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_contact_confirmation` (`backend/api/src/cmp/tasks/authentication/otp.py:74`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/service.py:746` |
+| Queued from | `backend/api/src/cmp/auth/authentication/service.py:753` |
 | Variables | `code` (The six-digit one-time code.), `minutes` (How many minutes the code is valid for.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{code} confirms this email address`
@@ -275,7 +275,7 @@ Key `contact_added_for_you` · channels: email, sms
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_contact_added_for_you` (`backend/api/src/cmp/tasks/notifications/staff.py:88`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/service.py:793` |
+| Queued from | `backend/api/src/cmp/auth/authentication/service.py:800` |
 | Variables | `code` (The six-digit one-time code.), `hours` (How many hours the code is valid for.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{code} confirms this email address`

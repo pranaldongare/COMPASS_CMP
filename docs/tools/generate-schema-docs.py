@@ -131,7 +131,15 @@ MODULES: dict[str, list[str]] = {
         "breach_report_addressee",
         "breach_board_recipient_event",
     ],
-    "platform": ["audit_log", "message_template", "message_copy", "restricted_country", "office"],
+    "platform": [
+        "audit_log",
+        "message_template",
+        "message_copy",
+        "restricted_country",
+        "office",
+        # The address links to the portal start with (0072).
+        "portal_address",
+    ],
 }
 MODULE_OF = {table: module for module, tables in MODULES.items() for table in tables}
 

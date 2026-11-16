@@ -27,6 +27,7 @@ Navigation returned after sign-in: `dashboard`, `projects`, `notices`, `processo
 | `message_template` | No | No | `none` | Denied |
 | `notice` | Yes | Yes | `own` | Own or addressed rows |
 | `notice_template` | No | No | `none` | Denied |
+| `portal_address` | No | No | `none` | Denied |
 | `processor` | Yes | No | `all` | All rows |
 | `project` | Yes | Yes | `own` | Own or addressed rows |
 | `purpose` | Yes | No | `all` | All rows |

@@ -155,7 +155,7 @@ Key `breach_ticket_access` · channels: email
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_breach_ticket_access` (`backend/api/src/cmp/tasks/notifications/staff.py:68`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/service.py:608` |
+| Queued from | `backend/api/src/cmp/auth/authentication/service.py:615` |
 | Variables | `full_name` (The person given access.), `code` (The six-digit one-time code.), `hours` (How many hours the code is valid for.), `reset_url` (The console page where they set their password, with their address filled in.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `The {organisation} Privacy Office has asked for your help`
@@ -239,7 +239,7 @@ Key `breach_ticket_date_changed` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_breach_ticket_date_changed` (`backend/api/src/cmp/tasks/notifications/breach_tickets.py:38`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:318`, `backend/api/src/cmp/domain/breach/tickets.py:677` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:318`, `backend/api/src/cmp/domain/breach/tickets.py:684` |
 | Variables | `console_url` (The ticket's place in the console (CONSOLE_BASE_URL).), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `A ticket's resolve-by date has changed`
@@ -266,7 +266,7 @@ Key `breach_board_report` · channels: email
 | CC | Never - a report on a breach goes to the addresses on the organisation's board's list and nobody else, and it may name a person; a copy would take it off that list. |
 | Attachment | The report as a PDF. |
 | Sent by | `cmp.notifications.send_breach_report` (`backend/api/src/cmp/tasks/notifications/breach_reports.py:148`) |
-| Queued from | `backend/api/src/cmp/domain/breach/reports.py:1448`, `backend/api/src/cmp/domain/breach/reports.py:577`, `backend/api/src/cmp/domain/breach/reports.py:672` |
+| Queued from | `backend/api/src/cmp/domain/breach/reports.py:1449`, `backend/api/src/cmp/domain/breach/reports.py:578`, `backend/api/src/cmp/domain/breach/reports.py:673` |
 | Variables | `breach_reference` (The breach's reference.), `report_title` (What the report is.), `report_text` (The report, as the office wrote it.), `sender_name` (Who finalised the report, and so signs it.), `sender_role` (Their role.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{organisation}: {breach_reference} - {report_title}`
@@ -301,7 +301,7 @@ Key `breach_report_finalised` · channels: email
 | CC | Never - a report on a breach goes to the addresses on the organisation's board's list and nobody else, and it may name a person; a copy would take it off that list. |
 | Attachment | The report as a PDF. |
 | Sent by | `cmp.notifications.send_breach_report` (`backend/api/src/cmp/tasks/notifications/breach_reports.py:150`) |
-| Queued from | `backend/api/src/cmp/domain/breach/reports.py:1448`, `backend/api/src/cmp/domain/breach/reports.py:577`, `backend/api/src/cmp/domain/breach/reports.py:672` |
+| Queued from | `backend/api/src/cmp/domain/breach/reports.py:1449`, `backend/api/src/cmp/domain/breach/reports.py:578`, `backend/api/src/cmp/domain/breach/reports.py:673` |
 | Variables | `breach_reference` (The breach's reference.), `report_title` (What the report is.), `report_text` (The report, as the office wrote it.), `sender_name` (Who finalised the report, and so signs it.), `sender_role` (Their role.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{organisation}: {breach_reference} - {report_title} finalised`

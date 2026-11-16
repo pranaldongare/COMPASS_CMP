@@ -27,6 +27,7 @@ Navigation returned after sign-in: `dashboard`, `projects`, `approvals`, `notice
 | `message_template` | Yes | Yes | `all` | All rows |
 | `notice` | Yes | Yes | `all` | All rows |
 | `notice_template` | Yes | Yes | `all` | All rows |
+| `portal_address` | No | No | `none` | Denied |
 | `processor` | Yes | Yes | `all` | All rows |
 | `project` | Yes | Yes | `all` | All rows |
 | `purpose` | Yes | Yes | `all` | All rows |

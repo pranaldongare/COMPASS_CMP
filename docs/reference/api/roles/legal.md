@@ -27,6 +27,7 @@ Navigation returned after sign-in: `dashboard`, `requests`, `breaches`, `breach-
 | `message_template` | No | No | `none` | Denied |
 | `notice` | Yes | No | `all` | All rows |
 | `notice_template` | Yes | Yes | `all` | All rows |
+| `portal_address` | No | No | `none` | Denied |
 | `processor` | Yes | No | `all` | All rows |
 | `project` | Yes | No | `all` | All rows |
 | `purpose` | Yes | Yes | `all` | All rows |

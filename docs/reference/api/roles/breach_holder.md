@@ -27,6 +27,7 @@ Navigation returned after sign-in: `tickets`, `notifications`, `profile`.
 | `message_template` | No | No | `none` | Denied |
 | `notice` | No | No | `none` | Denied |
 | `notice_template` | No | No | `none` | Denied |
+| `portal_address` | No | No | `none` | Denied |
 | `processor` | No | No | `none` | Denied |
 | `project` | No | No | `none` | Denied |
 | `purpose` | No | No | `none` | Denied |

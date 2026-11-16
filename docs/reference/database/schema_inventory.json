@@ -1,6 +1,6 @@
 {
-  "commit": "248cd6d62c78275dbe93f56bb6f59b10ca0233bc",
-  "migration_head": "0071",
+  "commit": "01cb753ff6892cf3d8b64efcb78da8c67937236d",
+  "migration_head": "0072",
   "migrations": [
     {
       "revision": "0001",
@@ -281,6 +281,10 @@
     {
       "revision": "0071",
       "source": "backend/api/migrations/versions/0071_datavault_erasure_and_consent_changes.py"
+    },
+    {
+      "revision": "0072",
+      "source": "backend/api/migrations/versions/0072_portal_address.py"
     }
   ],
   "postgres_version": "16.15",
@@ -604,6 +608,11 @@
       "name": "person_type_history",
       "kind": "r",
       "comment": null
+    },
+    {
+      "name": "portal_address",
+      "kind": "r",
+      "comment": "One row: the address links to the data principal's portal start with; kept by the administrator"
     },
     {
       "name": "processor",
@@ -6794,6 +6803,42 @@
       "not_null": true,
       "default_value": "now()",
       "comment": null
+    },
+    {
+      "table_name": "portal_address",
+      "name": "address_id",
+      "position": 1,
+      "type": "smallint",
+      "not_null": true,
+      "default_value": "1",
+      "comment": null
+    },
+    {
+      "table_name": "portal_address",
+      "name": "portal_url",
+      "position": 2,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Scheme, host and port, no path; NULL: the configured address (PUBLIC_BASE_URL) is used"
+    },
+    {
+      "table_name": "portal_address",
+      "name": "updated_by",
+      "position": 3,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Who last set it"
+    },
+    {
+      "table_name": "portal_address",
+      "name": "updated_at",
+      "position": 4,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": "When it was last set"
     },
     {
       "table_name": "processor",
@@ -16178,6 +16223,68 @@
       "initially_deferred": false
     },
     {
+      "table_name": "portal_address",
+      "name": "portal_address_is_an_origin",
+      "kind": "c",
+      "definition": "CHECK (((portal_url IS NULL) OR (portal_url ~ '^https?://[^/?#@[:space:]]+$'::text)))",
+      "columns": [
+        "portal_url"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "portal_address",
+      "name": "portal_address_one_row",
+      "kind": "c",
+      "definition": "CHECK ((address_id = 1))",
+      "columns": [
+        "address_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "portal_address",
+      "name": "portal_address_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (address_id)",
+      "columns": [
+        "address_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "portal_address",
+      "name": "portal_address_updated_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (updated_by) REFERENCES auth_user(id)",
+      "columns": [
+        "updated_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "processor",
       "name": "processor_location_is_iso",
       "kind": "c",
@@ -19780,6 +19887,11 @@
       "definition": "CREATE UNIQUE INDEX person_type_history_pkey ON public.person_type_history USING btree (history_id)"
     },
     {
+      "table_name": "portal_address",
+      "name": "portal_address_pkey",
+      "definition": "CREATE UNIQUE INDEX portal_address_pkey ON public.portal_address USING btree (address_id)"
+    },
+    {
       "table_name": "processor",
       "name": "processor_pkey",
       "definition": "CREATE UNIQUE INDEX processor_pkey ON public.processor USING btree (processor_id)"
@@ -21352,13 +21464,13 @@
     }
   ],
   "counts": {
-    "application_tables": 81,
+    "application_tables": 82,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 963,
-    "foreign_keys": 235,
+    "table_columns": 967,
+    "foreign_keys": 236,
     "enums": 39,
     "triggers": 82,
-    "checks": 145
+    "checks": 147
   }
 }

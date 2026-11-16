@@ -45,6 +45,8 @@ one stays and points forward.
 | [0037](0037-a-public-report-waits-apart-and-the-platform-mails-the-organisations-board.md) | A public report waits apart, the organisation's board is told on a yes by the platform's mail, and a regulator's duty completes only with proof | accepted; amended 2026-11-07 (a CERT-In mark set aside, and the review), and again 2026-11-07 (the product owner's six answers: who a report goes to, CERT-In at any time, what a yes finds done, a dismissed reporter's rights, a report to CERT-In held for a yes); corrected 2026-11-08 (the review of that build, its second review: an email counts once a code to it came back, and its third: a nomination stamps only an account it makes, a report's mail says why the *yes* withheld it) |
 | [0038](0038-datavault-is-asked-by-the-platform-at-an-address-the-administrator-sets.md) | DataVault is asked by the platform, at an address the administrator sets | accepted |
 | [0039](0039-datavault-is-told-to-erase-by-the-office-and-of-consent-changes-by-the-worker.md) | DataVault is told to erase by the office, and of consent changes by the worker | accepted |
+| [0040](0040-asking-for-a-sign-in-code-says-when-there-is-no-account.md) | Asking for a sign-in code says when there is no account | accepted |
+| [0041](0041-the-portals-address-is-kept-by-the-administrator.md) | The portal's address is kept by the administrator | accepted |
 
 ## Writing one
 

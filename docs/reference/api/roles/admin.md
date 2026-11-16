@@ -2,7 +2,7 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `users`, `messages`, `processors`, `sources`, `requests`, `breach-settings`, `datavault`, `audit`, `delegate`, `tickets`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `users`, `messages`, `processors`, `sources`, `requests`, `breach-settings`, `datavault`, `portal-address`, `audit`, `delegate`, `tickets`, `notifications`, `profile`.
 
 ## Resource access
 
@@ -27,6 +27,7 @@ Navigation returned after sign-in: `dashboard`, `users`, `messages`, `processors
 | `message_template` | Yes | Yes | `all` | All rows |
 | `notice` | No | No | `none` | Denied |
 | `notice_template` | No | No | `none` | Denied |
+| `portal_address` | Yes | Yes | `all` | All rows |
 | `processor` | Yes | Yes | `all` | All rows |
 | `project` | No | No | `none` | Denied |
 | `purpose` | Yes | No | `all` | All rows |

@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 408,
-  "registered_business_and_system_operations": 411,
+  "documented_operations": 410,
+  "registered_business_and_system_operations": 413,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -17054,6 +17054,86 @@
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/datavault/connection.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
       ]
+    },
+    {
+      "module": "portal_address",
+      "method": "GET",
+      "path": "/portal-address",
+      "summary": "The address portal links start with",
+      "function": "get_portal_address",
+      "operation_id": "get_portal_address_portal_address_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "PortalAddressReader",
+      "resolved_gate": "RequireResource(portal_address)",
+      "route_roles": [
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "portal_address",
+      "write_gate": false,
+      "access": {
+        "dpo": "NO",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "Resource `portal_address`, the administrator's alone (0072): every other role is answered 403. The address links to the data principal's portal start with: the one set, the configured one (`PUBLIC_BASE_URL`), which of them is in use, and who last set it and when. Every signed-in session is told the address in use by `GET /auth/me` (`portal_url`), which is not this route."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/portal_address.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/portal_address/__init__.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/portal_address.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
+    },
+    {
+      "module": "portal_address",
+      "method": "PUT",
+      "path": "/portal-address",
+      "summary": "Set the address portal links start with",
+      "function": "put_portal_address",
+      "operation_id": "put_portal_address_portal_address_put",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "PortalAddressWriter",
+      "resolved_gate": "RequireResource(portal_address, write=True)",
+      "route_roles": [
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "portal_address",
+      "write_gate": true,
+      "access": {
+        "dpo": "NO",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "Resource `portal_address`, the administrator's alone (0072): every other role is answered 403. `portal_url` must be http or https, a host and optionally a port, with no path, query, fragment or user (422, field `portal_url`); null or empty goes back to the configured address. Takes effect in the saving process at once and in every other process, the worker included, within fifteen seconds; nothing is restarted. Recorded on the trail (`portal_address.changed`) with the address before and after."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/portal_address.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/portal_address/__init__.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/portal_address.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
     }
   ],
   "amended": [
@@ -17266,6 +17346,11 @@
       "on": "2026-11-13",
       "commit": "Erasure in DataVault and consent changes (0071), uncommitted",
       "note": "Two operations added, module datavault: POST /requests/{request_uuid}/datavault/erase and POST /requests/{request_uuid}/datavault/erase/status (as the rights routes: RightsWriter; dpo, legal, admin scoped), on an erasure request only. GET/PUT /datavault-connection gain the erasure address, the ID naming and the consent-changes switch; GET /requests/{request_uuid}/datavault gains each asset's place in the erasure. Consent changes have no route: the worker sends them. No existing guard changed. Evidence links point at HEAD."
+    },
+    {
+      "on": "2026-11-16",
+      "commit": "Portal address (0072) and sign-in for an unregistered contact (ADR 0040), uncommitted",
+      "note": "Two operations added, a new module portal_address: GET and PUT /portal-address (resource portal_address, admin only). GET /auth/me gains portal_url, the address in use, for every session. POST /auth/otp/request and POST /c/{token}/otp answer 404 account_not_found for a contact no account carries (ADR 0040); their guards are unchanged (public). No existing guard changed. Evidence links point at HEAD."
     }
   ]
 }

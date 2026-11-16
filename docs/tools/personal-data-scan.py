@@ -180,6 +180,7 @@ CATEGORIES = [
 #: one is written down: a reviewer who disagrees can see what was decided.
 NOT_PERSONAL = {
     "name": "a purpose, a source, a site or a template - never a person",
+    "address_id": "the key of the one row holding the portal's web address (0072), not a person's address",
     "legal_name": "a processor is an organisation",
     "note": "an instruction to whoever collects, and never served to a principal",
     "description": "what a purpose or a project is for",

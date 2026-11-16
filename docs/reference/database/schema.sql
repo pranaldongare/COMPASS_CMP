@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 8Wzx0NueoHmVkjv8NKwgbBpNj1usa83X4K92DwfIkPxbacaz2JxNcHlZ0sHFKas
+\restrict 7bUe34hptOR59Waf64oyMh18AdCgM02tmuaychnegL2tmf50iYoZyLxzDA9ve4i
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -5464,6 +5464,48 @@ ALTER SEQUENCE public.person_type_history_history_id_seq OWNED BY public.person_
 
 
 --
+-- Name: portal_address; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.portal_address (
+    address_id smallint DEFAULT 1 NOT NULL,
+    portal_url text,
+    updated_by integer,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT portal_address_is_an_origin CHECK (((portal_url IS NULL) OR (portal_url ~ '^https?://[^/?#@[:space:]]+$'::text))),
+    CONSTRAINT portal_address_one_row CHECK ((address_id = 1))
+);
+
+
+--
+-- Name: TABLE portal_address; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.portal_address IS 'One row: the address links to the data principal''s portal start with; kept by the administrator';
+
+
+--
+-- Name: COLUMN portal_address.portal_url; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.portal_address.portal_url IS 'Scheme, host and port, no path; NULL: the configured address (PUBLIC_BASE_URL) is used';
+
+
+--
+-- Name: COLUMN portal_address.updated_by; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.portal_address.updated_by IS 'Who last set it';
+
+
+--
+-- Name: COLUMN portal_address.updated_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.portal_address.updated_at IS 'When it was last set';
+
+
+--
 -- Name: processor; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -8308,6 +8350,14 @@ ALTER TABLE ONLY public.person_type_history
 
 ALTER TABLE ONLY public.person_type_history
     ADD CONSTRAINT person_type_history_pkey PRIMARY KEY (history_id);
+
+
+--
+-- Name: portal_address portal_address_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.portal_address
+    ADD CONSTRAINT portal_address_pkey PRIMARY KEY (address_id);
 
 
 --
@@ -11521,6 +11571,14 @@ ALTER TABLE ONLY public.person_type_history
 
 
 --
+-- Name: portal_address portal_address_updated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.portal_address
+    ADD CONSTRAINT portal_address_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES public.auth_user(id);
+
+
+--
 -- Name: processor_respondent processor_respondent_processor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -13094,5 +13152,5 @@ ALTER TABLE public.template_version_purpose ENABLE ROW LEVEL SECURITY;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 8Wzx0NueoHmVkjv8NKwgbBpNj1usa83X4K92DwfIkPxbacaz2JxNcHlZ0sHFKas
+\unrestrict 7bUe34hptOR59Waf64oyMh18AdCgM02tmuaychnegL2tmf50iYoZyLxzDA9ve4i
 

@@ -370,6 +370,15 @@ Roles refer to the **effective session role**. A staff account signed in through
 | POST | `/notice-templates/{template_uuid}/versions/{number}/status` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 | GET | `/notice-templates/{template_uuid}/versions/{number}/preview` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 
+## Portal address
+
+[Conditions and source evidence](modules/portal_address.md)
+
+| Method | Endpoint | Anonymous | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| GET | `/portal-address` | NO | NO | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
+| PUT | `/portal-address` | NO | NO | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
+
 ## Projects
 
 [Conditions and source evidence](modules/projects.md)

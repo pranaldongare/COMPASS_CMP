@@ -192,6 +192,17 @@ Stored as a **keyed hash, scoped to their purpose** — never in plaintext, and 
 code issued for staff MFA cannot be replayed against the consent flow. Whoever
 can read Redis should not thereby be able to complete somebody else's sign-in.
 
+**Asking for a code says whether there is an account** (2026-11-16, ADR 0040).
+`POST /auth/otp/request` and `POST /c/{token}/otp` answer a contact no account
+carries with `404 account_not_found`, and the portal takes the person to
+sign-up. It was the same sentence for everybody; the product owner chose the
+plain answer, since somebody who had never registered waited for a code that
+was never coming, and since sign-up has always refused a contact already taken
+by name (`409 contact_taken`). What bounds it is the limit per contact and per
+link, counted before anybody is looked up. An account that is switched off is
+still answered as if a code went. What follows - the refusal of a code - is
+unchanged.
+
 **A refused code says nothing of who is registered** (2026-11-08). Where anybody
 can type a contact or a reference - a sign-in by code (`POST /auth/otp/verify`), a
 consent link's code (`POST /c/{token}/otp/verify`), a password reset

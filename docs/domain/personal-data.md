@@ -913,6 +913,15 @@ selected.
 | POST | `/requests/{request_uuid}/datavault/erase/status` | DPO every row, Admin rows in scope, Legal PoC every row | — | `asked_by_name`, `consent_no`, `consent_uuid` |
 | GET | `/tickets/{holder_uuid}/datavault` | any signed-in session, own record | — | `consent_no`, `consent_uuid` |
 
+### Portal address: the address links to the portal start with
+
+2 operations carry personal data: the name of the administrator who last set it.
+
+| Method | Endpoint | Who may call it | Personal data in | Personal data out |
+|---|---|---|---|---|
+| GET | `/portal-address` | Admin every row | — | `updated_by_name` |
+| PUT | `/portal-address` | Admin every row | — | `updated_by_name` |
+
 ### Public_information
 
 9 operations carry personal data.
@@ -943,7 +952,7 @@ the same token and are protected the same way.
 | `POST /auth/register` | Yes | `full_name`, `email`, `mobile`, `dob` | Rate-limited per contact, five an hour; the account is `pending` until a code to every contact given comes back. A child's date of birth is refused before the contact is looked up, the same 422 `minor_not_permitted` whoever holds the contact, with nothing sent or written (7bdb710). A data principal's sign-up never finished answers 202, as a new contact does, and its codes are sent again, to the contacts it was first given; **a contact already on any other account is refused with 409 `contact_taken`, naming the field**, a product decision that trades this oracle for a form a person can correct ([03-security.md](../backend/03-security.md#data-principal-sign-in)); since 7bdb710 that includes a member of staff's or a breach holder's account still `pending` its first password, which is sent nothing. The route still tells an unfinished sign-up from a new mobile: the email is looked up only when the mobile matches nobody, so with an email already on another account an unfinished sign-up's mobile answers 202 where a new mobile answers 409 on `email`; and since a resumed sign-up's codes go to the contacts it was first given, an email typed now gets a code when the mobile is new and none when it is an unfinished sign-up begun without that email, which also means an email added on resuming a sign-up begun with a mobile alone is neither stored nor sent a code (open, [breaches.md](breaches.md#open-questions)) |
 | `POST /auth/register/verify` | Carries codes | `mobile`, `email_code`, `mobile_code` | Five attempts, ten minutes; every code waiting is checked without being spent, and all are discarded once all have passed, so it is not one atomic check-and-consume: two finishes at once with the right pair can both open a session, on the same account; every refusal is the unknown mobile's 400 `otp_invalid`, on `mobile_code` (bd6cef1): a wrong code, one of the wrong length and a spent budget, for either contact, a code left out for a contact still waiting, and an account with nothing left to answer, where until 2026-11-08 the mobile alone opened a session on it. Only the limit of 30 failures in fifteen minutes per address answers 429 |
 | `POST /auth/login` | Carries the password | `login`, `password` | Five failures locks the account for 30 minutes; the reply does not distinguish a wrong password from an unknown login |
-| `POST /auth/otp/request` | Yes | `contact` | **The reply is the same sentence whether or not the contact is registered**, so it cannot be used to ask whether a number is on the register |
+| `POST /auth/otp/request` | Yes | `contact` | A contact no account carries is answered `404 account_not_found` (2026-11-16, ADR 0040), so the portal can send the person to register; the limit per contact is counted first. Until then the reply was the same sentence either way |
 | `POST /auth/otp/verify` | Carries the code | `contact`, `code` | Ten minutes, five attempts, one atomic check-and-consume; the code answers only to the contact it was sent to, and another contact of the same account, a code of the wrong length and a spent budget are refused as a wrong code and an unknown contact are, 400 `otp_invalid` (2026-11-08); only the limit of 30 failures in fifteen minutes per address answers 429; a verified code mints a `data_subject` session **whatever role the account holds** |
 | `POST /auth/password/reset/request` | Yes | `email` | Neutral reply, rate-limited |
 | `POST /auth/password/reset/confirm` | Carries the code | `email`, `code`, `new_password` | Single-use code; a wrong code, one of the wrong length and a spent budget answer as an unknown email does, 400 `otp_invalid` (2026-11-08), and only the limit of 30 failures in fifteen minutes per address answers 429 |

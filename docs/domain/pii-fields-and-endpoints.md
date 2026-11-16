@@ -93,7 +93,7 @@ hash and no email is written
 rows from before that change stand as written, because the trail is
 hash-chained and cannot be rewritten.
 
-## 2. API endpoints that carry PII — 296 endpoints in 26 modules
+## 2. API endpoints that carry PII — 298 endpoints in 27 modules
 
 Every GET, POST, PUT, PATCH and DELETE whose request or response includes a
 personal field. *In* is what the caller sends (body, path and query); *out* is
@@ -512,6 +512,13 @@ these need no session; they are marked **public**.
 | GET | `/hr/categories/{category_uuid}` | — | `email`, `full_name`, `respondent_email`, `respondent_name` |
 | GET | `/hr/categories/{category_uuid}/processors` | — | `respondent_email`, `respondent_name` |
 | PUT | `/hr/categories/{category_uuid}/processors` | — | `respondent_email`, `respondent_name` |
+
+### Portal_address — 2 endpoints
+
+| Method | Endpoint | PII in (request) | PII out (response) |
+|---|---|---|---|
+| GET | `/portal-address` | — | `updated_by_name` |
+| PUT | `/portal-address` | — | `updated_by_name` |
 
 ### Public_information — 9 endpoints
 

@@ -27,6 +27,7 @@ Navigation returned after sign-in: `dashboard`, `projects`, `sites`, `sources`, 
 | `message_template` | No | No | `none` | Denied |
 | `notice` | Yes | No | `scoped` | Assigned project/organisational rows |
 | `notice_template` | No | No | `none` | Denied |
+| `portal_address` | No | No | `none` | Denied |
 | `processor` | Yes | No | `all` | All rows |
 | `project` | Yes | Yes | `scoped` | Assigned project/organisational rows |
 | `purpose` | Yes | No | `all` | All rows |

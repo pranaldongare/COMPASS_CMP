@@ -24,6 +24,7 @@ Each cell is **GET / non-GET endpoint counts** for which that role is eligible. 
 | [Me](modules/me.md) | 30 | 1 / 5 | 1 / 5 | 1 / 4 | 1 / 4 | 1 / 4 | 1 / 4 | 19 / 11 | 1 / 4 | 0 / 0 | 0 / 0 |
 | [Messages](modules/messages.md) | 6 | 2 / 4 | 2 / 4 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
 | [Notices](modules/notices.md) | 44 | 16 / 28 | 0 / 0 | 9 / 0 | 9 / 0 | 9 / 0 | 11 / 4 | 0 / 0 | 0 / 0 | 15 / 17 | 10 / 3 |
+| [Portal address](modules/portal_address.md) | 2 | 0 / 0 | 1 / 1 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 | 0 / 0 |
 | [Projects](modules/projects.md) | 27 | 13 / 9 | 0 / 0 | 12 / 5 | 12 / 7 | 12 / 5 | 13 / 10 | 0 / 0 | 0 / 0 | 13 / 14 | 13 / 14 |
 | [Public Consent](modules/public_consent.md) | 9 | 3 / 5 | 3 / 5 | 3 / 5 | 3 / 5 | 3 / 5 | 3 / 5 | 3 / 6 | 3 / 5 | 0 / 0 | 0 / 0 |
 | [Public Information](modules/public_information.md) | 19 | 6 / 13 | 6 / 13 | 6 / 13 | 6 / 13 | 6 / 13 | 6 / 13 | 6 / 13 | 6 / 13 | 0 / 0 | 0 / 0 |

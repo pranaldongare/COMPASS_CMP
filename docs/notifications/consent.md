@@ -26,8 +26,8 @@ Key `consent_receipt` · channels: email, sms
 | To | The data principal who gave consent, at her primary contact. |
 | CC | Never - it is written to one person about her own data; a copy would disclose it. |
 | Attachment | Her consent record (consent-record.txt): what she agreed to and when, the notice version and its fingerprint. |
-| Sent by | `cmp.notifications.send_consent_receipt` (`backend/api/src/cmp/tasks/notifications/consent.py:50`) |
-| Queued from | `backend/api/src/cmp/domain/consent/service.py:638` |
+| Sent by | `cmp.notifications.send_consent_receipt` (`backend/api/src/cmp/tasks/notifications/consent.py:51`) |
+| Queued from | `backend/api/src/cmp/domain/consent/service.py:643` |
 | Variables | `project_name` (The project the consent is for.), `reference` (The consent record's reference.), `purposes` (The purposes agreed to, one per line, each starting with a dash.), `purpose_count` (How many purposes were agreed to.), `withdraw_url` (Where she can review or withdraw.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Your consent record for {project_name}`
@@ -67,7 +67,7 @@ Key `hr_reconsent_request` · channels: email, sms
 | To | Each participant with a current consent on the activity, at her primary contact. |
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
-| Sent by | `cmp.notifications.send_reconsent_request` (`backend/api/src/cmp/tasks/notifications/consent.py:100`) |
+| Sent by | `cmp.notifications.send_reconsent_request` (`backend/api/src/cmp/tasks/notifications/consent.py:101`) |
 | Queued from | `backend/api/src/cmp/domain/hr/activities.py:448` |
 | Variables | `activity_name` (The activity's name.), `change_summary` (What changed: the template and its new version.), `link_url` (The activity's consent link, where she decides again.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
@@ -103,8 +103,8 @@ Key `hr_withdrawal_notice` · channels: email
 | To | Each respondent of the activity: its HR PoC and the respondent of every live category processor (the HR PoC where none is named), once per account. |
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
-| Sent by | `cmp.notifications.send_hr_withdrawal_notice` (`backend/api/src/cmp/tasks/notifications/withdrawal.py:68`) |
-| Queued from | `backend/api/src/cmp/domain/consent/service.py:689` |
+| Sent by | `cmp.notifications.send_hr_withdrawal_notice` (`backend/api/src/cmp/tasks/notifications/withdrawal.py:69`) |
+| Queued from | `backend/api/src/cmp/domain/consent/service.py:713` |
 | Variables | `activity_name` (The activity's name.), `category_name` (The activity's category.), `principal_ref` (The participant's employee ID, or her principal ID when none is on record.), `stopped` (The purposes withdrawn, comma-separated.), `continuing` (The purposes still in force, comma-separated, or 'none'.), `consent_reference` (The withdrawal record's reference.), `register_url` (The activity's register in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Consent withdrawn on {activity_name} - stop processing for {principal_ref}`
@@ -136,8 +136,8 @@ Key `withdrawal_confirmation` · channels: email, sms
 | To | The data principal who withdrew, at her primary contact. |
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
-| Sent by | `cmp.notifications.send_withdrawal_confirmation` (`backend/api/src/cmp/tasks/notifications/withdrawal.py:37`) |
-| Queued from | `backend/api/src/cmp/domain/consent/service.py:806` |
+| Sent by | `cmp.notifications.send_withdrawal_confirmation` (`backend/api/src/cmp/tasks/notifications/withdrawal.py:38`) |
+| Queued from | `backend/api/src/cmp/domain/consent/service.py:830` |
 | Variables | `reference` (The new record's reference.), `stopped` (The purposes withdrawn, comma-separated.), `continuing` (The purposes still in force, comma-separated, or empty.), `continuing_note` (A sentence about what continues, or empty when nothing does.), `rights_url` (Where to ask for erasure.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Your withdrawal has been recorded`

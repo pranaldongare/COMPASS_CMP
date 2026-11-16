@@ -508,6 +508,7 @@ No request body.
   "nav": [
     "string"
   ],
+  "portal_url": "string",
   "writes": [
     "string"
   ]
@@ -890,6 +891,7 @@ For state changes whose only interesting output is that they happened.
 | `mfa_verified` | `boolean` | Yes | — | — |
 | `session_expires_at` | `string` | Yes | format: `date-time` | — |
 | `nav` | array of `string` | Yes | — | — |
+| `portal_url` | `string` or `null` | No | — | — |
 | `writes` | array of `string` | No | — | — |
 
 <a id="schema-mfaverifyrequest"></a>

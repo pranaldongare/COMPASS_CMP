@@ -89,11 +89,11 @@ account is hers, rather than having to find it again at a counter.
 
 A code is sent only to a contact the register knows — a member of staff's
 included, since every account may act as a data principal; the session the code
-earns carries a data principal's powers and no others. The reply does not say
-whether a contact was known - it is
-the same sentence either way, so the form cannot be used to ask whether a
-number is registered. That is also why the offer to create an account is shown
-to everyone rather than only to the people who need it.
+earns carries a data principal's powers and no others. A contact no account
+carries is told so (`404 account_not_found`, 2026-11-16, ADR 0040) and the page
+takes the person to sign-up, with the contact filled in, and back to the link
+afterwards. Until then the reply was the same sentence either way. The offer to
+create an account is still shown to everyone.
 
 Self-registration on the portal is where the details are given: name,
 **mobile** (required), email (optional) and her date of birth. A code goes to

@@ -27,6 +27,7 @@ Navigation returned after sign-in: `dashboard`, `hr-activities`, `hr-categories`
 | `message_template` | No | No | `none` | Denied |
 | `notice` | Yes | No | `scoped` | Assigned project/organisational rows |
 | `notice_template` | No | No | `none` | Denied |
+| `portal_address` | No | No | `none` | Denied |
 | `processor` | No | No | `none` | Denied |
 | `project` | Yes | Yes | `scoped` | Assigned project/organisational rows |
 | `purpose` | No | No | `none` | Denied |
