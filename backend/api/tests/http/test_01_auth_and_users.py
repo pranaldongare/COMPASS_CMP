@@ -96,14 +96,16 @@ class TestPublicRegistrationAndCodeSignIn:
         sessions = await call(http, "GET", "/auth/sessions", cookies=cookies)
         assert any(s.get("ip_address") for s in sessions.json()), "her own sessions, with addresses"
 
-    async def test_the_neutral_reply_for_an_unknown_contact(
+    async def test_an_unknown_contact_is_told_there_is_no_account(
         self, http: httpx.AsyncClient, queued: Any
     ) -> None:
-        known = await call(
-            http, "POST", "/auth/otp/request", json={"contact": fresh_email("nobody")}
-        )
-        assert "sent" in known.json()["message"].lower() or "if" in known.json()["message"].lower()
-        assert not [n for n, _ in queued if n == LOGIN], "and nothing was actually sent"
+        """Since 2026-11-16 (the product owner's decision); the portal sends
+        the person to register. It was the same sentence as for anybody."""
+        unknown = await http.post("/auth/otp/request", json={"contact": fresh_email("nobody")})
+        assert unknown.status_code == 404, unknown.text
+        assert unknown.json()["error"]["code"] == "account_not_found"
+        assert unknown.json()["error"]["field"] == "contact"
+        assert not [n for n, _ in queued if n == LOGIN], "and nothing was sent"
 
 
 class TestStaffSignInAndPasswords:

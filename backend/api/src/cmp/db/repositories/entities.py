@@ -342,6 +342,13 @@ _SPECS: dict[str, _Spec] = {
         href=None,
         noun="Breach settings",
     ),
+    "portal_address": _Spec(
+        sql="""SELECT address_id::int AS id, NULL::text AS uuid,
+                      'Portal address' AS label
+               FROM portal_address WHERE address_id = ANY(%s)""",
+        href=None,
+        noun="Portal address",
+    ),
     "datavault_connection": _Spec(
         sql="""SELECT connection_id::int AS id, NULL::text AS uuid,
                       'DataVault connection' AS label

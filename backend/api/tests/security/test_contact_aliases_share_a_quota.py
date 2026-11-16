@@ -17,7 +17,7 @@ import pytest
 from cmp.auth.authentication import service as auth_service
 from cmp.auth.rate_limit import service as ratelimit
 from cmp.core.config import settings
-from cmp.core.errors import RateLimited
+from cmp.core.errors import AccountNotFound, RateLimited
 from cmp.db.redis import K_RATE
 from cmp.db.redis import key as rkey
 from cmp.domain.rights import service as rights_service
@@ -51,7 +51,11 @@ async def test_sign_in_codes_share_one_quota_across_spellings(
 ) -> None:
     await _clear(redis_conn, "subject_otp")
     for i in range(settings.otp_requests_per_contact_per_hour):
-        await auth_service.request_subject_otp(conn, contact=SPELLINGS[i % len(SPELLINGS)])
+        # Nobody holds this number, which is said since 2026-11-16 - after the
+        # request is counted, so asking whether a number is registered is
+        # bounded by the same quota as asking for codes.
+        with pytest.raises(AccountNotFound):
+            await auth_service.request_subject_otp(conn, contact=SPELLINGS[i % len(SPELLINGS)])
     with pytest.raises(RateLimited):
         await auth_service.request_subject_otp(conn, contact=SPELLINGS[-1])
     await _clear(redis_conn, "subject_otp")

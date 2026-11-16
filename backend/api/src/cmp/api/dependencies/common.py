@@ -89,6 +89,9 @@ DataVaultConnectionReader = Annotated[Principal, Depends(RequireResource("datava
 DataVaultConnectionWriter = Annotated[
     Principal, Depends(RequireResource("datavault_connection", write=True))
 ]
+#: The address links to the portal start with (0072): the administrator's.
+PortalAddressReader = Annotated[Principal, Depends(RequireResource("portal_address"))]
+PortalAddressWriter = Annotated[Principal, Depends(RequireResource("portal_address", write=True))]
 #: A breach ticket addressed to me (S3-08). Not hidden: the resource is the
 #: holder's own ticket, and a ticket that is not theirs is 404 by its WHERE.
 BreachTicketReader = Annotated[Principal, Depends(RequireResource("breach_ticket"))]

@@ -24,8 +24,8 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from cmp.core.config import settings
 from cmp.core.errors import ValidationFailed
+from cmp.core.portal_address import portal_base
 from cmp.core.security import new_token, seal_token, token_fingerprint, unseal_token
 from cmp.db.repositories import rights as repo
 from cmp.db.sql import Conn
@@ -47,7 +47,7 @@ def external(holder: Row) -> bool:
 
 def link_url(holder: Row) -> str | None:
     raw = unseal_token(holder.get("link_token_sealed"))
-    return f"{settings.public_base_url.rstrip('/')}/ticket/{raw}" if raw else None
+    return f"{portal_base()}/ticket/{raw}" if raw else None
 
 
 async def mint_link(conn: Conn, holder_id: int) -> None:

@@ -40,6 +40,7 @@ from cmp.core.errors import (
 )
 from cmp.core.logging import get_logger
 from cmp.core.permissions import OFFICE_TITLES, Role
+from cmp.core.portal_address import portal_base
 from cmp.core.security import new_token, token_fingerprint
 from cmp.db.repositories import breach_tickets as breach_ticket_repo
 from cmp.db.repositories import holdings
@@ -833,7 +834,7 @@ def _files_note(names: list[str], expires: datetime | None) -> str:
     count = "1 document goes" if len(names) == 1 else f"{len(names)} documents go"
     where = (
         f"Download from your account until {expires.date().isoformat()}: "
-        f"{settings.public_base_url.rstrip('/')}/my-requests"
+        f"{portal_base()}/my-requests"
         if expires
         else "Reply to this message and the office will send them to you."
     )
@@ -3718,11 +3719,7 @@ async def respond(
             digest_for_mail,
             # The date is the files': there is nothing else to download.
             expires.date().isoformat() if expires and attachments else None,
-            (
-                f"{settings.public_base_url.rstrip('/')}/my-requests"
-                if row.get("subject_user_id") is not None
-                else None
-            ),
+            (f"{portal_base()}/my-requests" if row.get("subject_user_id") is not None else None),
         )
     return row
 
@@ -3982,11 +3979,11 @@ async def dispute(conn: Conn, row: Row, *, subject_user_id: int, text: str, abou
 # --------------------------------------------------------------- nominations
 def nominee_url(nomination_uuid: str) -> str:
     """Where the nominee acts, with the reference already filled in."""
-    return f"{settings.public_base_url.rstrip('/')}/rights/nominee?nomination={nomination_uuid}"
+    return f"{portal_base()}/rights/nominee?nomination={nomination_uuid}"
 
 
 def _accept_url(raw_token: str) -> str:
-    return f"{settings.public_base_url.rstrip('/')}/rights/nominations/{raw_token}"
+    return f"{portal_base()}/rights/nominations/{raw_token}"
 
 
 async def nominate(
@@ -4210,7 +4207,7 @@ async def accept_nomination(conn: Conn, raw_token: str, *, code: str) -> Row:
     # The reference and the page where he acts, to every contact recorded for
     # him - and, now that accepting has proven a contact, that he can sign in
     # with it. He will need all of this on a day that may be years off.
-    sign_in = f"{settings.public_base_url.rstrip('/')}/sign-in" if has_account else None
+    sign_in = f"{portal_base()}/sign-in" if has_account else None
     for contact in (fresh.get("nominee_mobile"), fresh.get("nominee_email")):
         if contact:
             _dispatch(

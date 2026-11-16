@@ -19823,6 +19823,66 @@
         }
       }
     },
+    "/portal-address": {
+      "get": {
+        "tags": [
+          "portal address"
+        ],
+        "summary": "The address portal links start with",
+        "operationId": "get_portal_address_portal_address_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalAddressOut"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "portal address"
+        ],
+        "summary": "Set the address portal links start with",
+        "operationId": "put_portal_address_portal_address_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PortalAddressIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortalAddressOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/tickets": {
       "get": {
         "tags": [
@@ -34358,6 +34418,17 @@
             "type": "array",
             "title": "Nav"
           },
+          "portal_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Portal Url"
+          },
           "writes": {
             "items": {
               "type": "string"
@@ -36809,6 +36880,80 @@
         ],
         "title": "PocCategory",
         "description": "A category an HR PoC runs activities in (0052)."
+      },
+      "PortalAddressIn": {
+        "properties": {
+          "portal_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Portal Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "PortalAddressIn"
+      },
+      "PortalAddressOut": {
+        "properties": {
+          "portal_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Portal Url"
+          },
+          "configured_url": {
+            "type": "string",
+            "title": "Configured Url"
+          },
+          "in_use": {
+            "type": "string",
+            "title": "In Use"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "portal_url",
+          "configured_url",
+          "in_use",
+          "updated_at",
+          "updated_by_name"
+        ],
+        "title": "PortalAddressOut"
       },
       "PreviewOut": {
         "properties": {

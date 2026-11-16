@@ -57,6 +57,7 @@ ROUTERS: tuple[APIRouter, ...] = (
     v1.datavault_connection_router,
     v1.datavault_request_router,
     v1.datavault_ticket_router,
+    v1.portal_address_router,
     # A team's own tickets on rights requests - the portal channel.
     v1.tickets_router,
     v1.audit_router,

@@ -47,7 +47,7 @@ from cmp.auth.authentication import otp
 from cmp.auth.authentication import service as auth_service
 from cmp.core.config import settings
 from cmp.core.context import RequestContext, use_context
-from cmp.core.errors import BadRequest, CmpError, RateLimited
+from cmp.core.errors import AccountNotFound, BadRequest, CmpError, RateLimited
 from cmp.core.security import new_token, token_fingerprint
 from cmp.db.repositories import users as user_repo
 from cmp.domain.consent import service as consent_service
@@ -166,7 +166,10 @@ class TestTheSignIn:
         known = await _tries(self._verify(conn, mobile), code)
 
         stranger_contact = _mobile()
-        await auth_service.request_subject_otp(conn, contact=stranger_contact)
+        # Asking is where a stranger is told apart since 2026-11-16; the
+        # refusals of a code, below, still are not.
+        with pytest.raises(AccountNotFound):
+            await auth_service.request_subject_otp(conn, contact=stranger_contact)
         assert len([1 for name, _ in queued if name == LOGIN]) == 1, "nothing to a stranger"
         stranger = await _tries(self._verify(conn, stranger_contact), None)
 
@@ -210,7 +213,8 @@ class TestTheConsentLink:
         known = [await _short(attempt_for(mobile)), *await _tries(attempt_for(mobile), code)]
 
         stranger_contact = _mobile()
-        await consent_service.send_contact_code(conn, token=token, contact=stranger_contact)
+        with pytest.raises(AccountNotFound):
+            await consent_service.send_contact_code(conn, token=token, contact=stranger_contact)
         stranger = [
             await _short(attempt_for(stranger_contact)),
             *await _tries(attempt_for(stranger_contact), None),

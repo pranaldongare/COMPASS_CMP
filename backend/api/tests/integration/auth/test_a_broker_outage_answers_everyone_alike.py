@@ -19,7 +19,7 @@ from typing import Any
 import pytest
 
 from cmp.auth.authentication import service as auth_service
-from cmp.core.errors import ServiceUnavailable
+from cmp.core.errors import AccountNotFound, ServiceUnavailable
 from cmp.domain.consent import service as consent_service
 from cmp.tasks import dispatch
 from tests.integration.test_consent_link_identity import a_link
@@ -54,7 +54,10 @@ async def test_a_consent_links_code(conn: Any, seeded: dict[str, Any], broker_do
             await consent_service.send_contact_code(conn, token=token, contact=contact)
 
 
-async def test_with_the_broker_up_a_stranger_is_still_told_nothing(
+async def test_with_the_broker_up_a_stranger_is_told_there_is_no_account(
     conn: Any, seeded: dict[str, Any]
 ) -> None:
-    assert await auth_service.request_subject_otp(conn, contact="nobody-at-all@test.local") is None
+    """Since 2026-11-16 (the product owner's decision): the page sends them to
+    register. The outage above is still checked first, and answers alike."""
+    with pytest.raises(AccountNotFound):
+        await auth_service.request_subject_otp(conn, contact="nobody-at-all@test.local")

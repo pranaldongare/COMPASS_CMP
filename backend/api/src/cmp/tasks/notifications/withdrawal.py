@@ -14,6 +14,7 @@ from celery import shared_task
 
 from cmp.core.config import settings
 from cmp.core.messages import Message
+from cmp.core.portal_address import portal_base
 from cmp.infrastructure.dkms.client import DkmsUnavailable
 from cmp.infrastructure.messaging import deliver
 
@@ -45,7 +46,7 @@ def send_withdrawal_confirmation(
             if continuing
             else "Nothing on this notice continues under your consent."
         ),
-        rights_url=f"{settings.public_base_url.rstrip('/')}/rights",
+        rights_url=f"{portal_base()}/rights",
     )
 
 

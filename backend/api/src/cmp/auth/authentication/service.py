@@ -27,6 +27,7 @@ from cmp.auth.sessions import service as sessions
 from cmp.core.config import settings
 from cmp.core.enums import UserStatus
 from cmp.core.errors import (
+    AccountNotFound,
     BadRequest,
     Conflict,
     Forbidden,
@@ -37,6 +38,7 @@ from cmp.core.errors import (
 )
 from cmp.core.logging import get_logger
 from cmp.core.permissions import ROLE_TITLES, Role, nav_for, writes_for
+from cmp.core.portal_address import portal_base
 from cmp.core.security import hash_password, password_needs_rehash, verify_password
 from cmp.db.repositories import users as user_repo
 from cmp.db.sql import Conn, unique_violation
@@ -257,9 +259,11 @@ def login_code_identity(user: dict[str, Any], contact: str) -> str:
 async def request_subject_otp(conn: Conn, *, contact: str) -> None:
     """Issue a sign-in code to a data subject.
 
-    Always returns success. Whether the contact is registered is not something an
-    unauthenticated caller may learn - that would turn this into a membership
-    oracle for "who consented to this project".
+    A contact no account carries is refused as that (`AccountNotFound`,
+    2026-11-16), so the page can send the person to register. It says only
+    that there is no account - never whose, nor what one consented to - and
+    the limit per contact above is counted first. An account that is switched
+    off is still answered as if a code went: why is the administrator's to say.
     """
     await ratelimit.enforce(
         "subject_otp",
@@ -274,8 +278,11 @@ async def request_subject_otp(conn: Conn, *, contact: str) -> None:
     await ensure_broker()
 
     user = await user_repo.by_contact(conn, contact)
-    if not user or user["status"] not in ("active", "pending"):
+    if not user:
         log.info("auth.otp_requested_unknown_contact")
+        raise AccountNotFound(field="contact")
+    if user["status"] not in ("active", "pending"):
+        log.info("auth.otp_requested_inactive_account")
         return
 
     issued = await otp.issue(otp.Scope.SUBJECT_LOGIN, login_code_identity(user, contact))
@@ -892,6 +899,9 @@ async def me_payload(conn: Conn, *, user_id: int, session: sessions.Session) -> 
         "mfa_verified": session.mfa_verified,
         "session_expires_at": datetime.fromtimestamp(session.expires_at, tz=UTC),
         "nav": nav_for(session.role),
+        # The address links to the portal start with (0072): the console puts
+        # it in front of a consent link's path when the link is copied.
+        "portal_url": portal_base(),
         "writes": writes_for(session.role),
     }
 

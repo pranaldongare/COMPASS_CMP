@@ -23,8 +23,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from cmp.core.config import settings as app_settings
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
+from cmp.core.portal_address import portal_base
 from cmp.db.repositories import incident_reports as repo
 from cmp.db.sql import Conn
 from cmp.domain.audit import service as audit
@@ -73,7 +73,7 @@ async def overview(conn: Conn) -> Row:
 
 def report_link() -> str:
     """The one public link: given out to anybody, on any page, for ever."""
-    return f"{app_settings.public_base_url.rstrip('/')}/report-incident"
+    return f"{portal_base()}/report-incident"
 
 
 async def set_intake_roles(conn: Conn, *, roles: list[str], actor_id: int) -> Row:

@@ -20,6 +20,7 @@ from celery import shared_task
 
 from cmp.core.config import settings
 from cmp.core.messages import Message
+from cmp.core.portal_address import portal_base
 from cmp.infrastructure.dkms.client import DkmsUnavailable
 from cmp.infrastructure.email import Attachment
 from cmp.infrastructure.messaging import deliver
@@ -56,7 +57,7 @@ def send_consent_receipt(
         reference=consent_uuid,
         purposes="\n".join(f"  - {name}" for name in names) or "  (the purposes on the notice)",
         purpose_count=len(names) if names else "the",
-        withdraw_url=f"{settings.public_base_url.rstrip('/')}/my-consents",
+        withdraw_url=f"{portal_base()}/my-consents",
     )
 
 
@@ -85,7 +86,7 @@ def consent_record(
         f"  {record.get('sha256', '')}",
         "",
         "You can withdraw at any time from your account:",
-        f"  {settings.public_base_url.rstrip('/')}/my-consents",
+        f"  {portal_base()}/my-consents",
         "",
     ]
     return Attachment("consent-record.txt", "text/plain", "\n".join(lines).encode("utf-8"))

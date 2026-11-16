@@ -21,6 +21,7 @@ from cmp.auth.authentication import otp
 from cmp.auth.rate_limit import service as ratelimit
 from cmp.core.config import settings
 from cmp.core.errors import (
+    AccountNotFound,
     BadRequest,
     Conflict,
     ConsentDefective,
@@ -286,16 +287,20 @@ async def send_contact_code(conn: Conn, *, token: str, contact: str) -> None:
     # knows can be a data principal, and the session the code earns carries a
     # data principal's powers and no others (`open_principal_session`).
     #
-    # The caller's reply does not change, and must not: "if those details are
-    # registered, a code has been sent" is the same sentence either way, so a
-    # visitor cannot use this to find out whose number is on the register.
+    # A contact no account carries is told so (`AccountNotFound`, the product
+    # owner's decision of 2026-11-16, as on the portal's sign-in), and the page
+    # sends the person to register and back. An account that is switched off
+    # is answered as if a code went.
     # Before the lookup, so an outage answers a stranger as it answers her.
     from cmp.tasks.dispatch import ensure_broker
 
     await ensure_broker()
     user = await user_repo.by_contact(conn, contact)
-    if not user or user["status"] not in ("active", "pending"):
+    if not user:
         log.info("consent.code_requested_for_unknown_contact")
+        raise AccountNotFound(field="contact")
+    if user["status"] not in ("active", "pending"):
+        log.info("consent.code_requested_for_inactive_account")
         return
 
     issued = await otp.issue(otp.Scope.CONSENT_LINK, f"{link['link_uuid']}:{contact}")

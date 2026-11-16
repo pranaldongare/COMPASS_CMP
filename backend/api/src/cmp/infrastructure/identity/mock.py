@@ -24,7 +24,7 @@ import json
 import re
 import secrets
 from typing import Final
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlsplit
 
 from cmp.core.config import settings
 from cmp.core.security import seal_token, unseal_token
@@ -52,8 +52,13 @@ def claims_for(email: str) -> Claims:
 
 
 async def authorize_url(*, state: str, nonce: str, challenge: str) -> str:
-    """The portal's stand-in sign-in page, carrying the state as a provider would."""
-    return f"{settings.public_base_url.rstrip('/')}/sso-mock?{urlencode({'state': state})}"
+    """The portal's stand-in sign-in page, carrying the state as a provider would.
+
+    A path, not an address: the stand-in is a page of the portal the person
+    already has open, so it is found wherever that was opened - by name, by
+    IP from another machine, or through the relay - and not only at
+    `PUBLIC_BASE_URL` (2026-11-16)."""
+    return f"/sso-mock?{urlencode({'state': state})}"
 
 
 async def signed_in(*, state: str, nonce: str, email: str) -> str:
@@ -71,7 +76,8 @@ def cancelled(*, state: str) -> str:
 
 
 def _callback(query: dict[str, str]) -> str:
-    target = settings.sso_redirect_url
+    # The callback's path alone, for the same reason as `authorize_url`.
+    target = urlsplit(settings.sso_redirect_url).path or "/api/auth/sso/callback"
     return f"{target}{'&' if '?' in target else '?'}{urlencode(query)}"
 
 

@@ -25,6 +25,7 @@ from cmp.auth.authentication import service as auth_service
 from cmp.auth.sessions import service as sessions
 from cmp.core.config import settings
 from cmp.core.errors import NotFound, Unauthenticated
+from cmp.core.portal_address import portal_base
 from cmp.db.pool import connection, transaction
 from cmp.schemas.common import Acknowledged, DateOfBirth, OtpCode, Out, Password, Schema
 from cmp.validation import Mobile
@@ -106,6 +107,9 @@ class MeResponse(Out):
     mfa_verified: bool
     session_expires_at: datetime
     nav: list[str]
+    #: The address links to the data principal's portal start with (0072):
+    #: the one the administrator set, else the configured one.
+    portal_url: str | None = None
     #: Resources the role may write - the interface offers controls from this.
     writes: list[str] = Field(default_factory=list)
 
@@ -229,8 +233,8 @@ async def register(body: RegisterBody) -> dict[str, Any]:
 async def otp_request(body: OtpRequestBody) -> dict[str, Any]:
     async with transaction() as conn:
         await auth_service.request_subject_otp(conn, contact=body.contact)
-    # Identical response whether or not the contact is registered.
-    return {"ok": True, "message": "If that contact is registered, a code has been sent."}
+    # A contact no account carries was refused above (404 account_not_found).
+    return {"ok": True, "message": "We have sent a code to that contact."}
 
 
 class RegisterVerifyBody(Schema):
@@ -390,7 +394,11 @@ async def sso_callback(
             user_agent=request.headers.get("user-agent"),
         )
     shown = {"signed_in": "ok", "mobile_needed": "mobile"}.get(outcome.kind, outcome.kind)
-    target = f"{settings.public_base_url.rstrip('/')}/c/{outcome.link_token}?sso={shown}"
+    # With the stand-in (`SSO_MOCK`) the browser never left the portal, so it
+    # goes back to the link on the origin it is on; a real provider returns
+    # to the one registered address, and the link is named in full.
+    base = "" if settings.sso_mock else portal_base()
+    target = f"{base}/c/{outcome.link_token}?sso={shown}"
     response = RedirectResponse(target, status_code=status.HTTP_303_SEE_OTHER)
     response.headers["Referrer-Policy"] = "no-referrer"
     response.headers["Cache-Control"] = "no-store"

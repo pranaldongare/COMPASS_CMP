@@ -61,6 +61,7 @@ from cmp.core.errors import Conflict, NotFound, ValidationFailed
 from cmp.core.logging import get_logger
 from cmp.core.messages import Channel, Message, junction, render_text
 from cmp.core.permissions import ROLE_TITLES
+from cmp.core.portal_address import portal_base
 from cmp.db.pool import across_offices
 from cmp.db.redis import K_LOCK
 from cmp.db.redis import key as rkey
@@ -1223,7 +1224,7 @@ async def email(conn: Conn, *, breach_uuid: str, report_uuid: str, actor_id: int
     )
     variables = {
         "organisation": settings.organisation_name,
-        "portal_url": settings.public_base_url.rstrip("/"),
+        "portal_url": portal_base(),
         "console_url": settings.console_base_url.rstrip("/"),
         "breach_reference": breach["reference"],
         "report_title": title,

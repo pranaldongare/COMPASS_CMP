@@ -150,3 +150,34 @@ async def test_cancelling_returns_to_the_link_as_cancelled(conn: Any, link: str)
         user_agent=None,
     )
     assert outcome.kind == "cancelled" and outcome.link_token == link
+
+
+async def test_its_addresses_are_paths_on_the_portal_the_person_has_open(
+    conn: Any, link: str, codes: list[Any]
+) -> None:
+    """Neither the sign-in page nor the way back names a host (2026-11-16):
+    the portal opened by IP from another machine, or through the relay, is not
+    at `PUBLIC_BASE_URL`, and the stand-in sent the browser there."""
+    start = await sso.start(conn, token=link)
+    assert start.startswith("/sso-mock?state=")
+    state = parse_qs(urlparse(start).query)["state"][0]
+    address = _address()
+    await sso_mock.send_code(conn, state=state, email=address)
+    back = await sso_mock.confirm(state=state, email=address, code=codes[-1][1])
+    assert back.startswith(urlparse(settings.sso_redirect_url).path + "?")
+    assert (await sso_mock.cancel(state=state)).startswith("/")
+
+
+async def test_an_address_already_on_an_account_signs_that_account_in(
+    conn: Any, link: str, codes: list[Any]
+) -> None:
+    """The stand-in proved the address by a code, as the ordinary sign-in does,
+    so whoever holds it is signed in (2026-11-16). With a real provider the
+    same address is a conflict (`test_sso_link`, open point F-10)."""
+    holder = await user_repo.by_contact(conn, "subject@test.local")
+    assert holder is not None and not holder.get("organization_id")
+
+    outcome = await _signed_in_as(conn, codes, link, "subject@test.local")
+
+    assert outcome.kind == "signed_in" and outcome.session is not None
+    assert outcome.session.user_id == holder["id"]

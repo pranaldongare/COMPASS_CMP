@@ -98,6 +98,26 @@ class NotFound(CmpError):
         super().__init__(f"{entity} not found", **kw)
 
 
+class AccountNotFound(CmpError):
+    """A sign-in code was asked for a contact no account carries.
+
+    Said in so many words since 2026-11-16, by the product owner's decision:
+    the person is told there is no account and sent to register, where a
+    contact already taken has always been refused by name (`contact_taken`).
+    Before, the reply was the same sentence either way, and somebody who had
+    never registered waited for a code that was never coming.
+    """
+
+    status_code = 404
+    code = "account_not_found"
+
+    def __init__(self, **kw: Any) -> None:
+        super().__init__(
+            "No account exists for this mobile number or email address. Register first.",
+            **kw,
+        )
+
+
 class HiddenFromRole(NotFound):
     """A role without the grant, told the thing is not there.
 

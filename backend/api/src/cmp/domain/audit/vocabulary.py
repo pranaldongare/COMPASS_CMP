@@ -52,6 +52,7 @@ GROUP_LABELS: Final[dict[str, str]] = {
     "incident_report": "Incident reports",
     "breach_settings": "Breach settings",
     "datavault": "DataVault",
+    "portal_address": "Portal address",
     "message_template": "Messages",
     "audit": "Audit trail",
 }
@@ -74,6 +75,7 @@ EVENT_LABELS: Final[dict[str, str]] = {
     "incident_report.reporter_erased": "Reporter's name and email erased",
     "datavault.checked": "Checked in DataVault",
     "datavault.connection_changed": "DataVault connection changed",
+    "portal_address.changed": "Portal address changed",
     "datavault.erasure_sent": "DataVault told to erase",
     "datavault.erasure_checked": "DataVault asked how far an erasure has got",
     "datavault.consent_change_queued": "Consent change to tell DataVault",

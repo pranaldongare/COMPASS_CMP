@@ -404,6 +404,12 @@ MATRIX: dict[str, dict[Role, Grant]] = {
     "datavault_connection": {
         Role.ADMIN: Grant(Scope.ALL, write=True),
     },
+    # The address every link to the portal starts with (0072). Configuration,
+    # like the one above: the administrator's alone. Everybody signed in is
+    # told the address in use (`/auth/me`); only the administrator sets it.
+    "portal_address": {
+        Role.ADMIN: Grant(Scope.ALL, write=True),
+    },
     # The Government's s.16 restricted-country list (S2-04). The DPO keeps it,
     # because it decides what may leave the country; the administrator reads it,
     # because a refused export lands on their desk as often as anyone's.
@@ -606,6 +612,8 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "breach-settings",
         # Where DataVault is reached (0070): the administrator's alone.
         "datavault",
+        # The address links to the portal start with (0072).
+        "portal-address",
         "audit",
         "delegate",
         *PERSONAL,

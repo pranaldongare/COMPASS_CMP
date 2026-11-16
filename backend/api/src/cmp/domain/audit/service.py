@@ -88,6 +88,7 @@ ENTITY_TYPES: Final[frozenset[str]] = frozenset(
         "breach_settings",
         # Where DataVault is reached (0070): the administrator's one row.
         "datavault_connection",
+        "portal_address",
         # The office's replacement words for a message junction.
         "message_template",
         # The Legal office's category of HR activity (0052, ADR 0033): its
@@ -401,6 +402,8 @@ class Event:
     #: administrator's change to where it is reached.
     DATAVAULT_CHECKED = "datavault.checked"
     DATAVAULT_CONNECTION_CHANGED = "datavault.connection_changed"
+    #: The address links to the portal start with was set (0072).
+    PORTAL_ADDRESS_CHANGED = "portal_address.changed"
     #: DataVault told to erase assets on an erasure request, and each time it
     #: was asked how far that has got (0071).
     DATAVAULT_ERASURE_SENT = "datavault.erasure_sent"

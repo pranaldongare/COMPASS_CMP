@@ -27,7 +27,7 @@ import pytest
 
 from cmp.auth.rate_limit.service import contact_key
 from cmp.core.enums import UserStatus
-from cmp.core.errors import LinkInvalid
+from cmp.core.errors import AccountNotFound, LinkInvalid
 from cmp.core.security import new_token, token_fingerprint
 from cmp.db.redis import K_RATE
 from cmp.db.redis import key as rkey
@@ -108,13 +108,16 @@ class TestWhoGetsACode:
     async def test_nothing_is_sent_to_a_contact_nobody_registered(
         self, conn: Any, seeded: dict[str, Any], redis_conn: Any, queued: Any
     ) -> None:
-        """And it returns rather than raising, which is the neutrality: the
-        endpoint above answers the same sentence in both cases."""
+        """And the person is told there is no account (2026-11-16, the product
+        owner's decision), so the page can send them to register and back. It
+        used to return as if a code had gone."""
         token = await a_link(conn, seeded)
         await unthrottle(redis_conn, "+915559999999")
 
-        await consent_service.send_contact_code(conn, token=token, contact="+915559999999")
+        with pytest.raises(AccountNotFound) as refused:
+            await consent_service.send_contact_code(conn, token=token, contact="+915559999999")
 
+        assert refused.value.code == "account_not_found" and refused.value.status_code == 404
         assert queued == []
 
     async def test_a_staff_contact_gets_one_too(

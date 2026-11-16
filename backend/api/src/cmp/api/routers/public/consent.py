@@ -170,7 +170,9 @@ async def request_code(token: TokenPath, body: OtpBody, response: Response) -> d
     _no_referrer(response)
     async with transaction() as conn:
         await service.send_contact_code(conn, token=token, contact=body.contact)
-    return {"ok": True, "message": "If those details are registered, a code has been sent."}
+    # A contact no account carries was refused above (404 account_not_found);
+    # an `sso` link sends no code and says the same sentence as ever.
+    return {"ok": True, "message": "We have sent a code to that contact."}
 
 
 @router.post(

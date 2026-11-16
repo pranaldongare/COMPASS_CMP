@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING, Any, Final
 from cmp.core.config import settings
 from cmp.core.logging import get_logger
 from cmp.core.messages import Channel, Junction, Message, junction, render_text
+from cmp.core.portal_address import portal_base
 from cmp.db.redis import K_CACHE
 from cmp.db.redis import key as rkey
 
@@ -128,7 +129,7 @@ def common_variables() -> dict[str, str]:
     """Available to every template, filled from configuration."""
     return {
         "organisation": settings.organisation_name,
-        "portal_url": settings.public_base_url.rstrip("/"),
+        "portal_url": portal_base(),
         "console_url": settings.console_base_url.rstrip("/"),
     }
 

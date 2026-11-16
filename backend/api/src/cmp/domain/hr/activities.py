@@ -25,9 +25,9 @@ from datetime import UTC, datetime
 from typing import Any
 
 from cmp.core import offices
-from cmp.core.config import settings
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
 from cmp.core.permissions import Role
+from cmp.core.portal_address import portal_base
 from cmp.core.security import unseal_token
 from cmp.db.repositories import consent as consent_repo
 from cmp.db.repositories import hr_activities as activity_repo
@@ -351,7 +351,7 @@ async def _live_link_url(conn: Conn, project_id: int) -> str | None:
         if link["status"] == "active":
             token = unseal_token(link.get("token_sealed"))
             if token:
-                return settings.public_base_url.rstrip("/") + consent_service.link_path(token)
+                return portal_base() + consent_service.link_path(token)
     return None
 
 

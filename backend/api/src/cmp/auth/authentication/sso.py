@@ -147,6 +147,12 @@ async def callback(
 
     account = await user_repo.by_employee_id(conn, claims.employee_id)
     holder = await user_repo.by_contact(conn, claims.email) if claims.email else None
+    if settings.sso_mock and holder and account is None:
+        # The stand-in proved the address by a code sent to it, which is what
+        # the ordinary sign-in asks: whoever holds the address is signed in,
+        # as there (2026-11-16). A real provider asserts an address nobody
+        # here proved, so for it the rule below stands (open point F-10).
+        account = holder
     if holder and (account is None or holder["id"] != account["id"]):
         await _conflict(conn, link, holder["id"], "the asserted address is on another account")
         return Outcome("conflict", token)

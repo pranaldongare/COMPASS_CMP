@@ -21,6 +21,7 @@ from celery import shared_task
 
 from cmp.core.config import settings
 from cmp.core.messages import Message
+from cmp.core.portal_address import portal_base
 from cmp.infrastructure.dkms.client import DkmsUnavailable
 from cmp.infrastructure.email import Attachment
 from cmp.infrastructure.messaging import deliver
@@ -198,7 +199,7 @@ def send_nomination_accepted(
         principal_name=principal_name,
         reference=reference,
         nominee_url=nominee_url,
-        sign_in_url=sign_in_url or f"{settings.public_base_url.rstrip('/')}/sign-in",
+        sign_in_url=sign_in_url or f"{portal_base()}/sign-in",
     )
 
 
