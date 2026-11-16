@@ -4,7 +4,7 @@
  * server names a reason, Complete cannot be chosen and the reason is shown.
  */
 import { HttpResponse, http } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { RespondCard } from "@/features/rights/components/respond-card";
 import { ToastProvider } from "@/providers/toast-provider";
@@ -18,6 +18,24 @@ const collating = {
   request_type: "erasure" as const,
   transitions: [{ to: "closed" as const, allowed: true, via: "respond" as const }],
 };
+
+// An erasure request's card reads what DataVault has not finished (0071).
+// Not set up, unless a test says otherwise.
+beforeEach(() => {
+  server.use(
+    http.get(`${API}/requests/:uuid/datavault`, () =>
+      HttpResponse.json({
+        configured: false,
+        may_check: false,
+        why_not: null,
+        answer: null,
+        assets: [],
+        last_failure: null,
+        erasure: null,
+      }),
+    ),
+  );
+});
 
 function card(overrides: Partial<RightsRequestDetail> = {}) {
   return render(
@@ -102,6 +120,53 @@ describe("RespondCard", () => {
       within(await screen.findByRole("dialog")).getByRole("button", { name: "Release and close" }),
     );
     await vi.waitFor(() => expect(released).toBe(1));
+  });
+
+  it("says before closing how many assets DataVault has not finished, and closes all the same", async () => {
+    // 2026-11-13: closing does not wait for DataVault; it is said first.
+    let released = 0;
+    server.use(
+      http.get(`${API}/requests/:uuid/datavault`, () =>
+        HttpResponse.json({
+          configured: true,
+          may_check: true,
+          why_not: null,
+          answer: null,
+          assets: [],
+          last_failure: null,
+          erasure: {
+            may_erase: false,
+            why_not: null,
+            to_send: 0,
+            left_out: 0,
+            open: 2,
+            may_check_status: true,
+            counts: { unanswered: 0, pending: 2, erased: 1, failed: 0, not_held: 0 },
+            last_asked_at: null,
+            last_failure: null,
+            last_failure_said: null,
+          },
+        }),
+      ),
+      http.post(`${API}/requests/:uuid/respond`, () => {
+        released += 1;
+        return HttpResponse.json(makeRequestDetail({ status: "closed" }));
+      }),
+    );
+    const { user } = card({ reference: "RR-2026-0043" });
+    expect(await screen.findByText(/2 assets are still with DataVault/)).toBeInTheDocument();
+    await user.type(screen.getByLabelText(/The response/), "Erased, two items pending in DataVault.");
+    await user.click(screen.getByRole("button", { name: "Release and close" }));
+    const question = await screen.findByRole("dialog");
+    expect(within(question).getByText(/2 assets are still with DataVault/)).toBeInTheDocument();
+    await user.click(within(question).getByRole("button", { name: "Release and close" }));
+    await vi.waitFor(() => expect(released).toBe(1));
+  });
+
+  it("warns of nothing when DataVault has nothing pending", async () => {
+    card();
+    await new Promise((done) => setTimeout(done, 50));
+    expect(screen.queryByText(/still with DataVault/)).not.toBeInTheDocument();
   });
 
   it("asks before a grievance is decided, and says when the earlier request is run again", async () => {

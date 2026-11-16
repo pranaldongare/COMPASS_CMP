@@ -12,14 +12,20 @@
  * A grievance is decided here instead. Not upheld is a legitimate outcome, but
  * it has to be reasoned and in writing, and it carries the Board route.
  * Upheld names a remedy, and can re-run the request it was about.
+ *
+ * On an erasure request, assets DataVault has not finished erasing (0071) do
+ * not hold the close back: the card says how many before it closes, and Check
+ * status on the DataVault card follows them afterwards.
  */
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { Download, Paperclip, Send } from "lucide-react";
 import * as React from "react";
 
 import { useConfirm } from "@/components/ui/confirm";
 import { Alert, Button, Card, CardBody, CardHeader, CardTitle, Field, Select, Textarea } from "@/components/ui/primitives";
+import { datavaultKeys, getRequestDataVault } from "@/features/datavault/api";
 import { downloadResponse, downloadResponseFile } from "@/features/rights/api";
 import { OUTCOME_COPY } from "@/features/rights/components/copy";
 import { ReleaseFiles } from "@/features/rights/components/release-files";
@@ -43,6 +49,19 @@ export function RespondCard({ request: r }: { request: RightsRequestDetail }) {
   // A response, or a decision, goes to the requester and closes the request:
   // asked first, in a pop-up that says so (2026-11-12).
   const asking = useConfirm();
+  // What DataVault has not said the last word on (0071). Closing does not
+  // wait for it; the card says so first. A console reaching an API without
+  // the route reads nothing here and warns of nothing.
+  const datavault = useQuery({
+    queryKey: datavaultKeys.request(r.request_uuid),
+    queryFn: () => getRequestDataVault(r.request_uuid),
+    enabled: r.request_type === "erasure" && r.status !== "closed",
+  });
+  const pending = datavault.data?.erasure?.open ?? 0;
+  const pendingSaid =
+    pending > 0
+      ? `${pending} ${pending === 1 ? "asset is" : "assets are"} still with DataVault, not yet erased or answered. Closing does not wait for ${pending === 1 ? "it" : "them"}: Check status, under Holders, follows ${pending === 1 ? "it" : "them"} after the request closes.`
+      : null;
 
   const [outcome, setOutcome] = React.useState(blocked ? "partial" : "complete");
   const [text, setText] = React.useState("");
@@ -226,6 +245,11 @@ export function RespondCard({ request: r }: { request: RightsRequestDetail }) {
             <p className="text-sm">{blocked}</p>
           </Alert>
         )}
+        {pendingSaid && (
+          <Alert tone="warning" title="Pending in DataVault">
+            <p className="text-sm">{pendingSaid}</p>
+          </Alert>
+        )}
         <Field label="Outcome">
           {(p) => (
             <Select {...p} value={outcome} onChange={(e) => setOutcome(e.target.value)}>
@@ -264,7 +288,9 @@ export function RespondCard({ request: r }: { request: RightsRequestDetail }) {
                   files.length
                     ? `, and ${files.length} file${files.length === 1 ? " is" : "s are"} released to their account`
                     : ""
-                }. The request closes; a holder who has not answered is recorded as a gap. A response sent cannot be recalled.`,
+                }. The request closes; a holder who has not answered is recorded as a gap.${
+                  pendingSaid ? ` ${pendingSaid}` : ""
+                } A response sent cannot be recalled.`,
                 confirmLabel: "Release and close",
               }))
             )

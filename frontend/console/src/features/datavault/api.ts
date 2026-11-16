@@ -1,33 +1,59 @@
 /**
- * DataVault (0070): the store the labs' assets live in.
+ * DataVault (0070, 0071): the store the labs' assets live in.
  *
- * Three things, each thin: where DataVault is reached (the administrator's
- * page), what it holds of a rights request's person (the DPO's or Legal's
- * "Check in DataVault"), and, on a DCO Admin's own ticket, the assets it
- * listed for their project. The server makes the call; the console never
- * talks to DataVault and never holds its key.
+ * Each thin: where DataVault is reached (the administrator's page), what it
+ * holds of a rights request's person (the DPO's or Legal's "Check in
+ * DataVault"), on an erasure request telling it to erase what it listed
+ * ("Erase in DataVault", then "Check status"), and, on a DCO Admin's own
+ * ticket, the assets it listed for their project. Consent changes have no
+ * button: the server tells DataVault of them by itself, and the
+ * administrator's page shows how that queue stands. The server makes every
+ * call; the console never talks to DataVault and never holds its key.
  */
 import { BACKGROUND, apiGet, apiPost, apiPut } from "@/lib/api";
 import type { Timestamp, Uuid } from "@/types";
 
+/** How a person, a consent and a project are named in every call. */
+export type DataVaultIdFormat = "numeric" | "uuid";
+
 export interface DataVaultConnection {
+  /** Where the lookup goes. */
   base_url: string | null;
+  /** Where erasures and consent changes go (0071). */
+  erasure_url: string | null;
   /** Whether a key is stored. The key itself is never served. */
   api_key_set: boolean;
   api_key_header: string;
   enabled: boolean;
+  id_format: DataVaultIdFormat;
+  /** Whether DataVault is told of consent changes by itself. */
+  consent_changes: boolean;
+  /** How that queue stands: counts and times only. */
+  consent_changes_waiting: number;
+  consent_changes_last_delivered_at: Timestamp | null;
+  /** Why the last try failed, in words. */
+  consent_changes_last_failure: string | null;
   updated_at: Timestamp | null;
   updated_by_name: string | null;
 }
 
 export interface DataVaultConnectionInput {
   base_url: string | null;
+  erasure_url: string | null;
   /** A new key; left out, the stored one stays. */
   api_key?: string;
   clear_api_key?: boolean;
   api_key_header: string;
   enabled: boolean;
+  id_format: DataVaultIdFormat;
+  consent_changes: boolean;
 }
+
+/** Where an asset stands in DataVault on an erasure request. `null`: not
+ *  sent. `unanswered`: sent, and DataVault has not said. `pending`, or one of
+ *  the final `erased`, `failed` and `not_held`. */
+export type DataVaultErasureStatus =
+  "unanswered" | "pending" | "erased" | "failed" | "not_held";
 
 export interface DataVaultAsset {
   asset_ref: string;
@@ -42,6 +68,33 @@ export interface DataVaultAsset {
   project_name: string | null;
   mid: string | null;
   datapath: string | null;
+  /** On an erasure request: whether the request reaches this asset - one
+   *  confined to a consent reaches that consent's assets only. Always true on
+   *  any other. */
+  in_scope: boolean;
+  erasure_status: DataVaultErasureStatus | null;
+  erasure_status_at: Timestamp | null;
+  erasure_completed_at: Timestamp | null;
+  /** Why DataVault did not erase it, in its words. */
+  erasure_reason: string | null;
+}
+
+/** What may be done about erasing in DataVault now, on an erasure request. */
+export interface DataVaultErasure {
+  /** This reader may press "Erase in DataVault" now; else why not, in words. */
+  may_erase: boolean;
+  why_not: string | null;
+  /** How many assets a press would send, and how many the check listed that
+   *  this request does not reach. */
+  to_send: number;
+  left_out: number;
+  /** Assets DataVault has not said the last word on. */
+  open: number;
+  may_check_status: boolean;
+  counts: Record<DataVaultErasureStatus, number>;
+  last_asked_at: Timestamp | null;
+  last_failure: string | null;
+  last_failure_said: string | null;
 }
 
 export interface DataVaultCheck {
@@ -62,6 +115,8 @@ export interface RequestDataVault {
   answer: DataVaultCheck | null;
   assets: DataVaultAsset[];
   last_failure: DataVaultCheck | null;
+  /** On an erasure request (0071); null on any other. */
+  erasure: DataVaultErasure | null;
 }
 
 export interface TicketDataVault {
@@ -101,6 +156,18 @@ export function getRequestDataVault(
 
 export function checkInDataVault(requestUuid: Uuid): Promise<RequestDataVault> {
   return apiPost<RequestDataVault>(`/requests/${requestUuid}/datavault/check`);
+}
+
+/** Tell DataVault to erase what its last check listed and this request
+ *  reaches: what has not been sent yet, and what it failed to erase. */
+export function eraseInDataVault(requestUuid: Uuid): Promise<RequestDataVault> {
+  return apiPost<RequestDataVault>(`/requests/${requestUuid}/datavault/erase`);
+}
+
+/** Ask DataVault how far each asset it was told to erase has got: the same
+ *  instruction again, which starts nothing new. */
+export function checkErasureStatus(requestUuid: Uuid): Promise<RequestDataVault> {
+  return apiPost<RequestDataVault>(`/requests/${requestUuid}/datavault/erase/status`);
 }
 
 export function getTicketDataVault(holderUuid: Uuid): Promise<TicketDataVault> {

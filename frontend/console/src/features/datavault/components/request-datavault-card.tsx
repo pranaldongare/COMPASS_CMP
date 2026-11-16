@@ -15,6 +15,13 @@
  * the page reads the request back. While one is expected and nothing has come,
  * the card looks again for a short while, then stops: the button is still
  * there for whoever wants to ask now.
+ *
+ * On an erasure request (0071) the card also tells DataVault to erase what it
+ * listed: "Erase in DataVault", asked about first in a pop-up with the count,
+ * sends what this request reaches and has not been sent, and "Check status"
+ * asks how far each asset has got. Nothing about it runs by itself. Until it
+ * may be pressed, the button stays greyed out with the server's reason beside
+ * it. Each asset's place shows in the table.
  */
 "use client";
 
@@ -22,6 +29,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DatabaseZap } from "lucide-react";
 import * as React from "react";
 
+import { useConfirm } from "@/components/ui/confirm";
 import {
   Alert,
   Button,
@@ -32,9 +40,14 @@ import {
   Skeleton,
 } from "@/components/ui/primitives";
 import {
+  checkErasureStatus,
   checkInDataVault,
   datavaultKeys,
+  eraseInDataVault,
   getRequestDataVault,
+  type DataVaultErasure,
+  type DataVaultErasureStatus,
+  type RequestDataVault,
 } from "@/features/datavault/api";
 import { AssetTable } from "@/features/datavault/components/asset-table";
 import { formatDateTime } from "@/lib/format";
@@ -50,6 +63,43 @@ function said(err: unknown, fallback: string): string {
 /** How long the card looks for the platform's own check, and how often. */
 const WATCH_FOR_MS = 45_000;
 const WATCH_EVERY_MS = 2_500;
+
+const assets = (n: number) => `${n} ${n === 1 ? "asset" : "assets"}`;
+
+/** The statuses as the summary line says them, in the order it says them. */
+const SAID: [DataVaultErasureStatus, string][] = [
+  ["erased", "erased"],
+  ["pending", "pending"],
+  ["unanswered", "not answered yet"],
+  ["failed", "not erased"],
+  ["not_held", "not held"],
+];
+
+/** "2 erased · 1 pending": where the request's assets stand, nothing for none. */
+export function erasureSummary(e: DataVaultErasure): string {
+  return SAID.filter(([status]) => e.counts[status] > 0)
+    .map(([status, words]) => `${e.counts[status]} ${words}`)
+    .join(" · ");
+}
+
+/** What an ask came back with, as a toast says it. */
+function told(
+  now: RequestDataVault,
+  toast: ReturnType<typeof useToast>,
+  first: boolean,
+): void {
+  const e = now.erasure;
+  if (!e) return;
+  if (e.last_failure) {
+    toast.error(
+      "DataVault did not answer",
+      `${e.last_failure_said ?? ""} The instruction is kept: Check status sends it again.`,
+    );
+    return;
+  }
+  const line = erasureSummary(e);
+  toast.success(first ? "Sent to DataVault" : "DataVault answered", line || undefined);
+}
 
 export function RequestDataVaultCard({
   requestUuid,
@@ -90,6 +140,43 @@ export function RequestDataVaultCard({
       return Date.now() - watch.current.since < WATCH_FOR_MS ? watchEveryMs : false;
     },
   });
+  const confirm = useConfirm();
+  const afterErasure = (now: RequestDataVault, first: boolean) => {
+    client.setQueryData(key, now);
+    // On the request's trail, and the response warns of what is pending.
+    void client.invalidateQueries({ queryKey: ["request", requestUuid, "trail"] });
+    told(now, toast, first);
+  };
+  const erase = useMutation({
+    mutationFn: () => eraseInDataVault(requestUuid),
+    onSuccess: (now) => afterErasure(now, true),
+    onError: (err) =>
+      toast.error("Not sent to DataVault", said(err, "Try again in a moment.")),
+  });
+  const status = useMutation({
+    mutationFn: () => checkErasureStatus(requestUuid),
+    onSuccess: (now) => afterErasure(now, false),
+    onError: (err) => toast.error("Not asked", said(err, "Try again in a moment.")),
+  });
+
+  async function pressErase(e: DataVaultErasure) {
+    const n = e.to_send;
+    const yes = await confirm.ask({
+      title: `Tell DataVault to erase ${assets(n)}?`,
+      consequence: (
+        <>
+          DataVault erases {n === 1 ? "it" : "each"} whole, and this cannot be taken back.
+          {e.left_out > 0 &&
+            ` ${assets(e.left_out)} DataVault listed ${e.left_out === 1 ? "is" : "are"} left out: this request does not reach ${e.left_out === 1 ? "it" : "them"}.`}{" "}
+          What DataVault answers for each is shown here, and on the request&apos;s trail.
+        </>
+      ),
+      confirmLabel: "Erase in DataVault",
+      tone: "danger",
+    });
+    if (yes) erase.mutate();
+  }
+
   const check = useMutation({
     mutationFn: () => checkInDataVault(requestUuid),
     onSuccess: (now) => {
@@ -169,7 +256,7 @@ export function RequestDataVaultCard({
             {d.assets.length === 0 ? (
               <p className="text-sm">DataVault holds nothing of this person.</p>
             ) : (
-              <AssetTable assets={d.assets} />
+              <AssetTable assets={d.assets} erasure={d.erasure !== null} />
             )}
           </>
         ) : (
@@ -183,7 +270,111 @@ export function RequestDataVaultCard({
             </p>
           )
         )}
+        {d.erasure && d.configured && (
+          <ErasureControls
+            e={d.erasure}
+            erasing={erase.isPending}
+            asking={status.isPending}
+            onErase={() => void pressErase(d.erasure!)}
+            onStatus={() => status.mutate()}
+          />
+        )}
+        {confirm.dialog}
       </CardBody>
     </Card>
+  );
+}
+
+/** "Erase in DataVault" and "Check status", with where things stand. The
+ *  erase button shows greyed out with the reason while it may not be
+ *  pressed; a reader who may not act on the request is shown neither. */
+function ErasureControls({
+  e,
+  erasing,
+  asking,
+  onErase,
+  onStatus,
+}: {
+  e: DataVaultErasure;
+  erasing: boolean;
+  asking: boolean;
+  onErase: () => void;
+  onStatus: () => void;
+}) {
+  const summary = erasureSummary(e);
+  const offered = e.may_erase || e.why_not !== null;
+  if (!offered && !e.may_check_status && !summary) return null;
+  return (
+    <section
+      aria-label="Erasure in DataVault"
+      className="space-y-2 border-t border-border pt-3"
+    >
+      <h3 className="text-sm font-semibold">Erasure in DataVault</h3>
+      {summary ? (
+        <p className="text-sm">
+          {summary}
+          {e.last_asked_at && (
+            <span className="text-text-muted">
+              {" · "}last asked {formatDateTime(e.last_asked_at)}
+            </span>
+          )}
+        </p>
+      ) : (
+        <p className="text-sm text-text-muted">Nothing has been sent to DataVault yet.</p>
+      )}
+      {e.last_failure && (
+        <Alert tone="warning" title="The last ask was not answered">
+          {e.last_failure_said} The instruction is kept: Check status sends it again.
+        </Alert>
+      )}
+      <div className="flex flex-wrap items-center gap-2">
+        {offered && (
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={onErase}
+            disabled={!e.may_erase || erasing}
+            loading={erasing}
+            aria-describedby={e.why_not ? "datavault-erase-why-not" : undefined}
+          >
+            {e.may_erase
+              ? `Erase in DataVault (${assets(e.to_send)})`
+              : "Erase in DataVault"}
+          </Button>
+        )}
+        {e.may_check_status && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onStatus}
+            disabled={asking}
+            loading={asking}
+          >
+            Check status
+          </Button>
+        )}
+      </div>
+      {e.why_not && (
+        <p id="datavault-erase-why-not" className="text-xs text-text-muted">
+          {e.why_not}
+        </p>
+      )}
+      {e.left_out > 0 && (
+        <p className="text-xs text-text-muted">
+          {assets(e.left_out)} DataVault listed {e.left_out === 1 ? "is" : "are"} left out:
+          this request does not reach {e.left_out === 1 ? "it" : "them"}. A request reaches
+          only assets matched to this person&apos;s records in its own office - and, about
+          one consent, only that consent&apos;s - and DataVault must have given a consent
+          for each.
+        </p>
+      )}
+      {e.open > 0 && (
+        <p className="text-xs text-text-muted">
+          {assets(e.open)} {e.open === 1 ? "is" : "are"} still with DataVault. Nothing asks
+          by itself: press Check status to hear where {e.open === 1 ? "it" : "they"} stand.
+          The request can close meanwhile.
+        </p>
+      )}
+    </section>
   );
 }

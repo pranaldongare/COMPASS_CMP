@@ -1,12 +1,15 @@
 /**
  * The assets DataVault listed, as a table: the asset, the consent and the
  * project it named - ours where they matched, as sent where they did not -
- * its mid, and where it is kept.
+ * its mid, and where it is kept. On an erasure request (0071), where each
+ * stands in DataVault too: not sent, left out because the request does not
+ * reach it, or what DataVault last said of it.
  */
 import Link from "next/link";
 
-import { Mono, Table, Td, Th, Tr } from "@/components/ui/primitives";
+import { Badge, Mono, Table, Td, Th, Tr } from "@/components/ui/primitives";
 import type { DataVaultAsset } from "@/features/datavault/api";
+import { formatDateTime } from "@/lib/format";
 
 /** Ours by its number or name - a link where the reader may open it - else
  *  what DataVault sent, marked as not found here. */
@@ -39,12 +42,72 @@ function Named({
   );
 }
 
+/** Where one asset stands in DataVault on an erasure request. Colour never
+ *  carries it alone: the words are always there. */
+export function ErasureStatus({ asset: a }: { asset: DataVaultAsset }) {
+  if (!a.in_scope)
+    return (
+      <span className="text-xs text-text-subtle">
+        Left out: this request does not reach it
+      </span>
+    );
+  switch (a.erasure_status) {
+    case null:
+      return <span className="text-xs text-text-subtle">Not sent</span>;
+    case "unanswered":
+      return (
+        <Badge tone="warning" dot>
+          Sent, no answer yet
+        </Badge>
+      );
+    case "pending":
+      return (
+        <Badge tone="info" dot>
+          Pending
+        </Badge>
+      );
+    case "erased":
+      return (
+        <span>
+          <Badge tone="success" dot>
+            Erased
+          </Badge>
+          {a.erasure_completed_at && (
+            <span className="block text-xs text-text-muted">
+              {formatDateTime(a.erasure_completed_at)}
+            </span>
+          )}
+        </span>
+      );
+    case "failed":
+      return (
+        <span>
+          <Badge tone="danger" dot>
+            Not erased
+          </Badge>
+          {a.erasure_reason && (
+            <span className="block text-xs text-text-muted">{a.erasure_reason}</span>
+          )}
+        </span>
+      );
+    case "not_held":
+      return (
+        <Badge tone="neutral" dot>
+          Not held
+        </Badge>
+      );
+  }
+}
+
 export function AssetTable({
   assets,
   links = true,
+  erasure = false,
 }: {
   assets: DataVaultAsset[];
   links?: boolean;
+  /** An erasure request: show where each asset stands in DataVault. */
+  erasure?: boolean;
 }) {
   return (
     <div className="overflow-x-auto">
@@ -56,6 +119,7 @@ export function AssetTable({
             <Th>Project</Th>
             <Th>MID</Th>
             <Th>Data path</Th>
+            {erasure && <Th>Erasure</Th>}
           </Tr>
         </thead>
         <tbody>
@@ -89,6 +153,11 @@ export function AssetTable({
                   <span className="text-text-subtle">Not given</span>
                 )}
               </Td>
+              {erasure && (
+                <Td>
+                  <ErasureStatus asset={a} />
+                </Td>
+              )}
             </Tr>
           ))}
         </tbody>

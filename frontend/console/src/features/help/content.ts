@@ -497,6 +497,7 @@ export const SECTIONS: HelpSection[] = [
           "Holders and tickets: the holders found are already listed. For each holder [[Confirm who answers]], then [[Send tickets]]. Click a holder to open its ticket: what it was asked, its answer and its messages. The main action is the button on its row; the rest are under [[More]].",
           "The reading finds the processors that hold the person's data: an export, an asset, an activity's processors. Where a project or activity has none of those yet, it names who answers for it instead: a DCO Admin for a project, the HR PoC who runs an activity. They answer in the console. Where there is more than one DCO Admin, choose one under [[Which DCO Admin answers]] when you [[Confirm who answers]]. A consent with nobody to ask is listed under the holders: [[Add a holder]] for it. [[Find who holds the data]] reads the records again, for anything recorded since. A request with no account behind it has no records to read: [[Add a holder]] for whoever holds the data. If the records name nobody and there is nothing to ask anyone, move the request to collating from [[Overview]].",
           "[[DataVault]], under the holders, lists what DataVault holds of the person: each asset with its consent, project, MID and data path. Click [[Check in DataVault]] to ask now. Where a project's DCO Admin is among the holders the platform asks by itself as the holders are found, and that DCO Admin sees their project's assets on their ticket. A consent or project DataVault names that is not this person's is shown as sent, with [[Not found among this person's records]]. A check that is not answered says why and leaves an earlier answer in place. If the card says DataVault is not set up, an administrator sets it under [[DataVault connection]].",
+          "On an erasure request, once it is in progress, [[Erase in DataVault]] on the same card tells DataVault to erase what it listed. A pop-up asks first and says how many assets go; nothing is erased by itself. Only the assets matched to the person's records in the request's own office go - and, for a request about one consent, only that consent's; the others, and any DataVault gave no consent for, show [[Left out: this request does not reach it]]. Until it can be pressed the button stays greyed out with the reason beside it: the request not started yet, no check yet, or a legal hold on the person. The [[Erasure]] column shows what DataVault last said of each asset: [[Erased]], [[Pending]], [[Not erased]] with DataVault's reason, or [[Not held]]. Nothing asks again by itself: click [[Check status]]. While a legal hold stands it asks only about what DataVault has already answered. An asset that was not erased - or that DataVault refused to take - can be sent again with [[Erase in DataVault]]. The request can close with assets still pending - the [[Response]] tab says how many before you close - and [[Check status]] still works after it closes.",
           "Before sending, open a holder to read or change [[What their ticket will ask]] - the standard words for the request, which you can make that holder's own. For an erasure the ticket also lists each item that holder holds and what to do with it.",
           "How each holder answers is settled as the ticket goes: a colleague with a console login answers in their [[My tasks]]; one inside the organisation without a login is given a temporary login; anyone outside - a vendor, a processor - is emailed a link, opens it with a code sent to the same address, and answers on the portal. Their row says which.",
           "When an answer comes, the holder shows [[Answered - review]]. Open it, read it, then [[Accept the answer]] to count it, or [[Send back]] - the button beside it - with what is missing. Only an accepted answer counts toward closing the request.",
@@ -714,21 +715,24 @@ export const SECTIONS: HelpSection[] = [
     id: "datavault-connection",
     title: "DataVault connection",
     summary:
-      "Where the platform asks DataVault what it holds of a person, for a rights request.",
+      "Where the platform asks DataVault what it holds of a person, tells it to erase, and tells it of consent changes.",
     roles: ["admin"],
     blocks: [
       {
         kind: "list",
         items: [
           "[[DataVault address]] is where the platform reaches DataVault; it adds /lookup to it. The DataVault team gives the address.",
+          "[[Erasure address]] is where erasures and consent changes go; the platform adds /erasures and /consent-changes to it. It is a second address because DataVault answers those calls elsewhere; the key is the same. Left empty, nothing is erased in DataVault and nothing is told.",
           "[[API key]] is the key DataVault asks for. It is stored encrypted and never shown again: type a new one to replace it, or tick [[Remove the stored key]].",
           "[[Header the key is sent in]] stays X-API-Key unless the DataVault team named another.",
+          "[[How IDs are sent]] is one choice for every call: [[Numeric IDs]] - the Person ID, Consent ID and Project ID the console shows, and the request's reference - or [[UUIDs]]. Each asset goes back to DataVault with the consent DataVault itself gave for it, whichever is chosen.",
+          "Tick [[Tell DataVault of consent changes]] to have every withdrawal, in full or in part, every consent given again and every validity that runs out sent by itself, as a restriction on the assets - never a deletion. Nothing on record before it is first switched on is sent. The [[Consent changes]] card shows how many wait and when the last one was delivered; one that cannot be delivered is tried again by itself.",
           "Tick [[Switched on]] and click [[Save]]. Switched off, the platform calls nothing and a rights request says DataVault is not set up.",
         ],
       },
       {
         kind: "note",
-        text: "On a check the platform sends the request's reference and the person's Person ID, and nothing else. Every check, and every change made here, is on the audit trail; the address and the key never are.",
+        text: "On a check the platform sends the request and the person, named as [[How IDs are sent]] says, and nothing else. Every call, and every change made here, is on the audit trail; the addresses and the key never are. A consent change is on the trail of the consent, of the person and of the project.",
       },
     ],
   },

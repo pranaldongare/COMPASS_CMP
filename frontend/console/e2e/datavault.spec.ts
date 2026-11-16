@@ -1,6 +1,6 @@
 /**
- * DataVault (0070): the administrator's connection page, and the card on a
- * rights request.
+ * DataVault (0070, 0071): the administrator's connection page, and the card on
+ * a rights request.
  *
  * Nothing here calls DataVault or saves the connection: the page is read as
  * it stands. The card on a request is looked at only when `E2E_DV_REQUEST`
@@ -11,6 +11,10 @@
  * received and ready to start, for a person whose project a DCO Admin answers
  * for, with DataVault switched on: it moves that request, so it is never run
  * against a request somebody is working on.
+ *
+ * The erasure on the card is looked at only when `E2E_DV_ERASURE` names an
+ * erasure request DataVault has been told to erase for. Nothing is pressed:
+ * the card is read as it stands.
  */
 import { expect, test } from "@playwright/test";
 
@@ -30,7 +34,14 @@ test.describe("the administrator", () => {
     await expect(page.getByLabel("API key")).toHaveValue("");
     await expect(page.getByLabel("Header the key is sent in")).toHaveValue(/.+/);
     await expect(page.getByLabel("Switched on")).toBeVisible();
+    // Since 0071: where erasures and consent changes go, and how IDs are sent.
+    await expect(page.getByLabel("Erasure address")).toBeVisible();
+    await expect(page.getByRole("radio", { name: "Numeric IDs" })).toBeVisible();
+    await expect(page.getByRole("radio", { name: "UUIDs" })).toBeVisible();
+    await expect(page.getByLabel("Tell DataVault of consent changes")).toBeVisible();
     await expect(page.getByText("SE::")).toHaveCount(0);
+    if (process.env.E2E_DV_CONNECTION_SHOT)
+      await page.screenshot({ path: process.env.E2E_DV_CONNECTION_SHOT, fullPage: true });
   });
 });
 
@@ -96,6 +107,23 @@ test.describe("as a request starts", () => {
       timeout: 30_000,
     });
     await expect(page.getByText(/^DV-/).first()).toBeVisible();
+    await expect(page.getByText("SE::")).toHaveCount(0);
+    if (process.env.E2E_DV_SHOT)
+      await page.screenshot({ path: process.env.E2E_DV_SHOT, fullPage: true });
+  });
+});
+
+test.describe("an erasure request DataVault was told to erase for", () => {
+  test.use({ storageState: statePath(process.env.E2E_DV_ROLE ?? "dpo") });
+
+  test("shows where each asset stands, and the erasure's buttons", async ({ page }) => {
+    const uuid = process.env.E2E_DV_ERASURE;
+    test.skip(!uuid, "set E2E_DV_ERASURE to an erasure request's uuid");
+    await page.goto(`/requests/${uuid}#holders`);
+    const section = page.getByRole("region", { name: "Erasure in DataVault" });
+    await expect(section).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: "Erasure" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Erase in DataVault/ })).toBeVisible();
     await expect(page.getByText("SE::")).toHaveCount(0);
     if (process.env.E2E_DV_SHOT)
       await page.screenshot({ path: process.env.E2E_DV_SHOT, fullPage: true });

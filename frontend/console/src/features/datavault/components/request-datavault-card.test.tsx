@@ -1,7 +1,9 @@
 /**
  * Check in DataVault, on a rights request (0070): the card draws the server's
  * answer - whether DataVault can be asked, what it last listed, and whether a
- * later attempt failed - and the button makes the one call.
+ * later attempt failed - and the button makes the one call. On an erasure
+ * request (0071) it also tells DataVault to erase, asked first, and asks how
+ * far each asset has got.
  */
 import { HttpResponse, http } from "msw";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -9,9 +11,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
   DataVaultAsset,
   DataVaultCheck,
+  DataVaultErasure,
   RequestDataVault,
 } from "@/features/datavault/api";
-import { RequestDataVaultCard } from "@/features/datavault/components/request-datavault-card";
+import {
+  RequestDataVaultCard,
+  erasureSummary,
+} from "@/features/datavault/components/request-datavault-card";
 import { TicketDataVault } from "@/features/datavault/components/ticket-datavault";
 import { render, screen, within } from "@/test/render";
 import { API, server } from "@/test/server";
@@ -37,6 +43,11 @@ const asset = (over: Partial<DataVaultAsset> = {}): DataVaultAsset => ({
   project_name: "Voice Study",
   mid: "4909",
   datapath: "/vault/img/000101",
+  in_scope: true,
+  erasure_status: null,
+  erasure_status_at: null,
+  erasure_completed_at: null,
+  erasure_reason: null,
   ...over,
 });
 
@@ -59,6 +70,21 @@ const state = (over: Partial<RequestDataVault> = {}): RequestDataVault => ({
   answer: null,
   assets: [],
   last_failure: null,
+  erasure: null,
+  ...over,
+});
+
+const erasure = (over: Partial<DataVaultErasure> = {}): DataVaultErasure => ({
+  may_erase: true,
+  why_not: null,
+  to_send: 2,
+  left_out: 0,
+  open: 0,
+  may_check_status: false,
+  counts: { unanswered: 0, pending: 0, erased: 0, failed: 0, not_held: 0 },
+  last_asked_at: null,
+  last_failure: null,
+  last_failure_said: null,
   ...over,
 });
 
@@ -280,5 +306,228 @@ describe("DataVault on a DCO Admin's ticket", () => {
     const { container } = render(<TicketDataVault holderUuid={UUID} />);
     await vi.waitFor(() => expect(called).toHaveBeenCalled());
     expect(container).toBeEmptyDOMElement();
+  });
+});
+
+describe("Erase in DataVault, on an erasure request", () => {
+  function serveErasure(
+    found: RequestDataVault,
+    erased: RequestDataVault,
+    asked?: RequestDataVault,
+  ) {
+    const calls = { erase: vi.fn(), status: vi.fn() };
+    server.use(
+      http.get(`${API}/requests/${UUID}/datavault`, () => HttpResponse.json(found)),
+      http.post(`${API}/requests/${UUID}/datavault/erase`, () => {
+        calls.erase();
+        return HttpResponse.json(erased);
+      }),
+      http.post(`${API}/requests/${UUID}/datavault/erase/status`, () => {
+        calls.status();
+        return HttpResponse.json(asked ?? erased);
+      }),
+    );
+    return calls;
+  }
+
+  const listed = [
+    asset(),
+    asset({ asset_ref: "DV-VID-000102", consent_no: 813, consent_uuid: null }),
+  ];
+
+  it("asks first, with the count, and sends nothing on a no", async () => {
+    const calls = serveErasure(
+      state({ answer: check({ asset_count: 2 }), assets: listed, erasure: erasure() }),
+      state(),
+    );
+    const { user } = render(<RequestDataVaultCard requestUuid={UUID} />);
+    await user.click(
+      await screen.findByRole("button", { name: "Erase in DataVault (2 assets)" }),
+    );
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog).toHaveTextContent("Tell DataVault to erase 2 assets?");
+    expect(dialog).toHaveTextContent(/cannot be taken back/);
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    expect(calls.erase).not.toHaveBeenCalled();
+  });
+
+  it("sends on a yes and shows where each asset stands", async () => {
+    const after = state({
+      answer: check({ asset_count: 2 }),
+      assets: [
+        asset({ erasure_status: "erased", erasure_completed_at: "2026-11-13T09:30:00Z" }),
+        asset({ asset_ref: "DV-VID-000102", erasure_status: "pending" }),
+      ],
+      erasure: erasure({
+        may_erase: false,
+        why_not: "Everything this request reaches has been sent to DataVault.",
+        to_send: 0,
+        open: 1,
+        may_check_status: true,
+        counts: { unanswered: 0, pending: 1, erased: 1, failed: 0, not_held: 0 },
+        last_asked_at: "2026-11-13T09:30:00Z",
+      }),
+    });
+    const calls = serveErasure(
+      state({ answer: check({ asset_count: 2 }), assets: listed, erasure: erasure() }),
+      after,
+    );
+    const { user } = render(<RequestDataVaultCard requestUuid={UUID} />);
+    await user.click(
+      await screen.findByRole("button", { name: "Erase in DataVault (2 assets)" }),
+    );
+    await user.click(
+      within(await screen.findByRole("dialog")).getByRole("button", {
+        name: "Erase in DataVault",
+      }),
+    );
+    await vi.waitFor(() => expect(calls.erase).toHaveBeenCalledTimes(1));
+    const first = (await screen.findByText("Erased")).closest("tr")!;
+    expect(within(first).getByText("DV-IMG-000101")).toBeInTheDocument();
+    const second = screen.getByText("DV-VID-000102").closest("tr")!;
+    expect(within(second).getByText("Pending")).toBeInTheDocument();
+    expect(screen.getByText(/1 erased · 1 pending/)).toBeInTheDocument();
+    expect(toast.success).toHaveBeenCalledWith("Sent to DataVault", "1 erased · 1 pending");
+    // Sent: the button stays, greyed out, with the reason beside it.
+    expect(screen.getByRole("button", { name: "Erase in DataVault" })).toBeDisabled();
+    expect(
+      screen.getByText("Everything this request reaches has been sent to DataVault."),
+    ).toBeInTheDocument();
+    expect(screen.getByText(/1 asset is still with DataVault/)).toBeInTheDocument();
+  });
+
+  it("checks status, once, and says what came back", async () => {
+    const pendingNow = state({
+      answer: check(),
+      assets: [asset({ erasure_status: "pending" })],
+      erasure: erasure({
+        may_erase: false,
+        why_not: "Everything this request reaches has been sent to DataVault.",
+        to_send: 0,
+        open: 1,
+        may_check_status: true,
+        counts: { unanswered: 0, pending: 1, erased: 0, failed: 0, not_held: 0 },
+      }),
+    });
+    const done = state({
+      answer: check(),
+      assets: [asset({ erasure_status: "erased" })],
+      erasure: erasure({
+        may_erase: false,
+        why_not: "Everything this request reaches has been sent to DataVault.",
+        to_send: 0,
+        counts: { unanswered: 0, pending: 0, erased: 1, failed: 0, not_held: 0 },
+      }),
+    });
+    const calls = serveErasure(pendingNow, pendingNow, done);
+    const { user } = render(<RequestDataVaultCard requestUuid={UUID} />);
+    await user.click(await screen.findByRole("button", { name: "Check status" }));
+    await vi.waitFor(() => expect(calls.status).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText("Erased")).toBeInTheDocument();
+    expect(toast.success).toHaveBeenCalledWith("DataVault answered", "1 erased");
+    expect(screen.queryByRole("button", { name: "Check status" })).not.toBeInTheDocument();
+    expect(calls.erase).not.toHaveBeenCalled();
+  });
+
+  it("an ask that was not answered says so, and that Check status sends it again", async () => {
+    serveErasure(
+      state({
+        answer: check(),
+        assets: [asset({ erasure_status: "unanswered" })],
+        erasure: erasure({
+          may_erase: false,
+          why_not: "Everything this request reaches has been sent to DataVault.",
+          to_send: 0,
+          open: 1,
+          may_check_status: true,
+          counts: { unanswered: 1, pending: 0, erased: 0, failed: 0, not_held: 0 },
+          last_failure: "timeout",
+          last_failure_said: "DataVault did not answer in time.",
+        }),
+      }),
+      state(),
+    );
+    render(<RequestDataVaultCard requestUuid={UUID} />);
+    expect(await screen.findByText("Sent, no answer yet")).toBeInTheDocument();
+    expect(
+      screen.getByText(/DataVault did not answer in time\. The instruction is kept/),
+    ).toBeInTheDocument();
+  });
+
+  it("greys the button out with the server's reason while it may not be pressed", async () => {
+    serveErasure(
+      state({
+        answer: check(),
+        assets: [asset()],
+        erasure: erasure({
+          may_erase: false,
+          to_send: 1,
+          why_not:
+            "A legal hold stands on this person. Nothing is erased in DataVault until it is released.",
+        }),
+      }),
+      state(),
+    );
+    render(<RequestDataVaultCard requestUuid={UUID} />);
+    const button = await screen.findByRole("button", { name: "Erase in DataVault" });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAccessibleDescription(/A legal hold stands on this person/);
+  });
+
+  it("marks what a request about one consent leaves out, and does not send it", async () => {
+    serveErasure(
+      state({
+        answer: check({ asset_count: 2 }),
+        assets: [asset(), asset({ asset_ref: "DV-OTHER-1", in_scope: false })],
+        erasure: erasure({ to_send: 1, left_out: 1 }),
+      }),
+      state(),
+    );
+    render(<RequestDataVaultCard requestUuid={UUID} />);
+    const other = (await screen.findByText("DV-OTHER-1")).closest("tr")!;
+    expect(
+      within(other).getByText("Left out: this request does not reach it"),
+    ).toBeInTheDocument();
+    const mine = screen.getByText("DV-IMG-000101").closest("tr")!;
+    expect(within(mine).getByText("Not sent")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Erase in DataVault (1 asset)" }),
+    ).toBeEnabled();
+    expect(screen.getByText(/1 asset DataVault listed is left out/)).toBeInTheDocument();
+  });
+
+  it("offers nothing to a reader who may not act on the request", async () => {
+    serveErasure(
+      state({
+        may_check: false,
+        answer: check(),
+        assets: [asset()],
+        erasure: erasure({ may_erase: false, why_not: null }),
+      }),
+      state(),
+    );
+    render(<RequestDataVaultCard requestUuid={UUID} />);
+    expect(await screen.findByText("DV-IMG-000101")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /erase/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Check status" })).not.toBeInTheDocument();
+  });
+
+  it("shows no erasure on any other request", async () => {
+    serve(state({ answer: check(), assets: [asset()] }));
+    render(<RequestDataVaultCard requestUuid={UUID} />);
+    expect(await screen.findByText("DV-IMG-000101")).toBeInTheDocument();
+    expect(screen.queryByText("Erasure in DataVault")).not.toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Erasure" })).not.toBeInTheDocument();
+  });
+
+  it("says the statuses in order and leaves out those with none", () => {
+    expect(
+      erasureSummary(
+        erasure({
+          counts: { unanswered: 1, pending: 2, erased: 3, failed: 1, not_held: 0 },
+        }),
+      ),
+    ).toBe("3 erased · 2 pending · 1 not answered yet · 1 not erased");
+    expect(erasureSummary(erasure())).toBe("");
   });
 });

@@ -6622,6 +6622,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/requests/{request_uuid}/datavault/erase": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Erase in DataVault: tell it to erase the assets its last check listed
+         * @description On an erasure request that has been started, with a check on record and
+         *     no legal hold on the person. The instruction is saved before it is sent,
+         *     so one that is never answered can be asked about again. Nothing about
+         *     this runs by itself.
+         */
+        post: operations["erase_in_datavault_requests__request_uuid__datavault_erase_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/requests/{request_uuid}/datavault/erase/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check status: ask DataVault how far each asset it was told to erase has got
+         * @description Repeats every instruction with an asset still pending or unanswered:
+         *     the same `erasure_id` and the same assets, which starts nothing new.
+         */
+        post: operations["erasure_status_requests__request_uuid__datavault_erase_status_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/tickets/{holder_uuid}/datavault": {
         parameters: {
             query?: never;
@@ -9795,6 +9839,8 @@ export interface components {
         ConnectionIn: {
             /** Base Url */
             base_url?: string | null;
+            /** Erasure Url */
+            erasure_url?: string | null;
             /** Api Key */
             api_key?: string | null;
             /**
@@ -9809,17 +9855,45 @@ export interface components {
              * @default false
              */
             enabled: boolean;
+            /** Id Format */
+            id_format?: string | null;
+            /**
+             * Consent Changes
+             * @default false
+             */
+            consent_changes: boolean;
         };
         /** ConnectionOut */
         ConnectionOut: {
             /** Base Url */
             base_url: string | null;
+            /** Erasure Url */
+            erasure_url?: string | null;
             /** Api Key Set */
             api_key_set: boolean;
             /** Api Key Header */
             api_key_header: string;
             /** Enabled */
             enabled: boolean;
+            /**
+             * Id Format
+             * @default numeric
+             */
+            id_format: string;
+            /**
+             * Consent Changes
+             * @default false
+             */
+            consent_changes: boolean;
+            /**
+             * Consent Changes Waiting
+             * @default 0
+             */
+            consent_changes_waiting: number;
+            /** Consent Changes Last Delivered At */
+            consent_changes_last_delivered_at?: string | null;
+            /** Consent Changes Last Failure */
+            consent_changes_last_failure?: string | null;
             /** Updated At */
             updated_at: string | null;
             /** Updated By Name */
@@ -10439,6 +10513,34 @@ export interface components {
              */
             about_dpo: boolean;
         };
+        /**
+         * ErasureOut
+         * @description What may be done about erasing in DataVault now, on an erasure request.
+         */
+        ErasureOut: {
+            /** May Erase */
+            may_erase: boolean;
+            /** Why Not */
+            why_not: string | null;
+            /** To Send */
+            to_send: number;
+            /** Left Out */
+            left_out: number;
+            /** Open */
+            open: number;
+            /** May Check Status */
+            may_check_status: boolean;
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Last Asked At */
+            last_asked_at: string | null;
+            /** Last Failure */
+            last_failure: string | null;
+            /** Last Failure Said */
+            last_failure_said: string | null;
+        };
         /** EvidenceIn */
         EvidenceIn: {
             /** Evidenced */
@@ -10616,6 +10718,19 @@ export interface components {
             mid: string | null;
             /** Datapath */
             datapath: string | null;
+            /**
+             * In Scope
+             * @default true
+             */
+            in_scope: boolean;
+            /** Erasure Status */
+            erasure_status?: string | null;
+            /** Erasure Status At */
+            erasure_status_at?: string | null;
+            /** Erasure Completed At */
+            erasure_completed_at?: string | null;
+            /** Erasure Reason */
+            erasure_reason?: string | null;
         };
         /** HolderIn */
         HolderIn: {
@@ -12857,6 +12972,7 @@ export interface components {
             /** Assets */
             assets: components["schemas"]["HeldAssetOut"][];
             last_failure: components["schemas"]["CheckOut"] | null;
+            erasure?: components["schemas"]["ErasureOut"] | null;
         };
         /** RequestDetail */
         RequestDetail: {
@@ -27255,6 +27371,68 @@ export interface operations {
         };
     };
     check_in_datavault_requests__request_uuid__datavault_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestDataVaultOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    erase_in_datavault_requests__request_uuid__datavault_erase_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RequestDataVaultOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    erasure_status_requests__request_uuid__datavault_erase_status_post: {
         parameters: {
             query?: never;
             header?: never;
