@@ -303,6 +303,37 @@ Where DataVault is reached is the administrator's to set, under **DataVault
 connection**; until it is set and switched on, the card says so and offers no
 button.
 
+**Erasing in DataVault** (2026-11-13,
+[ADR 0039](../decisions/0039-datavault-is-told-to-erase-by-the-office-and-of-consent-changes-by-the-worker.md)).
+On an erasure request the same card offers **Erase in DataVault**. It may be
+pressed once the request is in progress - identity verified, classified as
+erasure, *They mean erasure* confirmed, and still open - with a check
+DataVault answered, and while no legal hold stands on the person; until then
+it is greyed out, with the reason beside it. A pop-up asks first and says how
+many assets go. They go to `POST {erasure address}/erasures` under one
+`erasure_id` (at most a thousand to an instruction), each with the consent
+DataVault gave for it at the check; the person and the request are named as
+the administrator's switch says - numbers to start, the request by its
+reference. A request is one office's, and so is what it erases: it reaches
+the assets matched to her records in its own office - DataVault's consent one
+of hers there, or its project one she gave a consent on there - and, if it is
+confined to one consent, only the assets tagged with that consent or another
+of its chain. An asset DataVault gave no consent for is not sent (the contract
+sends each back with its consent). The rest are left out and shown so.
+
+DataVault answers each asset `erased`, `pending`, `failed` (with its reason)
+or `not_held`, and the table shows it. Nothing asks again by itself: **Check
+status** repeats the instruction - the same `erasure_id` and the same assets -
+which starts nothing new; under a legal hold it sends no instruction DataVault
+has never answered. One DataVault refused outright it never took: its assets
+show as not erased, with why, and a press of Erase sends them again. A press
+of Erase sends only what has not been sent and what DataVault did not erase,
+each once; two presses at once send once. None of it decides the request's items or
+holds back the close: the Response tab says, before it closes, how many assets
+are still pending, and Check status still works after the request has closed.
+The trail records that an instruction went (`datavault.erasure_sent`) and what
+came back (`datavault.erasure_checked`), as counts and a failure code.
+
 ### How a holder is reached
 
 Decided with the product owner on 2026-10-08 and settled as the ticket is

@@ -34,7 +34,8 @@ in the code or its configuration files.
    key is encrypted with the application key and never served again. Switched
    off, nothing is called.
 3. **What is sent** is the request's reference and the person's numeric
-   Person ID (the product owner's choice), and nothing else.
+   Person ID (the product owner's choice), and nothing else. Since 0071 the
+   administrator may switch every call to uuids (ADR 0039).
 4. **What comes back is kept as sent** and matched to ours only among this
    person's own consents in the request's office, by uuid or by number. An
    identifier that is somebody else's, or her own consent in the other
@@ -79,7 +80,8 @@ in the code or its configuration files.
 ## Not decided here
 
 - Erasure in DataVault and telling it of consent changes (the earlier
-  branch's calls 2 and 3).
+  branch's calls 2 and 3): decided since, in
+  [0039](0039-datavault-is-told-to-erase-by-the-office-and-of-consent-changes-by-the-worker.md).
 - Showing any of this to the data principal.
 - Finding holders any earlier than the start. On arrival a request may be
   nobody's office's, unverified, or not a rights request at all; nothing is

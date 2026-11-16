@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 406,
-  "registered_business_and_system_operations": 409,
+  "documented_operations": 408,
+  "registered_business_and_system_operations": 411,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -16790,7 +16790,7 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "Resource `datavault_connection`, the administrator's alone (0070): every other role is answered 403. Where DataVault is reached, the header its key is sent in, whether a key is stored and whether the platform may call it. The key is encrypted with the application key and never served; the trail records that the address or key changed, never either."
+        "Resource `datavault_connection`, the administrator's alone (0070): every other role is answered 403. Where DataVault is reached, the header its key is sent in, whether a key is stored and whether the platform may call it. The key is encrypted with the application key and never served; the trail records that the address or key changed, never either. Since 0071 also the erasure address, how IDs are named, whether consent changes are sent, and how their queue stands as counts and times (waiting, last delivered, why the last try failed in words) - nothing of any consent."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/datavault.py",
@@ -16830,7 +16830,7 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "Resource `datavault_connection`, the administrator's alone (0070): every other role is answered 403. Where DataVault is reached, the header its key is sent in, whether a key is stored and whether the platform may call it. The key is encrypted with the application key and never served; the trail records that the address or key changed, never either. The address must be http or https with a host and no user, query or fragment (422); it cannot be switched on without one. `api_key` left out keeps the stored key; `clear_api_key` removes it."
+        "Resource `datavault_connection`, the administrator's alone (0070): every other role is answered 403. Where DataVault is reached, the header its key is sent in, whether a key is stored and whether the platform may call it. The key is encrypted with the application key and never served; the trail records that the address or key changed, never either. The address must be http or https with a host and no user, query or fragment (422); it cannot be switched on without one. `api_key` left out keeps the stored key; `clear_api_key` removes it. Since 0071 also the erasure address erasures and consent changes go to (`erasure_url`, the same rules), how IDs are named in every call (`id_format`, `numeric` or `uuid`; 422 otherwise) and whether consent changes go out by themselves (`consent_changes`, refused without the erasure address; the first time it is switched on fixes where they start, so nothing on record before is sent). The trail says which of these changed, never an address."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/datavault.py",
@@ -16872,7 +16872,7 @@
         "hr_user": "NO"
       },
       "conditions": [
-        "As every read of a request: the scoped lookup, so a request outside the caller's office is 404. Whether DataVault is set up, whether this caller may ask now, the last answered check with its assets (DataVault's asset identifier, the consent and project as it named them and ours where they are this person's own in the request's office, mid, datapath) and the last attempt if it failed. The name of who asked is sealed."
+        "As every read of a request: the scoped lookup, so a request outside the caller's office is 404. Whether DataVault is set up, whether this caller may ask now, the last answered check with its assets (DataVault's asset identifier, the consent and project as it named them and ours where they are this person's own in the request's office, mid, datapath) and the last attempt if it failed. The name of who asked is sealed. On an erasure request (0071), also where each asset stands in DataVault (whether the request reaches it, its status, when, and DataVault's reason for one it did not erase) and what may be done now (`erasure`: may erase and why not, how many would go and how many are left out, how many are open, the counts, the last ask and its failure); null on any other request."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/datavault.py",
@@ -16918,6 +16918,92 @@
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/datavault.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/datavault/checks.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/datavault/connection.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
+    },
+    {
+      "module": "datavault",
+      "method": "POST",
+      "path": "/requests/{request_uuid}/datavault/erase",
+      "summary": "Erase in DataVault: tell it to erase the assets its last check listed",
+      "function": "erase_in_datavault",
+      "operation_id": "erase_in_datavault_requests__request_uuid__datavault_erase_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RightsWriter",
+      "resolved_gate": "RequireResource(rights_request, write=True)",
+      "route_roles": [
+        "admin",
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "rights_request",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "SCOPED",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "The scoped lookup, then the state machine's `may_act` (403 for a request that is not the caller's to act on). Only an erasure request (409 `datavault_not_an_erasure`). 409 `datavault_erasure_not_now` until it may be sent: a person behind the request, not closed, started and still open (in progress, awaiting holders or collating - identity verified, classified, erasure confirmed), the erasure address set, no legal hold on the person (a hold on the person, whichever office placed it), and a check DataVault answered. 409 `datavault_nothing_to_erase` when every asset the request reaches has been sent and is not failed. Sends the assets the last answered check listed that the request reaches - those matched to the person's records in the request's own office, and of a request confined to one consent that consent's chain only; the rest, and any DataVault gave no consent for, are left out - and that have not been sent or were not erased, each once and with the consent as DataVault gave it, presses on one request taken one at a time, as `POST {erasure address}/erasures` under a new `erasure_id`, at most 1000 assets to an instruction. The instruction is written and committed before the call, which is made with no transaction open; each asset's answer is kept (`erased`, `pending`, `failed` with DataVault's reason, `not_held`). The trail records counts and a failure code (`datavault.erasure_sent`, `datavault.erasure_checked`), never an asset or a reason. Nothing else about the request changes; nothing about it runs by itself."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/datavault.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/datavault/erasures.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/datavault/checks.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/datavault/connection.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
+    },
+    {
+      "module": "datavault",
+      "method": "POST",
+      "path": "/requests/{request_uuid}/datavault/erase/status",
+      "summary": "Check status: ask DataVault how far each asset it was told to erase has got",
+      "function": "erasure_status",
+      "operation_id": "erasure_status_requests__request_uuid__datavault_erase_status_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RightsWriter",
+      "resolved_gate": "RequireResource(rights_request, write=True)",
+      "route_roles": [
+        "admin",
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "rights_request",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "SCOPED",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "The scoped lookup, then `may_act`. Only an erasure request (409 `datavault_not_an_erasure`); 409 `datavault_not_configured` without the erasure address; 409 `datavault_nothing_pending` when no asset is unanswered or pending. Repeats every instruction with such an asset - the same `erasure_id` and the same assets, named as DataVault first took it - which starts nothing new, and keeps each answer; under a legal hold on the person it sends no instruction DataVault has never answered (409 `datavault_erasure_not_now`); an instruction DataVault refused outright and never answered has its assets marked not erased, to be sent again by a press; a final word already kept stands. Allowed on a closed request too: closing does not wait for DataVault. Recorded as `datavault.erasure_checked` with counts or a failure code."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/datavault.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/datavault/erasures.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/datavault/checks.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/datavault/connection.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
@@ -17175,6 +17261,11 @@
       "on": "2026-11-13",
       "commit": "Holders found as a request starts, uncommitted",
       "note": "No operation added or removed, and no guard changed. POST /requests/{request_uuid}/transition: the move from received to in progress also reads the records for who holds the person's data, as POST /requests/{request_uuid}/holders/derive does (access and erasure requests with a person behind them; not a grievance), after the move has been saved; the trail marks it (rights.holders_derived with automatic). The platform's DataVault check follows either reading."
+    },
+    {
+      "on": "2026-11-13",
+      "commit": "Erasure in DataVault and consent changes (0071), uncommitted",
+      "note": "Two operations added, module datavault: POST /requests/{request_uuid}/datavault/erase and POST /requests/{request_uuid}/datavault/erase/status (as the rights routes: RightsWriter; dpo, legal, admin scoped), on an erasure request only. GET/PUT /datavault-connection gain the erasure address, the ID naming and the consent-changes switch; GET /requests/{request_uuid}/datavault gains each asset's place in the erasure. Consent changes have no route: the worker sends them. No existing guard changed. Evidence links point at HEAD."
     }
   ]
 }

@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict naDbUe2VGOds25TK9tQzFiNlHOqiqSr2SeZQYIjiU5OsVN7kquCp3Abk72vUw5c
+\restrict 8Wzx0NueoHmVkjv8NKwgbBpNj1usa83X4K92DwfIkPxbacaz2JxNcHlZ0sHFKas
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -3902,7 +3902,8 @@ CREATE TABLE public.datavault_check_asset (
     consent_id integer,
     project_id integer,
     mid text,
-    datapath text
+    datapath text,
+    consent_ref_is_number boolean
 );
 
 ALTER TABLE ONLY public.datavault_check_asset FORCE ROW LEVEL SECURITY;
@@ -3965,6 +3966,13 @@ COMMENT ON COLUMN public.datavault_check_asset.datapath IS 'Where DataVault keep
 
 
 --
+-- Name: COLUMN datavault_check_asset.consent_ref_is_number; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_check_asset.consent_ref_is_number IS 'Whether DataVault gave consent_ref as a JSON number; NULL: checked before this was kept';
+
+
+--
 -- Name: datavault_check_asset_row_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -4016,7 +4024,14 @@ CREATE TABLE public.datavault_connection (
     enabled boolean DEFAULT false NOT NULL,
     updated_by integer,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    erasure_url text,
+    id_format text DEFAULT 'numeric'::text NOT NULL,
+    consent_changes boolean DEFAULT false NOT NULL,
+    consent_changes_after integer,
+    consent_changes_since timestamp with time zone,
+    CONSTRAINT datavault_connection_changes_have_url CHECK (((NOT consent_changes) OR (erasure_url IS NOT NULL))),
     CONSTRAINT datavault_connection_enabled_has_url CHECK (((NOT enabled) OR (base_url IS NOT NULL))),
+    CONSTRAINT datavault_connection_id_format CHECK ((id_format = ANY (ARRAY['numeric'::text, 'uuid'::text]))),
     CONSTRAINT datavault_connection_one_row CHECK ((connection_id = 1))
 );
 
@@ -4054,6 +4069,349 @@ COMMENT ON COLUMN public.datavault_connection.api_key_header IS 'The header the 
 --
 
 COMMENT ON COLUMN public.datavault_connection.enabled IS 'Whether the platform may call DataVault at all';
+
+
+--
+-- Name: COLUMN datavault_connection.erasure_url; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_connection.erasure_url IS 'The address /erasures and /consent-changes are appended to; NULL: neither call is made';
+
+
+--
+-- Name: COLUMN datavault_connection.id_format; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_connection.id_format IS 'How a person, a consent and a project are named in every call: numeric (the IDs the console shows) or uuid';
+
+
+--
+-- Name: COLUMN datavault_connection.consent_changes; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_connection.consent_changes IS 'Whether DataVault is told of consent changes by itself';
+
+
+--
+-- Name: COLUMN datavault_connection.consent_changes_after; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_connection.consent_changes_after IS 'The highest consent on record when consent changes were first switched on: none up to it is ever read';
+
+
+--
+-- Name: COLUMN datavault_connection.consent_changes_since; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_connection.consent_changes_since IS 'When consent changes were first switched on: a validity that ran out before it is never reported';
+
+
+--
+-- Name: datavault_consent_change; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.datavault_consent_change (
+    change_id integer NOT NULL,
+    message_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    consent_id integer NOT NULL,
+    chain_root_id integer NOT NULL,
+    change text NOT NULL,
+    action text NOT NULL,
+    purposes_granted text[] DEFAULT '{}'::text[] NOT NULL,
+    purposes_removed text[] DEFAULT '{}'::text[] NOT NULL,
+    effective_at timestamp with time zone NOT NULL,
+    queued_at timestamp with time zone DEFAULT now() NOT NULL,
+    attempts integer DEFAULT 0 NOT NULL,
+    last_attempt_at timestamp with time zone,
+    next_attempt_at timestamp with time zone DEFAULT now() NOT NULL,
+    failure text,
+    delivered_at timestamp with time zone,
+    result text,
+    assets_affected integer,
+    superseded_at timestamp with time zone,
+    CONSTRAINT datavault_consent_change_action CHECK ((action = ANY (ARRAY['restrict'::text, 'lift_restriction'::text]))),
+    CONSTRAINT datavault_consent_change_delivery_whole CHECK (((delivered_at IS NULL) = (result IS NULL))),
+    CONSTRAINT datavault_consent_change_kind CHECK ((change = ANY (ARRAY['withdrawn'::text, 'partly_withdrawn'::text, 'expired'::text, 'granted_again'::text]))),
+    CONSTRAINT datavault_consent_change_result CHECK (((result IS NULL) OR (result = ANY (ARRAY['applied'::text, 'duplicate'::text, 'stale'::text]))))
+);
+
+ALTER TABLE ONLY public.datavault_consent_change FORCE ROW LEVEL SECURITY;
+
+
+--
+-- Name: TABLE datavault_consent_change; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.datavault_consent_change IS 'A consent change DataVault is told of: queued first, sent after, retried until it answers';
+
+
+--
+-- Name: COLUMN datavault_consent_change.change_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_consent_change.change_id IS 'Also the message''s sequence: it grows with every message';
+
+
+--
+-- Name: COLUMN datavault_consent_change.consent_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_consent_change.consent_id IS 'The consent in force when it was queued';
+
+
+--
+-- Name: COLUMN datavault_consent_change.chain_root_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_consent_change.chain_root_id IS 'The first consent of the chain - the same person and notice - which names the chain';
+
+
+--
+-- Name: COLUMN datavault_consent_change.purposes_granted; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_consent_change.purposes_granted IS 'Every purpose the assets may be used for after it, by code: the whole state, not a difference';
+
+
+--
+-- Name: COLUMN datavault_consent_change.purposes_removed; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_consent_change.purposes_removed IS 'The purposes it took away, by code';
+
+
+--
+-- Name: COLUMN datavault_consent_change.failure; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_consent_change.failure IS 'Why the last try was not answered, as a short code; NULL once delivered';
+
+
+--
+-- Name: COLUMN datavault_consent_change.result; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_consent_change.result IS 'DataVault''s answer: applied, duplicate or stale - each counts as delivered';
+
+
+--
+-- Name: COLUMN datavault_consent_change.superseded_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_consent_change.superseded_at IS 'Set aside unsent: a later message for the same chain carries the whole state';
+
+
+--
+-- Name: datavault_consent_change_change_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.datavault_consent_change_change_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: datavault_consent_change_change_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.datavault_consent_change_change_id_seq OWNED BY public.datavault_consent_change.change_id;
+
+
+--
+-- Name: datavault_consent_noted; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.datavault_consent_noted (
+    consent_id integer NOT NULL,
+    noted_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+ALTER TABLE ONLY public.datavault_consent_noted FORCE ROW LEVEL SECURITY;
+
+
+--
+-- Name: TABLE datavault_consent_noted; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.datavault_consent_noted IS 'The consents already read for what DataVault must be told: each is read once';
+
+
+--
+-- Name: datavault_erasure; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.datavault_erasure (
+    erasure_id integer NOT NULL,
+    erasure_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    request_id integer NOT NULL,
+    check_id integer NOT NULL,
+    id_format text NOT NULL,
+    sent_by integer NOT NULL,
+    sent_at timestamp with time zone DEFAULT now() NOT NULL,
+    asks integer DEFAULT 0 NOT NULL,
+    last_asked_at timestamp with time zone,
+    last_asked_by integer,
+    answered_at timestamp with time zone,
+    failure text,
+    CONSTRAINT datavault_erasure_id_format CHECK ((id_format = ANY (ARRAY['numeric'::text, 'uuid'::text])))
+);
+
+ALTER TABLE ONLY public.datavault_erasure FORCE ROW LEVEL SECURITY;
+
+
+--
+-- Name: TABLE datavault_erasure; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.datavault_erasure IS 'One instruction to DataVault to erase assets, on an erasure request';
+
+
+--
+-- Name: COLUMN datavault_erasure.erasure_uuid; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_erasure.erasure_uuid IS 'The erasure_id DataVault is given; repeating it asks for the state and starts nothing new';
+
+
+--
+-- Name: COLUMN datavault_erasure.check_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_erasure.check_id IS 'The check whose list of assets it was drawn from';
+
+
+--
+-- Name: COLUMN datavault_erasure.id_format; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_erasure.id_format IS 'How the person and the request were named in it. Fixed once DataVault has answered it, so a repeat says the same';
+
+
+--
+-- Name: COLUMN datavault_erasure.asks; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_erasure.asks IS 'How many times it has been sent, the first included';
+
+
+--
+-- Name: COLUMN datavault_erasure.answered_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_erasure.answered_at IS 'When DataVault last answered it; NULL: not yet';
+
+
+--
+-- Name: COLUMN datavault_erasure.failure; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_erasure.failure IS 'Why the last ask was not answered, as a short code; NULL when it was';
+
+
+--
+-- Name: datavault_erasure_asset; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.datavault_erasure_asset (
+    row_id integer NOT NULL,
+    erasure_id integer NOT NULL,
+    "position" integer NOT NULL,
+    asset_ref text NOT NULL,
+    consent_sent jsonb,
+    status text DEFAULT 'unanswered'::text NOT NULL,
+    status_at timestamp with time zone,
+    completed_at timestamp with time zone,
+    reason text,
+    CONSTRAINT datavault_erasure_asset_status CHECK ((status = ANY (ARRAY['unanswered'::text, 'pending'::text, 'erased'::text, 'failed'::text, 'not_held'::text])))
+);
+
+ALTER TABLE ONLY public.datavault_erasure_asset FORCE ROW LEVEL SECURITY;
+
+
+--
+-- Name: TABLE datavault_erasure_asset; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.datavault_erasure_asset IS 'An asset named in an erasure instruction, and what DataVault last said of it';
+
+
+--
+-- Name: COLUMN datavault_erasure_asset.asset_ref; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_erasure_asset.asset_ref IS 'DataVault''s own identifier for the asset';
+
+
+--
+-- Name: COLUMN datavault_erasure_asset.consent_sent; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_erasure_asset.consent_sent IS 'The consent it was sent with, as DataVault gave it at the check: a JSON number or a JSON text';
+
+
+--
+-- Name: COLUMN datavault_erasure_asset.status; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_erasure_asset.status IS 'unanswered until DataVault says: pending, or one of the final erased, failed, not_held';
+
+
+--
+-- Name: COLUMN datavault_erasure_asset.completed_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_erasure_asset.completed_at IS 'When DataVault says it was erased';
+
+
+--
+-- Name: COLUMN datavault_erasure_asset.reason; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.datavault_erasure_asset.reason IS 'Why DataVault did not erase it, in its words; the contract asks for no personal data in it';
+
+
+--
+-- Name: datavault_erasure_asset_row_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.datavault_erasure_asset_row_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: datavault_erasure_asset_row_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.datavault_erasure_asset_row_id_seq OWNED BY public.datavault_erasure_asset.row_id;
+
+
+--
+-- Name: datavault_erasure_erasure_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.datavault_erasure_erasure_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: datavault_erasure_erasure_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.datavault_erasure_erasure_id_seq OWNED BY public.datavault_erasure.erasure_id;
 
 
 --
@@ -6524,6 +6882,27 @@ ALTER TABLE ONLY public.datavault_check_asset ALTER COLUMN row_id SET DEFAULT ne
 
 
 --
+-- Name: datavault_consent_change change_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_consent_change ALTER COLUMN change_id SET DEFAULT nextval('public.datavault_consent_change_change_id_seq'::regclass);
+
+
+--
+-- Name: datavault_erasure erasure_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_erasure ALTER COLUMN erasure_id SET DEFAULT nextval('public.datavault_erasure_erasure_id_seq'::regclass);
+
+
+--
+-- Name: datavault_erasure_asset row_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_erasure_asset ALTER COLUMN row_id SET DEFAULT nextval('public.datavault_erasure_asset_row_id_seq'::regclass);
+
+
+--
 -- Name: delegation delegation_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7521,6 +7900,62 @@ ALTER TABLE ONLY public.datavault_check
 
 ALTER TABLE ONLY public.datavault_connection
     ADD CONSTRAINT datavault_connection_pkey PRIMARY KEY (connection_id);
+
+
+--
+-- Name: datavault_consent_change datavault_consent_change_message_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_consent_change
+    ADD CONSTRAINT datavault_consent_change_message_uuid_key UNIQUE (message_uuid);
+
+
+--
+-- Name: datavault_consent_change datavault_consent_change_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_consent_change
+    ADD CONSTRAINT datavault_consent_change_pkey PRIMARY KEY (change_id);
+
+
+--
+-- Name: datavault_consent_noted datavault_consent_noted_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_consent_noted
+    ADD CONSTRAINT datavault_consent_noted_pkey PRIMARY KEY (consent_id);
+
+
+--
+-- Name: datavault_erasure_asset datavault_erasure_asset_once; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_erasure_asset
+    ADD CONSTRAINT datavault_erasure_asset_once UNIQUE (erasure_id, asset_ref);
+
+
+--
+-- Name: datavault_erasure_asset datavault_erasure_asset_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_erasure_asset
+    ADD CONSTRAINT datavault_erasure_asset_pkey PRIMARY KEY (row_id);
+
+
+--
+-- Name: datavault_erasure datavault_erasure_erasure_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_erasure
+    ADD CONSTRAINT datavault_erasure_erasure_uuid_key UNIQUE (erasure_uuid);
+
+
+--
+-- Name: datavault_erasure datavault_erasure_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_erasure
+    ADD CONSTRAINT datavault_erasure_pkey PRIMARY KEY (erasure_id);
 
 
 --
@@ -8546,6 +8981,34 @@ CREATE INDEX idx_datavault_check_asset_check ON public.datavault_check_asset USI
 --
 
 CREATE INDEX idx_datavault_check_request ON public.datavault_check USING btree (request_id, check_id DESC);
+
+
+--
+-- Name: idx_datavault_consent_change_chain; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_datavault_consent_change_chain ON public.datavault_consent_change USING btree (chain_root_id, change_id DESC);
+
+
+--
+-- Name: idx_datavault_consent_change_due; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_datavault_consent_change_due ON public.datavault_consent_change USING btree (next_attempt_at) WHERE ((delivered_at IS NULL) AND (superseded_at IS NULL));
+
+
+--
+-- Name: idx_datavault_erasure_asset; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_datavault_erasure_asset ON public.datavault_erasure_asset USING btree (erasure_id, "position");
+
+
+--
+-- Name: idx_datavault_erasure_request; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_datavault_erasure_request ON public.datavault_erasure USING btree (request_id, erasure_id DESC);
 
 
 --
@@ -10530,6 +10993,70 @@ ALTER TABLE ONLY public.datavault_connection
 
 
 --
+-- Name: datavault_consent_change datavault_consent_change_chain_root_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_consent_change
+    ADD CONSTRAINT datavault_consent_change_chain_root_id_fkey FOREIGN KEY (chain_root_id) REFERENCES public.consent_artefact(consent_id);
+
+
+--
+-- Name: datavault_consent_change datavault_consent_change_consent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_consent_change
+    ADD CONSTRAINT datavault_consent_change_consent_id_fkey FOREIGN KEY (consent_id) REFERENCES public.consent_artefact(consent_id);
+
+
+--
+-- Name: datavault_consent_noted datavault_consent_noted_consent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_consent_noted
+    ADD CONSTRAINT datavault_consent_noted_consent_id_fkey FOREIGN KEY (consent_id) REFERENCES public.consent_artefact(consent_id);
+
+
+--
+-- Name: datavault_erasure_asset datavault_erasure_asset_erasure_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_erasure_asset
+    ADD CONSTRAINT datavault_erasure_asset_erasure_id_fkey FOREIGN KEY (erasure_id) REFERENCES public.datavault_erasure(erasure_id) ON DELETE CASCADE;
+
+
+--
+-- Name: datavault_erasure datavault_erasure_check_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_erasure
+    ADD CONSTRAINT datavault_erasure_check_id_fkey FOREIGN KEY (check_id) REFERENCES public.datavault_check(check_id) ON DELETE CASCADE;
+
+
+--
+-- Name: datavault_erasure datavault_erasure_last_asked_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_erasure
+    ADD CONSTRAINT datavault_erasure_last_asked_by_fkey FOREIGN KEY (last_asked_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: datavault_erasure datavault_erasure_request_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_erasure
+    ADD CONSTRAINT datavault_erasure_request_id_fkey FOREIGN KEY (request_id) REFERENCES public.rights_request(request_id) ON DELETE CASCADE;
+
+
+--
+-- Name: datavault_erasure datavault_erasure_sent_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.datavault_erasure
+    ADD CONSTRAINT datavault_erasure_sent_by_fkey FOREIGN KEY (sent_by) REFERENCES public.auth_user(id);
+
+
+--
 -- Name: delegation delegation_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11686,6 +12213,30 @@ ALTER TABLE public.datavault_check ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.datavault_check_asset ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: datavault_consent_change; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.datavault_consent_change ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: datavault_consent_noted; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.datavault_consent_noted ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: datavault_erasure; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.datavault_erasure ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: datavault_erasure_asset; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.datavault_erasure_asset ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: export_line; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -12085,6 +12636,50 @@ CREATE POLICY office_isolation ON public.datavault_check_asset USING (((current_
   WHERE (p.check_id = datavault_check_asset.check_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
    FROM public.datavault_check p
   WHERE (p.check_id = datavault_check_asset.check_id)))));
+
+
+--
+-- Name: datavault_consent_change office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.datavault_consent_change USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.consent_artefact p
+  WHERE (p.consent_id = datavault_consent_change.consent_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.consent_artefact p
+  WHERE (p.consent_id = datavault_consent_change.consent_id)))));
+
+
+--
+-- Name: datavault_consent_noted office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.datavault_consent_noted USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.consent_artefact p
+  WHERE (p.consent_id = datavault_consent_noted.consent_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.consent_artefact p
+  WHERE (p.consent_id = datavault_consent_noted.consent_id)))));
+
+
+--
+-- Name: datavault_erasure office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.datavault_erasure USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.rights_request p
+  WHERE (p.request_id = datavault_erasure.request_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.rights_request p
+  WHERE (p.request_id = datavault_erasure.request_id)))));
+
+
+--
+-- Name: datavault_erasure_asset office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.datavault_erasure_asset USING (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.datavault_erasure p
+  WHERE (p.erasure_id = datavault_erasure_asset.erasure_id))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (EXISTS ( SELECT 1
+   FROM public.datavault_erasure p
+  WHERE (p.erasure_id = datavault_erasure_asset.erasure_id)))));
 
 
 --
@@ -12499,5 +13094,5 @@ ALTER TABLE public.template_version_purpose ENABLE ROW LEVEL SECURITY;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict naDbUe2VGOds25TK9tQzFiNlHOqiqSr2SeZQYIjiU5OsVN7kquCp3Abk72vUw5c
+\unrestrict 8Wzx0NueoHmVkjv8NKwgbBpNj1usa83X4K92DwfIkPxbacaz2JxNcHlZ0sHFKas
 

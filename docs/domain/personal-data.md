@@ -181,7 +181,20 @@ row.
 hold no name or contact, but each row belongs to a rights request and so to a
 person: DataVault's asset identifier, the consent and project it named, its
 `mid` and its `datapath`. They go when the request does. `datavault_connection`
-holds the address and the encrypted key, and nothing about anybody.
+holds the addresses and the encrypted key, and nothing about anybody.
+
+**DataVault erasures and consent changes (0071).** `datavault_erasure` and
+`datavault_erasure_asset` hold no name or contact either, and each row belongs
+to an erasure request and so to a person: the instruction's uuid, who sent it,
+each asset's identifier with the consent DataVault gave for it, and what
+DataVault last said of it - its status, when it was erased, and its `reason`
+for one it did not erase, which the contract asks to carry no personal data.
+They go when the request does. `datavault_consent_change` is a person's
+consent decision as DataVault is told it: the consent, the purpose codes
+granted and taken away, and when; `datavault_consent_noted` marks which of her
+consents have been read for it. Both belong to her consents and are kept as the
+consent record is. None of these four tables is written to the audit trail
+beyond counts, codes and purpose codes.
 
 ### Collection and disclosure
 
@@ -888,7 +901,7 @@ selected.
 
 ### DataVault: the connection, and what it holds of a request's person
 
-5 operations carry personal data.
+7 operations carry personal data.
 
 | Method | Endpoint | Who may call it | Personal data in | Personal data out |
 |---|---|---|---|---|
@@ -896,6 +909,8 @@ selected.
 | PUT | `/datavault-connection` | Admin every row | — | `updated_by_name` |
 | GET | `/requests/{request_uuid}/datavault` | DPO every row, Admin rows in scope, Legal PoC every row | — | `asked_by_name`, `consent_no`, `consent_uuid` |
 | POST | `/requests/{request_uuid}/datavault/check` | DPO every row, Admin rows in scope, Legal PoC every row | — | `asked_by_name`, `consent_no`, `consent_uuid` |
+| POST | `/requests/{request_uuid}/datavault/erase` | DPO every row, Admin rows in scope, Legal PoC every row | — | `asked_by_name`, `consent_no`, `consent_uuid` |
+| POST | `/requests/{request_uuid}/datavault/erase/status` | DPO every row, Admin rows in scope, Legal PoC every row | — | `asked_by_name`, `consent_no`, `consent_uuid` |
 | GET | `/tickets/{holder_uuid}/datavault` | any signed-in session, own record | — | `consent_no`, `consent_uuid` |
 
 ### Public_information
@@ -914,7 +929,7 @@ selected.
 | GET | `/holder-tickets/{token}/ticket` | **public** — the request carries its own credential (password, link token, one-time code) | `token` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | POST | `/holder-tickets/{token}/verify` | **public** — the request carries its own credential (password, link token, one-time code) | `code`, `token` | — |
 
-<!-- 294 of 406 operations carry personal data; 35 of them need no session. -->
+<!-- 296 of 408 operations carry personal data; 35 of them need no session. -->
 
 ## The public surface
 

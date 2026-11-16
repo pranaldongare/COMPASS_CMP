@@ -191,6 +191,25 @@ respondent of each live category processor, one email each
 commits, naming her by employee ID or principal ID and never by name
 ([ADR 0033](../decisions/0033-hr-consent-is-governed-by-an-approved-template-version.md)).
 
+**DataVault is told** (2026-11-13,
+[ADR 0039](../decisions/0039-datavault-is-told-to-erase-by-the-office-and-of-consent-changes-by-the-worker.md)),
+once the administrator has switched consent changes on: a withdrawal in full
+or in part, a second consent that declines or grants purposes again, and a
+granted purpose whose validity has run out (the retention sweep's own test, a
+nightly run at 02:15). Nothing in the withdrawal depends on it. The worker
+reads the consents it has not read, one chain at a time, works out where the
+chain now stands against what DataVault was last told, and sends one message
+to `POST {erasure address}/consent-changes`: `restrict` with every purpose
+still granted, or `lift_restriction` for a consent given again - never a
+deletion, which only an erasure request can bring. A withdrawal never gives
+back a purpose whose validity has run out. A first consent is not a change.
+Every consent counts, an HR activity's included. Each message is queued
+before it is sent and tried until DataVault answers; it is on the trail when
+queued and when delivered (`datavault.consent_change_queued`,
+`datavault.consent_change_delivered`), on the consent, against her, and read
+with the project's trail. Nothing on record when the switch was first ticked
+is sent.
+
 ## 7. What follows a consent
 
 - **Exports** include only people whose current consent covers the purpose;

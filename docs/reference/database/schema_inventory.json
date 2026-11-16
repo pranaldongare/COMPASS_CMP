@@ -1,6 +1,6 @@
 {
-  "commit": "aae904f00d7883e06b235421fdf1410fa9a42749",
-  "migration_head": "0070",
+  "commit": "248cd6d62c78275dbe93f56bb6f59b10ca0233bc",
+  "migration_head": "0071",
   "migrations": [
     {
       "revision": "0001",
@@ -277,6 +277,10 @@
     {
       "revision": "0070",
       "source": "backend/api/migrations/versions/0070_datavault_check.py"
+    },
+    {
+      "revision": "0071",
+      "source": "backend/api/migrations/versions/0071_datavault_erasure_and_consent_changes.py"
     }
   ],
   "postgres_version": "16.15",
@@ -485,6 +489,26 @@
       "name": "datavault_connection",
       "kind": "r",
       "comment": "One row: where DataVault is reached and with what key; kept by the administrator"
+    },
+    {
+      "name": "datavault_consent_change",
+      "kind": "r",
+      "comment": "A consent change DataVault is told of: queued first, sent after, retried until it answers"
+    },
+    {
+      "name": "datavault_consent_noted",
+      "kind": "r",
+      "comment": "The consents already read for what DataVault must be told: each is read once"
+    },
+    {
+      "name": "datavault_erasure",
+      "kind": "r",
+      "comment": "One instruction to DataVault to erase assets, on an erasure request"
+    },
+    {
+      "name": "datavault_erasure_asset",
+      "kind": "r",
+      "comment": "An asset named in an erasure instruction, and what DataVault last said of it"
     },
     {
       "name": "delegation",
@@ -4342,6 +4366,15 @@
       "comment": "Where DataVault keeps the asset, as sent"
     },
     {
+      "table_name": "datavault_check_asset",
+      "name": "consent_ref_is_number",
+      "position": 11,
+      "type": "boolean",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Whether DataVault gave consent_ref as a JSON number; NULL: checked before this was kept"
+    },
+    {
       "table_name": "datavault_connection",
       "name": "connection_id",
       "position": 1,
@@ -4403,6 +4436,420 @@
       "not_null": true,
       "default_value": "now()",
       "comment": null
+    },
+    {
+      "table_name": "datavault_connection",
+      "name": "erasure_url",
+      "position": 8,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The address /erasures and /consent-changes are appended to; NULL: neither call is made"
+    },
+    {
+      "table_name": "datavault_connection",
+      "name": "id_format",
+      "position": 9,
+      "type": "text",
+      "not_null": true,
+      "default_value": "'numeric'::text",
+      "comment": "How a person, a consent and a project are named in every call: numeric (the IDs the console shows) or uuid"
+    },
+    {
+      "table_name": "datavault_connection",
+      "name": "consent_changes",
+      "position": 10,
+      "type": "boolean",
+      "not_null": true,
+      "default_value": "false",
+      "comment": "Whether DataVault is told of consent changes by itself"
+    },
+    {
+      "table_name": "datavault_connection",
+      "name": "consent_changes_after",
+      "position": 11,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The highest consent on record when consent changes were first switched on: none up to it is ever read"
+    },
+    {
+      "table_name": "datavault_connection",
+      "name": "consent_changes_since",
+      "position": 12,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": "When consent changes were first switched on: a validity that ran out before it is never reported"
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "change_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('datavault_consent_change_change_id_seq'::regclass)",
+      "comment": "Also the message's sequence: it grows with every message"
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "message_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "consent_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": "The consent in force when it was queued"
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "chain_root_id",
+      "position": 4,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": "The first consent of the chain - the same person and notice - which names the chain"
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "change",
+      "position": 5,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "action",
+      "position": 6,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "purposes_granted",
+      "position": 7,
+      "type": "text[]",
+      "not_null": true,
+      "default_value": "'{}'::text[]",
+      "comment": "Every purpose the assets may be used for after it, by code: the whole state, not a difference"
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "purposes_removed",
+      "position": 8,
+      "type": "text[]",
+      "not_null": true,
+      "default_value": "'{}'::text[]",
+      "comment": "The purposes it took away, by code"
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "effective_at",
+      "position": 9,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "queued_at",
+      "position": 10,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "attempts",
+      "position": 11,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "0",
+      "comment": null
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "last_attempt_at",
+      "position": 12,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "next_attempt_at",
+      "position": 13,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "failure",
+      "position": 14,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Why the last try was not answered, as a short code; NULL once delivered"
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "delivered_at",
+      "position": 15,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "result",
+      "position": 16,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "DataVault's answer: applied, duplicate or stale - each counts as delivered"
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "assets_affected",
+      "position": 17,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "superseded_at",
+      "position": 18,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Set aside unsent: a later message for the same chain carries the whole state"
+    },
+    {
+      "table_name": "datavault_consent_noted",
+      "name": "consent_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "datavault_consent_noted",
+      "name": "noted_at",
+      "position": 2,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "erasure_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('datavault_erasure_erasure_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "erasure_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": "The erasure_id DataVault is given; repeating it asks for the state and starts nothing new"
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "request_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "check_id",
+      "position": 4,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": "The check whose list of assets it was drawn from"
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "id_format",
+      "position": 5,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": "How the person and the request were named in it. Fixed once DataVault has answered it, so a repeat says the same"
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "sent_by",
+      "position": 6,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "sent_at",
+      "position": 7,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "asks",
+      "position": 8,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "0",
+      "comment": "How many times it has been sent, the first included"
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "last_asked_at",
+      "position": 9,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "last_asked_by",
+      "position": 10,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "answered_at",
+      "position": 11,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": "When DataVault last answered it; NULL: not yet"
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "failure",
+      "position": 12,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Why the last ask was not answered, as a short code; NULL when it was"
+    },
+    {
+      "table_name": "datavault_erasure_asset",
+      "name": "row_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('datavault_erasure_asset_row_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "datavault_erasure_asset",
+      "name": "erasure_id",
+      "position": 2,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "datavault_erasure_asset",
+      "name": "position",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "datavault_erasure_asset",
+      "name": "asset_ref",
+      "position": 4,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": "DataVault's own identifier for the asset"
+    },
+    {
+      "table_name": "datavault_erasure_asset",
+      "name": "consent_sent",
+      "position": 5,
+      "type": "jsonb",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The consent it was sent with, as DataVault gave it at the check: a JSON number or a JSON text"
+    },
+    {
+      "table_name": "datavault_erasure_asset",
+      "name": "status",
+      "position": 6,
+      "type": "text",
+      "not_null": true,
+      "default_value": "'unanswered'::text",
+      "comment": "unanswered until DataVault says: pending, or one of the final erased, failed, not_held"
+    },
+    {
+      "table_name": "datavault_erasure_asset",
+      "name": "status_at",
+      "position": 7,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "datavault_erasure_asset",
+      "name": "completed_at",
+      "position": 8,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": "When DataVault says it was erased"
+    },
+    {
+      "table_name": "datavault_erasure_asset",
+      "name": "reason",
+      "position": 9,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Why DataVault did not erase it, in its words; the contract asks for no personal data in it"
     },
     {
       "table_name": "delegation",
@@ -13268,12 +13715,43 @@
     },
     {
       "table_name": "datavault_connection",
+      "name": "datavault_connection_changes_have_url",
+      "kind": "c",
+      "definition": "CHECK (((NOT consent_changes) OR (erasure_url IS NOT NULL)))",
+      "columns": [
+        "consent_changes",
+        "erasure_url"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_connection",
       "name": "datavault_connection_enabled_has_url",
       "kind": "c",
       "definition": "CHECK (((NOT enabled) OR (base_url IS NOT NULL)))",
       "columns": [
         "enabled",
         "base_url"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_connection",
+      "name": "datavault_connection_id_format",
+      "kind": "c",
+      "definition": "CHECK ((id_format = ANY (ARRAY['numeric'::text, 'uuid'::text])))",
+      "columns": [
+        "id_format"
       ],
       "referenced_table": null,
       "referenced_columns": [],
@@ -13326,6 +13804,339 @@
       ],
       "delete_action": "a",
       "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "datavault_consent_change_action",
+      "kind": "c",
+      "definition": "CHECK ((action = ANY (ARRAY['restrict'::text, 'lift_restriction'::text])))",
+      "columns": [
+        "action"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "datavault_consent_change_chain_root_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (chain_root_id) REFERENCES consent_artefact(consent_id)",
+      "columns": [
+        "chain_root_id"
+      ],
+      "referenced_table": "consent_artefact",
+      "referenced_columns": [
+        "consent_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "datavault_consent_change_consent_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (consent_id) REFERENCES consent_artefact(consent_id)",
+      "columns": [
+        "consent_id"
+      ],
+      "referenced_table": "consent_artefact",
+      "referenced_columns": [
+        "consent_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "datavault_consent_change_delivery_whole",
+      "kind": "c",
+      "definition": "CHECK (((delivered_at IS NULL) = (result IS NULL)))",
+      "columns": [
+        "delivered_at",
+        "result"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "datavault_consent_change_kind",
+      "kind": "c",
+      "definition": "CHECK ((change = ANY (ARRAY['withdrawn'::text, 'partly_withdrawn'::text, 'expired'::text, 'granted_again'::text])))",
+      "columns": [
+        "change"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "datavault_consent_change_message_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (message_uuid)",
+      "columns": [
+        "message_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "datavault_consent_change_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (change_id)",
+      "columns": [
+        "change_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "datavault_consent_change_result",
+      "kind": "c",
+      "definition": "CHECK (((result IS NULL) OR (result = ANY (ARRAY['applied'::text, 'duplicate'::text, 'stale'::text]))))",
+      "columns": [
+        "result"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_consent_noted",
+      "name": "datavault_consent_noted_consent_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (consent_id) REFERENCES consent_artefact(consent_id)",
+      "columns": [
+        "consent_id"
+      ],
+      "referenced_table": "consent_artefact",
+      "referenced_columns": [
+        "consent_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_consent_noted",
+      "name": "datavault_consent_noted_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (consent_id)",
+      "columns": [
+        "consent_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "datavault_erasure_check_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (check_id) REFERENCES datavault_check(check_id) ON DELETE CASCADE",
+      "columns": [
+        "check_id"
+      ],
+      "referenced_table": "datavault_check",
+      "referenced_columns": [
+        "check_id"
+      ],
+      "delete_action": "c",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "datavault_erasure_erasure_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (erasure_uuid)",
+      "columns": [
+        "erasure_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "datavault_erasure_id_format",
+      "kind": "c",
+      "definition": "CHECK ((id_format = ANY (ARRAY['numeric'::text, 'uuid'::text])))",
+      "columns": [
+        "id_format"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "datavault_erasure_last_asked_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (last_asked_by) REFERENCES auth_user(id)",
+      "columns": [
+        "last_asked_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "datavault_erasure_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (erasure_id)",
+      "columns": [
+        "erasure_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "datavault_erasure_request_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (request_id) REFERENCES rights_request(request_id) ON DELETE CASCADE",
+      "columns": [
+        "request_id"
+      ],
+      "referenced_table": "rights_request",
+      "referenced_columns": [
+        "request_id"
+      ],
+      "delete_action": "c",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "datavault_erasure_sent_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (sent_by) REFERENCES auth_user(id)",
+      "columns": [
+        "sent_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_erasure_asset",
+      "name": "datavault_erasure_asset_erasure_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (erasure_id) REFERENCES datavault_erasure(erasure_id) ON DELETE CASCADE",
+      "columns": [
+        "erasure_id"
+      ],
+      "referenced_table": "datavault_erasure",
+      "referenced_columns": [
+        "erasure_id"
+      ],
+      "delete_action": "c",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_erasure_asset",
+      "name": "datavault_erasure_asset_once",
+      "kind": "u",
+      "definition": "UNIQUE (erasure_id, asset_ref)",
+      "columns": [
+        "erasure_id",
+        "asset_ref"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_erasure_asset",
+      "name": "datavault_erasure_asset_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (row_id)",
+      "columns": [
+        "row_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "datavault_erasure_asset",
+      "name": "datavault_erasure_asset_status",
+      "kind": "c",
+      "definition": "CHECK ((status = ANY (ARRAY['unanswered'::text, 'pending'::text, 'erased'::text, 'failed'::text, 'not_held'::text])))",
+      "columns": [
+        "status"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
       "deferrable": false,
       "initially_deferred": false
     },
@@ -18524,6 +19335,61 @@
       "definition": "CREATE UNIQUE INDEX datavault_connection_pkey ON public.datavault_connection USING btree (connection_id)"
     },
     {
+      "table_name": "datavault_consent_change",
+      "name": "datavault_consent_change_message_uuid_key",
+      "definition": "CREATE UNIQUE INDEX datavault_consent_change_message_uuid_key ON public.datavault_consent_change USING btree (message_uuid)"
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "datavault_consent_change_pkey",
+      "definition": "CREATE UNIQUE INDEX datavault_consent_change_pkey ON public.datavault_consent_change USING btree (change_id)"
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "idx_datavault_consent_change_chain",
+      "definition": "CREATE INDEX idx_datavault_consent_change_chain ON public.datavault_consent_change USING btree (chain_root_id, change_id DESC)"
+    },
+    {
+      "table_name": "datavault_consent_change",
+      "name": "idx_datavault_consent_change_due",
+      "definition": "CREATE INDEX idx_datavault_consent_change_due ON public.datavault_consent_change USING btree (next_attempt_at) WHERE ((delivered_at IS NULL) AND (superseded_at IS NULL))"
+    },
+    {
+      "table_name": "datavault_consent_noted",
+      "name": "datavault_consent_noted_pkey",
+      "definition": "CREATE UNIQUE INDEX datavault_consent_noted_pkey ON public.datavault_consent_noted USING btree (consent_id)"
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "datavault_erasure_erasure_uuid_key",
+      "definition": "CREATE UNIQUE INDEX datavault_erasure_erasure_uuid_key ON public.datavault_erasure USING btree (erasure_uuid)"
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "datavault_erasure_pkey",
+      "definition": "CREATE UNIQUE INDEX datavault_erasure_pkey ON public.datavault_erasure USING btree (erasure_id)"
+    },
+    {
+      "table_name": "datavault_erasure",
+      "name": "idx_datavault_erasure_request",
+      "definition": "CREATE INDEX idx_datavault_erasure_request ON public.datavault_erasure USING btree (request_id, erasure_id DESC)"
+    },
+    {
+      "table_name": "datavault_erasure_asset",
+      "name": "datavault_erasure_asset_once",
+      "definition": "CREATE UNIQUE INDEX datavault_erasure_asset_once ON public.datavault_erasure_asset USING btree (erasure_id, asset_ref)"
+    },
+    {
+      "table_name": "datavault_erasure_asset",
+      "name": "datavault_erasure_asset_pkey",
+      "definition": "CREATE UNIQUE INDEX datavault_erasure_asset_pkey ON public.datavault_erasure_asset USING btree (row_id)"
+    },
+    {
+      "table_name": "datavault_erasure_asset",
+      "name": "idx_datavault_erasure_asset",
+      "definition": "CREATE INDEX idx_datavault_erasure_asset ON public.datavault_erasure_asset USING btree (erasure_id, \"position\")"
+    },
+    {
       "table_name": "delegation",
       "name": "delegation_delegation_uuid_key",
       "definition": "CREATE UNIQUE INDEX delegation_delegation_uuid_key ON public.delegation USING btree (delegation_uuid)"
@@ -20216,6 +21082,15 @@
       "name": "datavault_check_check_id_seq"
     },
     {
+      "name": "datavault_consent_change_change_id_seq"
+    },
+    {
+      "name": "datavault_erasure_asset_row_id_seq"
+    },
+    {
+      "name": "datavault_erasure_erasure_id_seq"
+    },
+    {
       "name": "delegation_delegation_id_seq"
     },
     {
@@ -20477,13 +21352,13 @@
     }
   ],
   "counts": {
-    "application_tables": 77,
+    "application_tables": 81,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 916,
-    "foreign_keys": 227,
+    "table_columns": 963,
+    "foreign_keys": 235,
     "enums": 39,
     "triggers": 82,
-    "checks": 137
+    "checks": 145
   }
 }

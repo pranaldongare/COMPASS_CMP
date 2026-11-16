@@ -8,6 +8,30 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Erase in DataVault, and consent changes told to DataVault** (2026-11-13,
+  migration 0071, ADR 0039). On an erasure request in progress, the DPO or the
+  Legal PoC presses **Erase in DataVault** on the DataVault card: a pop-up
+  says how many assets go, and the assets the last check listed that the
+  request reaches go to DataVault's erasure address (`POST /erasures`), each
+  with the consent DataVault gave for it: assets matched to the person's
+  records in the request's own office, and of a request about one consent,
+  that consent's; the others show as left out. A legal hold on the person
+  keeps the button greyed out, with the reason, as does a request not started
+  or not checked yet, and stops Check status from sending what DataVault never
+  received. The table shows what DataVault said of each
+  asset - erased, pending, not erased with its reason, not held - and **Check
+  status** asks again with the same instruction; nothing asks by itself. The
+  request can close with assets pending: the Response tab says how many first,
+  and Check status still works afterwards. Separately, once the administrator
+  ticks **Tell DataVault of consent changes**, every withdrawal in full or in
+  part, every consent given again and every validity that runs out (a nightly
+  run) goes to DataVault by itself (`POST /consent-changes`) as a restriction,
+  never a deletion, and is retried until delivered; nothing on record before
+  the switch is first ticked is sent. Each is on the trail of the consent, the
+  person and the project. The connection page gains the erasure address, one
+  switch for how IDs are sent in every call - numeric IDs (the console's
+  Person, Consent and Project IDs, and the request's reference) or UUIDs,
+  numeric to start - and how the consent-change queue stands.
 - **The next step, on an incident or a breach** (2026-11-13). The bar a
   rights request has, above the tabs of a breach's page: the one step to take
   next, its clock, the button that takes it or the tab it is taken on, and

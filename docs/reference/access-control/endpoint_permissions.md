@@ -180,6 +180,8 @@ Roles refer to the **effective session role**. A staff account signed in through
 | PUT | `/datavault-connection` | NO | NO | ALL | NO | NO | NO | NO | NO | NO | NO | NO |
 | GET | `/requests/{request_uuid}/datavault` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/requests/{request_uuid}/datavault/check` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
+| POST | `/requests/{request_uuid}/datavault/erase` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
+| POST | `/requests/{request_uuid}/datavault/erase/status` | NO | ALL | SCOPED | NO | NO | NO | NO | NO | NO | ALL | NO |
 | GET | `/tickets/{holder_uuid}/datavault` | NO | OWN | OWN | OWN | OWN | OWN | OWN | NO | OWN | NO | NO |
 
 ## Delegations

@@ -1,6 +1,6 @@
 # Datavault API
 
-Generated from `backend/api/openapi.json`. **5 operations.**
+Generated from `backend/api/openapi.json`. **7 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -10,7 +10,9 @@ For each operation the information is deliberately ordered as **API → Validati
 2. [`PUT /datavault-connection`](#2_put_datavault_connection)
 3. [`GET /requests/{request_uuid}/datavault`](#3_get_requests_request_uuid_datavault)
 4. [`POST /requests/{request_uuid}/datavault/check`](#4_post_requests_request_uuid_datavault_check)
-5. [`GET /tickets/{holder_uuid}/datavault`](#5_get_tickets_holder_uuid_datavault)
+5. [`POST /requests/{request_uuid}/datavault/erase`](#5_post_requests_request_uuid_datavault_erase)
+6. [`POST /requests/{request_uuid}/datavault/erase/status`](#6_post_requests_request_uuid_datavault_erase_status)
+7. [`GET /tickets/{holder_uuid}/datavault`](#7_get_tickets_holder_uuid_datavault)
 
 <a id="1_get_datavault_connection"></a>
 ## 1. `GET /datavault-connection` — Where DataVault is reached, and whether it is on
@@ -39,9 +41,15 @@ No request body.
 ```json
 {
   "base_url": "string",
+  "erasure_url": "string",
   "api_key_set": true,
   "api_key_header": "string",
   "enabled": true,
+  "id_format": "numeric",
+  "consent_changes": false,
+  "consent_changes_waiting": 0,
+  "consent_changes_last_delivered_at": "2026-09-17T12:00:00Z",
+  "consent_changes_last_failure": "string",
   "updated_at": "2026-09-17T12:00:00Z",
   "updated_by_name": "string"
 }
@@ -69,10 +77,13 @@ Request body required: **yes**.
 ```json
 {
   "base_url": "string",
+  "erasure_url": "string",
   "api_key": "string",
   "clear_api_key": false,
   "api_key_header": "string",
-  "enabled": false
+  "enabled": false,
+  "id_format": "string",
+  "consent_changes": false
 }
 ```
 
@@ -88,9 +99,15 @@ Request body required: **yes**.
 ```json
 {
   "base_url": "string",
+  "erasure_url": "string",
   "api_key_set": true,
   "api_key_header": "string",
   "enabled": true,
+  "id_format": "numeric",
+  "consent_changes": false,
+  "consent_changes_waiting": 0,
+  "consent_changes_last_delivered_at": "2026-09-17T12:00:00Z",
+  "consent_changes_last_failure": "string",
   "updated_at": "2026-09-17T12:00:00Z",
   "updated_by_name": "string"
 }
@@ -167,7 +184,12 @@ No request body.
       "project_no": "…",
       "project_name": "…",
       "mid": "…",
-      "datapath": "…"
+      "datapath": "…",
+      "in_scope": true,
+      "erasure_status": "…",
+      "erasure_status_at": "…",
+      "erasure_completed_at": "…",
+      "erasure_reason": "…"
     }
   ],
   "last_failure": {
@@ -179,6 +201,18 @@ No request body.
     "failure": "…",
     "failure_said": "…",
     "asset_count": 1
+  },
+  "erasure": {
+    "may_erase": true,
+    "why_not": "…",
+    "to_send": 1,
+    "left_out": 1,
+    "open": 1,
+    "may_check_status": true,
+    "counts": {},
+    "last_asked_at": "…",
+    "last_failure": "…",
+    "last_failure_said": "…"
   }
 }
 ```
@@ -257,7 +291,12 @@ No request body.
       "project_no": "…",
       "project_name": "…",
       "mid": "…",
-      "datapath": "…"
+      "datapath": "…",
+      "in_scope": true,
+      "erasure_status": "…",
+      "erasure_status_at": "…",
+      "erasure_completed_at": "…",
+      "erasure_reason": "…"
     }
   ],
   "last_failure": {
@@ -269,6 +308,18 @@ No request body.
     "failure": "…",
     "failure_said": "…",
     "asset_count": 1
+  },
+  "erasure": {
+    "may_erase": true,
+    "why_not": "…",
+    "to_send": 1,
+    "left_out": 1,
+    "open": 1,
+    "may_check_status": true,
+    "counts": {},
+    "last_asked_at": "…",
+    "last_failure": "…",
+    "last_failure_said": "…"
   }
 }
 ```
@@ -291,8 +342,224 @@ No request body.
 }
 ```
 
-<a id="5_get_tickets_holder_uuid_datavault"></a>
-## 5. `GET /tickets/{holder_uuid}/datavault` — On a DCO Admin's ticket: the assets DataVault listed for their project
+<a id="5_post_requests_request_uuid_datavault_erase"></a>
+## 5. `POST /requests/{request_uuid}/datavault/erase` — Erase in DataVault: tell it to erase the assets its last check listed
+
+### API
+
+- **Operation ID:** `erase_in_datavault_requests__request_uuid__datavault_erase_post`
+- **Access:** Role-controlled `datavault` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+On an erasure request that has been started, with a check on record and
+no legal hold on the person. The instruction is saved before it is sent,
+so one that is never answered can be asked about again. Nothing about
+this runs by itself.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `request_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`RequestDataVaultOut`](#schema-requestdatavaultout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "configured": true,
+  "may_check": true,
+  "why_not": "string",
+  "answer": {
+    "check_uuid": "00000000-0000-4000-8000-000000000000",
+    "asked_at": "2026-09-17T12:00:00Z",
+    "automatic": true,
+    "asked_by_name": "…",
+    "outcome": "string",
+    "failure": "…",
+    "failure_said": "…",
+    "asset_count": 1
+  },
+  "assets": [
+    {
+      "asset_ref": "string",
+      "consent_ref": "…",
+      "project_ref": "…",
+      "consent_uuid": "…",
+      "consent_no": "…",
+      "project_uuid": "…",
+      "project_no": "…",
+      "project_name": "…",
+      "mid": "…",
+      "datapath": "…",
+      "in_scope": true,
+      "erasure_status": "…",
+      "erasure_status_at": "…",
+      "erasure_completed_at": "…",
+      "erasure_reason": "…"
+    }
+  ],
+  "last_failure": {
+    "check_uuid": "00000000-0000-4000-8000-000000000000",
+    "asked_at": "2026-09-17T12:00:00Z",
+    "automatic": true,
+    "asked_by_name": "…",
+    "outcome": "string",
+    "failure": "…",
+    "failure_said": "…",
+    "asset_count": 1
+  },
+  "erasure": {
+    "may_erase": true,
+    "why_not": "…",
+    "to_send": 1,
+    "left_out": 1,
+    "open": 1,
+    "may_check_status": true,
+    "counts": {},
+    "last_asked_at": "…",
+    "last_failure": "…",
+    "last_failure_said": "…"
+  }
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="6_post_requests_request_uuid_datavault_erase_status"></a>
+## 6. `POST /requests/{request_uuid}/datavault/erase/status` — Check status: ask DataVault how far each asset it was told to erase has got
+
+### API
+
+- **Operation ID:** `erasure_status_requests__request_uuid__datavault_erase_status_post`
+- **Access:** Role-controlled `datavault` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+Repeats every instruction with an asset still pending or unanswered:
+the same `erasure_id` and the same assets, which starts nothing new.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `request_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`RequestDataVaultOut`](#schema-requestdatavaultout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "configured": true,
+  "may_check": true,
+  "why_not": "string",
+  "answer": {
+    "check_uuid": "00000000-0000-4000-8000-000000000000",
+    "asked_at": "2026-09-17T12:00:00Z",
+    "automatic": true,
+    "asked_by_name": "…",
+    "outcome": "string",
+    "failure": "…",
+    "failure_said": "…",
+    "asset_count": 1
+  },
+  "assets": [
+    {
+      "asset_ref": "string",
+      "consent_ref": "…",
+      "project_ref": "…",
+      "consent_uuid": "…",
+      "consent_no": "…",
+      "project_uuid": "…",
+      "project_no": "…",
+      "project_name": "…",
+      "mid": "…",
+      "datapath": "…",
+      "in_scope": true,
+      "erasure_status": "…",
+      "erasure_status_at": "…",
+      "erasure_completed_at": "…",
+      "erasure_reason": "…"
+    }
+  ],
+  "last_failure": {
+    "check_uuid": "00000000-0000-4000-8000-000000000000",
+    "asked_at": "2026-09-17T12:00:00Z",
+    "automatic": true,
+    "asked_by_name": "…",
+    "outcome": "string",
+    "failure": "…",
+    "failure_said": "…",
+    "asset_count": 1
+  },
+  "erasure": {
+    "may_erase": true,
+    "why_not": "…",
+    "to_send": 1,
+    "left_out": 1,
+    "open": 1,
+    "may_check_status": true,
+    "counts": {},
+    "last_asked_at": "…",
+    "last_failure": "…",
+    "last_failure_said": "…"
+  }
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="7_get_tickets_holder_uuid_datavault"></a>
+## 7. `GET /tickets/{holder_uuid}/datavault` — On a DCO Admin's ticket: the assets DataVault listed for their project
 
 ### API
 
@@ -336,7 +603,12 @@ No request body.
       "project_no": "…",
       "project_name": "…",
       "mid": "…",
-      "datapath": "…"
+      "datapath": "…",
+      "in_scope": true,
+      "erasure_status": "…",
+      "erasure_status_at": "…",
+      "erasure_completed_at": "…",
+      "erasure_reason": "…"
     }
   ]
 }
@@ -368,10 +640,13 @@ No request body.
 | Field | Type | Required | Validation | Description |
 |---|---|---:|---|---|
 | `base_url` | `string` or `null` | No | max length: `500` | — |
+| `erasure_url` | `string` or `null` | No | max length: `500` | — |
 | `api_key` | `string` or `null` | No | min length: `1`; max length: `4000` | — |
 | `clear_api_key` | `boolean` | No | default: `False` | — |
 | `api_key_header` | `string` or `null` | No | min length: `1`; max length: `64` | — |
 | `enabled` | `boolean` | No | default: `False` | — |
+| `id_format` | `string` or `null` | No | max length: `16` | — |
+| `consent_changes` | `boolean` | No | default: `False` | — |
 
 <a id="schema-connectionout"></a>
 #### `ConnectionOut`
@@ -379,9 +654,15 @@ No request body.
 | Field | Type | Required | Validation | Description |
 |---|---|---:|---|---|
 | `base_url` | `string` or `null` | Yes | — | — |
+| `erasure_url` | `string` or `null` | No | — | — |
 | `api_key_set` | `boolean` | Yes | — | — |
 | `api_key_header` | `string` | Yes | — | — |
 | `enabled` | `boolean` | Yes | — | — |
+| `id_format` | `string` | No | default: `numeric` | — |
+| `consent_changes` | `boolean` | No | default: `False` | — |
+| `consent_changes_waiting` | `integer` | No | default: `0` | — |
+| `consent_changes_last_delivered_at` | `string` or `null` | No | format: `date-time` | — |
+| `consent_changes_last_failure` | `string` or `null` | No | — | — |
 | `updated_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `updated_by_name` | `string` or `null` | Yes | — | — |
 
@@ -403,6 +684,7 @@ No request body.
 | `answer` | [`CheckOut`](#schema-checkout) or `null` | Yes | — | — |
 | `assets` | array of [`HeldAssetOut`](#schema-heldassetout) | Yes | — | — |
 | `last_failure` | [`CheckOut`](#schema-checkout) or `null` | Yes | — | — |
+| `erasure` | [`ErasureOut`](#schema-erasureout) or `null` | No | — | — |
 
 <a id="schema-ticketdatavaultout"></a>
 #### `TicketDataVaultOut`
@@ -455,3 +737,26 @@ What DataVault listed for the project a DCO Admin's ticket is about.
 | `project_name` | `string` or `null` | Yes | — | — |
 | `mid` | `string` or `null` | Yes | — | — |
 | `datapath` | `string` or `null` | Yes | — | — |
+| `in_scope` | `boolean` | No | default: `True` | — |
+| `erasure_status` | `string` or `null` | No | — | — |
+| `erasure_status_at` | `string` or `null` | No | format: `date-time` | — |
+| `erasure_completed_at` | `string` or `null` | No | format: `date-time` | — |
+| `erasure_reason` | `string` or `null` | No | — | — |
+
+<a id="schema-erasureout"></a>
+#### `ErasureOut`
+
+What may be done about erasing in DataVault now, on an erasure request.
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `may_erase` | `boolean` | Yes | — | — |
+| `why_not` | `string` or `null` | Yes | — | — |
+| `to_send` | `integer` | Yes | — | — |
+| `left_out` | `integer` | Yes | — | — |
+| `open` | `integer` | Yes | — | — |
+| `may_check_status` | `boolean` | Yes | — | — |
+| `counts` | `object` | Yes | — | — |
+| `last_asked_at` | `string` or `null` | Yes | format: `date-time` | — |
+| `last_failure` | `string` or `null` | Yes | — | — |
+| `last_failure_said` | `string` or `null` | Yes | — | — |
