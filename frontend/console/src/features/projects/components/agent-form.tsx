@@ -93,7 +93,8 @@ export function AgentForm({ siteUuid, onDone }: { siteUuid: string; onDone: () =
             className="mt-0.5 size-4 rounded border-border-strong accent-[var(--accent)]"
           />
           <span>
-            Employees only: they sign in with their organisation account instead of a code
+            Employees only: they sign in with their organisation account once it is connected, and
+            with a one-time code until then
           </span>
         </label>
       </div>

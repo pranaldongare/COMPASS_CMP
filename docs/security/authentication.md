@@ -106,7 +106,10 @@ The callback sends the browser back to the link with `?sso=` saying what
 happened; a failed assertion lands on the same neutral page as an invalid
 link, and a provider that does not answer is reported as that, with "Try
 again". A code is never sent on an `sso` link, and nobody registers by form
-on one. An employee ID is never accepted from an unauthenticated form
+on one - while a sign-in is switched on (`SSO_ENABLED`, or `SSO_MOCK` in
+development). With none, an `sso` link takes the normal route, the form and
+a one-time code, and the link is unchanged for the day one is
+([ADR 0044](../decisions/0044-an-employee-link-takes-the-code-route-until-the-sign-in-is-connected.md)). An employee ID is never accepted from an unauthenticated form
 (`POST /c/{token}/register` ignores one, open point F-8). The audit records
 `auth.sso_signed_in`, `auth.sso_account_created`,
 `auth.sso_identity_conflict` and `auth.sso_assertion_refused`, never the

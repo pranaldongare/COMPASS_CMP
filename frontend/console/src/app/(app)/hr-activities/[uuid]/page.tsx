@@ -258,7 +258,7 @@ function LinkCard({ activity: a }: { activity: HrActivityDetail }) {
               <DescriptionItem term="Status">{link.status}</DescriptionItem>
               <DescriptionItem term="Signs people in">
                 {link.audience_mode === "sso"
-                  ? "with their organisation account (employees)"
+                  ? "employees: with their organisation account once it is connected, with a one-time code until then"
                   : "with a one-time code"}
               </DescriptionItem>
               <DescriptionItem term="Works until">{formatDateTime(link.expires_at)}</DescriptionItem>
