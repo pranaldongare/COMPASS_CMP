@@ -26,6 +26,26 @@ by their upper-case name like any other:
 `MAX_PAGE_SIZE`, `PUBLIC_LINK_RATE_PER_MINUTE`, `EXTERNAL_HTTP_RETRIES`,
 `STORAGE_BUCKET`, `STORAGE_PREFIX`, `STORAGE_REGION`.
 
+## One address for the machine
+
+The repository's `.env` (copy `.env.example`) holds the one address people
+reach this machine by, and the ports. The API and both frontends read it and
+build every other address from it, so a changed IP is one line and a restart
+of the API, the worker, the console and the portal.
+
+| Setting | Default | What is built from it |
+|---|---|---|
+| `APP_BASE_URL` | `http://localhost` | `http://<ip>` or `https://<name>`; no port, no path |
+| `PORTAL_PORT` | `3001` | `PUBLIC_BASE_URL` (links to a person), `SSO_REDIRECT_URL`, the console's link to the portal |
+| `CONSOLE_PORT` | `3000` | `CONSOLE_BASE_URL` (links to staff), the portal's link to the console |
+| `API_PORT` | `8000` | where each frontend forwards `/api` (`API_ORIGIN`) |
+
+`CORS_ORIGINS` becomes the two built addresses, and the host is added to the
+origins each dev server accepts. An address set by its own name in a part's
+own env file wins over what is built. The ports are also in the frontends'
+start commands; keep them the same. The admin's **Portal address** setting
+(0072) still wins over `PUBLIC_BASE_URL` for links in messages.
+
 ## Production refuses to start on
 
 The API (`_production_guards` in `core/config.py`):

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 from functools import lru_cache
+from pathlib import Path
 from typing import Annotated, Literal
 
 from pydantic import AliasChoices, Field, SecretStr, field_validator, model_validator
@@ -19,9 +20,17 @@ from cmp.core.permissions import Role
 Environment = Literal["local", "test", "staging", "production"]
 
 
+#: `<repository>/.env`. Absent in a container, where the environment is set
+#: directly; a missing file is skipped.
+_REPOSITORY_ENV = Path(__file__).resolve().parents[5] / ".env"
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        # The repository's own `.env` first - the one place the machine's
+        # address is written (APP_BASE_URL), read by the API and both
+        # frontends - then this service's, which wins where both set a value.
+        env_file=(str(_REPOSITORY_ENV), ".env"),
         env_file_encoding="utf-8",
         env_nested_delimiter="__",
         extra="forbid",  # an unknown env var is a typo, not a feature
@@ -101,16 +110,30 @@ class Settings(BaseSettings):
     mfa_ttl_s: int = 60 * 5
     mfa_max_verify_attempts: int = 5
 
+    #: APP_BASE_URL: this machine as people reach it - `http://<ip>` or
+    #: `https://<name>`, no port and no path. The one address to change when
+    #: the machine's does: the portal's and the console's addresses, the SSO
+    #: return address and the allowed origins are built from it and the ports
+    #: below, unless one of them is set by its own name.
+    app_base_url: str = "http://localhost"
+    #: CONSOLE_PORT / PORTAL_PORT / API_PORT: where each listens. Empty or 0:
+    #: no port is written (a name behind a proxy on 80 or 443).
+    console_port: int = 3000
+    portal_port: int = 3001
+    api_port: int = 8000
+
     #: The data principal's portal, as reached from outside: the base of every
     #: link the platform puts in a message to a person - a nomination's
     #: acceptance link, "withdraw here", "sign in to see your request". Port
     #: 3001 in development; the console is 3000 and has none of those pages,
     #: so a link built on the wrong one is a 404 in somebody's inbox.
-    public_base_url: str = "http://localhost:3001"
+    #: Empty: built from APP_BASE_URL and PORTAL_PORT.
+    public_base_url: str = ""
     #: The staff console's public origin: the base of a link that sends a
     #: member of staff to a ticket or a request. Distinct from the portal above,
     #: which is where data principals and nominees go.
-    console_base_url: str = "http://localhost:3000"
+    #: Empty: built from APP_BASE_URL and CONSOLE_PORT.
+    console_base_url: str = ""
 
     # ----------------------------------------------------------------- SSO
     #
@@ -126,7 +149,8 @@ class Settings(BaseSettings):
     sso_client_secret: SecretStr = SecretStr("")
     #: Where the provider sends the browser back: the portal's `/api/` path,
     #: which it forwards to the API (open point F-9).
-    sso_redirect_url: str = "http://localhost:3001/api/auth/sso/callback"
+    #: Empty: `<portal>/api/auth/sso/callback`.
+    sso_redirect_url: str = ""
     sso_scopes: str = "openid email profile"
     sso_claim_employee_id: str = "employee_id"
     sso_claim_email: str = "email"
@@ -142,7 +166,8 @@ class Settings(BaseSettings):
     sso_mock: bool = False
 
     # ---------------------------------------------------------------- CORS
-    cors_origins: Annotated[tuple[str, ...], NoDecode] = ("http://localhost:3000",)
+    #: Empty: the console's and the portal's addresses.
+    cors_origins: Annotated[tuple[str, ...], NoDecode] = ()
     trusted_hosts: Annotated[tuple[str, ...], NoDecode] = ("*",)
 
     # ---------------------------------------------------------------- DKMS
@@ -415,6 +440,36 @@ class Settings(BaseSettings):
         if len(seen) > 5:
             raise ValueError("at most five addresses")
         return tuple(seen)
+
+    @model_validator(mode="after")
+    def _addresses(self) -> Settings:
+        """Build every address that was not given by name from APP_BASE_URL
+        and the ports, so a machine whose address changes has one line to
+        change. Runs before the guards below, which read what it builds."""
+        base = self.app_base_url.strip().rstrip("/")
+        if not re.fullmatch(r"https?://[^/\s:]+|https?://\[[0-9A-Fa-f:]+\]", base):
+            raise ValueError(
+                "APP_BASE_URL must be http://<ip or name> or https://<name>, "
+                "with no port and no path"
+            )
+
+        def at(port: int) -> str:
+            return f"{base}:{port}" if port else base
+
+        built = {
+            "app_base_url": base,
+            "public_base_url": self.public_base_url.strip().rstrip("/") or at(self.portal_port),
+            "console_base_url": self.console_base_url.strip().rstrip("/") or at(self.console_port),
+        }
+        built["sso_redirect_url"] = (
+            self.sso_redirect_url.strip() or f"{built['public_base_url']}/api/auth/sso/callback"
+        )
+        for name, value in built.items():
+            object.__setattr__(self, name, value)
+        if not self.cors_origins:
+            origins = tuple(dict.fromkeys((built["console_base_url"], built["public_base_url"])))
+            object.__setattr__(self, "cors_origins", origins)
+        return self
 
     @model_validator(mode="after")
     def _production_guards(self) -> Settings:

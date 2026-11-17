@@ -1,14 +1,37 @@
+import { existsSync, readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
 import type { NextConfig } from "next";
 import { PHASE_PRODUCTION_BUILD } from "next/constants";
 
+import { addresses, parseEnvFile } from "./src/lib/config/addresses";
 import { deploymentProblems, deploymentWarnings } from "./src/lib/config/deployment";
+
+/**
+ * This machine's address and what is built from it (`addresses.ts`): the
+ * repository's `.env` holds APP_BASE_URL and the ports, and this app's own
+ * env file wins where it names a value itself.
+ */
+const REPOSITORY_ENV = resolve(process.cwd(), "..", "..", ".env");
+const ADDRESSES = addresses(
+  process.env,
+  existsSync(REPOSITORY_ENV) ? parseEnvFile(readFileSync(REPOSITORY_ENV, "utf8")) : {},
+);
 
 /**
  * Where the API actually listens. Server-side only - it is never inlined into
  * the browser bundle, because the browser only ever talks to `/api` on its own
  * origin.
  */
-const API_ORIGIN = process.env.API_ORIGIN ?? "http://127.0.0.1:8000";
+const API_ORIGIN = ADDRESSES.api;
+
+/**
+ * The other portal's address, for the bundle: given by name, or built from
+ * APP_BASE_URL. Set on the environment too, so the production build's check
+ * below sees what the bundle gets.
+ */
+const OTHER_PORTAL = process.env.NEXT_PUBLIC_STAFF_PORTAL_URL?.trim() || ADDRESSES.console;
+if (OTHER_PORTAL) process.env.NEXT_PUBLIC_STAFF_PORTAL_URL = OTHER_PORTAL;
 
 /**
  * Next configuration.
@@ -19,6 +42,9 @@ const API_ORIGIN = process.env.API_ORIGIN ?? "http://127.0.0.1:8000";
  */
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+
+  // Inlined into the bundle: the other portal's address, when there is one.
+  env: OTHER_PORTAL ? { NEXT_PUBLIC_STAFF_PORTAL_URL: OTHER_PORTAL } : {},
 
   // Never advertise the framework version to a scanner.
   poweredByHeader: false,
@@ -62,6 +88,7 @@ const nextConfig: NextConfig = {
     "localhost",
     "127.0.0.1",
     "[::1]",
+    ...(ADDRESSES.host ? [ADDRESSES.host] : []),
     ...(process.env.DEV_ORIGINS ?? "")
       .split(",")
       .map((origin) => origin.trim())

@@ -160,3 +160,26 @@ class TestSnsIsCheckedInAnyEnvironment:
             sms_transport="console", sms_sns_region="", sms_default_country_code="+91"
         )
         assert settings.sms_transport == "console"
+
+
+def test_every_address_is_built_from_the_one_address_unless_given_by_name() -> None:
+    built = Settings(app_base_url="http://10.1.2.3/", _env_file=None)
+    assert built.public_base_url == "http://10.1.2.3:3001"
+    assert built.console_base_url == "http://10.1.2.3:3000"
+    assert built.sso_redirect_url == "http://10.1.2.3:3001/api/auth/sso/callback"
+    assert built.cors_origins == ("http://10.1.2.3:3000", "http://10.1.2.3:3001")
+
+    named = Settings(
+        app_base_url="https://cmp.example.org",
+        portal_port=0,
+        console_base_url="https://console.example.org",
+        _env_file=None,
+    )
+    assert named.public_base_url == "https://cmp.example.org"
+    assert named.console_base_url == "https://console.example.org"
+
+
+def test_the_one_address_carries_no_port_and_no_path() -> None:
+    for wrong in ("http://10.1.2.3:3000", "http://10.1.2.3/app", "10.1.2.3"):
+        with pytest.raises(ValueError, match="APP_BASE_URL"):
+            Settings(app_base_url=wrong, _env_file=None)
