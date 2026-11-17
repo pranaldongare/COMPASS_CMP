@@ -52,6 +52,8 @@ Roles refer to the **effective session role**. A staff account signed in through
 | PUT | `/breach-settings/intake-roles` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/breach-settings/board-recipients` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
 | DELETE | `/breach-settings/board-recipients/{recipient_uuid}` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
+| POST | `/breach-settings/escalation-recipients` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
+| DELETE | `/breach-settings/escalation-recipients/{recipient_uuid}` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
 | PUT | `/breach-settings/board-recipients/{recipient_uuid}/mandatory` | NO | ALL | ALL | NO | NO | NO | NO | NO | NO | ALL | NO |
 
 ## Breach tickets
@@ -78,6 +80,8 @@ Roles refer to the **effective session role**. A staff account signed in through
 | POST | `/breaches` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 | GET | `/breaches/{breach_uuid}` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/breaches/{breach_uuid}/determinations` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+| POST | `/breaches/{breach_uuid}/reporter/acknowledge` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
+| POST | `/breaches/{breach_uuid}/transfer` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 | GET | `/breaches/{breach_uuid}/assessments` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/breaches/{breach_uuid}/assessments` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |
 | POST | `/breaches/{breach_uuid}/cert-in` | NO | ALL | NO | NO | NO | NO | NO | NO | NO | ALL | NO |

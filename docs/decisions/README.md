@@ -47,6 +47,7 @@ one stays and points forward.
 | [0039](0039-datavault-is-told-to-erase-by-the-office-and-of-consent-changes-by-the-worker.md) | DataVault is told to erase by the office, and of consent changes by the worker | accepted |
 | [0040](0040-asking-for-a-sign-in-code-says-when-there-is-no-account.md) | Asking for a sign-in code says when there is no account | accepted |
 | [0041](0041-the-portals-address-is-kept-by-the-administrator.md) | The portal's address is kept by the administrator | accepted |
+| [0042](0042-an-unclaimed-report-is-escalated-a-breach-may-change-office-and-the-reporter-is-only-acknowledged.md) | An unclaimed report is escalated, a breach may change office, and the reporter is only acknowledged | accepted |
 
 ## Writing one
 

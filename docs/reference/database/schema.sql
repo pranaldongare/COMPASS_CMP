@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict 7bUe34hptOR59Waf64oyMh18AdCgM02tmuaychnegL2tmf50iYoZyLxzDA9ve4i
+\restrict rUXfgRjKDPJUjSift7wvK6C5wdYVoVvL7hG1tLwL3CBEaP81aUAWEBmQLjegx1U
 
 -- Dumped from database version 16.15
 -- Dumped by pg_dump version 16.15
@@ -783,6 +783,32 @@ $$;
 
 
 --
+-- Name: cmp_breach_office_moves(); Type: FUNCTION; Schema: public; Owner: -
+--
+
+CREATE FUNCTION public.cmp_breach_office_moves() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+  IF NEW.office_id IS NOT DISTINCT FROM OLD.office_id THEN
+    RETURN NEW;
+  END IF;
+  IF NEW.office_id IS NOT NULL
+     AND NEW.transferred_from_office_id = OLD.office_id
+     AND NEW.transferred_at IS DISTINCT FROM OLD.transferred_at
+     AND NEW.transferred_at IS NOT NULL
+     AND NEW.transferred_by IS NOT NULL
+     AND NEW.transfer_reason IS NOT NULL THEN
+    RETURN NEW;
+  END IF;
+  RAISE EXCEPTION
+    USING MESSAGE = 'A breach changes office only by a reassignment',
+          ERRCODE = '42501';
+END;
+$$;
+
+
+--
 -- Name: cmp_breach_org_board_reported_to(); Type: FUNCTION; Schema: public; Owner: -
 --
 
@@ -905,11 +931,18 @@ $$;
 CREATE FUNCTION public.cmp_breach_status_only() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
+DECLARE
+  moves text[] := ARRAY['status', 'office_id', 'transferred_from_office_id',
+                        'transferred_at', 'transferred_by', 'transfer_reason'];
 BEGIN
   IF TG_OP = 'DELETE' THEN
     RAISE EXCEPTION 'breach rows are never deleted' USING ERRCODE = 'restrict_violation';
   END IF;
-  IF (to_jsonb(NEW) - 'status') IS DISTINCT FROM (to_jsonb(OLD) - 'status') THEN
+  IF (to_jsonb(NEW) - moves) IS DISTINCT FROM (to_jsonb(OLD) - moves)
+     OR (NEW.office_id IS NOT DISTINCT FROM OLD.office_id
+         AND (to_jsonb(NEW) - 'status') IS DISTINCT FROM (to_jsonb(OLD) - 'status'))
+     OR (NEW.office_id IS DISTINCT FROM OLD.office_id
+         AND NEW.status IS DISTINCT FROM OLD.status) THEN
     RAISE EXCEPTION 'only the status of a breach may change' USING ERRCODE = 'restrict_violation';
   END IF;
   RETURN NEW;
@@ -1992,11 +2025,16 @@ CREATE TABLE public.breach (
     third_parties text,
     cyber_attack character varying(8),
     office_id integer NOT NULL,
+    transferred_from_office_id integer,
+    transferred_at timestamp with time zone,
+    transferred_by integer,
+    transfer_reason text,
     CONSTRAINT breach_began_before_detected CHECK (((began_at IS NULL) OR (began_at <= detected_at))),
     CONSTRAINT breach_cyber_attack CHECK (((cyber_attack)::text = ANY ((ARRAY['yes'::character varying, 'no'::character varying, 'unknown'::character varying])::text[]))),
     CONSTRAINT breach_location_kind CHECK (((location_kind)::text = ANY ((ARRAY['platform'::character varying, 'processor'::character varying, 'data_source'::character varying, 'other'::character varying])::text[]))),
     CONSTRAINT breach_location_named CHECK (((((location_kind)::text = 'processor'::text) = (location_processor_id IS NOT NULL)) AND (((location_kind)::text = 'data_source'::text) = (location_source_id IS NOT NULL)))),
-    CONSTRAINT breach_status CHECK (((status)::text = ANY ((ARRAY['open'::character varying, 'closed'::character varying])::text[])))
+    CONSTRAINT breach_status CHECK (((status)::text = ANY ((ARRAY['open'::character varying, 'closed'::character varying])::text[]))),
+    CONSTRAINT breach_transfer_whole CHECK ((((transferred_from_office_id IS NULL) = (transferred_at IS NULL)) AND ((transferred_at IS NULL) = (transferred_by IS NULL)) AND ((transferred_at IS NULL) = (transfer_reason IS NULL))))
 );
 
 ALTER TABLE ONLY public.breach FORCE ROW LEVEL SECURITY;
@@ -2098,6 +2136,34 @@ COMMENT ON COLUMN public.breach.third_parties IS 'As logged; optional; sealed (F
 --
 
 COMMENT ON COLUMN public.breach.cyber_attack IS 'As logged: yes, no or unknown. Yes made it reportable to CERT-In';
+
+
+--
+-- Name: COLUMN breach.transferred_from_office_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach.transferred_from_office_id IS 'The office the last reassignment took it from';
+
+
+--
+-- Name: COLUMN breach.transferred_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach.transferred_at IS 'When it was last reassigned to this office';
+
+
+--
+-- Name: COLUMN breach.transferred_by; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach.transferred_by IS 'Who reassigned it';
+
+
+--
+-- Name: COLUMN breach.transfer_reason; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach.transfer_reason IS 'Why the last reassignment moved it to this office; sealed, FREE_TEXT';
 
 
 --
@@ -2563,6 +2629,79 @@ CREATE SEQUENCE public.breach_determination_determination_id_seq
 --
 
 ALTER SEQUENCE public.breach_determination_determination_id_seq OWNED BY public.breach_determination.determination_id;
+
+
+--
+-- Name: breach_escalation_recipient; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.breach_escalation_recipient (
+    recipient_id integer NOT NULL,
+    recipient_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    full_name text,
+    email text NOT NULL,
+    email_hash text NOT NULL,
+    added_by integer NOT NULL,
+    added_at timestamp with time zone DEFAULT now() NOT NULL,
+    removed_by integer,
+    removed_at timestamp with time zone,
+    CONSTRAINT breach_escalation_recipient_removal_whole CHECK (((removed_by IS NULL) = (removed_at IS NULL)))
+);
+
+
+--
+-- Name: TABLE breach_escalation_recipient; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.breach_escalation_recipient IS 'Management told when a report from the public link waits unclaimed for half an hour. Apart from the organisation''s board';
+
+
+--
+-- Name: COLUMN breach_escalation_recipient.full_name; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_escalation_recipient.full_name IS 'Sealed (NAME)';
+
+
+--
+-- Name: COLUMN breach_escalation_recipient.email; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_escalation_recipient.email IS 'Sealed (EMAIL)';
+
+
+--
+-- Name: COLUMN breach_escalation_recipient.email_hash; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_escalation_recipient.email_hash IS 'Blind index of the address: listed once';
+
+
+--
+-- Name: COLUMN breach_escalation_recipient.removed_at; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.breach_escalation_recipient.removed_at IS 'When it was taken off the list; the row is kept';
+
+
+--
+-- Name: breach_escalation_recipient_recipient_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.breach_escalation_recipient_recipient_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: breach_escalation_recipient_recipient_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.breach_escalation_recipient_recipient_id_seq OWNED BY public.breach_escalation_recipient.recipient_id;
 
 
 --
@@ -4814,6 +4953,64 @@ COMMENT ON COLUMN public.incident_report.reporter_erased_at IS 'When the reporte
 
 
 --
+-- Name: incident_report_acknowledgement; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.incident_report_acknowledgement (
+    acknowledgement_id integer NOT NULL,
+    report_id integer NOT NULL,
+    sent_by integer NOT NULL,
+    sent_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: TABLE incident_report_acknowledgement; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.incident_report_acknowledgement IS 'Each time an officer sent the reporter an acknowledgement of their report: who and when. Append-only';
+
+
+--
+-- Name: incident_report_acknowledgement_acknowledgement_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.incident_report_acknowledgement_acknowledgement_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: incident_report_acknowledgement_acknowledgement_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.incident_report_acknowledgement_acknowledgement_id_seq OWNED BY public.incident_report_acknowledgement.acknowledgement_id;
+
+
+--
+-- Name: incident_report_escalation; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.incident_report_escalation (
+    report_id integer NOT NULL,
+    escalated_at timestamp with time zone DEFAULT now() NOT NULL,
+    addresses integer NOT NULL,
+    CONSTRAINT incident_report_escalation_addresses CHECK ((addresses > 0))
+);
+
+
+--
+-- Name: TABLE incident_report_escalation; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.incident_report_escalation IS 'A waiting report was escalated to management: once per report, when, and to how many addresses';
+
+
+--
 -- Name: incident_report_report_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
@@ -6749,6 +6946,13 @@ ALTER TABLE ONLY public.breach_determination ALTER COLUMN determination_id SET D
 
 
 --
+-- Name: breach_escalation_recipient recipient_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_escalation_recipient ALTER COLUMN recipient_id SET DEFAULT nextval('public.breach_escalation_recipient_recipient_id_seq'::regclass);
+
+
+--
 -- Name: breach_notice notice_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -6991,6 +7195,13 @@ ALTER TABLE ONLY public.import_batch ALTER COLUMN batch_id SET DEFAULT nextval('
 --
 
 ALTER TABLE ONLY public.incident_report ALTER COLUMN report_id SET DEFAULT nextval('public.incident_report_report_id_seq'::regclass);
+
+
+--
+-- Name: incident_report_acknowledgement acknowledgement_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.incident_report_acknowledgement ALTER COLUMN acknowledgement_id SET DEFAULT nextval('public.incident_report_acknowledgement_acknowledgement_id_seq'::regclass);
 
 
 --
@@ -7438,6 +7649,22 @@ ALTER TABLE ONLY public.breach_determination
 
 ALTER TABLE ONLY public.breach_determination
     ADD CONSTRAINT breach_determination_pkey PRIMARY KEY (determination_id);
+
+
+--
+-- Name: breach_escalation_recipient breach_escalation_recipient_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_escalation_recipient
+    ADD CONSTRAINT breach_escalation_recipient_pkey PRIMARY KEY (recipient_id);
+
+
+--
+-- Name: breach_escalation_recipient breach_escalation_recipient_recipient_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_escalation_recipient
+    ADD CONSTRAINT breach_escalation_recipient_recipient_uuid_key UNIQUE (recipient_uuid);
 
 
 --
@@ -8097,11 +8324,27 @@ ALTER TABLE ONLY public.import_batch
 
 
 --
+-- Name: incident_report_acknowledgement incident_report_acknowledgement_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.incident_report_acknowledgement
+    ADD CONSTRAINT incident_report_acknowledgement_pkey PRIMARY KEY (acknowledgement_id);
+
+
+--
 -- Name: incident_report incident_report_breach_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.incident_report
     ADD CONSTRAINT incident_report_breach_id_key UNIQUE (breach_id);
+
+
+--
+-- Name: incident_report_escalation incident_report_escalation_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.incident_report_escalation
+    ADD CONSTRAINT incident_report_escalation_pkey PRIMARY KEY (report_id);
 
 
 --
@@ -9139,6 +9382,13 @@ CREATE INDEX idx_hr_poc_category_category ON public.hr_poc_category USING btree 
 
 
 --
+-- Name: idx_incident_report_acknowledgement; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_incident_report_acknowledgement ON public.incident_report_acknowledgement USING btree (report_id, acknowledgement_id);
+
+
+--
 -- Name: idx_incident_report_reporter_email_hash; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9566,6 +9816,13 @@ CREATE UNIQUE INDEX uq_breach_board_recipient_active ON public.breach_board_reci
 
 
 --
+-- Name: uq_breach_escalation_recipient_active; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX uq_breach_escalation_recipient_active ON public.breach_escalation_recipient USING btree (email_hash) WHERE (removed_at IS NULL);
+
+
+--
 -- Name: uq_breach_notice_one_draft; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -9755,10 +10012,10 @@ CREATE TRIGGER trg_breach_obligation_event_cites_determination BEFORE INSERT ON 
 
 
 --
--- Name: breach trg_breach_office_fixed; Type: TRIGGER; Schema: public; Owner: -
+-- Name: breach trg_breach_office_moves; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER trg_breach_office_fixed BEFORE UPDATE OF office_id ON public.breach FOR EACH ROW EXECUTE FUNCTION public.cmp_office_is_fixed();
+CREATE TRIGGER trg_breach_office_moves BEFORE UPDATE OF office_id ON public.breach FOR EACH ROW EXECUTE FUNCTION public.cmp_breach_office_moves();
 
 
 --
@@ -9969,6 +10226,20 @@ CREATE TRIGGER trg_hr_notice_purposes_in_version BEFORE INSERT ON public.notice_
 --
 
 CREATE TRIGGER trg_hr_template_has_category BEFORE INSERT OR UPDATE OF category_id, office_id ON public.notice_template FOR EACH ROW EXECUTE FUNCTION public.cmp_template_category_fits();
+
+
+--
+-- Name: incident_report_acknowledgement trg_incident_report_acknowledgement_append_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_incident_report_acknowledgement_append_only BEFORE DELETE OR UPDATE ON public.incident_report_acknowledgement FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
+-- Name: incident_report_escalation trg_incident_report_escalation_append_only; Type: TRIGGER; Schema: public; Owner: -
+--
+
+CREATE TRIGGER trg_incident_report_escalation_append_only BEFORE DELETE OR UPDATE ON public.incident_report_escalation FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
 
 
 --
@@ -10387,6 +10658,22 @@ ALTER TABLE ONLY public.breach_determination
 
 
 --
+-- Name: breach_escalation_recipient breach_escalation_recipient_added_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_escalation_recipient
+    ADD CONSTRAINT breach_escalation_recipient_added_by_fkey FOREIGN KEY (added_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach_escalation_recipient breach_escalation_recipient_removed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach_escalation_recipient
+    ADD CONSTRAINT breach_escalation_recipient_removed_by_fkey FOREIGN KEY (removed_by) REFERENCES public.auth_user(id);
+
+
+--
 -- Name: breach breach_location_processor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -10752,6 +11039,22 @@ ALTER TABLE ONLY public.breach_ticket_message
 
 ALTER TABLE ONLY public.breach_ticket
     ADD CONSTRAINT breach_ticket_parent_ticket_id_fkey FOREIGN KEY (parent_ticket_id) REFERENCES public.breach_ticket(ticket_id);
+
+
+--
+-- Name: breach breach_transferred_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach
+    ADD CONSTRAINT breach_transferred_by_fkey FOREIGN KEY (transferred_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: breach breach_transferred_from_office_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.breach
+    ADD CONSTRAINT breach_transferred_from_office_id_fkey FOREIGN KEY (transferred_from_office_id) REFERENCES public.office(office_id);
 
 
 --
@@ -11291,6 +11594,22 @@ ALTER TABLE ONLY public.import_batch
 
 
 --
+-- Name: incident_report_acknowledgement incident_report_acknowledgement_report_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.incident_report_acknowledgement
+    ADD CONSTRAINT incident_report_acknowledgement_report_id_fkey FOREIGN KEY (report_id) REFERENCES public.incident_report(report_id);
+
+
+--
+-- Name: incident_report_acknowledgement incident_report_acknowledgement_sent_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.incident_report_acknowledgement
+    ADD CONSTRAINT incident_report_acknowledgement_sent_by_fkey FOREIGN KEY (sent_by) REFERENCES public.auth_user(id);
+
+
+--
 -- Name: incident_report incident_report_breach_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -11312,6 +11631,14 @@ ALTER TABLE ONLY public.incident_report
 
 ALTER TABLE ONLY public.incident_report
     ADD CONSTRAINT incident_report_dismissed_by_fkey FOREIGN KEY (dismissed_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: incident_report_escalation incident_report_escalation_report_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.incident_report_escalation
+    ADD CONSTRAINT incident_report_escalation_report_id_fkey FOREIGN KEY (report_id) REFERENCES public.incident_report(report_id);
 
 
 --
@@ -13152,5 +13479,5 @@ ALTER TABLE public.template_version_purpose ENABLE ROW LEVEL SECURITY;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 7bUe34hptOR59Waf64oyMh18AdCgM02tmuaychnegL2tmf50iYoZyLxzDA9ve4i
+\unrestrict rUXfgRjKDPJUjSift7wvK6C5wdYVoVvL7hG1tLwL3CBEaP81aUAWEBmQLjegx1U
 

@@ -183,7 +183,7 @@ erased or redacted only once the item is **executed**; until then an applied
 erasure reads quarantined.
 
 **Executed (erasure).** A scope item whose every store has been confirmed:
-the holder's copy by its answer saying it did all of it, once the DPO has
+the holder's copy by its answer saying Completed, once the DPO has
 accepted it, and for an erasure the platform's
 pointer to the asset cleared. Recorded as `executed_at`, from the append-only
 attempts in `rights_item_execution`. Applied is not executed.

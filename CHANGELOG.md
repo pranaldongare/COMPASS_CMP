@@ -8,6 +8,16 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Escalation, reassignment and the reporter's acknowledgement** (2026-11-17,
+  migration 0073, ADR 0042). A report from the public link that neither
+  office claims or dismisses within 30 minutes is mailed, once, to the
+  **Escalation to management** list on Breach settings, a list apart from the
+  organisation's board. An open incident or breach can be **reassigned to the
+  other office** with a reason (`POST /breaches/{uuid}/transfer`): it goes as
+  it stands, no clock restarts, and the receiving officers are mailed. On an
+  incident that came from the public link, **Send acknowledgement**
+  (`POST /breaches/{uuid}/reporter/acknowledge`) thanks the reporter and
+  tells them nothing of what the office found or did.
 - **Portal address, set by the administrator** (2026-11-16, migration 0072,
   ADR 0041). A new console page, **Portal address**, holds the address every
   link to the data principal's portal starts with: consent links copied in
@@ -1262,6 +1272,18 @@ as a release yet.
 - `CONTRIBUTING.md`.
 
 ### Changed
+- **New incidents stand out on the Breaches page** (2026-11-17). Three
+  figures in the dashboard's tiles head the page: reports waiting for an
+  office (and how many were escalated), what is new in the register - logged
+  or reassigned to this office in the last 24 hours and not validated - and
+  breaches with a duty overdue. Each narrows the page to it (`?new=1`,
+  `?clock=overdue`). A new incident's row is bold with a blue dot and a New
+  mark.
+- **What a ticket's answer is called** (2026-11-17). "Did all of it", "Did
+  only part of it" and "Could not do it" are now **Completed**, **Partially
+  Done** and **Not Applicable**, on rights and breach tickets, in the console,
+  the portal, the trail and the office's mail. The stored values and the
+  rule are unchanged: only Completed counts as done.
 - **Signing in with a contact nobody registered says so** (2026-11-16, ADR
   0040). `POST /auth/otp/request` and `POST /c/{token}/otp` answer
   `404 account_not_found`, and the portal takes the person to sign-up with the

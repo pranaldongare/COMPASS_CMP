@@ -1,6 +1,6 @@
 {
-  "commit": "01cb753ff6892cf3d8b64efcb78da8c67937236d",
-  "migration_head": "0072",
+  "commit": "39669f069554e157d9b9b184cd1c43b172554376",
+  "migration_head": "0073",
   "migrations": [
     {
       "revision": "0001",
@@ -285,6 +285,10 @@
     {
       "revision": "0072",
       "source": "backend/api/migrations/versions/0072_portal_address.py"
+    },
+    {
+      "revision": "0073",
+      "source": "backend/api/migrations/versions/0073_escalation_reassignment_acknowledgement.py"
     }
   ],
   "postgres_version": "16.15",
@@ -358,6 +362,11 @@
       "name": "breach_determination",
       "kind": "r",
       "comment": null
+    },
+    {
+      "name": "breach_escalation_recipient",
+      "kind": "r",
+      "comment": "Management told when a report from the public link waits unclaimed for half an hour. Apart from the organisation's board"
     },
     {
       "name": "breach_notice",
@@ -548,6 +557,16 @@
       "name": "incident_report",
       "kind": "r",
       "comment": "An incident reported through the public link, waiting for an office. Both see it until one claims or dismisses it"
+    },
+    {
+      "name": "incident_report_acknowledgement",
+      "kind": "r",
+      "comment": "Each time an officer sent the reporter an acknowledgement of their report: who and when. Append-only"
+    },
+    {
+      "name": "incident_report_escalation",
+      "kind": "r",
+      "comment": "A waiting report was escalated to management: once per report, when, and to how many addresses"
     },
     {
       "name": "legal_hold",
@@ -1333,6 +1352,42 @@
       "comment": null
     },
     {
+      "table_name": "breach",
+      "name": "transferred_from_office_id",
+      "position": 26,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The office the last reassignment took it from"
+    },
+    {
+      "table_name": "breach",
+      "name": "transferred_at",
+      "position": 27,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": "When it was last reassigned to this office"
+    },
+    {
+      "table_name": "breach",
+      "name": "transferred_by",
+      "position": 28,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Who reassigned it"
+    },
+    {
+      "table_name": "breach",
+      "name": "transfer_reason",
+      "position": 29,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Why the last reassignment moved it to this office; sealed, FREE_TEXT"
+    },
+    {
       "table_name": "breach_affected",
       "name": "affected_id",
       "position": 1,
@@ -2078,6 +2133,87 @@
       "not_null": true,
       "default_value": "now()",
       "comment": null
+    },
+    {
+      "table_name": "breach_escalation_recipient",
+      "name": "recipient_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('breach_escalation_recipient_recipient_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "breach_escalation_recipient",
+      "name": "recipient_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_escalation_recipient",
+      "name": "full_name",
+      "position": 3,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Sealed (NAME)"
+    },
+    {
+      "table_name": "breach_escalation_recipient",
+      "name": "email",
+      "position": 4,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": "Sealed (EMAIL)"
+    },
+    {
+      "table_name": "breach_escalation_recipient",
+      "name": "email_hash",
+      "position": 5,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": "Blind index of the address: listed once"
+    },
+    {
+      "table_name": "breach_escalation_recipient",
+      "name": "added_by",
+      "position": 6,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_escalation_recipient",
+      "name": "added_at",
+      "position": 7,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "breach_escalation_recipient",
+      "name": "removed_by",
+      "position": 8,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "breach_escalation_recipient",
+      "name": "removed_at",
+      "position": 9,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": "When it was taken off the list; the row is kept"
     },
     {
       "table_name": "breach_notice",
@@ -5649,6 +5785,69 @@
       "position": 29,
       "type": "integer",
       "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "incident_report_acknowledgement",
+      "name": "acknowledgement_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('incident_report_acknowledgement_acknowledgement_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "incident_report_acknowledgement",
+      "name": "report_id",
+      "position": 2,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "incident_report_acknowledgement",
+      "name": "sent_by",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "incident_report_acknowledgement",
+      "name": "sent_at",
+      "position": 4,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "incident_report_escalation",
+      "name": "report_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "incident_report_escalation",
+      "name": "escalated_at",
+      "position": 2,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "incident_report_escalation",
+      "name": "addresses",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
       "default_value": null,
       "comment": null
     },
@@ -10079,6 +10278,58 @@
       "initially_deferred": false
     },
     {
+      "table_name": "breach",
+      "name": "breach_transfer_whole",
+      "kind": "c",
+      "definition": "CHECK ((((transferred_from_office_id IS NULL) = (transferred_at IS NULL)) AND ((transferred_at IS NULL) = (transferred_by IS NULL)) AND ((transferred_at IS NULL) = (transfer_reason IS NULL))))",
+      "columns": [
+        "transferred_from_office_id",
+        "transferred_at",
+        "transferred_by",
+        "transfer_reason"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach",
+      "name": "breach_transferred_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (transferred_by) REFERENCES auth_user(id)",
+      "columns": [
+        "transferred_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach",
+      "name": "breach_transferred_from_office_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (transferred_from_office_id) REFERENCES office(office_id)",
+      "columns": [
+        "transferred_from_office_id"
+      ],
+      "referenced_table": "office",
+      "referenced_columns": [
+        "office_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "breach_affected",
       "name": "breach_affected_affected_uuid_key",
       "kind": "u",
@@ -10906,6 +11157,86 @@
       "referenced_columns": [],
       "delete_action": " ",
       "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_escalation_recipient",
+      "name": "breach_escalation_recipient_added_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (added_by) REFERENCES auth_user(id)",
+      "columns": [
+        "added_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_escalation_recipient",
+      "name": "breach_escalation_recipient_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (recipient_id)",
+      "columns": [
+        "recipient_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_escalation_recipient",
+      "name": "breach_escalation_recipient_recipient_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (recipient_uuid)",
+      "columns": [
+        "recipient_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_escalation_recipient",
+      "name": "breach_escalation_recipient_removal_whole",
+      "kind": "c",
+      "definition": "CHECK (((removed_by IS NULL) = (removed_at IS NULL)))",
+      "columns": [
+        "removed_by",
+        "removed_at"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "breach_escalation_recipient",
+      "name": "breach_escalation_recipient_removed_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (removed_by) REFERENCES auth_user(id)",
+      "columns": [
+        "removed_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
       "deferrable": false,
       "initially_deferred": false
     },
@@ -15062,6 +15393,102 @@
       "initially_deferred": false
     },
     {
+      "table_name": "incident_report_acknowledgement",
+      "name": "incident_report_acknowledgement_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (acknowledgement_id)",
+      "columns": [
+        "acknowledgement_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "incident_report_acknowledgement",
+      "name": "incident_report_acknowledgement_report_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (report_id) REFERENCES incident_report(report_id)",
+      "columns": [
+        "report_id"
+      ],
+      "referenced_table": "incident_report",
+      "referenced_columns": [
+        "report_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "incident_report_acknowledgement",
+      "name": "incident_report_acknowledgement_sent_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (sent_by) REFERENCES auth_user(id)",
+      "columns": [
+        "sent_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "incident_report_escalation",
+      "name": "incident_report_escalation_addresses",
+      "kind": "c",
+      "definition": "CHECK ((addresses > 0))",
+      "columns": [
+        "addresses"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "incident_report_escalation",
+      "name": "incident_report_escalation_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (report_id)",
+      "columns": [
+        "report_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "incident_report_escalation",
+      "name": "incident_report_escalation_report_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (report_id) REFERENCES incident_report(report_id)",
+      "columns": [
+        "report_id"
+      ],
+      "referenced_table": "incident_report",
+      "referenced_columns": [
+        "report_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "legal_hold",
       "name": "legal_hold_asset_id_fkey",
       "kind": "f",
@@ -18972,6 +19399,21 @@
       "definition": "CREATE INDEX idx_breach_determination ON public.breach_determination USING btree (breach_id, determination_id)"
     },
     {
+      "table_name": "breach_escalation_recipient",
+      "name": "breach_escalation_recipient_pkey",
+      "definition": "CREATE UNIQUE INDEX breach_escalation_recipient_pkey ON public.breach_escalation_recipient USING btree (recipient_id)"
+    },
+    {
+      "table_name": "breach_escalation_recipient",
+      "name": "breach_escalation_recipient_recipient_uuid_key",
+      "definition": "CREATE UNIQUE INDEX breach_escalation_recipient_recipient_uuid_key ON public.breach_escalation_recipient USING btree (recipient_uuid)"
+    },
+    {
+      "table_name": "breach_escalation_recipient",
+      "name": "uq_breach_escalation_recipient_active",
+      "definition": "CREATE UNIQUE INDEX uq_breach_escalation_recipient_active ON public.breach_escalation_recipient USING btree (email_hash) WHERE (removed_at IS NULL)"
+    },
+    {
       "table_name": "breach_notice",
       "name": "breach_notice_notice_uuid_key",
       "definition": "CREATE UNIQUE INDEX breach_notice_notice_uuid_key ON public.breach_notice USING btree (notice_uuid)"
@@ -19645,6 +20087,21 @@
       "table_name": "incident_report",
       "name": "incident_report_report_uuid_key",
       "definition": "CREATE UNIQUE INDEX incident_report_report_uuid_key ON public.incident_report USING btree (report_uuid)"
+    },
+    {
+      "table_name": "incident_report_acknowledgement",
+      "name": "idx_incident_report_acknowledgement",
+      "definition": "CREATE INDEX idx_incident_report_acknowledgement ON public.incident_report_acknowledgement USING btree (report_id, acknowledgement_id)"
+    },
+    {
+      "table_name": "incident_report_acknowledgement",
+      "name": "incident_report_acknowledgement_pkey",
+      "definition": "CREATE UNIQUE INDEX incident_report_acknowledgement_pkey ON public.incident_report_acknowledgement USING btree (acknowledgement_id)"
+    },
+    {
+      "table_name": "incident_report_escalation",
+      "name": "incident_report_escalation_pkey",
+      "definition": "CREATE UNIQUE INDEX incident_report_escalation_pkey ON public.incident_report_escalation USING btree (report_id)"
     },
     {
       "table_name": "legal_hold",
@@ -20674,8 +21131,8 @@
     },
     {
       "table_name": "breach",
-      "name": "trg_breach_office_fixed",
-      "definition": "CREATE TRIGGER trg_breach_office_fixed BEFORE UPDATE OF office_id ON public.breach FOR EACH ROW EXECUTE FUNCTION cmp_office_is_fixed()"
+      "name": "trg_breach_office_moves",
+      "definition": "CREATE TRIGGER trg_breach_office_moves BEFORE UPDATE OF office_id ON public.breach FOR EACH ROW EXECUTE FUNCTION cmp_breach_office_moves()"
     },
     {
       "table_name": "breach",
@@ -20898,6 +21355,16 @@
       "definition": "CREATE TRIGGER trg_incident_report_outcome_once BEFORE DELETE OR UPDATE ON public.incident_report FOR EACH ROW EXECUTE FUNCTION cmp_incident_report_outcome_once()"
     },
     {
+      "table_name": "incident_report_acknowledgement",
+      "name": "trg_incident_report_acknowledgement_append_only",
+      "definition": "CREATE TRIGGER trg_incident_report_acknowledgement_append_only BEFORE DELETE OR UPDATE ON public.incident_report_acknowledgement FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
+      "table_name": "incident_report_escalation",
+      "name": "trg_incident_report_escalation_append_only",
+      "definition": "CREATE TRIGGER trg_incident_report_escalation_append_only BEFORE DELETE OR UPDATE ON public.incident_report_escalation FOR EACH STATEMENT EXECUTE FUNCTION cmp_append_only()"
+    },
+    {
       "table_name": "legal_hold",
       "name": "trg_legal_hold_office_fixed",
       "definition": "CREATE TRIGGER trg_legal_hold_office_fixed BEFORE UPDATE OF office_id ON public.legal_hold FOR EACH ROW EXECUTE FUNCTION cmp_office_is_fixed()"
@@ -21113,6 +21580,9 @@
       "name": "breach_determination_determination_id_seq"
     },
     {
+      "name": "breach_escalation_recipient_recipient_id_seq"
+    },
+    {
       "name": "breach_incident_ref_seq"
     },
     {
@@ -21219,6 +21689,9 @@
     },
     {
       "name": "import_batch_batch_id_seq"
+    },
+    {
+      "name": "incident_report_acknowledgement_acknowledgement_id_seq"
     },
     {
       "name": "incident_report_report_id_seq"
@@ -21349,6 +21822,9 @@
       "name": "cmp_breach_obligation_event_cites_determination"
     },
     {
+      "name": "cmp_breach_office_moves"
+    },
+    {
       "name": "cmp_breach_org_board_reported_to"
     },
     {
@@ -21464,13 +21940,13 @@
     }
   ],
   "counts": {
-    "application_tables": 82,
+    "application_tables": 85,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 967,
-    "foreign_keys": 236,
+    "table_columns": 987,
+    "foreign_keys": 243,
     "enums": 39,
-    "triggers": 82,
-    "checks": 147
+    "triggers": 84,
+    "checks": 150
   }
 }

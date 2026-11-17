@@ -130,6 +130,9 @@ MODULES: dict[str, list[str]] = {
         # mandatory (0064, ADR 0037 as amended on 2026-11-07).
         "breach_report_addressee",
         "breach_board_recipient_event",
+        "breach_escalation_recipient",
+        "incident_report_escalation",
+        "incident_report_acknowledgement",
     ],
     "platform": [
         "audit_log",

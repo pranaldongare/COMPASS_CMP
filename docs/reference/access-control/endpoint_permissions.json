@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 410,
-  "registered_business_and_system_operations": 413,
+  "documented_operations": 414,
+  "registered_business_and_system_operations": 417,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -10922,6 +10922,90 @@
     },
     {
       "module": "breaches",
+      "method": "POST",
+      "path": "/breaches/{breach_uuid}/transfer",
+      "summary": "Reassign it to the other office, as it stands, saying why",
+      "function": "transfer_breach",
+      "operation_id": "transfer_breach_breaches__breach_uuid__transfer_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachWriter",
+      "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "The officers' alone, each on its own office's records (resource `breach`, hidden: 404 to every other role and to the other office). Moves the incident or breach to the other office as it stands: its status, validation, duties and clocks, people, reports and tickets are not touched. Needs a reason and an open breach (409 `breach_closed`). It leaves the sender's register with the statement that moves it; the receiving office's officers are mailed. (0073, ADR 0042)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "breaches",
+      "method": "POST",
+      "path": "/breaches/{breach_uuid}/reporter/acknowledge",
+      "summary": "Send the person who reported it an acknowledgement, and no more",
+      "function": "acknowledge_reporter",
+      "operation_id": "acknowledge_reporter_breaches__breach_uuid__reporter_acknowledge_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachWriter",
+      "resolved_gate": "RequireResource(breach, write=True, hidden=True)",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "The officers' alone, each on its own office's records (resource `breach`, hidden). Sends the person who reported the incident through the public link an acknowledgement and nothing of what the office found or did; may be sent again, and each time is kept. 409 `no_reporter` on an incident the office logged itself. (0073, ADR 0042)",
+        "Each office's officer on its own office's records (0055): the DPO on the DPO office's, the Legal PoC on the Legal office's; a rights request in the shared intake (no office) is visible to both until one claims it."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breaches.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/service.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "breaches",
       "method": "GET",
       "path": "/breaches/{breach_uuid}/assessments",
       "summary": "Every revision of the assessment, newest first",
@@ -16599,6 +16683,48 @@
     },
     {
       "module": "breach settings",
+      "method": "POST",
+      "path": "/breach-settings/escalation-recipients",
+      "summary": "Add an address to the escalation list",
+      "function": "add_escalation_recipient",
+      "operation_id": "add_escalation_recipient_breach_settings_escalation_recipients_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachSettingsWriter",
+      "resolved_gate": "RequireResource(breach_settings, write=True)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach_settings",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "The administrator, the DPO and the Legal PoC (resource `breach_settings`). Adds an address to the escalation list: management, mailed once when a report from the public link has waited 30 minutes unclaimed. Separate from the organisation's board. 409 `recipient_exists` if listed already. (0073, ADR 0042)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breach_settings.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/settings.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py"
+      ]
+    },
+    {
+      "module": "breach settings",
       "method": "DELETE",
       "path": "/breach-settings/board-recipients/{recipient_uuid}",
       "summary": "Take an address off the organisation's board",
@@ -16631,6 +16757,49 @@
       },
       "conditions": [
         "Resource `breach_settings`, read and write for the administrator, the DPO and the Legal PoC (0058, ADR 0037): the administrator keeps it with the officers and sees no breach by it; every other role is answered 403. The row stays, with who took it off and when: reports already mailed name it. Not listed, or an address added for one report alone, is 404; a mandatory entry is 409 `recipient_mandatory` until it is made optional. The trail records the change, never the address. Mails every active DPO and Legal account, naming the address and no breach; a broker that cannot be reached is 503 and nothing changes (0064). Whatever was still queued to the address, on either office's reports, goes to the worker to be recorded failed (`RecipientRemoved`), and the organisation's board's duty is re-read after it; the caller is served none of that."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breach_settings.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/settings.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/dependencies/authorization.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/breach/reports.py"
+      ]
+    },
+    {
+      "module": "breach settings",
+      "method": "DELETE",
+      "path": "/breach-settings/escalation-recipients/{recipient_uuid}",
+      "summary": "Take an address off the escalation list",
+      "function": "remove_escalation_recipient",
+      "operation_id": "remove_escalation_recipient_breach_settings_escalation_recipients__recipient_uuid__delete",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "BreachSettingsWriter",
+      "resolved_gate": "RequireResource(breach_settings, write=True)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "breach_settings",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "The administrator, the DPO and the Legal PoC (resource `breach_settings`). Takes an address off the escalation list; the row is kept. 404 if it is not on the list. (0073, ADR 0042)"
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/breach_settings.py",

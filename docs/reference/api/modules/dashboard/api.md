@@ -69,7 +69,9 @@ No request body.
       ],
       "last_activity_at": "2026-09-17T12:00:00Z",
       "tickets_open": 1,
-      "tickets_overdue": 1
+      "tickets_overdue": 1,
+      "recorded_at": "2026-09-17T12:00:00Z",
+      "transferred_at": "…"
     }
   ],
   "trends": {}
@@ -252,6 +254,8 @@ and where to act on it. Rows with nothing to count are not sent.
 | `last_activity_at` | `string` | Yes | format: `date-time` | — |
 | `tickets_open` | `integer` | Yes | — | — |
 | `tickets_overdue` | `integer` | Yes | — | — |
+| `recorded_at` | `string` | Yes | format: `date-time` | — |
+| `transferred_at` | `string` or `null` | No | format: `date-time` | — |
 
 <a id="schema-validationerror"></a>
 #### `ValidationError`

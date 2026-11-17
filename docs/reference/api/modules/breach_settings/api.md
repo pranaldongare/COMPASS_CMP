@@ -1,6 +1,6 @@
 # Breach Settings API
 
-Generated from `backend/api/openapi.json`. **5 operations.**
+Generated from `backend/api/openapi.json`. **7 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -11,6 +11,8 @@ For each operation the information is deliberately ordered as **API → Validati
 3. [`POST /breach-settings/board-recipients`](#3_post_breach_settings_board_recipients)
 4. [`DELETE /breach-settings/board-recipients/{recipient_uuid}`](#4_delete_breach_settings_board_recipients_recipient_uuid)
 5. [`PUT /breach-settings/board-recipients/{recipient_uuid}/mandatory`](#5_put_breach_settings_board_recipients_recipient_uuid_mandatory)
+6. [`POST /breach-settings/escalation-recipients`](#6_post_breach_settings_escalation_recipients)
+7. [`DELETE /breach-settings/escalation-recipients/{recipient_uuid}`](#7_delete_breach_settings_escalation_recipients_recipient_uuid)
 
 <a id="1_get_breach_settings"></a>
 ## 1. `GET /breach-settings` — Who hears of a breach, and how
@@ -62,6 +64,16 @@ No request body.
       "mandatory_changed_by_name": "…"
     }
   ],
+  "escalation_recipients": [
+    {
+      "recipient_uuid": "00000000-0000-4000-8000-000000000000",
+      "full_name": "…",
+      "email": "string",
+      "added_at": "2026-09-17T12:00:00Z",
+      "added_by_name": "…"
+    }
+  ],
+  "escalate_after_minutes": 1,
   "report_link": "string"
 }
 ```
@@ -128,6 +140,16 @@ Request body required: **yes**.
       "mandatory_changed_by_name": "…"
     }
   ],
+  "escalation_recipients": [
+    {
+      "recipient_uuid": "00000000-0000-4000-8000-000000000000",
+      "full_name": "…",
+      "email": "string",
+      "added_at": "2026-09-17T12:00:00Z",
+      "added_by_name": "…"
+    }
+  ],
+  "escalate_after_minutes": 1,
   "report_link": "string"
 }
 ```
@@ -211,6 +233,16 @@ Request body required: **yes**.
       "mandatory_changed_by_name": "…"
     }
   ],
+  "escalation_recipients": [
+    {
+      "recipient_uuid": "00000000-0000-4000-8000-000000000000",
+      "full_name": "…",
+      "email": "string",
+      "added_at": "2026-09-17T12:00:00Z",
+      "added_by_name": "…"
+    }
+  ],
+  "escalate_after_minutes": 1,
   "report_link": "string"
 }
 ```
@@ -286,6 +318,16 @@ No request body.
       "mandatory_changed_by_name": "…"
     }
   ],
+  "escalation_recipients": [
+    {
+      "recipient_uuid": "00000000-0000-4000-8000-000000000000",
+      "full_name": "…",
+      "email": "string",
+      "added_at": "2026-09-17T12:00:00Z",
+      "added_by_name": "…"
+    }
+  ],
+  "escalate_after_minutes": 1,
   "report_link": "string"
 }
 ```
@@ -370,6 +412,194 @@ Request body required: **yes**.
       "mandatory_changed_by_name": "…"
     }
   ],
+  "escalation_recipients": [
+    {
+      "recipient_uuid": "00000000-0000-4000-8000-000000000000",
+      "full_name": "…",
+      "email": "string",
+      "added_at": "2026-09-17T12:00:00Z",
+      "added_by_name": "…"
+    }
+  ],
+  "escalate_after_minutes": 1,
+  "report_link": "string"
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="6_post_breach_settings_escalation_recipients"></a>
+## 6. `POST /breach-settings/escalation-recipients` — Add an address to the escalation list
+
+### API
+
+- **Operation ID:** `add_escalation_recipient_breach_settings_escalation_recipients_post`
+- **Access:** Role-controlled `breach settings` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+No path, query, header, or cookie parameters are declared for this operation.
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `application/json`  
+**Schema:** [`BoardRecipientIn`](#schema-boardrecipientin)
+
+```json
+{
+  "full_name": "string",
+  "email": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`BreachSettingsOut`](#schema-breachsettingsout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "intake_roles": [
+    "string"
+  ],
+  "roles": [
+    {
+      "role": "string",
+      "title": "string"
+    }
+  ],
+  "officers": [
+    "string"
+  ],
+  "board_recipients": [
+    {
+      "recipient_uuid": "00000000-0000-4000-8000-000000000000",
+      "full_name": "…",
+      "email": "string",
+      "added_at": "2026-09-17T12:00:00Z",
+      "added_by_name": "…",
+      "mandatory": true,
+      "mandatory_changed_at": "…",
+      "mandatory_changed_by_name": "…"
+    }
+  ],
+  "escalation_recipients": [
+    {
+      "recipient_uuid": "00000000-0000-4000-8000-000000000000",
+      "full_name": "…",
+      "email": "string",
+      "added_at": "2026-09-17T12:00:00Z",
+      "added_by_name": "…"
+    }
+  ],
+  "escalate_after_minutes": 1,
+  "report_link": "string"
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="7_delete_breach_settings_escalation_recipients_recipient_uuid"></a>
+## 7. `DELETE /breach-settings/escalation-recipients/{recipient_uuid}` — Take an address off the escalation list
+
+### API
+
+- **Operation ID:** `remove_escalation_recipient_breach_settings_escalation_recipients__recipient_uuid__delete`
+- **Access:** Role-controlled `breach settings` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `recipient_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`BreachSettingsOut`](#schema-breachsettingsout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "intake_roles": [
+    "string"
+  ],
+  "roles": [
+    {
+      "role": "string",
+      "title": "string"
+    }
+  ],
+  "officers": [
+    "string"
+  ],
+  "board_recipients": [
+    {
+      "recipient_uuid": "00000000-0000-4000-8000-000000000000",
+      "full_name": "…",
+      "email": "string",
+      "added_at": "2026-09-17T12:00:00Z",
+      "added_by_name": "…",
+      "mandatory": true,
+      "mandatory_changed_at": "…",
+      "mandatory_changed_by_name": "…"
+    }
+  ],
+  "escalation_recipients": [
+    {
+      "recipient_uuid": "00000000-0000-4000-8000-000000000000",
+      "full_name": "…",
+      "email": "string",
+      "added_at": "2026-09-17T12:00:00Z",
+      "added_by_name": "…"
+    }
+  ],
+  "escalate_after_minutes": 1,
   "report_link": "string"
 }
 ```
@@ -418,6 +648,8 @@ Request body required: **yes**.
 | `roles` | array of [`BreachRoleOut`](#schema-breachroleout) | Yes | — | — |
 | `officers` | array of `string` | Yes | — | — |
 | `board_recipients` | array of [`BoardRecipientOut`](#schema-boardrecipientout) | Yes | — | — |
+| `escalation_recipients` | array of [`EscalationRecipientOut`](#schema-escalationrecipientout) | Yes | — | — |
+| `escalate_after_minutes` | `integer` | Yes | — | — |
 | `report_link` | `string` | Yes | — | — |
 
 <a id="schema-httpvalidationerror"></a>
@@ -455,6 +687,17 @@ Request body required: **yes**.
 | `mandatory` | `boolean` | Yes | — | — |
 | `mandatory_changed_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `mandatory_changed_by_name` | `string` or `null` | Yes | — | — |
+
+<a id="schema-escalationrecipientout"></a>
+#### `EscalationRecipientOut`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `recipient_uuid` | `string` | Yes | format: `uuid` | — |
+| `full_name` | `string` or `null` | Yes | — | — |
+| `email` | `string` | Yes | — | — |
+| `added_at` | `string` | Yes | format: `date-time` | — |
+| `added_by_name` | `string` or `null` | Yes | — | — |
 
 <a id="schema-validationerror"></a>
 #### `ValidationError`
