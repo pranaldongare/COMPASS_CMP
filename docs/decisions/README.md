@@ -48,6 +48,7 @@ one stays and points forward.
 | [0040](0040-asking-for-a-sign-in-code-says-when-there-is-no-account.md) | Asking for a sign-in code says when there is no account | accepted |
 | [0041](0041-the-portals-address-is-kept-by-the-administrator.md) | The portal's address is kept by the administrator | accepted |
 | [0042](0042-an-unclaimed-report-is-escalated-a-breach-may-change-office-and-the-reporter-is-only-acknowledged.md) | An unclaimed report is escalated, a breach may change office, and the reporter is only acknowledged | accepted |
+| [0044](0044-an-employee-link-takes-the-code-route-until-the-sign-in-is-connected.md) | An employee link takes the code route until the organisation's sign-in is connected | accepted |
 
 ## Writing one
 

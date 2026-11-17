@@ -1575,6 +1575,12 @@ as a release yet.
   completes only by filing a report with both proofs.
 
 ### Fixed
+- **An employee consent link works before the organisation's sign-in is
+  connected** (2026-11-17, ADR 0044). A link made for employees ended at "we
+  could not sign you in with your organisation account" on any server
+  without `SSO_ENABLED`. It now takes the normal route there - the short form
+  for a new person, a one-time code to sign in - and asks for the
+  organisation account again, unchanged, once the sign-in is switched on.
 - **Copy link copies** (2026-11-16). Over plain http by address a browser has
   no clipboard API. The Breach settings button called it directly and copied
   nothing; the consent link buttons fell back to the older route, which took
