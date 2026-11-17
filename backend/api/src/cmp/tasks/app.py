@@ -124,6 +124,12 @@ celery_app.conf.update(
             "task": "cmp.maintenance.alert_breach_duties",
             "schedule": crontab(minute="*/5"),
         },
+        # A report from the public link nobody has taken up in half an hour:
+        # management is mailed, once per report (0073).
+        "escalate-incident-reports": {
+            "task": "cmp.maintenance.escalate_incident_reports",
+            "schedule": crontab(minute="*"),
+        },
         # DataVault is told of consent changes (0071): read what changed and
         # deliver what is due, every minute - the net under the nudge each
         # saved consent gives - and nightly, the consents whose validity ran

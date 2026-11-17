@@ -302,7 +302,7 @@ def digest_text(package: dict[str, Any]) -> str:
     if holders:
         for h in holders:
             if h.get("ticket_status") == "returned":
-                said = {"partial": " (did only part of it)", "failed": " (could not do it)"}.get(
+                said = {"partial": " (partially done)", "failed": " (not applicable)"}.get(
                     str(h.get("return_outcome")), ""
                 )
                 lines.append(

@@ -44,3 +44,44 @@ def send_incident_reported(email: str, reference: str, received_at: str) -> dict
         received_at=received_at,
         breaches_url=f"{settings.console_base_url.rstrip('/')}/breaches",
     )
+
+
+@shared_task(name="cmp.notifications.send_incident_report_escalated", **RETRY_KW)
+def send_incident_report_escalated(
+    email: str, reference: str, received_at: str, waited: str
+) -> dict[str, Any]:
+    """To management: a report nobody has taken up (0073)."""
+    return deliver(
+        Message.INCIDENT_REPORT_ESCALATED,
+        to=email,
+        incident_reference=reference,
+        received_at=received_at,
+        waited=waited,
+        breaches_url=f"{settings.console_base_url.rstrip('/')}/breaches",
+    )
+
+
+@shared_task(name="cmp.notifications.send_incident_report_acknowledged", **RETRY_KW)
+def send_incident_report_acknowledged(email: str, full_name: str, reference: str) -> dict[str, Any]:
+    """To the reporter: thanks, and that the office is dealing with it (0073)."""
+    return deliver(
+        Message.INCIDENT_REPORT_ACKNOWLEDGED,
+        to=email,
+        full_name=full_name,
+        incident_reference=reference,
+    )
+
+
+@shared_task(name="cmp.notifications.send_breach_transfer_received", **RETRY_KW)
+def send_breach_transfer_received(
+    to: str, breach_reference: str, from_office: str, reason: str, breach_uuid: str
+) -> dict[str, Any]:
+    """`reason` travels sealed and is opened at delivery."""
+    return deliver(
+        Message.BREACH_TRANSFER_RECEIVED,
+        to=to,
+        breach_reference=breach_reference,
+        from_office=from_office,
+        reason=reason,
+        breach_url=f"{settings.console_base_url.rstrip('/')}/breaches/{breach_uuid}",
+    )

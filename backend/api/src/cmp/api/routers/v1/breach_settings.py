@@ -44,6 +44,16 @@ class BoardRecipientOut(Out):
     mandatory_changed_by_name: str | None
 
 
+class EscalationRecipientOut(Out):
+    recipient_uuid: UUID
+    #: Sealed.
+    full_name: str | None
+    #: Sealed.
+    email: str
+    added_at: datetime
+    added_by_name: str | None
+
+
 class BreachSettingsOut(Out):
     #: The roles told of a report from the public link.
     intake_roles: list[str]
@@ -52,6 +62,10 @@ class BreachSettingsOut(Out):
     #: Always told, whatever is chosen.
     officers: list[str]
     board_recipients: list[BoardRecipientOut]
+    #: Management, told when a report from the public link has waited this
+    #: many minutes with neither office taking it up (0073).
+    escalation_recipients: list[EscalationRecipientOut]
+    escalate_after_minutes: int
     #: The public link, to give out.
     report_link: str
 
@@ -127,4 +141,32 @@ async def set_board_recipient_mandatory(
             recipient_uuid=str(recipient_uuid),
             mandatory=body.mandatory,
             actor_id=principal.user_id,
+        )
+
+
+@router.post(
+    "/escalation-recipients",
+    response_model=BreachSettingsOut,
+    summary="Add an address to the escalation list",
+)
+async def add_escalation_recipient(
+    body: BoardRecipientIn, principal: BreachSettingsWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        return await settings.add_escalation_recipient(
+            conn, full_name=body.full_name, email=body.email, actor_id=principal.user_id
+        )
+
+
+@router.delete(
+    "/escalation-recipients/{recipient_uuid}",
+    response_model=BreachSettingsOut,
+    summary="Take an address off the escalation list",
+)
+async def remove_escalation_recipient(
+    recipient_uuid: UUID, principal: BreachSettingsWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        return await settings.remove_escalation_recipient(
+            conn, recipient_uuid=str(recipient_uuid), actor_id=principal.user_id
         )

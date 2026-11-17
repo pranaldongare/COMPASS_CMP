@@ -16,7 +16,9 @@ from typing import Any
 
 from psycopg.types.json import Jsonb
 
+from cmp.core.errors import NotFound
 from cmp.core.offices import OFFICE_ID
+from cmp.db.pool import across_offices
 from cmp.db.sql import Conn, fetch_all, fetch_one
 from cmp.infrastructure.dkms import seal
 
@@ -36,8 +38,12 @@ _BREACH = """
   pr.processor_uuid AS location_processor_uuid, pr.legal_name AS location_processor_name,
   ds.source_uuid AS location_source_uuid, ds.name AS location_source_name,
   rb.full_name AS recorded_by_name,
-  (SELECT o.office_code FROM office o WHERE o.office_id = b.office_id) AS office_code
+  (SELECT o.office_code FROM office o WHERE o.office_id = b.office_id) AS office_code,
+  (SELECT o.office_code FROM office o
+    WHERE o.office_id = b.transferred_from_office_id) AS transferred_from_office,
+  b.transferred_at, b.transfer_reason, tb.full_name AS transferred_by_name
   FROM breach b
+  LEFT JOIN auth_user tb         ON tb.id = b.transferred_by
   LEFT JOIN breach_recording rec ON rec.breach_id = b.breach_id
   LEFT JOIN auth_user rbb        ON rbb.id = rec.recorded_by
   LEFT JOIN processor pr         ON pr.processor_id = b.location_processor_id
@@ -166,8 +172,32 @@ async def lock(conn: Conn, breach_id: int) -> Row:
     row = await fetch_one(
         conn, "SELECT breach_id, status FROM breach WHERE breach_id = %s FOR UPDATE", (breach_id,)
     )
-    assert row is not None
+    if row is None:
+        # Reassigned to the other office while this waited for the row (0073):
+        # the policy no longer shows it, and it is not there, as a wrong uuid
+        # is not.
+        raise NotFound("Breach")
     return row
+
+
+async def transfer(
+    conn: Conn, breach_id: int, *, to_office: str, transferred_by: int, reason: str
+) -> None:
+    """To the other office, with who, when and why, in one statement (0073).
+    Nothing else of the row is touched. Across both offices for this one
+    statement: the caller's office could not write a row into the other."""
+    sealed = await seal("breach", {"transfer_reason": reason})
+    async with across_offices(conn):
+        await conn.execute(
+            f"""UPDATE breach
+                   SET transferred_from_office_id = office_id,
+                       office_id = {OFFICE_ID},
+                       transferred_at = clock_timestamp(),
+                       transferred_by = %s,
+                       transfer_reason = %s
+                 WHERE breach_id = %s""",
+            (to_office, transferred_by, sealed["transfer_reason"], breach_id),
+        )
 
 
 async def list_breaches(conn: Conn, *, status: str | None) -> list[Row]:

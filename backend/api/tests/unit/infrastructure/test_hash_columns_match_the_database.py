@@ -35,6 +35,7 @@ BORN_HASHED = {
     "message_copy": "0046_message_copy.py",
     "breach_board_recipient": "0058_public_incident_report.py",
     "incident_report": "0065_a_dismissed_reporter_is_found_and_erased.py",
+    "breach_escalation_recipient": "0073_escalation_reassignment_acknowledgement.py",
 }
 
 

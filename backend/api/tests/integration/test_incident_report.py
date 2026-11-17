@@ -144,6 +144,7 @@ class TestTheListIsAPage:
             "noticed_at",
             "received_at",
             "cyber_attack",
+            "escalated_at",
         }
 
     async def test_it_serves_a_page_and_says_how_many_there_are(

@@ -304,17 +304,104 @@ async def dismiss(conn: Conn, *, report_uuid: str, reason: str, actor_id: int) -
 
 async def reported(conn: Conn, breach_id: int) -> Row | None:
     """Who reported an incident and what they said of it, if a report became
-    it. Sealed; the console opens it."""
+    it, and whether they have been sent an acknowledgement. Sealed; the
+    console opens it."""
     report = await repo.for_breach(conn, breach_id)
     if report is None:
         return None
+    sent = await repo.acknowledgements(conn, int(report["report_id"]))
     return {
+        "acknowledgements": int(sent["sent"]),
+        "acknowledged_at": sent["last_sent_at"],
+        "acknowledged_by_name": sent["last_sent_by_name"],
         "reporter_name": report["reporter_name"],
         "reporter_email": report["reporter_email"],
         "received_at": report["received_at"],
         "noticed_at": report["noticed_at"],
         "cyber_attack": report["cyber_attack"],
     }
+
+
+# ----------------------------------------------------- the reporter is told
+#
+# The reporter is owed a word that their report was read, and no more: they
+# may be nobody the incident touched, so what the office found, decided or did
+# is not theirs to hear (0073, ADR 0042). A person it did touch hears as every
+# affected person does, by the notice.
+
+
+async def acknowledge_reporter(conn: Conn, *, breach_uuid: str, actor_id: int) -> Row:
+    """Send the reporter the acknowledgement: thanks, and that the office is
+    dealing with it. The officer's choice, and they may send it again; each
+    time is kept. Open or closed, the incident may be acknowledged."""
+    from cmp.tasks.dispatch import dispatch_optional, ensure_broker
+    from cmp.tasks.notifications.incident_reports import send_incident_report_acknowledged
+
+    breach = await service.require(conn, breach_uuid)
+    # The mail is the whole of this: refused before anything is written.
+    await ensure_broker()
+    report = await repo.lock_for_breach(conn, int(breach["breach_id"]))
+    if report is None:
+        raise Conflict(
+            "Nobody reported this through the public link: there is no reporter to acknowledge",
+            code="no_reporter",
+        )
+    await repo.add_acknowledgement(conn, int(report["report_id"]), sent_by=actor_id)
+    await service.record_event(
+        conn,
+        breach,
+        Event.INCIDENT_REPORT_ACKNOWLEDGED,
+        actor_id=actor_id,
+        detail={"incident_reference": report["reference"]},
+    )
+    # Sealed as read, opened at delivery.
+    dispatch_optional(
+        send_incident_report_acknowledged,
+        str(report["reporter_email"]),
+        str(report["reporter_name"]),
+        str(report["reference"]),
+    )
+    return await service.detail(conn, breach_uuid)
+
+
+# ------------------------------------------------- nobody has taken it up
+
+#: How long a report may wait for an office before management is told.
+ESCALATE_AFTER: Final = timedelta(minutes=30)
+
+#: How many one sweep escalates. It runs every minute; a flood is spread out.
+_ESCALATED_AT_ONCE: Final = 50
+
+
+async def escalate_waiting(conn: Conn, *, now: datetime | None = None) -> int:
+    """Every report from the public link that has waited half an hour with
+    neither office claiming or dismissing it: the escalation list is mailed,
+    once per report, and the report remembers it. With nobody on the list
+    nothing is escalated, and nothing is marked - an address added later
+    hears of what is still waiting. Returns how many reports it escalated."""
+    from cmp.domain import alerts
+
+    recipients = await repo.escalation_recipients(conn)
+    if not recipients:
+        return 0
+    emails = [str(r["email"]) for r in recipients]
+    at = now or datetime.now(UTC)
+    done = 0
+    for report in await repo.unescalated(
+        conn, received_by=at - ESCALATE_AFTER, limit=_ESCALATED_AT_ONCE
+    ):
+        await repo.set_escalated(conn, int(report["report_id"]), addresses=len(emails))
+        await audit.record(
+            conn,
+            event=Event.INCIDENT_REPORT_ESCALATED,
+            entity_type="incident_report",
+            entity_id=int(report["report_id"]),
+            actor_user_id=None,
+            detail={"reference": report["reference"], "addresses": len(emails)},
+        )
+        await alerts.incident_escalated(conn, report=report, emails=emails, now=at)
+        done += 1
+    return done
 
 
 #: Who the office may have told of a report: every role that signs in to the

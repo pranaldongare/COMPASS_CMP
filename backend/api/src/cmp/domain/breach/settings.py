@@ -67,6 +67,8 @@ async def overview(conn: Conn) -> Row:
         "roles": intake.role_titles(),
         "officers": list(intake.OFFICERS),
         "board_recipients": await repo.board_recipients(conn),
+        "escalation_recipients": await repo.escalation_recipients(conn),
+        "escalate_after_minutes": int(intake.ESCALATE_AFTER.total_seconds() // 60),
         "report_link": report_link(),
     }
 
@@ -157,5 +159,42 @@ async def set_board_recipient_mandatory(
     )
     await _officers_told(
         conn, change="mandatory" if mandatory else "optional", recipient=found, actor_id=actor_id
+    )
+    return await overview(conn)
+
+
+# ------------------------------------------------------ the escalation list
+#
+# Management, told when a report from the public link has waited half an hour
+# for an office (0073). Apart from the organisation's board: that list is who
+# a report on a breach goes to; this one is who hears that nobody has looked.
+
+
+async def add_escalation_recipient(
+    conn: Conn, *, full_name: str | None, email: str, actor_id: int
+) -> Row:
+    address = reports.board_address(email, field="email")
+    name = reports.board_name(full_name, field="full_name")
+    made = await repo.add_escalation_recipient(
+        conn, full_name=name, email=address, added_by=actor_id
+    )
+    if made is None:
+        raise Conflict("That address is on the list already", code="recipient_exists")
+    await _trail(
+        conn,
+        actor_id=actor_id,
+        detail={"escalation_recipient": "added", "recipient": str(made["recipient_uuid"])},
+    )
+    return await overview(conn)
+
+
+async def remove_escalation_recipient(conn: Conn, *, recipient_uuid: str, actor_id: int) -> Row:
+    gone = await repo.remove_escalation_recipient(conn, recipient_uuid, removed_by=actor_id)
+    if gone is None:
+        raise NotFound("Recipient")
+    await _trail(
+        conn,
+        actor_id=actor_id,
+        detail={"escalation_recipient": "removed", "recipient": recipient_uuid},
     )
     return await overview(conn)

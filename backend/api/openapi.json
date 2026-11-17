@@ -16469,6 +16469,102 @@
         }
       }
     },
+    "/breaches/{breach_uuid}/transfer": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Reassign it to the other office, as it stands, saying why",
+        "operationId": "transfer_breach_breaches__breach_uuid__transfer_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachTransferIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachTransferOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breaches/{breach_uuid}/reporter/acknowledge": {
+      "post": {
+        "tags": [
+          "breaches"
+        ],
+        "summary": "Send the person who reported it an acknowledgement, and no more",
+        "operationId": "acknowledge_reporter_breaches__breach_uuid__reporter_acknowledge_post",
+        "parameters": [
+          {
+            "name": "breach_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Breach Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/breaches/{breach_uuid}/determinations": {
       "post": {
         "tags": [
@@ -19520,6 +19616,90 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachSettingsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breach-settings/escalation-recipients": {
+      "post": {
+        "tags": [
+          "breach settings"
+        ],
+        "summary": "Add an address to the escalation list",
+        "operationId": "add_escalation_recipient_breach_settings_escalation_recipients_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BoardRecipientIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachSettingsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breach-settings/escalation-recipients/{recipient_uuid}": {
+      "delete": {
+        "tags": [
+          "breach settings"
+        ],
+        "summary": "Take an address off the escalation list",
+        "operationId": "remove_escalation_recipient_breach_settings_escalation_recipients__recipient_uuid__delete",
+        "parameters": [
+          {
+            "name": "recipient_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Recipient Uuid"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -26579,6 +26759,20 @@
               }
             ]
           },
+          "office": {
+            "type": "string",
+            "title": "Office"
+          },
+          "transferred": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BreachTransferredOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "recorded_at": {
             "type": "string",
             "format": "date-time",
@@ -26675,6 +26869,7 @@
           "began_at",
           "began_at_recorded",
           "location",
+          "office",
           "recorded_at",
           "recorded_by_name",
           "determination",
@@ -27043,6 +27238,34 @@
               }
             ],
             "title": "Cyber Attack"
+          },
+          "acknowledgements": {
+            "type": "integer",
+            "title": "Acknowledgements",
+            "default": 0
+          },
+          "acknowledged_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acknowledged At"
+          },
+          "acknowledged_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Acknowledged By Name"
           }
         },
         "type": "object",
@@ -27178,6 +27401,17 @@
             "type": "array",
             "title": "Board Recipients"
           },
+          "escalation_recipients": {
+            "items": {
+              "$ref": "#/components/schemas/EscalationRecipientOut"
+            },
+            "type": "array",
+            "title": "Escalation Recipients"
+          },
+          "escalate_after_minutes": {
+            "type": "integer",
+            "title": "Escalate After Minutes"
+          },
           "report_link": {
             "type": "string",
             "title": "Report Link"
@@ -27189,6 +27423,8 @@
           "roles",
           "officers",
           "board_recipients",
+          "escalation_recipients",
+          "escalate_after_minutes",
           "report_link"
         ],
         "title": "BreachSettingsOut"
@@ -27313,6 +27549,23 @@
           "tickets_overdue": {
             "type": "integer",
             "title": "Tickets Overdue"
+          },
+          "recorded_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Recorded At"
+          },
+          "transferred_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transferred At"
           }
         },
         "type": "object",
@@ -27329,7 +27582,8 @@
           "obligations",
           "last_activity_at",
           "tickets_open",
-          "tickets_overdue"
+          "tickets_overdue",
+          "recorded_at"
         ],
         "title": "BreachSummaryOut"
       },
@@ -27813,6 +28067,84 @@
           "reason"
         ],
         "title": "BreachTicketReasonIn"
+      },
+      "BreachTransferIn": {
+        "properties": {
+          "office": {
+            "type": "string",
+            "maxLength": 8,
+            "minLength": 2,
+            "title": "Office"
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "office",
+          "reason"
+        ],
+        "title": "BreachTransferIn"
+      },
+      "BreachTransferOut": {
+        "properties": {
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "office": {
+            "type": "string",
+            "title": "Office"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reference",
+          "office"
+        ],
+        "title": "BreachTransferOut"
+      },
+      "BreachTransferredOut": {
+        "properties": {
+          "from_office": {
+            "type": "string",
+            "title": "From Office"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          },
+          "transferred_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transferred By Name"
+          },
+          "transfer_reason": {
+            "type": "string",
+            "title": "Transfer Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "from_office",
+          "at",
+          "transferred_by_name",
+          "transfer_reason"
+        ],
+        "title": "BreachTransferredOut",
+        "description": "The last reassignment to another office (0073)."
       },
       "BreachTransitionIn": {
         "properties": {
@@ -31045,6 +31377,55 @@
         "title": "ErasureOut",
         "description": "What may be done about erasing in DataVault now, on an erasure request."
       },
+      "EscalationRecipientOut": {
+        "properties": {
+          "recipient_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Recipient Uuid"
+          },
+          "full_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Full Name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "added_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Added At"
+          },
+          "added_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Added By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recipient_uuid",
+          "full_name",
+          "email",
+          "added_at",
+          "added_by_name"
+        ],
+        "title": "EscalationRecipientOut"
+      },
       "EvidenceIn": {
         "properties": {
           "evidenced": {
@@ -32753,6 +33134,18 @@
             ],
             "title": "Cyber Attack"
           },
+          "escalated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escalated At"
+          },
           "logged": {
             "$ref": "#/components/schemas/BreachLoggedOut"
           }
@@ -32872,6 +33265,18 @@
               }
             ],
             "title": "Cyber Attack"
+          },
+          "escalated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Escalated At"
           }
         },
         "type": "object",

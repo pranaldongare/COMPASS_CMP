@@ -64,6 +64,7 @@ PRIMARY_KEY = {
     "breach_ticket_message": "message_id",
     "breach_attachment": "attachment_id",
     "breach_board_recipient": "recipient_id",
+    "breach_escalation_recipient": "recipient_id",
     "breach_contact": "contact_id",
     "breach_report_section": "section_id",
     "breach_upload": "upload_id",

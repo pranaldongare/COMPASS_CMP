@@ -32,6 +32,7 @@ from typing import Any, Final
 from cmp.core import offices
 from cmp.core.config import settings
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
+from cmp.db.pool import across_offices
 from cmp.db.repositories import breach_reports as report_repo
 from cmp.db.repositories import breach_tickets as ticket_repo
 from cmp.db.repositories import breaches as repo
@@ -127,6 +128,60 @@ async def record_event(
         actor_user_id=actor_id,
         detail={"reference": breach["reference"], **(detail or {})},
     )
+
+
+# ------------------------------------------------------------- reassignment
+
+
+async def transfer(
+    conn: Conn, *, breach_uuid: str, to_office: str, reason: str, actor_id: int
+) -> Row:
+    """To the other office, with the reason (0073, ADR 0042): for an incident
+    or breach an office took up and then found was the other's. It goes as it
+    stands - its status, its validation, its duties and their clocks, its
+    people, notices, reports and tickets are not touched, and no clock starts
+    again. It leaves the sender's register with the statement that moves it,
+    and the receiving office's officers are mailed. Returns its reference and
+    where it went."""
+    breach = await locked_open(conn, breach_uuid)
+    if to_office not in offices.CODES:
+        raise ValidationFailed("Choose rnd or hr", field="office")
+    current = str(breach["office_code"])
+    if to_office == current:
+        raise ValidationFailed("It is already this office's", field="office")
+    why = _text(reason)
+    if not why:
+        raise ValidationFailed("Say why it belongs to the other office", field="reason")
+    breach_id = int(breach["breach_id"])
+    await repo.transfer(conn, breach_id, to_office=to_office, transferred_by=actor_id, reason=why)
+    from cmp.domain import alerts
+
+    # It is the other office's now: read, trailed and told across both.
+    async with across_offices(conn):
+        moved = await repo.by_breach_id(conn, breach_id)
+        assert moved is not None
+        await record_event(
+            conn,
+            moved,
+            Event.BREACH_TRANSFERRED,
+            actor_id=actor_id,
+            detail={"from": current, "to": to_office},
+        )
+        await alerts.breach_transferred(conn, breach=moved, from_office=current)
+    return {"reference": moved["reference"], "office": to_office}
+
+
+def _transferred(row: Row) -> Row | None:
+    """The last reassignment, if there was one: from where, when, by whom and
+    why (the last two sealed)."""
+    if row.get("transferred_at") is None:
+        return None
+    return {
+        "from_office": row["transferred_from_office"],
+        "at": row["transferred_at"],
+        "transferred_by_name": row["transferred_by_name"],
+        "transfer_reason": row["transfer_reason"],
+    }
 
 
 # ---------------------------------------------------------------- recording
@@ -895,6 +950,9 @@ async def transition(
 ) -> Row:
     breach = await require(conn, breach_uuid)
     locked = await repo.lock(conn, int(breach["breach_id"]))
+    # Read again once held: a reassignment this waited behind has taken it to
+    # the other office, and it is then not there (0073).
+    breach = await require(conn, breach_uuid)
     current = str(locked["status"])
     facts = await _facts(conn, int(breach["breach_id"]))
     state_machine.validate(current, to, facts, reason)
@@ -1006,6 +1064,8 @@ async def detail(conn: Conn, breach_uuid: str) -> Row:
         "logged": {c: breach.get(c) for c in repo.LOGGED_TEXT},
         "cyber_attack": breach.get("cyber_attack"),
         "reported": await intake.reported(conn, breach_id),
+        "office": breach["office_code"],
+        "transferred": _transferred(breach),
         "recorded_at": breach["recorded_at"],
         "recorded_by_name": breach["recorded_by_name"],
         "determination": current["outcome"] if current else Outcome.PENDING.value,
@@ -1049,6 +1109,8 @@ async def register(conn: Conn, *, status: str | None) -> list[Row]:
                 "last_activity_at": activity.get(int(r["breach_id"])) or r["recorded_at"],
                 "tickets_open": counts["open"],
                 "tickets_overdue": counts["overdue"],
+                "recorded_at": r["recorded_at"],
+                "transferred_at": r.get("transferred_at"),
             }
         )
     return out

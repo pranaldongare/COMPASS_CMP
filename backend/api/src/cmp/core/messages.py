@@ -101,6 +101,12 @@ class Message(StrEnum):
     INCIDENT_REPORT_CODE = "incident_report_code"
     INCIDENT_REPORT_RECEIVED = "incident_report_received"
     INCIDENT_REPORTED = "incident_reported"
+    #: 0073: a report nobody took up in half an hour, to management; the
+    #: reporter's acknowledgement once an officer has looked into it; and the
+    #: receiving office's word that a breach was reassigned to it.
+    INCIDENT_REPORT_ESCALATED = "incident_report_escalated"
+    INCIDENT_REPORT_ACKNOWLEDGED = "incident_report_acknowledged"
+    BREACH_TRANSFER_RECEIVED = "breach_transfer_received"
     #: A report on a breach, mailed to the organisation's board (0059).
     BREACH_BOARD_REPORT = "breach_board_report"
     BREACH_REPORT_FINALISED = "breach_report_finalised"
@@ -1561,7 +1567,7 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
         variables=(
             Variable("breach_reference", "The breach's reference.", "BR-2026-0003"),
             Variable("holder_name", "Who answered.", "Asha Rao"),
-            Variable("outcome", "Done, partly done, or could not be done.", "done"),
+            Variable("outcome", "Completed, partially done, or not applicable.", "done"),
             Variable(
                 "breach_url",
                 "The breach's tickets in the console.",
@@ -1812,6 +1818,101 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
         ),
     ),
     Junction(
+        key=Message.INCIDENT_REPORT_ESCALATED,
+        title="A reported incident has not been taken up",
+        description=(
+            "Sent to the escalation list under Breach settings when a report from the public "
+            "link has waited half an hour and neither office has claimed or dismissed it. Once "
+            "per report. It says that one is waiting, and nothing of what it says."
+        ),
+        group="Breach",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("incident_reference", "The reference it was given.", "INC-2026-0042"),
+            Variable("received_at", "When it arrived, in UTC.", "6 November 2026, 09:14 UTC"),
+            Variable("waited", "How long it has waited.", "32 minutes"),
+            Variable(
+                "breaches_url",
+                "The list of incidents in the console.",
+                "https://console.example.org/breaches",
+            ),
+            ORGANISATION,
+        ),
+        email_subject="Escalation: incident {incident_reference} has not been taken up",
+        email_body=(
+            "An incident was reported through the public link at {received_at}. Its reference "
+            "is {incident_reference}.\n\n"
+            "It has now waited {waited}, and neither the DPO office nor the Legal office has "
+            "claimed or dismissed it. You are told because you are on the escalation list for "
+            "reported incidents.\n\n"
+            "For the officers, the list of incidents:\n"
+            "{breaches_url}" + _SIGN_OFF_EMAIL
+        ),
+        sms_body=None,
+        to="Every address on the escalation list under Breach settings.",
+    ),
+    Junction(
+        key=Message.INCIDENT_REPORT_ACKNOWLEDGED,
+        title="Your incident report has been looked into",
+        description=(
+            "Sent when an officer presses Send acknowledgement on an incident that came from "
+            "the public link. It thanks the reporter and says the office is dealing with it - "
+            "nothing of what the office found, decided or did."
+        ),
+        group="Breach",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("full_name", "The person who reported it.", "Asha Rao"),
+            Variable("incident_reference", "The reference it was given.", "INC-2026-0042"),
+            ORGANISATION,
+        ),
+        email_subject="{organisation}: your report {incident_reference}",
+        email_body=(
+            "{full_name}, thank you for your report {incident_reference}. The {organisation} "
+            "Privacy Office has looked into it and is dealing with it.\n\n"
+            "We will not write to you further about it unless we need to know more from you."
+            + _SIGN_OFF_EMAIL
+        ),
+        sms_body=None,
+        to="Whoever reported the incident, at the email address they proved.",
+    ),
+    Junction(
+        key=Message.BREACH_TRANSFER_RECEIVED,
+        title="An incident or breach was reassigned to your office",
+        description=(
+            "Sent to the officers of the office an incident or breach is reassigned to (0073). "
+            "Its reference, who moved it and why. Its status and its clocks are unchanged by "
+            "the move."
+        ),
+        group="Breach",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("breach_reference", "Its reference.", "BR-2026-0007"),
+            Variable("from_office", "The office that reassigned it.", "DPO office"),
+            Variable(
+                "reason",
+                "Why, in the reassigning officer's words.",
+                "The data is of employees, held by HR.",
+            ),
+            Variable(
+                "breach_url",
+                "It, in the console.",
+                "https://console.example.org/breaches/0e1f",
+            ),
+            ORGANISATION,
+        ),
+        email_subject="{breach_reference} was reassigned to your office",
+        email_body=(
+            "{breach_reference} was reassigned to your office by the {from_office}.\n\n"
+            "Why: {reason}\n\n"
+            "It comes as it stands: its status, its duties and their clocks have not moved, "
+            "and any that are running are now yours.\n\n"
+            "{breach_url}" + _SIGN_OFF_EMAIL
+        ),
+        sms_body=None,
+        to="Every active officer of the office it was reassigned to, at their primary email.",
+    ),
+    Junction(
         key=Message.STAFF_ROLE_CHANGED,
         title="Your role has changed",
         description="Sent to a member of staff when an administrator changes their role.",
@@ -1907,6 +2008,8 @@ COPYABLE: Final[frozenset[Message]] = frozenset(
         Message.BREACH_TICKET_RETURNED,
         Message.BREACH_TICKET_DATE_CHANGED,
         Message.INCIDENT_REPORTED,
+        Message.INCIDENT_REPORT_ESCALATED,
+        Message.BREACH_TRANSFER_RECEIVED,
         Message.STAFF_ROLE_CHANGED,
         Message.STAFF_ACCESS_ENDED,
         Message.DELEGATION_ARRANGED,

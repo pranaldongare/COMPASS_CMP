@@ -179,6 +179,8 @@ ENCRYPTED_FIELDS: dict[str, dict[str, DataType]] = {
         "subject_types": DataType.FREE_TEXT,
         "entities_involved": DataType.FREE_TEXT,
         "third_parties": DataType.FREE_TEXT,
+        # Why it was reassigned to this office (0073).
+        "transfer_reason": DataType.FREE_TEXT,
     },
     # An incident reported through the public link (0058): who, and what they
     # said, on the same terms as the same words on `breach`.
@@ -205,6 +207,11 @@ ENCRYPTED_FIELDS: dict[str, dict[str, DataType]] = {
     },
     # The organisation's board: a person's name and address (0058).
     "breach_board_recipient": {
+        "full_name": DataType.NAME,
+        "email": DataType.EMAIL,
+    },
+    # Management told of a report nobody has taken up (0073).
+    "breach_escalation_recipient": {
         "full_name": DataType.NAME,
         "email": DataType.EMAIL,
     },
@@ -318,6 +325,10 @@ BLIND_INDEXED: dict[str, dict[str, str]] = {
     },
     # An address on the organisation's board, listed once (0058).
     "breach_board_recipient": {
+        "email": "email_hash",
+    },
+    # An address on the escalation list, listed once (0073).
+    "breach_escalation_recipient": {
         "email": "email_hash",
     },
     # The address a report from the public link came from: a rights request

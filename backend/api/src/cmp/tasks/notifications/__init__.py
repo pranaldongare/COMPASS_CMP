@@ -38,7 +38,10 @@ from cmp.tasks.notifications.breach_tickets import (
 )
 from cmp.tasks.notifications.consent import send_consent_receipt, send_reconsent_request
 from cmp.tasks.notifications.incident_reports import (
+    send_breach_transfer_received,
+    send_incident_report_acknowledged,
     send_incident_report_code,
+    send_incident_report_escalated,
     send_incident_report_received,
     send_incident_reported,
 )
@@ -78,12 +81,15 @@ __all__ = [
     "send_breach_ticket_date_changed",
     "send_breach_ticket_returned",
     "send_breach_ticket_waiting",
+    "send_breach_transfer_received",
     "send_consent_receipt",
     "send_contact_added_for_you",
     "send_delegation_arranged",
     "send_holder_instruction",
     "send_hr_withdrawal_notice",
+    "send_incident_report_acknowledged",
     "send_incident_report_code",
+    "send_incident_report_escalated",
     "send_incident_report_received",
     "send_incident_reported",
     "send_nomination_accepted",

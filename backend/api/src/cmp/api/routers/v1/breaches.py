@@ -286,6 +286,35 @@ class BreachReportedOut(Out):
     noticed_at: datetime | None
     #: Whether they said it was a cyber attack: yes, no or unknown.
     cyber_attack: str | None
+    #: How often an officer has sent them the acknowledgement (0073), and the
+    #: last time: when, and by whom (sealed).
+    acknowledgements: int = 0
+    acknowledged_at: datetime | None = None
+    acknowledged_by_name: str | None = None
+
+
+class BreachTransferredOut(Out):
+    """The last reassignment to another office (0073)."""
+
+    #: rnd or hr: the office it came from.
+    from_office: str
+    at: datetime
+    #: Sealed.
+    transferred_by_name: str | None
+    #: Why, in the reassigning officer's words. Sealed.
+    transfer_reason: str
+
+
+class BreachTransferIn(Schema):
+    #: rnd or hr: the office it goes to.
+    office: Annotated[str, Field(min_length=2, max_length=8)]
+    reason: Annotated[str, Field(min_length=1, max_length=2000)]
+
+
+class BreachTransferOut(Out):
+    reference: str
+    #: The office it is with now.
+    office: str
 
 
 class IncidentReportRowOut(Out):
@@ -302,6 +331,8 @@ class IncidentReportRowOut(Out):
     noticed_at: datetime | None
     received_at: datetime
     cyber_attack: str | None
+    #: When management was told nobody had taken it up (0073). None until then.
+    escalated_at: datetime | None = None
 
 
 class IncidentReportPageOut(Out):
@@ -373,6 +404,10 @@ class BreachSummaryOut(Out):
     #: those past their answer-by.
     tickets_open: int
     tickets_overdue: int
+    #: When it was logged in this register, and when it was last reassigned to
+    #: this office (0073): what "new here" is measured from.
+    recorded_at: datetime
+    transferred_at: datetime | None = None
 
 
 class BreachOut(Out):
@@ -399,6 +434,10 @@ class BreachOut(Out):
     cyber_attack: str | None = None
     #: Who reported it through the public link. None if the office logged it.
     reported: BreachReportedOut | None = None
+    #: rnd or hr: the office whose it is.
+    office: str
+    #: The last reassignment from the other office, if there was one (0073).
+    transferred: BreachTransferredOut | None = None
     recorded_at: datetime
     recorded_by_name: str | None
     #: pending, yes or no: the latest determination.
@@ -530,6 +569,36 @@ async def dismiss_report(
 async def get_breach(breach_uuid: UUID, principal: BreachReader) -> dict[str, Any]:
     async with connection() as conn:
         return await service.detail(conn, str(breach_uuid))
+
+
+@router.post(
+    "/{breach_uuid}/transfer",
+    response_model=BreachTransferOut,
+    summary="Reassign it to the other office, as it stands, saying why",
+)
+async def transfer_breach(
+    breach_uuid: UUID, body: BreachTransferIn, principal: BreachWriter
+) -> dict[str, Any]:
+    async with transaction() as conn:
+        return await service.transfer(
+            conn,
+            breach_uuid=str(breach_uuid),
+            to_office=body.office,
+            reason=body.reason,
+            actor_id=principal.user_id,
+        )
+
+
+@router.post(
+    "/{breach_uuid}/reporter/acknowledge",
+    response_model=BreachOut,
+    summary="Send the person who reported it an acknowledgement, and no more",
+)
+async def acknowledge_reporter(breach_uuid: UUID, principal: BreachWriter) -> dict[str, Any]:
+    async with transaction() as conn:
+        return await intake.acknowledge_reporter(
+            conn, breach_uuid=str(breach_uuid), actor_id=principal.user_id
+        )
 
 
 @router.post(

@@ -299,7 +299,7 @@ async def breach_ticket_returned(
 ) -> None:
     from cmp.tasks.notifications import alerts as tasks
 
-    words = {"done": "done", "partial": "partly done", "failed": "could not be done"}
+    words = {"done": "completed", "partial": "partially done", "failed": "not applicable"}
     for email in await _officers(conn, breach.get("office_code") or "rnd"):
         _queue(
             tasks.send_breach_ticket_returned,
@@ -345,6 +345,40 @@ async def incident_reported(conn: Conn, *, report: Row) -> None:
         str(report["reporter_name"]),
         str(report["reference"]),
     )
+
+
+async def breach_transferred(conn: Conn, *, breach: Row, from_office: str) -> None:
+    """Reassigned to another office: that office's officers, with the sender's
+    reason as the row holds it - sealed on the queue too, opened at delivery
+    (0073)."""
+    from cmp.tasks.notifications import incident_reports as tasks
+
+    for email in await _officers(conn, breach.get("office_code")):
+        _queue(
+            tasks.send_breach_transfer_received,
+            email,
+            str(breach["reference"]),
+            OFFICE_TITLES.get(from_office, from_office),
+            str(breach["transfer_reason"]),
+            str(breach["breach_uuid"]),
+        )
+
+
+async def incident_escalated(conn: Conn, *, report: Row, emails: list[str], now: datetime) -> None:
+    """A report nobody has taken up: to management, the escalation list. That
+    it waits and since when, and nothing of what it says (0073)."""
+    from cmp.tasks.notifications import incident_reports as tasks
+
+    minutes = max(1, int((now - report["received_at"]).total_seconds() // 60))
+    waited = f"{minutes} minutes" if minutes < 120 else f"{minutes // 60} hours"
+    for email in emails:
+        _queue(
+            tasks.send_incident_report_escalated,
+            email,
+            str(report["reference"]),
+            moment(report["received_at"]),
+            waited,
+        )
 
 
 async def board_list_changed(conn: Conn, *, change: str, recipient: Row, actor_id: int) -> None:

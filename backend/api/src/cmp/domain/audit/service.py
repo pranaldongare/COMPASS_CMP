@@ -327,6 +327,8 @@ class Event:
     #: and rows already carry it; `breach.confirmed` is the breach recorded.
     BREACH_RECORDED = "breach.recorded"
     BREACH_CONFIRMED = "breach.confirmed"
+    #: Reassigned to the other office, as it stands (0073): from and to.
+    BREACH_TRANSFERRED = "breach.transferred"
     BREACH_DETERMINED = "breach.determined"
     BREACH_ASSESSED = "breach.assessed"
     BREACH_CERT_IN_MARKED = "breach.cert_in_marked"
@@ -374,6 +376,10 @@ class Event:
     INCIDENT_REPORT_RECEIVED = "incident_report.received"
     INCIDENT_REPORT_CLAIMED = "incident_report.claimed"
     INCIDENT_REPORT_DISMISSED = "incident_report.dismissed"
+    #: Nobody took it up within half an hour: management was mailed (0073).
+    INCIDENT_REPORT_ESCALATED = "incident_report.escalated"
+    #: An officer sent the reporter an acknowledgement, and no more (0073).
+    INCIDENT_REPORT_ACKNOWLEDGED = "incident_report.acknowledged"
     #: A dismissed report's reporter erased under a rights request (0065). Its
     #: `reference` is the request's, so the request's trail carries it; the
     #: report's own number is `incident_reference`.

@@ -83,7 +83,9 @@ async def waiting(conn: Conn, *, limit: int, offset: int) -> list[Row]:
     return await fetch_all(
         conn,
         """SELECT r.report_uuid, r.reference, r.reporter_name, r.reporter_email, r.title,
-                  r.noticed_at, r.received_at, r.cyber_attack
+                  r.noticed_at, r.received_at, r.cyber_attack,
+                  (SELECT e.escalated_at FROM incident_report_escalation e
+                    WHERE e.report_id = r.report_id) AS escalated_at
              FROM incident_report r
             WHERE r.claimed_at IS NULL AND r.dismissed_at IS NULL
             ORDER BY r.received_at, r.report_id
@@ -160,6 +162,111 @@ async def set_dismissed(conn: Conn, report_id: int, *, reason: str, dismissed_by
               SET dismissal_reason = %s, dismissed_by = %s, dismissed_at = now()
             WHERE report_id = %s""",
         (sealed["dismissal_reason"], dismissed_by, report_id),
+    )
+
+
+# ---------------------------------------------- escalation, acknowledgement
+
+
+async def unescalated(conn: Conn, *, received_by: datetime, limit: int) -> list[Row]:
+    """Reports that arrived by then and neither office has taken up, and that management
+    has not been told of, oldest first. Each is held: of two sweeps at once,
+    the second skips what the first is on."""
+    return await fetch_all(
+        conn,
+        """SELECT r.report_id, r.reference, r.received_at
+             FROM incident_report r
+            WHERE r.claimed_at IS NULL AND r.dismissed_at IS NULL
+              AND r.received_at <= %s
+              AND NOT EXISTS (SELECT 1 FROM incident_report_escalation e
+                               WHERE e.report_id = r.report_id)
+            ORDER BY r.received_at, r.report_id
+            LIMIT %s
+            FOR UPDATE OF r SKIP LOCKED""",
+        (received_by, limit),
+    )
+
+
+async def set_escalated(conn: Conn, report_id: int, *, addresses: int) -> None:
+    await conn.execute(
+        "INSERT INTO incident_report_escalation (report_id, addresses) VALUES (%s, %s)",
+        (report_id, addresses),
+    )
+
+
+async def acknowledgements(conn: Conn, report_id: int) -> Row:
+    """How often the reporter was sent an acknowledgement, and the last time:
+    when, and by whom (sealed)."""
+    row = await fetch_one(
+        conn,
+        """SELECT count(*) AS sent,
+                  max(a.sent_at) AS last_sent_at,
+                  (SELECT u.full_name FROM incident_report_acknowledgement l
+                     JOIN auth_user u ON u.id = l.sent_by
+                    WHERE l.report_id = %s
+                    ORDER BY l.acknowledgement_id DESC LIMIT 1) AS last_sent_by_name
+             FROM incident_report_acknowledgement a WHERE a.report_id = %s""",
+        (report_id, report_id),
+    )
+    assert row is not None
+    return row
+
+
+async def add_acknowledgement(conn: Conn, report_id: int, *, sent_by: int) -> None:
+    await conn.execute(
+        "INSERT INTO incident_report_acknowledgement (report_id, sent_by) VALUES (%s, %s)",
+        (report_id, sent_by),
+    )
+
+
+async def lock_for_breach(conn: Conn, breach_id: int) -> Row | None:
+    """The report an incident came from, held: two presses of Send
+    acknowledgement go one after the other."""
+    return await fetch_one(
+        conn,
+        f"SELECT {_COLUMNS} FROM incident_report r WHERE r.breach_id = %s FOR UPDATE",
+        (breach_id,),
+    )
+
+
+_ESCALATION = """
+  x.recipient_id, x.recipient_uuid, x.full_name, x.email, x.added_at,
+  u.full_name AS added_by_name
+  FROM breach_escalation_recipient x JOIN auth_user u ON u.id = x.added_by
+"""
+
+
+async def escalation_recipients(conn: Conn) -> list[Row]:
+    """The escalation list as it stands, in the order they were added. Sealed."""
+    return await fetch_all(
+        conn, f"SELECT {_ESCALATION} WHERE x.removed_at IS NULL ORDER BY x.recipient_id"
+    )
+
+
+async def add_escalation_recipient(
+    conn: Conn, *, full_name: str | None, email: str, added_by: int
+) -> Row | None:
+    """The new entry, or None if the address is on the list already."""
+    sealed = await seal("breach_escalation_recipient", {"full_name": full_name, "email": email})
+    return await fetch_one(
+        conn,
+        """INSERT INTO breach_escalation_recipient (full_name, email, email_hash, added_by)
+           VALUES (%s, %s, %s, %s)
+           ON CONFLICT (email_hash) WHERE removed_at IS NULL DO NOTHING
+           RETURNING recipient_id, recipient_uuid""",
+        (sealed["full_name"], sealed["email"], index_of("email", email), added_by),
+    )
+
+
+async def remove_escalation_recipient(
+    conn: Conn, recipient_uuid: str, *, removed_by: int
+) -> Row | None:
+    return await fetch_one(
+        conn,
+        """UPDATE breach_escalation_recipient SET removed_by = %s, removed_at = now()
+            WHERE recipient_uuid = %s AND removed_at IS NULL
+            RETURNING recipient_uuid""",
+        (removed_by, recipient_uuid),
     )
 
 
