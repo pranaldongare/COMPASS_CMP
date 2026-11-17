@@ -10,9 +10,9 @@ import { apiDownload, apiGet, apiPost } from "@/lib/api";
 export type ReturnOutcome = "done" | "partial" | "failed";
 
 export const OUTCOME_COPY: Record<ReturnOutcome, string> = {
-  done: "Did all of it",
-  partial: "Did only part of it",
-  failed: "Could not do it",
+  done: "Completed",
+  partial: "Partially Done",
+  failed: "Not Applicable",
 };
 
 export interface HolderLink {

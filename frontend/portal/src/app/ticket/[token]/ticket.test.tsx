@@ -110,7 +110,7 @@ describe("an outside holder's ticket", () => {
     for (const radio of answer.getAllByRole("radio")) expect(radio).not.toBeChecked();
     await user.type(answer.getByLabelText(/what you hold, and what you did/i), "Two boxes.");
     expect(submit).toBeDisabled();
-    await user.click(answer.getByLabelText("Did all of it"));
+    await user.click(answer.getByLabelText("Completed"));
     expect(submit).toBeEnabled();
   });
 

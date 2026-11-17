@@ -368,7 +368,7 @@ export const SECTIONS: HelpSection[] = [
         kind: "steps",
         title: "Answering",
         items: [
-          "The ticket opens on [[Answer the ticket]]. When your work is done, choose what was done - all of it, part of it, or none - say what you hold and what you did, attach any proof, and click [[Submit answer]]. This is what answers the ticket.",
+          "The ticket opens on [[Answer the ticket]]. When your work is done, choose [[Completed]], [[Partially Done]] or [[Not Applicable]], say what you hold and what you did, attach any proof, and click [[Submit answer]]. This is what answers the ticket.",
           "To ask us something first, open [[Messages]], write in [[Message to the Privacy Office]], attach a file if it helps, and click [[Send message]]. We are told at once, and you are emailed when we reply. A message does not answer the ticket.",
           "We review your answer. If something is missing we send it back with what we need and a new date; you are emailed, and the same link opens it.",
         ],

@@ -72,6 +72,7 @@ export const TYPE_BY_FIELD: Readonly<Record<string, DataType>> = {
 
   // Joined names and contacts: the same person's value, read through a
   // foreign key, under the name the response gives it.
+  acknowledged_by_name: "NAME",
   actor_name: "NAME",
   added_by_name: "NAME",
   author_name: "NAME",
@@ -100,6 +101,7 @@ export const TYPE_BY_FIELD: Readonly<Record<string, DataType>> = {
   subject_email: "EMAIL",
   subject_mobile: "MOBILE",
   subject_name: "NAME",
+  transferred_by_name: "NAME",
   updated_by_name: "NAME",
   uploaded_by_name: "NAME",
   verified_by_name: "NAME",

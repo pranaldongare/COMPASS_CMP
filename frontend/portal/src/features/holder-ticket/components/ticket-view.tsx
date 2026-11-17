@@ -383,7 +383,7 @@ function AnswerForm({
   sentBack: string | null;
   onDone: (next: HolderTicketDetail) => void;
 }) {
-  // No default: "did all of it" is never assumed (review DPDP-1).
+  // No default: "Completed" is never assumed (review DPDP-1).
   const [outcome, setOutcome] = React.useState<ReturnOutcome | "">("");
   const [summary, setSummary] = React.useState("");
   const [file, setFile] = React.useState<File | null>(null);
@@ -428,7 +428,7 @@ function AnswerForm({
             {OUTCOME_COPY[o]}
           </label>
         ))}
-        <p className="text-xs text-text-muted">Only “did all of it” counts as done. If you could not do some or all of it, say why below.</p>
+        <p className="text-xs text-text-muted">Only “Completed” counts as done. If it is partially done or not applicable, say why below.</p>
       </fieldset>
       <Field label="2 · What you hold, and what you did" required>
         {(p) => <Textarea {...p} rows={4} maxLength={20_000} value={summary} onChange={(e) => setSummary(e.target.value)} />}
