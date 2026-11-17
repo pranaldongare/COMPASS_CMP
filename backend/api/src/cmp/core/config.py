@@ -7,6 +7,7 @@ happens to touch the bad value.
 
 from __future__ import annotations
 
+import re
 from functools import lru_cache
 from typing import Annotated, Literal
 
@@ -314,7 +315,7 @@ class Settings(BaseSettings):
     #: is set, and to the local outbox when it is not (`email_mode`). Kept so
     #: a test can choose `null`, and so an older .env that names it loads.
     email_transport: Literal["console", "smtp", "null"] | None = None
-    sms_transport: Literal["console", "http", "null"] = "console"
+    sms_transport: Literal["console", "http", "sns", "null"] = "console"
     storage_backend: Literal["local", "object"] = "local"
 
     # Email: five settings and nothing else (docs/email/README.md).
@@ -346,6 +347,20 @@ class Settings(BaseSettings):
     sms_http_url: str = ""
     sms_http_token: SecretStr = SecretStr("")
     sms_http_sender: str = ""
+
+    # Amazon SNS (ADR 0043): each text published straight to the phone number.
+    # Credentials are the standard AWS chain of the process's environment
+    # (AWS_PROFILE and AWS_SHARED_CREDENTIALS_FILE, or a credential_process
+    # for IAM Roles Anywhere); the proxy is HTTPS_PROXY and NO_PROXY. Neither
+    # is a setting here, so no AWS secret is ever in this file's reach.
+    #: SMS_SNS_REGION: where texts are sent from. Mumbai, the relay's Region.
+    sms_sns_region: str = "ap-south-1"
+    #: SMS_SNS_SENDER_ID: the sender name, where the country shows one. India
+    #: shows only a name registered with TRAI and AWS: leave it empty until then.
+    sms_sns_sender_id: str = ""
+    #: SMS_DEFAULT_COUNTRY_CODE: digits, no plus, put in front of a mobile
+    #: stored without a country code. The stored value never changes.
+    sms_default_country_code: str = "91"
 
     # Object storage. The reference recorded in the database stays relative, so
     # bucket and region live here and never reach a table that gets exported.
@@ -436,8 +451,8 @@ class Settings(BaseSettings):
             # mail a real server is entitled to refuse.
             if self.notification_email_from.lower().endswith(("@example.org", "@example.com")):
                 raise ValueError("NOTIFICATION_EMAIL_FROM must be a real address in production")
-            if self.sms_transport != "http":
-                raise ValueError("SMS_TRANSPORT must be http in production")
+            if self.sms_transport not in ("http", "sns"):
+                raise ValueError("SMS_TRANSPORT must be http or sns in production")
             # The switch exists for a development database of plaintext rows.
             # Off in production means personal data written in the clear, with
             # nothing in the system ever reporting it - which is the failure
@@ -478,6 +493,26 @@ class Settings(BaseSettings):
             )
         if self.sms_transport == "http" and not self.sms_http_url.startswith("https://"):
             raise ValueError("SMS_HTTP_URL must be an https:// gateway when SMS_TRANSPORT=http")
+        if self.sms_transport == "sns":
+            # Any environment: each of these is a text that would be refused
+            # one at a time, at the moment somebody is waiting for a code.
+            if not re.fullmatch(r"[a-z]{2}(-[a-z]+)+-[0-9]", self.sms_sns_region.strip()):
+                raise ValueError(
+                    "SMS_SNS_REGION must be an AWS Region, such as ap-south-1, "
+                    "when SMS_TRANSPORT=sns"
+                )
+            if not re.fullmatch(r"[1-9][0-9]{0,2}", self.sms_default_country_code):
+                raise ValueError(
+                    "SMS_DEFAULT_COUNTRY_CODE must be 1 to 3 digits with no plus, such as 91"
+                )
+            sender = self.sms_sns_sender_id
+            if sender and not (
+                re.fullmatch(r"[A-Za-z0-9-]{3,11}", sender) and re.search(r"[A-Za-z]", sender)
+            ):
+                raise ValueError(
+                    "SMS_SNS_SENDER_ID must be 3 to 11 letters, digits or hyphens, "
+                    "with at least one letter; or empty"
+                )
         return self
 
     @property

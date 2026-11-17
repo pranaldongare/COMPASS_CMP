@@ -10,11 +10,14 @@ an SMS outage cannot take email down with it.
 
 from __future__ import annotations
 
-from typing import Protocol, runtime_checkable
+import re
+from functools import lru_cache
+from typing import Any, Final, Protocol, runtime_checkable
 
 from cmp.core.config import settings
 from cmp.core.logging import get_logger
 from cmp.infrastructure.email.transport import obscure
+from cmp.validation.contacts import normalise_mobile
 
 log = get_logger("cmp.infrastructure.sms")
 
@@ -123,6 +126,183 @@ class HttpSmsTransport:
         return {"channel": "sms", "transport": "http", "delivered": True, "message_id": message_id}
 
 
+#: What SNS takes for a phone number: a plus, then 8 to 15 digits, the first
+#: not a zero (E.164).
+_E164: Final = re.compile(r"\+[1-9][0-9]{7,14}")
+
+#: How long a national number is where the default country code is India's.
+_NATIONAL_DIGITS: Final = 10
+
+
+def to_e164(stored: str, country_code: str) -> str:
+    """A stored mobile as SNS takes it, or `ValueError`.
+
+    A mobile is stored as it was typed, less its punctuation: with a plus if
+    one was typed, and with no country code assumed if none was
+    (`normalise_mobile`). SNS takes E.164 only. A number with a plus is taken
+    as it is. One without loses its leading zeros - a trunk prefix (`098…`) or
+    an international one (`0091…`) - and gets `country_code` in front, unless
+    it carries it already: it starts with the code and is exactly ten digits
+    longer, the length of India's national number. So `9198765432`, ten digits
+    that happen to start with 91, is a national number and gets the code;
+    `919876543210` has it.
+    """
+    number = normalise_mobile(stored)
+    if not number.startswith("+"):
+        digits = number.lstrip("0")
+        carries_code = (
+            digits.startswith(country_code) and len(digits) == len(country_code) + _NATIONAL_DIGITS
+        )
+        number = "+" + (digits if carries_code else country_code + digits)
+    if not _E164.fullmatch(number):
+        raise ValueError("not a phone number SNS can send to")
+    return number
+
+
+#: `ClientError` codes that say "not now" whatever the HTTP status: SNS's own
+#: throttle, the account's, and a key service or endpoint that blinked.
+_SNS_BUSY: Final = frozenset(
+    {
+        "Throttled",
+        "ThrottledException",
+        "Throttling",
+        "ThrottlingException",
+        "TooManyRequestsException",
+        "RequestThrottled",
+        "RequestTimeout",
+        "RequestTimeoutException",
+        "KMSThrottling",
+        "InternalError",
+        "InternalFailure",
+        "ServiceUnavailable",
+    }
+)
+
+
+@lru_cache(maxsize=4)
+def _sns_client(region: str, timeout_s: float) -> Any:
+    """One SNS client per process, made on the first text and kept.
+
+    Made lazily, so building the transport - the API at startup, `deliver()`
+    for every message - needs no credentials and opens nothing, and each
+    Celery child makes its own after the fork rather than sharing a parent's
+    sockets. botocore alone, not boto3: the workers publish and do nothing
+    else, and boto3 would bring the S3 transfer manager with it.
+
+    botocore tries once more itself; the task's backoff does the real
+    retrying. The proxy is HTTPS_PROXY and NO_PROXY, which botocore reads.
+    """
+    import botocore.session
+    from botocore.config import Config
+
+    return botocore.session.get_session().create_client(
+        "sns",
+        region_name=region,
+        config=Config(
+            connect_timeout=timeout_s,
+            read_timeout=timeout_s,
+            retries={"mode": "standard", "total_max_attempts": 2},
+            user_agent_extra="compass-cmp",
+        ),
+    )
+
+
+class SnsSmsTransport:
+    """Amazon SNS, publishing straight to the phone number (ADR 0043).
+
+    No topic and no subscription: one `Publish` per text, as Transactional,
+    the route SNS keeps for one-time codes. Credentials are the standard AWS
+    chain of the worker's environment and the proxy is HTTPS_PROXY: neither
+    is read here. "Delivered" means SNS accepted the text, as a 2xx does for
+    the HTTP gateway; what the carrier did with it is in SNS's delivery logs
+    in CloudWatch, not here.
+    """
+
+    def __init__(self, *, region: str, sender_id: str, country_code: str, timeout_s: float) -> None:
+        self._region = region
+        self._sender_id = sender_id
+        self._country_code = country_code
+        self._timeout_s = timeout_s
+
+    def send(self, *, to: str, body: str) -> dict[str, object]:
+        # botocore is imported here, like httpx above: a process that sends
+        # through another transport never loads it.
+        from botocore import exceptions as aws
+
+        who = obscure(to)
+        try:
+            number = to_e164(to, self._country_code)
+        except ValueError as exc:
+            log.error("sms.gateway_refused", to=who, code="bad_number")
+            raise RuntimeError("SNS cannot send to this number: not E.164") from exc
+
+        attributes: dict[str, dict[str, str]] = {
+            "AWS.SNS.SMS.SMSType": {"DataType": "String", "StringValue": "Transactional"}
+        }
+        if self._sender_id:
+            attributes["AWS.SNS.SMS.SenderID"] = {
+                "DataType": "String",
+                "StringValue": self._sender_id,
+            }
+        # The HTTP transport's contract (review SCALE-2): passing trouble is
+        # said in the tasks' terms, and a refusal no retry will mend stays a
+        # RuntimeError. The mapping is needed, not tidiness: botocore's
+        # connection errors are not OSError subclasses, so unmapped, a proxy
+        # or endpoint outage would lose the sign-in code on the first try.
+        # The order matters: the timeouts and the TLS failure are subclasses
+        # of botocore's ConnectionError and HTTPClientError.
+        try:
+            response = _sns_client(self._region, self._timeout_s).publish(
+                PhoneNumber=number, Message=body, MessageAttributes=attributes
+            )
+        except (aws.ConnectTimeoutError, aws.ReadTimeoutError) as exc:
+            log.warning("sms.gateway_timeout", to=who)
+            raise TimeoutError(f"SNS timed out: {type(exc).__name__}") from exc
+        except aws.SSLError as exc:
+            log.warning(
+                "sms.gateway_tls_failed",
+                to=who,
+                hint=f"is the proxy inspecting sns.{self._region}.amazonaws.com?",
+            )
+            raise ConnectionError("SNS could not be reached: the TLS handshake failed") from exc
+        except (aws.ConnectionError, aws.HTTPClientError) as exc:
+            log.warning("sms.gateway_unreachable", to=who)
+            raise ConnectionError(f"SNS unreachable: {type(exc).__name__}") from exc
+        except aws.ClientError as exc:
+            status = int(exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode") or 0)
+            code = str(exc.response.get("Error", {}).get("Code") or "")
+            if status == 429 or status >= 500 or code in _SNS_BUSY:
+                log.warning("sms.gateway_busy", to=who, status=status, code=code)
+                raise GatewayBusy(f"SNS answered {status} {code}") from exc
+            # A bad number, a number that opted out, a key that may not
+            # publish: SNS's words can quote the number, so only its code.
+            log.error("sms.gateway_refused", to=who, status=status, code=code)
+            raise RuntimeError(f"SNS refused the text: {status} {code}") from exc
+        except (
+            aws.NoCredentialsError,
+            aws.PartialCredentialsError,
+            aws.CredentialRetrievalError,
+            aws.ProfileNotFound,
+            aws.ConfigNotFound,
+            aws.TokenRetrievalError,
+            aws.SSOError,
+        ) as exc:
+            log.error(
+                "sms.not_configured",
+                reason=type(exc).__name__,
+                hint="this process found no usable AWS credentials: check AWS_PROFILE and "
+                "AWS_SHARED_CREDENTIALS_FILE in its environment",
+            )
+            raise RuntimeError(f"SNS has no credentials: {type(exc).__name__}") from exc
+        except aws.BotoCoreError as exc:
+            log.error("sms.gateway_refused", to=who, code=type(exc).__name__)
+            raise RuntimeError(f"SNS could not send the text: {type(exc).__name__}") from exc
+
+        message_id = response.get("MessageId")
+        log.info("sms.delivered", to=who, transport="sns", message_id=message_id)
+        return {"channel": "sms", "transport": "sns", "delivered": True, "message_id": message_id}
+
+
 class NullSmsTransport:
     """Accepts and discards, keeping what it was given for assertions."""
 
@@ -147,6 +327,13 @@ def build_sms_transport() -> SmsTransport:
             url=settings.sms_http_url,
             token=settings.sms_http_token.get_secret_value(),
             sender=settings.sms_http_sender,
+            timeout_s=settings.external_http_timeout_s,
+        )
+    if settings.sms_transport == "sns":
+        return SnsSmsTransport(
+            region=settings.sms_sns_region.strip(),
+            sender_id=settings.sms_sns_sender_id,
+            country_code=settings.sms_default_country_code,
             timeout_s=settings.external_http_timeout_s,
         )
     return ConsoleSmsTransport()

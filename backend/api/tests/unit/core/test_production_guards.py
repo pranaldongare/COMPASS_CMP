@@ -45,6 +45,11 @@ class TestTransportsInProduction:
         with pytest.raises(ValueError, match="SMS_TRANSPORT"):
             _settings(sms_transport="console")
 
+    def test_sns_boots_with_no_gateway_address(self) -> None:
+        settings = _settings(sms_transport="sns", sms_http_url="")
+        assert settings.sms_transport == "sns"
+        assert settings.sms_sns_region == "ap-south-1"
+
     def test_null_sms_is_refused(self) -> None:
         with pytest.raises(ValueError, match="SMS_TRANSPORT"):
             _settings(sms_transport="null")
@@ -107,3 +112,51 @@ class TestBreachTicketDomainsInProduction:
     def test_a_comma_separated_value_is_read_as_a_list(self) -> None:
         settings = _settings(breach_ticket_email_domains="organisation.example, lab.example")
         assert settings.breach_ticket_email_domains == ("organisation.example", "lab.example")
+
+
+class TestSnsIsCheckedInAnyEnvironment:
+    """Each of these is a text refused one at a time, while somebody waits for
+    a code (ADR 0043)."""
+
+    @staticmethod
+    def _local(**overrides: Any) -> Settings:
+        return Settings(
+            **{
+                "_env_file": None,
+                "environment": "local",
+                "secret_key": "dev-only-secret-key-for-local-use-only",
+                "cookie_secure": False,
+                "sms_transport": "sns",
+                **overrides,
+            }
+        )
+
+    def test_the_defaults_boot(self) -> None:
+        settings = self._local()
+        assert (settings.sms_sns_region, settings.sms_sns_sender_id) == ("ap-south-1", "")
+        assert settings.sms_default_country_code == "91"
+
+    @pytest.mark.parametrize("region", ["", "  ", "mumbai", "ap-south", "https://sns.aws"])
+    def test_a_region_that_is_not_one_is_refused(self, region: str) -> None:
+        with pytest.raises(ValueError, match="SMS_SNS_REGION"):
+            self._local(sms_sns_region=region)
+
+    @pytest.mark.parametrize("code", ["+91", "", "0", "091", "9191", "IN"])
+    def test_a_country_code_that_is_not_digits_is_refused(self, code: str) -> None:
+        with pytest.raises(ValueError, match="SMS_DEFAULT_COUNTRY_CODE"):
+            self._local(sms_default_country_code=code)
+
+    @pytest.mark.parametrize("sender", ["AB", "A B", "123456", "TWELVELETTER", "CMP_1"])
+    def test_a_sender_id_sns_would_refuse_is_refused(self, sender: str) -> None:
+        with pytest.raises(ValueError, match="SMS_SNS_SENDER_ID"):
+            self._local(sms_sns_sender_id=sender)
+
+    @pytest.mark.parametrize("sender", ["COMPASS", "CMP-1", "Compass2026"])
+    def test_a_sender_id_sns_takes_boots(self, sender: str) -> None:
+        assert self._local(sms_sns_sender_id=sender).sms_sns_sender_id == sender
+
+    def test_none_of_it_is_looked_at_for_another_transport(self) -> None:
+        settings = self._local(
+            sms_transport="console", sms_sns_region="", sms_default_country_code="+91"
+        )
+        assert settings.sms_transport == "console"

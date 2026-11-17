@@ -8,6 +8,9 @@ time the gateway hiccuped. The adapter now says which kind of failure it was:
 a timeout, a lost connection, 429 or 5xx are worth another try; any other
 refusal - a bad number, a bad token - is not, and retrying it would only send
 the same wrong request five more times.
+
+The Amazon SNS transport keeps the same contract in botocore's exceptions
+(ADR 0043): `test_sns_sms_transport.py`, with this file's `_retried`.
 """
 
 from __future__ import annotations
