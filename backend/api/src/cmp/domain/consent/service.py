@@ -197,7 +197,7 @@ async def register_subject(
     who otherwise leaves no artefact to trace.
     """
     link = await resolve_link(conn, token)
-    if link.get("audience_mode") == "sso":
+    if signs_in_with_the_organisation(link):
         # An `sso` link enrols through the organisation's account, never a form
         # (ADR 0034).
         raise Conflict("This link signs you in with your organisation account.", code="sso_link")
@@ -248,15 +248,34 @@ async def register_subject(
         entity_id=user["id"],
         subject_user_id=user["id"],
         actor_user_id=user["id"],
-        detail={"link": str(link["link_uuid"]), "new_account": created},
+        detail={
+            "link": str(link["link_uuid"]),
+            "new_account": created,
+            # An employee link followed by a code, the organisation's sign-in
+            # not being connected: nothing vouched for the employment (ADR 0044).
+            **({"employee_link_by_code": True} if link.get("audience_mode") == "sso" else {}),
+        },
     )
     return {"user": user, "link": link, "created": created}
+
+
+def signs_in_with_the_organisation(link: dict[str, Any]) -> bool:
+    """Whether this link's people sign in with their organisation account.
+
+    A link made for employees (`audience_mode = sso`) does so only once the
+    organisation's sign-in is connected (`SSO_ENABLED`; in development, the
+    stand-in, `SSO_MOCK`). Until then it takes the normal route, as every
+    other link does: a form for a new person and a one-time code (ADR 0044,
+    2026-11-17). The link itself is not changed, so the day the sign-in is
+    connected the same link asks for it.
+    """
+    return link.get("audience_mode") == "sso" and (settings.sso_enabled or settings.sso_mock)
 
 
 async def send_contact_code(conn: Conn, *, token: str, contact: str) -> None:
     link = await resolve_link(conn, token)
     contact = normalise_contact(contact)
-    if link.get("audience_mode") == "sso":
+    if signs_in_with_the_organisation(link):
         # An `sso` link signs in through the organisation; a code is never
         # sent on it, and the reply is the same sentence as ever (ADR 0034).
         log.info("consent.code_requested_on_sso_link")

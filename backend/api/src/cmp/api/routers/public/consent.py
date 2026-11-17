@@ -136,7 +136,9 @@ async def open_link(token: TokenPath, request: Request, response: Response) -> d
         "available_languages": [
             x["language_code"] for x in languages if x["approved_at"] is not None
         ],
-        "audience_mode": link.get("audience_mode") or "otp",
+        # How this link signs people in now: an employee link takes the code
+        # route until the organisation's sign-in is connected (ADR 0044).
+        "audience_mode": "sso" if service.signs_in_with_the_organisation(link) else "otp",
     }
 
 

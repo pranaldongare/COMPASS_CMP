@@ -20,6 +20,7 @@ from urllib.parse import parse_qs, urlparse
 import pytest
 
 from cmp.auth.authentication import sso
+from cmp.core.config import settings
 from cmp.core.errors import Conflict, NotFound
 from cmp.core.permissions import Role
 from cmp.db.repositories import users as user_repo
@@ -281,14 +282,66 @@ class TestRefusals:
             )
 
 
+class TestUntilTheSignInIsConnectedAnEmployeeLinkTakesTheNormalRoute:
+    """ADR 0044: with no organisation sign-in switched on, an employee link is
+    followed as every other link is - a form for a new person, a code to sign
+    in - and the link itself is unchanged for the day the sign-in is."""
+
+    async def test_it_does_not_ask_for_the_organisation_account(
+        self, conn: Any, link: str, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        found = await consent_service.resolve_link(conn, link)
+        assert found["audience_mode"] == "sso"
+        assert consent_service.signs_in_with_the_organisation(found) is False
+        # Connected - the provider, or in development its stand-in - it does.
+        monkeypatch.setattr(settings, "sso_enabled", True)
+        assert consent_service.signs_in_with_the_organisation(found) is True
+        monkeypatch.setattr(settings, "sso_enabled", False)
+        monkeypatch.setattr(settings, "sso_mock", True)
+        assert consent_service.signs_in_with_the_organisation(found) is True
+
+    async def test_a_code_link_never_does(
+        self, conn: Any, seeded: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        monkeypatch.setattr(settings, "sso_enabled", True)
+        assert consent_service.signs_in_with_the_organisation({"audience_mode": "otp"}) is False
+
+    async def test_a_new_person_registers_by_the_form_and_is_sent_a_code(
+        self, conn: Any, link: str, codes: list[Any]
+    ) -> None:
+        made = await consent_service.register_subject(
+            conn,
+            token=link,
+            full_name="Nisha Verma",
+            mobile="+919833334455",
+            email="nisha.verma@example.org",
+            dob="1990-01-01",
+        )
+        assert made["created"] is True
+        # Nothing vouched for the employment: no employee ID from a form.
+        assert made["user"]["organization_id"] is None
+        await consent_service.send_contact_code(conn, token=link, contact="+919833334455")
+        assert len(codes) == 1
+        row = await fetch_one(
+            conn,
+            """SELECT detail_json FROM audit_log
+                WHERE event_type = 'subject.registered' AND entity_id = %s
+                ORDER BY log_id DESC LIMIT 1""",
+            (int(made["user"]["id"]),),
+        )
+        assert row is not None and row["detail_json"]["employee_link_by_code"] is True
+
+
 class TestTheLinkItself:
     async def test_a_code_is_never_sent_on_an_sso_link(
-        self, conn: Any, link: str, codes: list[Any], seeded: dict[str, Any]
+        self, conn: Any, stub: StubProvider, link: str, codes: list[Any], seeded: dict[str, Any]
     ) -> None:
         await consent_service.send_contact_code(conn, token=link, contact="+915550000001")
         assert codes == []
 
-    async def test_nobody_registers_by_form_on_an_sso_link(self, conn: Any, link: str) -> None:
+    async def test_nobody_registers_by_form_on_an_sso_link(
+        self, conn: Any, stub: StubProvider, link: str
+    ) -> None:
         with pytest.raises(Conflict) as refused:
             await consent_service.register_subject(
                 conn,

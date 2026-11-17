@@ -19,9 +19,9 @@ import pytest
 
 from cmp.core.config import settings
 from cmp.infrastructure.identity import state as sso_state
-from tests.http.conftest import SessionFactory, fresh_mobile
+from tests.http.conftest import SessionFactory, fresh_mobile, last_code
 from tests.http.contract import call
-from tests.http.world import World, build
+from tests.http.world import CONSENT_CODE, World, build
 from tests.support.oidc_stub import StubProvider, install
 
 
@@ -131,4 +131,60 @@ async def test_an_employee_signs_in_by_sso_and_reads_the_notice(
         "/auth/sso/callback",
         params={"state": "never-issued-state-0000", "code": "x"},
         expect=404,
+    )
+
+
+async def test_with_no_sign_in_connected_an_employee_link_takes_the_normal_route(
+    http: httpx.AsyncClient, world: World, queued: Any
+) -> None:
+    """ADR 0044: no stub here, so no organisation sign-in is switched on. The
+    link is made for employees and is followed as any other: the form, a code,
+    a session, the notice."""
+    assert not settings.sso_enabled and not settings.sso_mock
+    minted = await call(
+        http,
+        "POST",
+        f"/sites/{world.site_uuid}/agent",
+        template="/sites/{site_uuid}/agent",
+        session=world.dco,
+        expect=(200, 201),
+        check_sealed=False,
+        json={
+            "expires_at": (datetime.now(UTC) + timedelta(days=7)).isoformat(),
+            "audience_mode": "sso",
+        },
+    )
+    token = minted.json()["url_path"].rsplit("/", 1)[-1]
+    opened = await call(http, "GET", f"/c/{token}", template="/c/{token}")
+    assert opened.json()["audience_mode"] == "otp"
+
+    mobile = fresh_mobile()
+    await call(
+        http,
+        "POST",
+        f"/c/{token}/register",
+        template="/c/{token}/register",
+        expect=(200, 201),
+        json={"full_name": "An Employee", "mobile": mobile, "dob": "1990-05-17"},
+    )
+    await call(http, "POST", f"/c/{token}/otp", template="/c/{token}/otp", json={"contact": mobile})
+    code = last_code(queued, CONSENT_CODE, position=1)
+    verified = await call(
+        http,
+        "POST",
+        f"/c/{token}/otp/verify",
+        template="/c/{token}/otp/verify",
+        json={"contact": mobile, "code": code},
+    )
+    cookies = dict(verified.cookies)
+    assert cookies.get(settings.cookie_name), "the code opened a session"
+    me = await call(http, "GET", "/auth/me", cookies=cookies)
+    assert me.json()["role"] == "data_subject"
+    await call(
+        http,
+        "GET",
+        f"/c/{token}/notice",
+        template="/c/{token}/notice",
+        params={"language_code": "english"},
+        cookies=cookies,
     )
