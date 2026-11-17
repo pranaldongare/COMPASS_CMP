@@ -88,7 +88,7 @@ const nextConfig: NextConfig = {
     "localhost",
     "127.0.0.1",
     "[::1]",
-    ...(ADDRESSES.host ? [ADDRESSES.host] : []),
+    ...ADDRESSES.hosts,
     ...(process.env.DEV_ORIGINS ?? "")
       .split(",")
       .map((origin) => origin.trim())

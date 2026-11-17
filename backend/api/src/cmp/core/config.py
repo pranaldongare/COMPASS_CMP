@@ -121,6 +121,14 @@ class Settings(BaseSettings):
     console_port: int = 3000
     portal_port: int = 3001
     api_port: int = 8000
+    #: CONSOLE_URL / PORTAL_URL / API_URL: for when the three run on
+    #: different machines - each one's whole address, `http://<ip>:<port>`.
+    #: One that is set is used as it is; one left empty is built from
+    #: APP_BASE_URL and its port. (API_URL is for the frontends, which forward
+    #: `/api` to it; the API only has to accept the line.)
+    console_url: str = ""
+    portal_url: str = ""
+    api_url: str = ""
 
     #: The data principal's portal, as reached from outside: the base of every
     #: link the platform puts in a message to a person - a nomination's
@@ -456,14 +464,30 @@ class Settings(BaseSettings):
         def at(port: int) -> str:
             return f"{base}:{port}" if port else base
 
+        def part(given: str, port: int) -> str:
+            """A part's own address: `http://<ip>` gets that part's port,
+            one written with a port, or an https name, is used as it is."""
+            url = given.strip().rstrip("/")
+            if url.startswith("http://") and port and not re.search(r":\d+$", url):
+                return f"{url}:{port}"
+            return url
+
         built = {
             "app_base_url": base,
-            "public_base_url": self.public_base_url.strip().rstrip("/") or at(self.portal_port),
-            "console_base_url": self.console_base_url.strip().rstrip("/") or at(self.console_port),
+            "public_base_url": self.public_base_url.strip().rstrip("/")
+            or part(self.portal_url, self.portal_port)
+            or at(self.portal_port),
+            "console_base_url": self.console_base_url.strip().rstrip("/")
+            or part(self.console_url, self.console_port)
+            or at(self.console_port),
         }
         built["sso_redirect_url"] = (
             self.sso_redirect_url.strip() or f"{built['public_base_url']}/api/auth/sso/callback"
         )
+        for name in ("console_url", "portal_url", "api_url"):
+            given = getattr(self, name).strip()
+            if given and not re.fullmatch(r"https?://[^/\s]+/?", given):
+                raise ValueError(f"{name.upper()} must be http(s)://<ip or name>[:port], no path")
         for name, value in built.items():
             object.__setattr__(self, name, value)
         if not self.cors_origins:

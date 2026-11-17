@@ -25,8 +25,8 @@ export type Addresses = {
   portal?: string;
   /** Where the API listens, as this server reaches it. */
   api: string;
-  /** The host people use, for the dev server's allowed origins. */
-  host?: string;
+  /** The hosts people use, for the dev server's allowed origins. */
+  hosts: string[];
 };
 
 /** `KEY=value` lines of an env file. Comments and blank lines are skipped;
@@ -52,25 +52,54 @@ function port(raw: string | undefined, fallback: number): number {
 export function addresses(env: Env, repositoryEnv: Env = {}): Addresses {
   const read = (name: string) =>
     env[name]?.trim() || repositoryEnv[name]?.trim() || undefined;
-  const api = read("API_ORIGIN") ?? `http://127.0.0.1:${port(read("API_PORT"), 8000)}`;
-  const base = read("APP_BASE_URL")?.replace(/\/+$/, "");
-  if (!base) return { api };
-  let url: URL;
-  try {
-    url = new URL(base);
-  } catch {
-    throw new Error("APP_BASE_URL must be http://<ip or name> or https://<name>");
-  }
-  if (!/^https?:$/.test(url.protocol) || url.port || url.pathname !== "/") {
-    throw new Error(
-      "APP_BASE_URL must be http://<ip or name> or https://<name>, no port, no path",
-    );
-  }
-  const at = (p: number) => (p ? `${base}:${p}` : base);
-  return {
-    console: at(port(read("CONSOLE_PORT"), 3000)),
-    portal: at(port(read("PORTAL_PORT"), 3001)),
-    api,
-    host: url.hostname,
+  const whole = (name: string, defaultPort = 0) => {
+    const raw = read(name)?.replace(/\/+$/, "");
+    if (!raw) return undefined;
+    let url: URL;
+    try {
+      url = new URL(raw);
+    } catch {
+      throw new Error(`${name} must be http(s)://<ip or name>[:port]`);
+    }
+    if (!/^https?:$/.test(url.protocol) || url.pathname !== "/") {
+      throw new Error(`${name} must be http(s)://<ip or name>[:port], no path`);
+    }
+    // `http://<ip>` gets that part's port; one written with a port, or an
+    // https name, is used as it is.
+    return url.protocol === "http:" && !url.port && defaultPort
+      ? `${raw}:${defaultPort}`
+      : raw;
   };
+  const api =
+    read("API_ORIGIN") ??
+    whole("API_URL", port(read("API_PORT"), 8000)) ??
+    `http://127.0.0.1:${port(read("API_PORT"), 8000)}`;
+  const base = read("APP_BASE_URL")?.replace(/\/+$/, "");
+  let at: ((p: number) => string) | undefined;
+  if (base) {
+    let url: URL;
+    try {
+      url = new URL(base);
+    } catch {
+      throw new Error("APP_BASE_URL must be http://<ip or name> or https://<name>");
+    }
+    if (!/^https?:$/.test(url.protocol) || url.port || url.pathname !== "/") {
+      throw new Error(
+        "APP_BASE_URL must be http://<ip or name> or https://<name>, no port, no path",
+      );
+    }
+    at = (p: number) => (p ? `${base}:${p}` : base);
+  }
+  // Each part's whole address when it is given (three machines), else the
+  // one address and that part's port.
+  const consoleUrl =
+    whole("CONSOLE_URL", port(read("CONSOLE_PORT"), 3000)) ??
+    at?.(port(read("CONSOLE_PORT"), 3000));
+  const portalUrl =
+    whole("PORTAL_URL", port(read("PORTAL_PORT"), 3001)) ??
+    at?.(port(read("PORTAL_PORT"), 3001));
+  const hosts = [
+    ...new Set([consoleUrl, portalUrl].flatMap((u) => (u ? [new URL(u).hostname] : []))),
+  ];
+  return { console: consoleUrl, portal: portalUrl, api, hosts };
 }

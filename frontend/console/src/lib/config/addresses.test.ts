@@ -9,7 +9,7 @@ describe("addresses", () => {
       console: "http://10.1.2.3:3000",
       portal: "http://10.1.2.3:4001",
       api: "http://127.0.0.1:8000",
-      host: "10.1.2.3",
+      hosts: ["10.1.2.3"],
     });
   });
 
@@ -27,7 +27,24 @@ describe("addresses", () => {
   });
 
   it("builds nothing without the address, so the build's own check still runs", () => {
-    expect(addresses({}, {})).toEqual({ api: "http://127.0.0.1:8000" });
+    expect(addresses({}, {})).toEqual({
+      console: undefined,
+      portal: undefined,
+      api: "http://127.0.0.1:8000",
+      hosts: [],
+    });
+  });
+
+  it("takes each part's whole address when the three are on different machines", () => {
+    const file = parseEnvFile(
+      "APP_BASE_URL=http://10.0.0.1\nPORTAL_URL=http://10.0.0.2\nAPI_URL=http://10.0.0.3\n",
+    );
+    expect(addresses({}, file)).toEqual({
+      console: "http://10.0.0.1:3000",
+      portal: "http://10.0.0.2:3001",
+      api: "http://10.0.0.3:8000",
+      hosts: ["10.0.0.1", "10.0.0.2"],
+    });
   });
 
   it("refuses an address with a port or a path", () => {

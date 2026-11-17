@@ -40,6 +40,11 @@ of the API, the worker, the console and the portal.
 | `CONSOLE_PORT` | `3000` | `CONSOLE_BASE_URL` (links to staff), the portal's link to the console |
 | `API_PORT` | `8000` | where each frontend forwards `/api` (`API_ORIGIN`) |
 
+When the console, the portal and the API run on **different machines**, give
+each one's whole address in the same file: `CONSOLE_URL`, `PORTAL_URL` and
+`API_URL`, as `http://<ip>` (its port is added). One left
+empty is built from `APP_BASE_URL` and its port.
+
 `CORS_ORIGINS` becomes the two built addresses, and the host is added to the
 origins each dev server accepts. An address set by its own name in a part's
 own env file wins over what is built. The ports are also in the frontends'
