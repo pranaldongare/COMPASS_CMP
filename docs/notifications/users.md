@@ -86,7 +86,7 @@ If you were not expecting this message, please tell the Privacy Office at {organ
 **SMS:**
 
 ```text
-{organisation}: your sign-in code is {code}. It expires in {minutes} minutes. Not you? Ignore this message.
+Your OTP for sign-in is {code}. It is valid for {minutes} minutes. Do not share it with anyone. - {organisation}
 ```
 
 <a id="registration-code"></a>
@@ -123,7 +123,7 @@ If you were not expecting this message, please tell the Privacy Office at {organ
 **SMS:**
 
 ```text
-{organisation}: {code} confirms this mobile number. Enter it to finish signing up. Expires in {minutes} minutes.
+{code} confirms this mobile number. Enter it to finish signing up. Expires in {minutes} minutes. - {organisation}
 ```
 
 <a id="consent-code"></a>
@@ -138,7 +138,7 @@ Key `consent_code` · channels: email, sms
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_consent_code` (`backend/api/src/cmp/tasks/authentication/otp.py:61`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/sso.py:262`, `backend/api/src/cmp/auth/authentication/sso_mock.py:50`, `backend/api/src/cmp/domain/consent/service.py:310` |
+| Queued from | `backend/api/src/cmp/auth/authentication/sso.py:262`, `backend/api/src/cmp/auth/authentication/sso_mock.py:50`, `backend/api/src/cmp/domain/consent/service.py:329` |
 | Variables | `code` (The six-digit one-time code.), `minutes` (How many minutes the code is valid for.), `project_name` (The project the notice belongs to.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{code} confirms your contact details`
@@ -160,7 +160,7 @@ If you were not expecting this message, please tell the Privacy Office at {organ
 **SMS:**
 
 ```text
-{organisation}: {code} confirms your contact for {project_name}. You have not agreed to anything yet. Expires in {minutes} minutes.
+{code} confirms your contact for {project_name}. You have not agreed to anything yet. Expires in {minutes} minutes. - {organisation}
 ```
 
 <a id="password-reset"></a>
@@ -260,7 +260,7 @@ If you were not expecting this message, please tell the Privacy Office at {organ
 **SMS:**
 
 ```text
-{organisation}: {code} confirms this mobile number. Enter it on your account page. Expires in {minutes} minutes.
+{code} confirms this mobile number. Enter it on your account page. Expires in {minutes} minutes. - {organisation}
 ```
 
 <a id="contact-added-for-you"></a>
@@ -295,7 +295,7 @@ If you were not expecting this message, please tell the Privacy Office at {organ
 **SMS:**
 
 ```text
-{organisation}: this number was added to your account. {code} confirms it is yours - sign in, open your account page and enter it there. Valid for {hours} hours.
+This number was added to your account. {code} confirms it is yours - sign in, open your account page and enter it there. Valid for {hours} hours. - {organisation}
 ```
 
 <a id="office-note"></a>

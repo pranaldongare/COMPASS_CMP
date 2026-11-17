@@ -70,7 +70,7 @@ This notice is also in your account: {portal_url}
 **SMS:**
 
 ```text
-{organisation}: a personal data breach may affect your data ({breach_reference}). What happened, what it means and what you can do are in your account: {portal_url} Questions: {contact}
+A personal data breach may affect your data ({breach_reference}). What happened, what it means and what you can do are in your account: {portal_url} Questions: {contact} - {organisation}
 ```
 
 <a id="breach-notice-direct"></a>
@@ -114,7 +114,7 @@ Questions
 **SMS:**
 
 ```text
-{organisation}: a personal data breach may affect your data ({breach_reference}). {what_happened} What you can do: {protective_steps} Questions: {contact}
+A personal data breach may affect your data ({breach_reference}). {what_happened} What you can do: {protective_steps} Questions: {contact} - {organisation}
 ```
 
 <a id="breach-ticket-waiting"></a>

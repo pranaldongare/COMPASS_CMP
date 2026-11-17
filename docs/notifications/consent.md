@@ -27,7 +27,7 @@ Key `consent_receipt` · channels: email, sms
 | CC | Never - it is written to one person about her own data; a copy would disclose it. |
 | Attachment | Her consent record (consent-record.txt): what she agreed to and when, the notice version and its fingerprint. |
 | Sent by | `cmp.notifications.send_consent_receipt` (`backend/api/src/cmp/tasks/notifications/consent.py:51`) |
-| Queued from | `backend/api/src/cmp/domain/consent/service.py:643` |
+| Queued from | `backend/api/src/cmp/domain/consent/service.py:662` |
 | Variables | `project_name` (The project the consent is for.), `reference` (The consent record's reference.), `purposes` (The purposes agreed to, one per line, each starting with a dash.), `purpose_count` (How many purposes were agreed to.), `withdraw_url` (Where she can review or withdraw.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Your consent record for {project_name}`
@@ -53,7 +53,7 @@ If you were not expecting this message, please tell the Privacy Office at {organ
 **SMS:**
 
 ```text
-{organisation}: your consent for {project_name} is recorded ({purpose_count} purpose(s)). Ref {reference}. Review or withdraw any time: {withdraw_url}
+Your consent for {project_name} is recorded ({purpose_count} purpose(s)). Ref {reference}. Review or withdraw any time: {withdraw_url} - {organisation}
 ```
 
 <a id="hr-reconsent-request"></a>
@@ -89,7 +89,7 @@ If you were not expecting this message, please tell the Privacy Office at {organ
 **SMS:**
 
 ```text
-{organisation}: the terms for {activity_name} have changed. Your consent stands until you decide; read and decide here: {link_url}
+The terms for {activity_name} have changed. Your consent stands until you decide; read and decide here: {link_url} - {organisation}
 ```
 
 <a id="hr-withdrawal-notice"></a>
@@ -104,7 +104,7 @@ Key `hr_withdrawal_notice` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_hr_withdrawal_notice` (`backend/api/src/cmp/tasks/notifications/withdrawal.py:69`) |
-| Queued from | `backend/api/src/cmp/domain/consent/service.py:713` |
+| Queued from | `backend/api/src/cmp/domain/consent/service.py:732` |
 | Variables | `activity_name` (The activity's name.), `category_name` (The activity's category.), `principal_ref` (The participant's employee ID, or her principal ID when none is on record.), `stopped` (The purposes withdrawn, comma-separated.), `continuing` (The purposes still in force, comma-separated, or 'none'.), `consent_reference` (The withdrawal record's reference.), `register_url` (The activity's register in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Consent withdrawn on {activity_name} - stop processing for {principal_ref}`
@@ -137,7 +137,7 @@ Key `withdrawal_confirmation` · channels: email, sms
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_withdrawal_confirmation` (`backend/api/src/cmp/tasks/notifications/withdrawal.py:38`) |
-| Queued from | `backend/api/src/cmp/domain/consent/service.py:830` |
+| Queued from | `backend/api/src/cmp/domain/consent/service.py:849` |
 | Variables | `reference` (The new record's reference.), `stopped` (The purposes withdrawn, comma-separated.), `continuing` (The purposes still in force, comma-separated, or empty.), `continuing_note` (A sentence about what continues, or empty when nothing does.), `rights_url` (Where to ask for erasure.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Your withdrawal has been recorded`
@@ -161,5 +161,5 @@ If you were not expecting this message, please tell the Privacy Office at {organ
 **SMS:**
 
 ```text
-{organisation}: your withdrawal is recorded. Stopped: {stopped}. Ref {reference}. To ask for erasure of data already collected: {rights_url}
+Your withdrawal is recorded. Stopped: {stopped}. Ref {reference}. To ask for erasure of data already collected: {rights_url} - {organisation}
 ```

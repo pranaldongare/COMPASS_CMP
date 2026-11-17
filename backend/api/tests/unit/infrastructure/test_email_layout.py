@@ -164,3 +164,21 @@ def test_the_message_sent_and_the_local_outbox_carry_no_marks(tmp_path: Path) ->
 def test_the_plain_text_carries_the_same_footer() -> None:
     text = render_text(body="Hello.\n", organisation="COMPASS")
     assert text.startswith("Hello.") and "--\nCOMPASS Privacy Office" in text
+
+
+def test_the_badge_and_label_follow_what_the_message_carries() -> None:
+    def label(subject: str, body: str) -> str:
+        page = render_html(subject=subject, body=body, organisation="COMPASS")
+        return next(w for w in ("Verification", "Action needed", "Notice") if f">{w}<" in page)
+
+    assert label("Your code", "Your code is:\n\n482913\n\nIt expires soon.") == "Verification"
+    assert label("A ticket", "Open it here:\nhttps://console.example.org/tickets") == "Action needed"
+    assert label("Action required by 24 September", "Please return it.") == "Action needed"
+    assert label("Your consent is recorded", "Thank you.") == "Notice"
+
+
+def test_a_short_message_is_centred_and_a_long_one_is_read_from_the_left() -> None:
+    short = render_html(subject="S", body="Hello.", organisation="COMPASS")
+    long = render_html(subject="S", body="A sentence to read. " * 60, organisation="COMPASS")
+    assert '<div style="text-align:center;">' in short
+    assert '<div style="text-align:left;">' in long

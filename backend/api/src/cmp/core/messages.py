@@ -233,8 +233,8 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             + _SIGN_OFF_EMAIL
         ),
         sms_body=(
-            "{organisation}: your sign-in code is {code}. It expires in {minutes} minutes. "
-            "Not you? Ignore this message."
+            "Your OTP for sign-in is {code}. It is valid for {minutes} minutes. "
+            "Do not share it with anyone. - {organisation}"
         ),
         to="The data principal signing in, at the email or mobile she chose.",
     ),
@@ -257,8 +257,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "needed." + _SIGN_OFF_EMAIL
         ),
         sms_body=(
-            "{organisation}: {code} confirms this mobile number. Enter it to finish signing "
+            "{code} confirms this mobile number. Enter it to finish signing "
             "up. Expires in {minutes} minutes."
+            " - {organisation}"
         ),
         to="The person signing up, at each email and mobile they gave.",
     ),
@@ -283,8 +284,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "of whatever you decide is yours." + _SIGN_OFF_EMAIL
         ),
         sms_body=(
-            "{organisation}: {code} confirms your contact for {project_name}. You have not "
+            "{code} confirms your contact for {project_name}. You have not "
             "agreed to anything yet. Expires in {minutes} minutes."
+            " - {organisation}"
         ),
         to="The person giving consent through a link, at the contact they gave.",
     ),
@@ -361,8 +363,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "confirmed it cannot be used to sign in." + _SIGN_OFF_EMAIL
         ),
         sms_body=(
-            "{organisation}: {code} confirms this mobile number. Enter it on your account "
+            "{code} confirms this mobile number. Enter it on your account "
             "page. Expires in {minutes} minutes."
+            " - {organisation}"
         ),
         to="The account holder, at the email or mobile they have just added.",
     ),
@@ -386,9 +389,10 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "office." + _SIGN_OFF_EMAIL
         ),
         sms_body=(
-            "{organisation}: this number was added to your account. {code} confirms it is "
+            "This number was added to your account. {code} confirms it is "
             "yours - sign in, open your account page and enter it there. Valid for {hours} "
             "hours."
+            " - {organisation}"
         ),
         to="The account holder, at the email or mobile an administrator added.",
     ),
@@ -433,8 +437,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "erasure from the same page." + _SIGN_OFF_EMAIL
         ),
         sms_body=(
-            "{organisation}: your consent for {project_name} is recorded ({purpose_count} "
+            "Your consent for {project_name} is recorded ({purpose_count} "
             "purpose(s)). Ref {reference}. Review or withdraw any time: {withdraw_url}"
+            " - {organisation}"
         ),
         to="The data principal who gave consent, at her primary contact.",
         attachment=(
@@ -475,8 +480,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "You can also withdraw at any time from your consents page." + _SIGN_OFF_EMAIL
         ),
         sms_body=(
-            "{organisation}: the terms for {activity_name} have changed. Your consent stands "
+            "The terms for {activity_name} have changed. Your consent stands "
             "until you decide; read and decide here: {link_url}"
+            " - {organisation}"
         ),
         to="Each participant with a current consent on the activity, at her primary contact.",
     ),
@@ -578,8 +584,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "make a rights request:\n{rights_url}" + _SIGN_OFF_EMAIL
         ),
         sms_body=(
-            "{organisation}: your withdrawal is recorded. Stopped: {stopped}. Ref "
+            "Your withdrawal is recorded. Stopped: {stopped}. Ref "
             "{reference}. To ask for erasure of data already collected: {rights_url}"
+            " - {organisation}"
         ),
         to="The data principal who withdrew, at her primary contact.",
     ),
@@ -613,8 +620,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "attachment." + _SIGN_OFF_EMAIL
         ),
         sms_body=(
-            "{organisation}: we have received your {request_kind}, ref {reference}. You will "
+            "We have received your {request_kind}, ref {reference}. You will "
             "hear from us by {due_on}. Track it at {portal_url}"
+            " - {organisation}"
         ),
         to="The requester, at the contact on file (a nominee's request: the nominee).",
     ),
@@ -636,8 +644,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "request goes no further." + _SIGN_OFF_EMAIL
         ),
         sms_body=(
-            "{organisation}: {code} confirms request {reference} is yours. Expires in "
+            "{code} confirms request {reference} is yours. Expires in "
             "{minutes} minutes. Not you? Ignore this message."
+            " - {organisation}"
         ),
         to=(
             "The requester, at the contact already on file: an account's, or the address a "
@@ -667,8 +676,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "{availability}" + _BOARD_ROUTE + _SIGN_OFF_EMAIL
         ),
         sms_body=(
-            "{organisation}: our response to request {reference} is ready. Sign in to read "
+            "Our response to request {reference} is ready. Sign in to read "
             "it: {portal_url}. {availability}"
+            " - {organisation}"
         ),
         to="The requester, at the contact on file.",
     ),
@@ -717,7 +727,7 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
         ),
         # Where to read the rest is the availability's to say: with no account
         # behind the request there is nothing to sign in to.
-        sms_body="{organisation}: regarding request {reference}: {headline} {availability}",
+        sms_body=("Regarding request {reference}: {headline} {availability} - {organisation}"),
         to="The requester, at the contact on file.",
     ),
     Junction(
@@ -750,8 +760,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             + _SIGN_OFF_EMAIL
         ),
         sms_body=(
-            "{organisation}: regarding request {reference}: {headline}. {explanation} You "
+            "Regarding request {reference}: {headline}. {explanation} You "
             "may raise a grievance with us or complain to the Data Protection Board."
+            " - {organisation}"
         ),
         to="The requester, at the contact on file.",
     ),
@@ -769,8 +780,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "Entering it is not itself an acceptance: you choose on the page." + _SIGN_OFF_EMAIL
         ),
         sms_body=(
-            "{organisation}: {code} is your nomination code. Enter it to accept or decline. "
+            "{code} is your nomination code. Enter it to accept or decline. "
             "Expires in {minutes} minutes."
+            " - {organisation}"
         ),
         to="The nominee, at the contact the principal recorded for them.",
     ),
@@ -806,8 +818,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             + _SIGN_OFF_EMAIL
         ),
         sms_body=(
-            "{organisation}: {principal_name} has nominated you to act for them under the "
+            "{principal_name} has nominated you to act for them under the "
             "DPDP Act. Accept or decline by {expires_on}: {accept_url}"
+            " - {organisation}"
         ),
         to="The nominee, at the contact the principal recorded for them.",
     ),
@@ -849,8 +862,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             + _SIGN_OFF_EMAIL
         ),
         sms_body=(
-            "{organisation}: you are now {principal_name}'s nominee. Keep this: ref "
+            "You are now {principal_name}'s nominee. Keep this: ref "
             "{reference}. To act when needed, sign in at {sign_in_url}"
+            " - {organisation}"
         ),
         to="The nominee who accepted.",
     ),
@@ -892,8 +906,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "Rights request {reference}, {organisation} Privacy Office."
         ),
         sms_body=(
-            "{organisation} Privacy Office: rights request {reference} needs your return by "
+            "Rights request {reference} needs your return by "
             "{due_on}. {instruction}"
+            " - {organisation}"
         ),
         to=(
             "The holder's responder inside the organisation: a member of staff, or a "
@@ -930,8 +945,7 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "may mean the response has to name your part as outstanding.\n\n{return_route}"
         ),
         sms_body=(
-            "{organisation} Privacy Office: your ticket on rights request {reference} "
-            "{when}. {return_route}"
+            "Your ticket on rights request {reference} {when}. {return_route} - {organisation}"
         ),
         to="The holder's responder.",
     ),
@@ -963,7 +977,8 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "\n\n{message}\n\n{return_route}"
         ),
         sms_body=(
-            "{organisation}: {author} wrote on rights request {reference}: {message} {return_route}"
+            "{author} wrote on rights request {reference}: {message} {return_route}"
+            " - {organisation}"
         ),
         to="The other side of the ticket's thread: the holder's responder, or the Privacy Office.",
         attachment="The file the Privacy Office put on the message, to the ticket's holder only.",
@@ -1107,9 +1122,10 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "This notice is also in your account: {portal_url}"
         ),
         sms_body=(
-            "{organisation}: a personal data breach may affect your data ({breach_reference}). "
+            "A personal data breach may affect your data ({breach_reference}). "
             "What happened, what it means and what you can do are in your account: "
             "{portal_url} Questions: {contact}"
+            " - {organisation}"
         ),
         to=(
             "Each person a breach affected who has an account, at their registered email "
@@ -1166,8 +1182,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "Questions\n{contact}"
         ),
         sms_body=(
-            "{organisation}: a personal data breach may affect your data ({breach_reference}). "
+            "A personal data breach may affect your data ({breach_reference}). "
             "{what_happened} What you can do: {protective_steps} Questions: {contact}"
+            " - {organisation}"
         ),
         to=(
             "Each person a breach affected who has no account, at the email and mobile in the "

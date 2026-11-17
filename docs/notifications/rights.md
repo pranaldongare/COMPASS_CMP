@@ -60,7 +60,7 @@ If you were not expecting this message, please tell the Privacy Office at {organ
 **SMS:**
 
 ```text
-{organisation}: we have received your {request_kind}, ref {reference}. You will hear from us by {due_on}. Track it at {portal_url}
+We have received your {request_kind}, ref {reference}. You will hear from us by {due_on}. Track it at {portal_url} - {organisation}
 ```
 
 <a id="rights-verification-code"></a>
@@ -97,7 +97,7 @@ If you were not expecting this message, please tell the Privacy Office at {organ
 **SMS:**
 
 ```text
-{organisation}: {code} confirms request {reference} is yours. Expires in {minutes} minutes. Not you? Ignore this message.
+{code} confirms request {reference} is yours. Expires in {minutes} minutes. Not you? Ignore this message. - {organisation}
 ```
 
 <a id="rights-response-ready"></a>
@@ -133,7 +133,7 @@ If you were not expecting this message, please tell the Privacy Office at {organ
 **SMS:**
 
 ```text
-{organisation}: our response to request {reference} is ready. Sign in to read it: {portal_url}. {availability}
+Our response to request {reference} is ready. Sign in to read it: {portal_url}. {availability} - {organisation}
 ```
 
 <a id="rights-response"></a>
@@ -173,7 +173,7 @@ If you were not expecting this message, please tell the Privacy Office at {organ
 **SMS:**
 
 ```text
-{organisation}: regarding request {reference}: {headline} {availability}
+Regarding request {reference}: {headline} {availability} - {organisation}
 ```
 
 <a id="rights-closed"></a>
@@ -208,7 +208,7 @@ If you were not expecting this message, please tell the Privacy Office at {organ
 **SMS:**
 
 ```text
-{organisation}: regarding request {reference}: {headline}. {explanation} You may raise a grievance with us or complain to the Data Protection Board.
+Regarding request {reference}: {headline}. {explanation} You may raise a grievance with us or complain to the Data Protection Board. - {organisation}
 ```
 
 <a id="nomination-code"></a>
@@ -243,7 +243,7 @@ If you were not expecting this message, please tell the Privacy Office at {organ
 **SMS:**
 
 ```text
-{organisation}: {code} is your nomination code. Enter it to accept or decline. Expires in {minutes} minutes.
+{code} is your nomination code. Enter it to accept or decline. Expires in {minutes} minutes. - {organisation}
 ```
 
 <a id="nomination-invitation"></a>
@@ -281,7 +281,7 @@ If you were not expecting this message, please tell the Privacy Office at {organ
 **SMS:**
 
 ```text
-{organisation}: {principal_name} has nominated you to act for them under the DPDP Act. Accept or decline by {expires_on}: {accept_url}
+{principal_name} has nominated you to act for them under the DPDP Act. Accept or decline by {expires_on}: {accept_url} - {organisation}
 ```
 
 <a id="nomination-accepted"></a>
@@ -321,7 +321,7 @@ If you were not expecting this message, please tell the Privacy Office at {organ
 **SMS:**
 
 ```text
-{organisation}: you are now {principal_name}'s nominee. Keep this: ref {reference}. To act when needed, sign in at {sign_in_url}
+You are now {principal_name}'s nominee. Keep this: ref {reference}. To act when needed, sign in at {sign_in_url} - {organisation}
 ```
 
 <a id="holder-instruction"></a>
@@ -360,7 +360,7 @@ Rights request {reference}, {organisation} Privacy Office.
 **SMS:**
 
 ```text
-{organisation} Privacy Office: rights request {reference} needs your return by {due_on}. {instruction}
+Rights request {reference} needs your return by {due_on}. {instruction} - {organisation}
 ```
 
 <a id="ticket-reminder"></a>
@@ -393,7 +393,7 @@ Your ticket on rights request {reference} {when}. The Privacy Office answers the
 **SMS:**
 
 ```text
-{organisation} Privacy Office: your ticket on rights request {reference} {when}. {return_route}
+Your ticket on rights request {reference} {when}. {return_route} - {organisation}
 ```
 
 <a id="ticket-message"></a>
@@ -426,7 +426,7 @@ Key `ticket_message` · channels: email, sms
 **SMS:**
 
 ```text
-{organisation}: {author} wrote on rights request {reference}: {message} {return_route}
+{author} wrote on rights request {reference}: {message} {return_route} - {organisation}
 ```
 
 <a id="holder-ticket-link"></a>
