@@ -245,6 +245,11 @@ export function IntakeCard() {
                   <p className="text-xs text-text-muted">
                     <Mono>{r.reference}</Mono> · {r.reporter_name} · {formatDateTime(r.received_at)}
                   </p>
+                  {r.escalated_at && (
+                    <p className="text-xs font-medium text-danger-text">
+                      Escalated to management {formatDateTime(r.escalated_at)}: nobody had taken it up
+                    </p>
+                  )}
                 </div>
                 <Button variant="secondary" size="sm" onClick={() => setOpened(r)}>
                   Open report

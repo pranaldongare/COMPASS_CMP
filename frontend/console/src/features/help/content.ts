@@ -640,6 +640,10 @@ export const SECTIONS: HelpSection[] = [
           "The list shows fifty at a time, the oldest first, with [[Previous]] and [[Next]] when there are more.",
           "Click [[Open report]], then [[Claim for this office]]: it becomes an incident in your register under the same reference, and the other office no longer sees it. What they said about a cyber attack starts nothing; mark it yourself once you have read it. Or [[Dismiss]] it with a reason: the report is kept.",
           "A dismissed report keeps the reporter's name and email until an erasure request from that address takes them off it. [[Dismissed reports]] then says when they were erased, and keeps the reference, the reason and who dismissed it.",
+          "Three figures head the page: [[New reports waiting]], [[New in your register]] - incidents logged or reassigned to your office in the last 24 hours that nobody has validated yet - and [[Breaches with a duty overdue]]. Click one to see only those; a new incident is in bold with a blue dot and a New mark until it is validated or a day has passed.",
+          "A report that waits half an hour with neither office claiming or dismissing it is escalated: the addresses on the escalation list in [[Breach settings]] are mailed, once, and the report says so in the list.",
+          "Once a report is claimed, the incident's [[Details]] show who reported it. Click [[Send acknowledgement]] to thank the reporter and tell them the office is dealing with it. Only that is sent: nothing of what the office found, decided or did.",
+          "If an incident or breach you took up belongs to the other office, open it and click [[Reassign to the Legal office]] or [[Reassign to the DPO office]], and say why. It goes exactly as it stands - status, validation, duties and their clocks, people, reports and tickets - and nothing starts again. It leaves your register, and the other office's officers are mailed.",
         ],
       },
       {
@@ -693,7 +697,7 @@ export const SECTIONS: HelpSection[] = [
     id: "breach-settings",
     title: "Breach settings",
     summary:
-      "Who hears of a breach: the public link, who is told of a report, and the organisation's board.",
+      "Who hears of a breach: the public link, who is told of a report, escalation to management, and the organisation's board.",
     roles: ["dpo", "legal", "admin"],
     blocks: [
       {
@@ -701,6 +705,7 @@ export const SECTIONS: HelpSection[] = [
         items: [
           "[[The public link]] is where anyone reports a breach, with no account, once they have confirmed their email address. [[Copy]] it and put it wherever people will look for it: the intranet, a notice, a staff handbook.",
           "[[Who is told when a report arrives]]: every active account in the roles you tick is mailed that a report has arrived, not what it says. The DPO and the Legal PoC are always told.",
+          "[[Escalation to management]] lists who is mailed when a reported incident has waited 30 minutes and neither the DPO nor Legal has claimed or dismissed it. Give an [[Escalation mail ID]], with a [[Manager's name]] if you wish, and click [[Add to escalation]]. The mail gives the reference and how long it has waited, not what was reported. This list is separate from the organisation's board.",
           "[[The organisation's board]] lists the addresses its reports are mailed to. Give a [[Mail ID]], with a [[Name]] if you wish, and click [[Add]]. Whoever sends a report may leave an address out of it, or add one for it alone. With the list empty, a report goes only to an address added for it.",
           "Tick [[Mandatory]] for an address every report must go to: it cannot be left out when a report is sent, or removed until it is unticked. Every change to the list is mailed to the DPO and the Legal PoC.",
         ],

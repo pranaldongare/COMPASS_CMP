@@ -57,6 +57,8 @@ const settings = (over: Partial<BreachSettings> = {}): BreachSettings => ({
   ],
   officers: ["dpo", "legal"],
   board_recipients: [person],
+  escalation_recipients: [],
+  escalate_after_minutes: 30,
   report_link: "https://portal.cmp.local/report-incident",
   ...over,
 });
@@ -445,5 +447,46 @@ describe("Breach settings", () => {
     render(<BreachSettingsPage />);
 
     expect(await screen.findByRole("columnheader", { name: "Remove" })).toHaveClass("relative");
+  });
+
+  describe("the escalation list (0073)", () => {
+    it("says nothing is escalated while nobody is on it, and adds an address", async () => {
+      let sent: unknown = null;
+      serve(settings({}));
+      server.use(
+        http.post(`${API}/breach-settings/escalation-recipients`, async ({ request }) => {
+          sent = await request.json();
+          return HttpResponse.json(
+            settings({
+              escalation_recipients: [
+                {
+                  recipient_uuid: "55555555-5555-4555-8555-555555555555",
+                  full_name: "Meera Shah",
+                  email: "coo@cmp.local",
+                  added_at: "2026-11-17T09:00:00Z",
+                  added_by_name: "Dev Admin",
+                },
+              ],
+            }),
+          );
+        }),
+      );
+      const { user } = render(<BreachSettingsPage />);
+      const card = await screen.findByTestId("escalation-list");
+      expect(within(card).getByText(/has waited 30 minutes/)).toBeInTheDocument();
+      expect(within(card).getByText("Nothing is escalated until somebody is.")).toBeInTheDocument();
+
+      await user.click(within(card).getByRole("button", { name: "Add to escalation" }));
+      expect(within(card).getByText("Enter an email address")).toBeInTheDocument();
+      expect(sent).toBeNull();
+
+      await user.type(within(card).getByLabelText(/Manager's name/), "Meera Shah");
+      await user.type(within(card).getByLabelText(/Escalation mail ID/), "coo@cmp.local");
+      await user.click(within(card).getByRole("button", { name: "Add to escalation" }));
+      expect(await within(card).findByText("coo@cmp.local")).toBeInTheDocument();
+      expect(sent).toEqual({ full_name: "Meera Shah", email: "coo@cmp.local" });
+      // The organisation's board is another list, and still has its one entry.
+      expect(screen.getAllByText("meera@cmp.local").length).toBe(1);
+    });
   });
 });

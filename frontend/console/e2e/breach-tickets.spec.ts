@@ -128,7 +128,7 @@ test.describe("the DCO answers", () => {
     // The window opens on the answer, as a rights ticket's does (2026-11-12).
     await card.getByRole("button", { name: "Answer" }).click();
     const dialog = page.getByRole("dialog");
-    await dialog.getByLabel("Did all of it").check();
+    await dialog.getByLabel("Completed").check();
     await dialog.getByLabel(/What you did, and how/).fill("Exported to the evidence share; nothing deleted.");
     await dialog.getByRole("button", { name: "Submit answer" }).click();
     await expect(page.getByText("Answer submitted")).toBeVisible();
@@ -275,7 +275,7 @@ test.describe("a temporary holder", () => {
 
     await card.getByRole("button", { name: "Answer" }).click();
     const respond = page.getByRole("dialog");
-    await respond.getByLabel("Did all of it").check();
+    await respond.getByLabel("Completed").check();
     await respond.getByLabel(/What you did, and how/).fill("Badge log exported to the evidence share.");
     await respond.getByRole("button", { name: "Submit answer" }).click();
     await expect(page.getByText("Answer submitted")).toBeVisible();

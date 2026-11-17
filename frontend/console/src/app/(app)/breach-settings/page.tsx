@@ -11,11 +11,16 @@
  * address goes with every report, and cannot be taken off the list until it
  * is optional again. Every change to the list is mailed to the DPO and the
  * Legal PoC, so the server refuses one it cannot tell them of.
+ *
+ * The escalation list is another list (0073): management, mailed when a
+ * report from the public link has waited half an hour and neither office has
+ * claimed or dismissed it. It is not the organisation's board.
  */
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Copy, ExternalLink, Trash2 } from "lucide-react";
+import * as React from "react";
 
 import { PageHeader } from "@/components/layout/app-shell";
 import { useConfirm } from "@/components/ui/confirm";
@@ -26,6 +31,8 @@ import {
   CardBody,
   CardHeader,
   CardTitle,
+  Field,
+  Input,
   Skeleton,
   Table,
   Td,
@@ -34,8 +41,10 @@ import {
 } from "@/components/ui/primitives";
 import {
   addBoardRecipient,
+  addEscalationRecipient,
   getBreachSettings,
   removeBoardRecipient,
+  removeEscalationRecipient,
   setBoardRecipientMandatory,
   setIntakeRoles,
 } from "@/features/breach/api";
@@ -306,6 +315,140 @@ function BoardList({ settings }: { settings: BreachSettings }) {
   );
 }
 
+/** Management, told when nobody has taken a report up (0073). Its own list:
+ *  being on the organisation's board puts nobody here, or the other way. */
+function EscalationList({ settings }: { settings: BreachSettings }) {
+  const toast = useToast();
+  const asking = useConfirm();
+  const qc = useQueryClient();
+  const stored = (fresh: BreachSettings) => qc.setQueryData(keys.breach.settings(), fresh);
+  const reread = () => void qc.invalidateQueries({ queryKey: keys.breach.settings() });
+  const add = useMutation({ mutationFn: addEscalationRecipient, onSuccess: stored });
+  const remove = useMutation({ mutationFn: removeEscalationRecipient, onSuccess: stored });
+  const [name, setName] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [error, setError] = React.useState<string | null>(null);
+  const minutes = settings.escalate_after_minutes;
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const address = email.trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(address)) {
+      setError("Enter an email address");
+      return;
+    }
+    setError(null);
+    try {
+      await add.mutateAsync({ full_name: name.trim() || null, email: address });
+      toast.success("Added to the escalation list");
+      setName("");
+      setEmail("");
+    } catch (err) {
+      toast.error("Not added", refusal(err));
+      reread();
+    }
+  }
+  async function takeOff(uuid: string, address: string) {
+    if (
+      !(await asking.ask({
+        title: `Remove ${address} from the escalation list?`,
+        consequence: "This address is no longer mailed when a reported incident waits without an office taking it up.",
+        confirmLabel: "Remove from the list",
+        tone: "danger",
+      }))
+    )
+      return;
+    try {
+      await remove.mutateAsync(uuid);
+      toast.success("Removed from the escalation list");
+    } catch (err) {
+      toast.error("Not removed", refusal(err));
+      reread();
+    }
+  }
+  return (
+    <Card data-testid="escalation-list">
+      <CardHeader>
+        <CardTitle>Escalation to management</CardTitle>
+        <p className="mt-1 text-xs text-text-muted">
+          When an incident reported through the public link has waited {minutes} minutes and neither the DPO nor Legal
+          has claimed or dismissed it, these addresses are mailed, once per report. The mail gives the reference and how
+          long it has waited, and nothing of what was reported. This list is separate from the organisation&apos;s
+          board.
+        </p>
+      </CardHeader>
+      <CardBody className="space-y-4">
+        {settings.escalation_recipients.length === 0 ? (
+          <Alert tone="warning" title="Nobody is on the escalation list">
+            Nothing is escalated until somebody is.
+          </Alert>
+        ) : (
+          <Table>
+            <thead>
+              <tr>
+                <Th>Name</Th>
+                <Th>Mail ID</Th>
+                <Th>Added</Th>
+                <Th className="relative">
+                  <span className="sr-only">Remove</span>
+                </Th>
+              </tr>
+            </thead>
+            <tbody>
+              {settings.escalation_recipients.map((r) => (
+                <Tr key={r.recipient_uuid}>
+                  <Td>{r.full_name ?? <span className="text-text-subtle">No name</span>}</Td>
+                  <Td className="text-sm break-all">{r.email}</Td>
+                  <Td className="text-sm">
+                    {formatDateTime(r.added_at)}
+                    {r.added_by_name && <span className="block text-xs text-text-subtle">{r.added_by_name}</span>}
+                  </Td>
+                  <Td className="text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Remove ${r.email} from the escalation list`}
+                      loading={remove.isPending && remove.variables === r.recipient_uuid}
+                      onClick={() => takeOff(r.recipient_uuid, r.email)}
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </Td>
+                </Tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+        <form method="post" noValidate className="grid items-start gap-3 sm:grid-cols-[1fr_1fr_auto]" onSubmit={submit}>
+          <Field label="Manager's name" hint="Optional">
+            {(p) => <Input {...p} value={name} maxLength={200} onChange={(e) => setName(e.target.value)} />}
+          </Field>
+          <Field label="Escalation mail ID" required error={error ?? undefined}>
+            {(p) => (
+              <Input
+                {...p}
+                type="email"
+                value={email}
+                maxLength={255}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError(null);
+                }}
+              />
+            )}
+          </Field>
+          <div className="sm:pt-6">
+            <Button type="submit" variant="secondary" loading={add.isPending}>
+              Add to escalation
+            </Button>
+          </div>
+        </form>
+        {asking.dialog}
+      </CardBody>
+    </Card>
+  );
+}
+
 export default function BreachSettingsPage() {
   const query = useQuery({ queryKey: keys.breach.settings(), queryFn: getBreachSettings });
   return (
@@ -324,6 +467,7 @@ export default function BreachSettingsPage() {
         <div className="space-y-6">
           <PublicLink link={query.data.report_link} />
           <WhoIsTold settings={query.data} />
+          <EscalationList settings={query.data} />
           <BoardList settings={query.data} />
         </div>
       )}

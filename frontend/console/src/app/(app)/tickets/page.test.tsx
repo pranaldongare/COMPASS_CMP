@@ -101,7 +101,7 @@ describe("My tasks", () => {
     expect(within(toDo).getByText("DSAR-2026-0012")).toBeInTheDocument();
     const waiting = screen.getByRole("heading", { name: /waiting on the privacy office · 1/i }).closest("section") as HTMLElement;
     expect(within(waiting).getByText("DSAR-2026-0013")).toBeInTheDocument();
-    expect(within(waiting).getByText("Did only part of it")).toBeInTheDocument();
+    expect(within(waiting).getByText("Partially Done")).toBeInTheDocument();
     expect(screen.queryByText("Rights requests")).not.toBeInTheDocument();
   });
 
@@ -122,7 +122,7 @@ describe("My tasks", () => {
     for (const radio of answer.getAllByRole("radio")) expect(radio).not.toBeChecked();
     await user.type(answer.getByLabelText(/what you hold, and what you did/i), "Exported it");
     expect(submit).toBeDisabled();
-    await user.click(answer.getByLabelText("Did all of it"));
+    await user.click(answer.getByLabelText("Completed"));
     expect(submit).toBeEnabled();
   });
 
@@ -159,7 +159,7 @@ describe("My tasks", () => {
     await user.click(messages.getByRole("button", { name: "Answer the ticket" }));
     expect(answer.getByLabelText(/what you hold, and what you did/i)).toHaveValue("Exported it");
 
-    await user.click(answer.getByLabelText("Did all of it"));
+    await user.click(answer.getByLabelText("Completed"));
     await user.click(answer.getByRole("button", { name: "Submit answer" }));
     await vi.waitFor(() => expect(returned).toMatch(/name="summary"\r\n\r\nExported it/));
     await vi.waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());

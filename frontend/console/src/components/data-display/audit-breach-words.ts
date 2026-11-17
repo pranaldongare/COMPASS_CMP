@@ -31,10 +31,12 @@ const REPORT: Record<string, string> = {
   board_report: "The detailed report to the Data Protection Board",
 };
 
+const OFFICES: Record<string, string> = { rnd: "DPO office", hr: "Legal office" };
+
 const DID: Record<string, string> = {
-  done: "did all of it",
-  partial: "did part of it",
-  failed: "could not do it",
+  done: "completed",
+  partial: "partially done",
+  failed: "not applicable",
 };
 
 const num = (value: unknown): number | null =>
@@ -223,8 +225,16 @@ const WORDS: Record<string, (d: Detail) => string> = {
   "incident_report.claimed": () => "The report was claimed by an office and logged as an incident.",
   "incident_report.dismissed": (d) => `The report was dismissed${withReason(d)}.`,
   "incident_report.reporter_erased": () => "The reporter's name and email were erased from the report.",
+  "incident_report.escalated": () =>
+    "Nobody had taken the report up within half an hour, so management was emailed.",
+  "incident_report.acknowledged": () =>
+    "The person who reported it was sent an acknowledgement, and nothing of what the office found or did.",
+  "breach.transferred": (d) =>
+    `It was reassigned from the ${OFFICES[String(d.from)] ?? "other office"} to the ${
+      OFFICES[String(d.to)] ?? "other office"
+    }, as it stood.`,
   "breach_settings.changed": () =>
-    "Who is told of a reported incident, or who is on the organisation's board list, was changed.",
+    "Who is told of a reported incident, who is on the organisation's board list, or who is on the escalation list, was changed.",
 };
 
 function version(d: Detail): string {

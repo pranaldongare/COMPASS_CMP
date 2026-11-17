@@ -160,10 +160,17 @@ export interface BreachSummary {
   /** Its tickets issued or returned, and those past their answer-by. */
   tickets_open: number;
   tickets_overdue: number;
+  /** When it was logged in the register, and when it was last reassigned to
+   *  this office (0073): what "new here" is measured from. */
+  recorded_at: Timestamp;
+  transferred_at?: Timestamp | null;
 }
 
 export interface Breach
-  extends Omit<BreachSummary, "obligations" | "last_activity_at" | "tickets_open" | "tickets_overdue"> {
+  extends Omit<
+    BreachSummary,
+    "obligations" | "last_activity_at" | "tickets_open" | "tickets_overdue" | "transferred_at"
+  > {
   /** When the first yes recorded it as a breach, and who made it. */
   breach_recorded_at: Timestamp | null;
   breach_recorded_by_name: string | null;
@@ -175,6 +182,10 @@ export interface Breach
   cyber_attack: BreachCyberAttack | null;
   /** Who reported it through the public link. Null if the office logged it. */
   reported: BreachReported | null;
+  /** rnd or hr: the office whose it is. */
+  office: string;
+  /** The last reassignment from the other office, if there was one (0073). */
+  transferred: BreachTransferred | null;
   recorded_at: Timestamp;
   recorded_by_name: string | null;
   determinations: BreachDetermination[];
@@ -197,6 +208,21 @@ export interface BreachReported {
   /** When they say they noticed it. Nothing is anchored on it. */
   noticed_at: Timestamp | null;
   cyber_attack: BreachCyberAttack | null;
+  /** How often an officer has sent them the acknowledgement (0073), and the
+   *  last time: when, and by whom (sealed). */
+  acknowledgements: number;
+  acknowledged_at: Timestamp | null;
+  acknowledged_by_name: string | null;
+}
+
+/** The last reassignment of an incident or breach to another office (0073). */
+export interface BreachTransferred {
+  from_office: string;
+  at: Timestamp;
+  /** Sealed. */
+  transferred_by_name: string | null;
+  /** Sealed. */
+  transfer_reason: string;
 }
 
 /** A report waiting in the shared intake, as the list shows it. */
@@ -209,6 +235,8 @@ export interface IncidentReportRow {
   noticed_at: Timestamp | null;
   received_at: Timestamp;
   cyber_attack: BreachCyberAttack | null;
+  /** When management was told nobody had taken it up (0073). */
+  escalated_at?: Timestamp | null;
 }
 
 /** A page of the shared intake, oldest first. */
@@ -754,12 +782,26 @@ export interface BreachBoardRecipient extends BreachBoardEntry {
   mandatory_changed_by_name: string | null;
 }
 
+export interface BreachEscalationRecipient {
+  recipient_uuid: Uuid;
+  /** Sealed. */
+  full_name: string | null;
+  /** Sealed. */
+  email: string;
+  added_at: Timestamp;
+  added_by_name: string | null;
+}
+
 export interface BreachSettings {
   intake_roles: string[];
   roles: { role: string; title: string }[];
   /** Always told, whatever is chosen. */
   officers: string[];
   board_recipients: BreachBoardRecipient[];
+  /** Management, told when a report from the public link has waited this
+   *  many minutes with neither office taking it up (0073). */
+  escalation_recipients: BreachEscalationRecipient[];
+  escalate_after_minutes: number;
   /** The public link, to give out. */
   report_link: string;
 }

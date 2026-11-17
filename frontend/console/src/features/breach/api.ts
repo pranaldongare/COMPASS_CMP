@@ -151,6 +151,31 @@ export function setBoardRecipientMandatory(recipientUuid: Uuid, mandatory: boole
   return apiPut<BreachSettings>(`/breach-settings/board-recipients/${recipientUuid}/mandatory`, { mandatory });
 }
 
+/** Management, mailed when a report waits unclaimed (0073). */
+export function addEscalationRecipient(body: {
+  full_name?: string | null;
+  email: string;
+}): Promise<BreachSettings> {
+  return apiPost<BreachSettings>("/breach-settings/escalation-recipients", body);
+}
+
+export function removeEscalationRecipient(recipientUuid: Uuid): Promise<BreachSettings> {
+  return apiDelete<BreachSettings>(`/breach-settings/escalation-recipients/${recipientUuid}`);
+}
+
+/** To the other office, as it stands (0073). It leaves this office's register. */
+export function transferBreach(
+  uuid: Uuid,
+  body: { office: "rnd" | "hr"; reason: string },
+): Promise<{ reference: string; office: string }> {
+  return apiPost<{ reference: string; office: string }>(`/breaches/${uuid}/transfer`, body);
+}
+
+/** The reporter is thanked and told the office is dealing with it: no more. */
+export function acknowledgeReporter(uuid: Uuid): Promise<Breach> {
+  return apiPost<Breach>(`/breaches/${uuid}/reporter/acknowledge`, {});
+}
+
 /* ------------------------------------------- the people affected (S3-02) */
 
 export function listAffected(uuid: Uuid, cursor?: string | null): Promise<BreachAffected> {

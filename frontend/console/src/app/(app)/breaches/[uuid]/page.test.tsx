@@ -86,6 +86,8 @@ const breach = (over: Partial<Breach> = {}): Breach => ({
   logged: {},
   cyber_attack: null,
   reported: null,
+  office: "rnd",
+  transferred: null,
   recorded_at: "2026-10-06T09:05:00Z",
   recorded_by_name: "Priya Menon",
   determinations: [],
@@ -250,6 +252,9 @@ describe("the breach page", () => {
         reported: {
           reporter_name: "Asha Rao",
           reporter_email: "asha@example.org",
+          acknowledgements: 0,
+          acknowledged_at: null,
+          acknowledged_by_name: null,
           received_at: "2026-10-06T08:00:00Z",
           noticed_at: null,
           cyber_attack: "yes",

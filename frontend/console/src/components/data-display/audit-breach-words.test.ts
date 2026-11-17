@@ -61,6 +61,9 @@ const EVENTS = [
   "incident_report.claimed",
   "incident_report.dismissed",
   "incident_report.reporter_erased",
+  "incident_report.escalated",
+  "incident_report.acknowledged",
+  "breach.transferred",
   "breach.report_drafted",
   "breach.report_edited",
   "breach.report_finalised",
@@ -148,7 +151,7 @@ describe("a breach's trail, in words", () => {
       `The holder changed the ticket's resolve-by date from ${formatDate("2026-11-20")} to ${formatDate("2026-11-27")}, with a reason.`,
     );
     expect(said("breach_ticket.returned", { ticket: "t1", outcome: "partial", file: true })).toBe(
-      "The holder answered the ticket: did part of it, with a file.",
+      "The holder answered the ticket: partially done, with a file.",
     );
     expect(said("breach_ticket.withdrawn", { ticket: "t1", reason_given: true })).toBe(
       "The office withdrew the ticket, with a reason.",

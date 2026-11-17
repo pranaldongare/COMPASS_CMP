@@ -71,6 +71,7 @@ const breach = (over: Partial<BreachSummary>): BreachSummary => ({
   last_activity_at: ago(24 * 40),
   tickets_open: 0,
   tickets_overdue: 0,
+  recorded_at: "2026-10-01T09:00:00Z",
   ...over,
 });
 
@@ -196,5 +197,80 @@ describe("the register", () => {
     );
     await screen.findByText("Printer queue");
     expect(shown()).not.toContain("INC-2026-0010");
+  });
+
+  describe("what is new (2026-11-17)", () => {
+    const FRESH = breach({
+      reference: "INC-2026-0010",
+      incident_reference: "INC-2026-0010",
+      title: "Survey answers seen by another team",
+      recorded_at: ago(2),
+    });
+    // Logged long ago, reassigned here an hour ago: new to this office.
+    const MOVED = breach({
+      reference: "INC-2026-0011",
+      incident_reference: "INC-2026-0011",
+      title: "Shared drive open to all staff",
+      transferred_at: ago(1),
+    });
+    // Logged today but validated already: somebody has acted on it.
+    const SEEN = breach({
+      reference: "INC-2026-0012",
+      incident_reference: "INC-2026-0012",
+      title: "Badge list in a bin",
+      recorded_at: ago(1),
+      determination: "no",
+    });
+
+    it("counts what waits, what is new and what is late, and marks the new rows", async () => {
+      server.use(
+        http.get(`${API}/breaches`, () => HttpResponse.json([LAPTOP, FRESH, MOVED, SEEN, OLD])),
+        http.get(`${API}/breaches/intake`, () =>
+          HttpResponse.json({
+            items: [
+              {
+                report_uuid: crypto.randomUUID(),
+                reference: "INC-2026-0147",
+                reporter_name: "Asha Rao",
+                reporter_email: "asha@example.org",
+                title: "Customer list emailed to the wrong vendor",
+                noticed_at: null,
+                received_at: ago(1),
+                cyber_attack: null,
+                escalated_at: ago(0.2),
+              },
+            ],
+            total: 2,
+            limit: 50,
+            offset: 0,
+          }),
+        ),
+      );
+      render(<BreachesPage />);
+      const tiles = within(await screen.findByRole("region", { name: "Needs attention" }));
+      const tile = (label: string) => tiles.getByText(label).closest("a")!;
+      await vi.waitFor(() => expect(tile("New reports waiting")).toHaveTextContent("2"));
+      expect(tile("New reports waiting")).toHaveTextContent("1 escalated to management");
+      await vi.waitFor(() => expect(tile("New in your register")).toHaveTextContent("2"));
+      expect(tile("Breaches with a duty overdue")).toHaveTextContent("1");
+      expect(tile("New in your register")).toHaveAttribute("href", "/breaches?new=1");
+
+      const row = (ref: string) => screen.getByRole("link", { name: ref }).closest("tr")!;
+      expect(row("INC-2026-0010")).toHaveAttribute("data-new", "true");
+      expect(row("INC-2026-0011")).toHaveAttribute("data-new", "true");
+      expect(within(row("INC-2026-0011")).getByText(/Reassigned to your office/)).toBeInTheDocument();
+      expect(row("INC-2026-0012")).not.toHaveAttribute("data-new");
+      expect(row("INC-2026-0009")).not.toHaveAttribute("data-new");
+      expect(row("BR-2026-0007")).not.toHaveAttribute("data-new");
+    });
+
+    it("narrows to the new ones from the address", async () => {
+      window.history.replaceState(null, "", "/breaches?new=1");
+      server.use(http.get(`${API}/breaches`, () => HttpResponse.json([LAPTOP, FRESH, MOVED, SEEN, OLD])));
+      render(<BreachesPage />);
+      await screen.findByRole("link", { name: "INC-2026-0010" });
+      expect(shown().sort()).toEqual(["INC-2026-0010", "INC-2026-0011"]);
+      expect(screen.getByText("2 of 5 shown")).toBeInTheDocument();
+    });
   });
 });

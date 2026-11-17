@@ -145,7 +145,7 @@ describe("TicketsCard", () => {
     const headings = (await within(dialog).findAllByRole("heading", { level: 3 })).map((h) => h.textContent);
     expect(headings).toEqual(["Their answer", "What they were asked", "Messages"]);
     expect(within(dialog).getByText("Exported the access log; the badge log is with facilities.")).toBeInTheDocument();
-    expect(within(dialog).getByText("Did only part of it")).toBeInTheDocument();
+    expect(within(dialog).getByText("Partially Done")).toBeInTheDocument();
     expect(within(dialog).getByText("Export the logs")).toBeInTheDocument();
     expect(within(dialog).getByText(/then close the ticket, or send it back/i)).toBeInTheDocument();
   });
@@ -549,7 +549,7 @@ describe("BreachTicketCard", () => {
     expect(submit).toBeDisabled();
     await user.type(answer.getByLabelText(/what you did, and how/i), "Exported it");
     expect(submit).toBeDisabled();
-    await user.click(answer.getByLabelText("Did all of it"));
+    await user.click(answer.getByLabelText("Completed"));
     expect(submit).toBeEnabled();
     expect(within(dialog).queryByText("This is my return")).not.toBeInTheDocument();
   });
@@ -567,7 +567,7 @@ describe("BreachTicketCard", () => {
     await user.click(screen.getByRole("button", { name: /^answer/i }));
     const dialog = await screen.findByRole("dialog");
     const answer = within(await within(dialog).findByRole("tabpanel", { name: /answer the ticket/i }));
-    await user.click(answer.getByLabelText("Did only part of it"));
+    await user.click(answer.getByLabelText("Partially Done"));
     await user.type(answer.getByLabelText(/what you did, and how/i), "Exported the access log");
     await user.click(answer.getByRole("button", { name: "Submit answer" }));
 

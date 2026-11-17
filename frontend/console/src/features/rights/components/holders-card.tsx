@@ -1416,7 +1416,7 @@ function ReturnForm({ request: r, holder: h, onDone }: { request: RightsRequestD
   const toast = useToast();
   const ret = useReturnTicket(r.request_uuid);
   const [summary, setSummary] = React.useState("");
-  // No default: "did all of it" pre-chosen is how a ticket answered "unable
+  // No default: "Completed" pre-chosen is how a ticket answered "unable
   // to erase" came to count as erased (review DPDP-1).
   const [outcome, setOutcome] = React.useState<ReturnOutcome | "">("");
   const [file, setFile] = React.useState<File | null>(null);
@@ -1439,7 +1439,7 @@ function ReturnForm({ request: r, holder: h, onDone }: { request: RightsRequestD
       }}
     >
       <div className="space-y-3">
-        <p className="text-xs text-text-muted">What {h.label} told you they did. Only “did all of it” counts as done.</p>
+        <p className="text-xs text-text-muted">What {h.label} told you they did. Only “Completed” counts as done.</p>
         {error && <Alert tone="danger">{error}</Alert>}
         <fieldset className="space-y-1.5">
           <legend className="text-sm font-medium">What they did</legend>

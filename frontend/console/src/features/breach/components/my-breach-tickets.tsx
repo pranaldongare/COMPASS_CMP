@@ -248,7 +248,7 @@ function AnswerForm({
       returnBreachTicket(t.ticket_uuid, input),
     onSuccess: onSaved,
   });
-  // No default: "did all of it" is not assumed.
+  // No default: "Completed" is not assumed.
   const [outcome, setOutcome] = React.useState<ReturnOutcome | "">("");
   const [summary, setSummary] = React.useState("");
   const [file, setFile] = React.useState<File | null>(null);
@@ -293,7 +293,7 @@ function AnswerForm({
           </label>
         ))}
         <p className="text-xs text-text-muted">
-          Only “did all of it” counts as done. If you could not do some or all of it, say why below.
+          Only “Completed” counts as done. If it is partially done or not applicable, say why below.
         </p>
       </fieldset>
       <Field label="2 · What you did, and how" required>

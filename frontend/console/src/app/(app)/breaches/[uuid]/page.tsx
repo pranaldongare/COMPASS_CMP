@@ -74,6 +74,7 @@ import { BreachNextBar } from "@/features/breach/components/next-bar";
 import { NoticesCard } from "@/features/breach/components/notices-card";
 import { NotifyBoardButton, ReportsCard } from "@/features/breach/components/reports-card";
 import { TicketsCard } from "@/features/breach/components/tickets-card";
+import { AcknowledgeReporter, BreachOfficeCard } from "@/features/breach/components/office-card";
 import { useBreach } from "@/features/breach/queries";
 import { formatDateTime } from "@/lib/format";
 import { keys } from "@/lib/query";
@@ -117,6 +118,15 @@ export default function BreachPage() {
   });
 
   if (breach.isLoading) return <Skeleton className="h-96" />;
+  // Gone while it was open here: reassigned to the other office (0073). What
+  // is cached is not shown as if it could still be worked on.
+  if (breach.error?.status === 404) {
+    return (
+      <Alert tone="warning" title="This incident is not in your register">
+        It may have been reassigned to the other office. <Link href="/breaches">Back to incidents and breaches</Link>
+      </Alert>
+    );
+  }
   if (breach.error && !breach.data) {
     return (
       <Alert tone="danger" title="Could not load this incident">
@@ -215,8 +225,9 @@ export default function BreachPage() {
         <div className="min-w-0 lg:col-span-2">
           <BreachTransitions breach={b} />
         </div>
-        <div className="hidden min-w-0 lg:block">
+        <div className="hidden min-w-0 space-y-6 lg:block">
           <DetailsCard breach={b} />
+          <BreachOfficeCard breach={b} />
         </div>
       </div>
 
@@ -289,8 +300,9 @@ export default function BreachPage() {
         </TabPanel>
       </Tabs>
 
-      <div className="mt-6 lg:hidden">
+      <div className="mt-6 space-y-6 lg:hidden">
         <DetailsCard breach={b} />
+        <BreachOfficeCard breach={b} />
       </div>
     </>
   );
@@ -355,6 +367,14 @@ function DetailsCard({ breach: b }: { breach: Breach }) {
             {formatDateTime(b.recorded_at)} by {b.recorded_by_name ?? "unknown"}
           </DescriptionItem>
         </DescriptionList>
+        {b.reported && (
+          <div className="mt-4 border-t border-border pt-4">
+            <p className="mb-2 text-xs font-semibold tracking-wide text-text-muted uppercase">
+              Acknowledgement to the reporter
+            </p>
+            <AcknowledgeReporter breach={b} />
+          </div>
+        )}
       </CardBody>
     </Card>
   );

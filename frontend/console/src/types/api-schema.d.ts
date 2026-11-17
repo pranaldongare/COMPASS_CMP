@@ -5600,6 +5600,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/breaches/{breach_uuid}/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reassign it to the other office, as it stands, saying why */
+        post: operations["transfer_breach_breaches__breach_uuid__transfer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breaches/{breach_uuid}/reporter/acknowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send the person who reported it an acknowledgement, and no more */
+        post: operations["acknowledge_reporter_breaches__breach_uuid__reporter_acknowledge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/breaches/{breach_uuid}/determinations": {
         parameters: {
             query?: never;
@@ -6561,6 +6595,40 @@ export interface paths {
         put: operations["set_board_recipient_mandatory_breach_settings_board_recipients__recipient_uuid__mandatory_put"];
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breach-settings/escalation-recipients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add an address to the escalation list */
+        post: operations["add_escalation_recipient_breach_settings_escalation_recipients_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breach-settings/escalation-recipients/{recipient_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Take an address off the escalation list */
+        delete: operations["remove_escalation_recipient_breach_settings_escalation_recipients__recipient_uuid__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -8875,6 +8943,9 @@ export interface components {
             /** Cyber Attack */
             cyber_attack?: string | null;
             reported?: components["schemas"]["BreachReportedOut"] | null;
+            /** Office */
+            office: string;
+            transferred?: components["schemas"]["BreachTransferredOut"] | null;
             /**
              * Recorded At
              * Format: date-time
@@ -9029,6 +9100,15 @@ export interface components {
             noticed_at: string | null;
             /** Cyber Attack */
             cyber_attack: string | null;
+            /**
+             * Acknowledgements
+             * @default 0
+             */
+            acknowledgements: number;
+            /** Acknowledged At */
+            acknowledged_at?: string | null;
+            /** Acknowledged By Name */
+            acknowledged_by_name?: string | null;
         };
         /** BreachRoleOut */
         BreachRoleOut: {
@@ -9062,6 +9142,10 @@ export interface components {
             officers: string[];
             /** Board Recipients */
             board_recipients: components["schemas"]["BoardRecipientOut"][];
+            /** Escalation Recipients */
+            escalation_recipients: components["schemas"]["EscalationRecipientOut"][];
+            /** Escalate After Minutes */
+            escalate_after_minutes: number;
             /** Report Link */
             report_link: string;
         };
@@ -9117,6 +9201,13 @@ export interface components {
             tickets_open: number;
             /** Tickets Overdue */
             tickets_overdue: number;
+            /**
+             * Recorded At
+             * Format: date-time
+             */
+            recorded_at: string;
+            /** Transferred At */
+            transferred_at?: string | null;
         };
         /** BreachTicketDateIn */
         BreachTicketDateIn: {
@@ -9268,6 +9359,37 @@ export interface components {
         BreachTicketReasonIn: {
             /** Reason */
             reason: string;
+        };
+        /** BreachTransferIn */
+        BreachTransferIn: {
+            /** Office */
+            office: string;
+            /** Reason */
+            reason: string;
+        };
+        /** BreachTransferOut */
+        BreachTransferOut: {
+            /** Reference */
+            reference: string;
+            /** Office */
+            office: string;
+        };
+        /**
+         * BreachTransferredOut
+         * @description The last reassignment to another office (0073).
+         */
+        BreachTransferredOut: {
+            /** From Office */
+            from_office: string;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Transferred By Name */
+            transferred_by_name: string | null;
+            /** Transfer Reason */
+            transfer_reason: string;
         };
         /** BreachTransitionIn */
         BreachTransitionIn: {
@@ -10559,6 +10681,25 @@ export interface components {
             /** Last Failure Said */
             last_failure_said: string | null;
         };
+        /** EscalationRecipientOut */
+        EscalationRecipientOut: {
+            /**
+             * Recipient Uuid
+             * Format: uuid
+             */
+            recipient_uuid: string;
+            /** Full Name */
+            full_name: string | null;
+            /** Email */
+            email: string;
+            /**
+             * Added At
+             * Format: date-time
+             */
+            added_at: string;
+            /** Added By Name */
+            added_by_name: string | null;
+        };
         /** EvidenceIn */
         EvidenceIn: {
             /** Evidenced */
@@ -11102,6 +11243,8 @@ export interface components {
             received_at: string;
             /** Cyber Attack */
             cyber_attack: string | null;
+            /** Escalated At */
+            escalated_at?: string | null;
             logged: components["schemas"]["BreachLoggedOut"];
         };
         /**
@@ -11152,6 +11295,8 @@ export interface components {
             received_at: string;
             /** Cyber Attack */
             cyber_attack: string | null;
+            /** Escalated At */
+            escalated_at?: string | null;
         };
         /** InstructionIn */
         InstructionIn: {
@@ -25336,6 +25481,72 @@ export interface operations {
             };
         };
     };
+    transfer_breach_breaches__breach_uuid__transfer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreachTransferIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachTransferOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    acknowledge_reporter_breaches__breach_uuid__reporter_acknowledge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                breach_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     determine_breaches__breach_uuid__determinations_post: {
         parameters: {
             query?: never;
@@ -27303,6 +27514,70 @@ export interface operations {
                 "application/json": components["schemas"]["BoardRecipientMandatoryIn"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_escalation_recipient_breach_settings_escalation_recipients_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardRecipientIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_escalation_recipient_breach_settings_escalation_recipients__recipient_uuid__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recipient_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

@@ -17,18 +17,26 @@
  * after the API client has opened them; every clock and count it reads is
  * the server's.
  *
+ * At the top, three figures in the dashboard's own tiles (2026-11-17): the
+ * reports waiting for an office, what is new in this register - logged or
+ * reassigned here in the last day and not validated yet - and the breaches
+ * with a duty late. Each is a link that narrows the page to it; a new row
+ * reads like unread mail, bold with a blue dot.
+ *
  * Above the filters, reports from the public link waiting for an office
  * (0058): they are not in the register until one is claimed. Those an office
  * dismissed are a button away, whether or not any wait.
  */
 "use client";
 
-import { Plus, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { AlarmClock, Inbox, Plus, Sparkles, X } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
 
 import { FilterBar, FilterSelect, SearchBox, useFilterParam } from "@/components/data-display/resource-list";
 import { PageHeader } from "@/components/layout/app-shell";
+import { StatTile } from "@/components/ui/charts";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { EmptyRecords } from "@/components/ui/graphics";
 import {
@@ -50,9 +58,11 @@ import {
   locationText,
 } from "@/features/breach/components/copy";
 import { DismissedReportsButton, IntakeCard } from "@/features/breach/components/intake-card";
+import { listIncidentReports } from "@/features/breach/api";
 import { RecordBreachForm } from "@/features/breach/components/record-breach";
 import { useBreaches } from "@/features/breach/queries";
 import { cn, formatDateTime, formatRelative } from "@/lib/format";
+import { keys } from "@/lib/query";
 import type { BreachStatus, BreachSummary } from "@/types";
 
 const HOUR = 3_600_000;
@@ -61,7 +71,14 @@ const ACTIVITY: Record<string, { label: string; within: number }> = {
   "7d": { label: "In the last 7 days", within: 7 * 24 * HOUR },
   "30d": { label: "In the last 30 days", within: 30 * 24 * HOUR },
 };
-const FILTERS = ["q", "validation", "clock", "activity", "tickets", "sort"] as const;
+const FILTERS = ["q", "validation", "clock", "activity", "tickets", "new", "sort"] as const;
+
+/** How long an incident is "new" in a register: from when it was logged
+ *  there, or reassigned to this office, while nobody has validated it. */
+const NEW_FOR = 24 * HOUR;
+const arrivedHere = (b: BreachSummary) => new Date(b.transferred_at ?? b.recorded_at).getTime();
+const isNew = (b: BreachSummary, now: number) =>
+  b.status === "open" && b.determination === "pending" && now - arrivedHere(b) <= NEW_FOR;
 
 const outstanding = (b: BreachSummary) => b.obligations.filter((d) => d.state === "outstanding");
 const isLate = (b: BreachSummary) => outstanding(b).some((d) => d.clock.overdue || d.clock.past_target);
@@ -91,6 +108,7 @@ function BreachesPageView() {
   const [clock, setClock] = useFilterParam("clock");
   const [activity, setActivity] = useFilterParam("activity");
   const [tickets, setTickets] = useFilterParam("tickets");
+  const [fresh, setFresh] = useFilterParam("new");
   const [sort, setSort] = useFilterParam("sort");
   const [recording, setRecording] = React.useState(false);
   const query = useBreaches(status === "all" ? undefined : (status as BreachStatus));
@@ -114,6 +132,7 @@ function BreachesPageView() {
       const window = ACTIVITY[activity];
       return !window || now - new Date(b.last_activity_at).getTime() <= window.within;
     })
+    .filter((b) => !fresh || isNew(b, now))
     .filter((b) => {
       if (tickets === "open") return b.tickets_open > 0;
       if (tickets === "overdue") return b.tickets_overdue > 0;
@@ -125,14 +144,28 @@ function BreachesPageView() {
     // Late first, then soonest due; nothing due last, in the server's order.
     rows.sort((a, b) => (soonest(a) ?? Number.POSITIVE_INFINITY) - (soonest(b) ?? Number.POSITIVE_INFINITY));
   }
-  const narrowed = FILTERS.some((name) => name !== "sort" && { q, validation, clock, activity, tickets }[name]);
+  const narrowed = FILTERS.some((name) => name !== "sort" && { q, validation, clock, activity, tickets, new: fresh }[name]);
   function clear() {
     setQ("");
     setValidation("");
     setClock("");
     setActivity("");
     setTickets("");
+    setFresh("");
   }
+
+  // The first page of the waiting reports, the query the card below runs: the
+  // oldest first, so those escalated are on it.
+  const waiting = useQuery({
+    queryKey: keys.breach.intakePage(0),
+    queryFn: () => listIncidentReports({ limit: 50, offset: 0 }),
+    refetchInterval: 60_000,
+  });
+  const reports = waiting.data?.total ?? 0;
+  const escalated = (waiting.data?.items ?? []).filter((r) => r.escalated_at).length;
+  const open = all.filter((b) => b.status === "open");
+  const newHere = open.filter((b) => isNew(b, now)).length;
+  const lateBreaches = open.filter(isLate).length;
 
   return (
     <>
@@ -150,7 +183,48 @@ function BreachesPageView() {
         }
       />
 
-      <IntakeCard />
+      <section aria-label="Needs attention" className="mb-6 grid gap-4 sm:grid-cols-3">
+        <StatTile
+          label="New reports waiting"
+          value={reports}
+          hint={
+            reports === 0
+              ? "none waiting"
+              : escalated
+                ? `${escalated} escalated to management`
+                : "claim or dismiss"
+          }
+          hintTone={reports === 0 ? "good" : escalated ? "bad" : "warn"}
+          tone={reports ? "attention" : "accent"}
+          icon={<Inbox />}
+          tint="amber"
+          href="#reported"
+        />
+        <StatTile
+          label="New in your register"
+          value={newHere}
+          hint={newHere ? "not validated yet" : "nothing new"}
+          hintTone={newHere ? "warn" : "good"}
+          tone={newHere ? "attention" : "accent"}
+          icon={<Sparkles />}
+          tint="blue"
+          href={fresh ? "/breaches" : "/breaches?new=1"}
+        />
+        <StatTile
+          label="Breaches with a duty overdue"
+          value={lateBreaches}
+          hint={lateBreaches ? "act on these first" : "no duty late"}
+          hintTone={lateBreaches ? "bad" : "good"}
+          tone={lateBreaches ? "attention" : "accent"}
+          icon={<AlarmClock />}
+          tint="violet"
+          href={clock === "overdue" ? "/breaches" : "/breaches?clock=overdue"}
+        />
+      </section>
+
+      <div id="reported" className="scroll-mt-20">
+        <IntakeCard />
+      </div>
 
       <FilterBar>
         <SearchBox
@@ -206,6 +280,13 @@ function BreachesPageView() {
             { value: "activity", label: "Most recent activity" },
             { value: "due", label: "Due soonest, late first" },
           ]}
+        />
+        <FilterSelect
+          label="New"
+          value={fresh}
+          onChange={setFresh}
+          allLabel="Any"
+          options={[{ value: "1", label: "New in the last 24 hours" }]}
         />
         {narrowed && (
           <Button variant="ghost" onClick={clear}>
@@ -263,15 +344,38 @@ function BreachesPageView() {
                 {rows.map((b) => {
                   const due = outstanding(b);
                   const late = isLate(b);
+                  const unread = isNew(b, now);
                   return (
-                    <Tr key={b.breach_uuid} className={cn(late && "bg-danger-subtle/40")}>
+                    <Tr
+                      key={b.breach_uuid}
+                      className={cn(late && "bg-danger-subtle/40", unread && "font-semibold")}
+                      data-new={unread || undefined}
+                    >
                       <Td>
+                        {unread && (
+                          <span
+                            title="New: not validated yet"
+                            className="mr-1.5 inline-block size-2 rounded-full bg-accent align-middle"
+                          >
+                            <span className="sr-only">New</span>
+                          </span>
+                        )}
                         <Link
                           href={`/breaches/${b.breach_uuid}`}
                           className="font-medium text-text hover:text-accent-text hover:underline"
                         >
                           <Mono>{b.reference}</Mono>
                         </Link>
+                        {unread && (
+                          <span className="ml-2 rounded-full bg-accent px-2 py-0.5 text-[0.6875rem] font-bold text-white">
+                            New
+                          </span>
+                        )}
+                        {unread && b.transferred_at && (
+                          <span className="block text-xs font-normal text-text-subtle">
+                            Reassigned to your office {formatRelative(b.transferred_at)}
+                          </span>
+                        )}
                         {/* A recorded breach is quoted by its BR; the INC it was
                             logged as stays findable beside it. */}
                         {b.breach_reference && b.incident_reference !== b.breach_reference && (
