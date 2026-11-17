@@ -152,7 +152,7 @@ export function ActivityWizard({ onDone }: { onDone: () => void }) {
           <p className="text-sm">
             Share this link with the people taking part.{" "}
             {made.audience_mode === "sso"
-              ? "They sign in with their organisation account."
+              ? "They sign in with their organisation account once it is connected; until then, with a one-time code like everyone else."
               : "They sign in with a one-time code."}{" "}
             It can be read back from the activity&apos;s page.
           </p>
@@ -314,7 +314,7 @@ export function ActivityWizard({ onDone }: { onDone: () => void }) {
             <legend className="mb-1 text-sm font-medium">Who signs in through the link</legend>
             {(
               [
-                ["sso", "Employees, with their organisation account"],
+                ["sso", "Employees (their organisation account once it is connected; a one-time code until then)"],
                 ["otp", "Anyone, with a one-time code (candidates, vendors, visitors)"],
               ] as const
             ).map(([value, label]) => (

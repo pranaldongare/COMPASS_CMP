@@ -603,7 +603,8 @@ export const SECTIONS: HelpSection[] = [
         items: [
           "Click [[New activity]] on your dashboard or on [[HR activities]].",
           "Choose the [[Category]] and the [[Template version]]. Its mandatory purposes are ticked and cannot be unticked; tick any others you need.",
-          "Give the [[Activity name]] and its [[Description]], within the length Legal set. Choose [[Who signs in through the link]] - the organisation's sign-in for employees, or a code by text or email - and the date [[The link works until]].",
+          "Give the [[Activity name]] and its [[Description]], within the length Legal set. Choose [[Who signs in through the link]] - employees, or anyone - and the date [[The link works until]].",
+          "An employee link signs people in with their organisation account once that sign-in is connected. Until then it works like any other link: a new person fills in the short form, and everyone signs in with a one-time code by text or email. The link does not need to be made again when the sign-in is connected.",
           "[[Create the activity]]. It is live: [[The activity is live]] shows its link to share. [[Open the activity]] for its consents.",
         ],
       },
