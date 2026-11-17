@@ -8,6 +8,18 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Texts through Amazon SNS** (2026-11-17, ADR 0043, no migration). A
+  fourth SMS transport, `SMS_TRANSPORT=sns`, publishes each text straight to
+  the phone number as Transactional. Three settings: `SMS_SNS_REGION`
+  (`ap-south-1`), `SMS_SNS_SENDER_ID` (empty until registered) and
+  `SMS_DEFAULT_COUNTRY_CODE` (`91`, put in front of a mobile stored without
+  one on its way out). AWS credentials are the standard chain in the
+  workers' environment, never a setting. Production now accepts `http` or
+  `sns`. A timeout, an unreachable endpoint or proxy, a throttle and a 5xx
+  are retried; a refused number, a key that may not publish and missing
+  credentials (`sms.not_configured`) are not. `scripts/send_test_sms.py`
+  sends one test text. The API's requirements gain botocore and jmespath at
+  the relay's pins.
 - **Escalation, reassignment and the reporter's acknowledgement** (2026-11-17,
   migration 0073, ADR 0042). A report from the public link that neither
   office claims or dismisses within 30 minutes is mailed, once, to the

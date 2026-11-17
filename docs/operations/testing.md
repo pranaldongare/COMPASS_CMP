@@ -262,6 +262,10 @@ values never reaching the page. `expectNoSidewaysScroll` in
   serialise writes; their throughput has not been measured.
 - The HTTP SMS gateway: the transport is unit-tested by shape only, since no
   gateway exists in a test environment.
+- Amazon SNS: the `sns` transport is unit-tested against botocore's `Stubber`,
+  which checks each request against SNS's API model and answers for it, so
+  no test reaches AWS. Whether a text arrives is checked by hand on the demo
+  server with `scripts/send_test_sms.py`.
 - The rights holders card and an outside holder's portal page `/ticket/[token]`
   (0049) have vitest and HTTP-suite coverage, but no browser spec: the page
   needs a ticket issued to an outside address first.

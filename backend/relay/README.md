@@ -774,6 +774,12 @@ default) through EventBridge and AWS Health. Route those to the on-call topic.
     `*.s3...` is not needed;
   - `rolesanywhere.ap-south-1.amazonaws.com`: hourly credentials.
 - **Outbound, direct:** the API (`RELAY_API_ORIGIN`), listed in `NO_PROXY`.
+- **For the API's workers, not the collector**, when texts go through Amazon
+  SNS (`SMS_TRANSPORT=sns`, ADR 0043): `sns.ap-south-1.amazonaws.com`,
+  port 443, through the same proxy, with no TLS inspection. botocore trusts
+  its own certificate bundle, so an inspecting proxy breaks the call
+  (`sms.gateway_tls_failed` in the worker's log). The workers read
+  `HTTPS_PROXY` and `NO_PROXY` from their own environment.
 - **NTP, inside:** the organisation's internal time server. No new egress.
 - **TLS 1.2 or later, and no TLS inspection of these three names** (set them
   no-decrypt on the proxy). `--no-verify-ssl` is never acceptable.

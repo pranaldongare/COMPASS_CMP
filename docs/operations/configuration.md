@@ -39,7 +39,7 @@ The API (`_production_guards` in `core/config.py`):
 | `CORS_ORIGINS` contains `*` | With `allow_credentials`, that hands the session to any origin |
 | `SMTP_SERVER` is empty | Email would go to the local outbox, which writes nothing outside local/test; a code nobody receives is a sign-in nobody completes |
 | `SENDER_EMAIL` is on `example.org` or `example.com` | Mail from a placeholder address is mail a real server may refuse and nobody can reply to |
-| `SMS_TRANSPORT` is not `http` | The same, for the data principal's primary sign-in; and `SMS_HTTP_URL` must be `https://` |
+| `SMS_TRANSPORT` is not `http` or `sns` | The same, for the data principal's primary sign-in. With `http`, `SMS_HTTP_URL` must be `https://`; with `sns`, `SMS_SNS_REGION` must be an AWS Region, `SMS_DEFAULT_COUNTRY_CODE` 1 to 3 digits, and `SMS_SNS_SENDER_ID` empty or one SNS takes (both checked in any environment) |
 | `DKMS_ENABLED` is false | Personal data would be written in the clear, and nothing would ever report it |
 | `BLIND_INDEX_KEY` starts `dev-only` or is under 32 bytes | Every lookup hash could be recomputed by anyone holding this repository |
 | The database user (`POSTGRES_USER`) is a superuser or holds `BYPASSRLS` | No row-level security policy binds such a role, so the wall between the offices would stand in the schema and stop nothing ([ADR 0032](../decisions/0032-offices-are-logical-tenants-in-one-database.md)). Checked against the live database at startup, outside `local` and `test` |
@@ -85,7 +85,7 @@ boot: the second failure is loud and costs ten minutes.
 | Outbound HTTP | `EXTERNAL_HTTP_TIMEOUT_S` 10, `EXTERNAL_HTTP_RETRIES` 3 |
 | Logging | `LOG_LEVEL`, `LOG_JSON` (false for a terminal) |
 | Email | Five settings: `SMTP_SERVER`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SENDER_EMAIL`; and `EMAIL_CC_ADDRESSES` (empty), up to five addresses copied on every email that may be copied, checked at startup; and `EMAIL_REDIRECT_TO` (empty), test mode - every email and text goes only to up to five addresses, saying whom it was for; production refuses to start with it set. `SMTP_SERVER` empty writes to the outbox; the port decides the connection (465 SSL, 587 STARTTLS, 25 plain). See [email/README.md](../email/README.md) |
-| Transports | `SMS_TRANSPORT` (`console`, `http`, `null`), `STORAGE_BACKEND` (`local`; `object` is not built, and any environment refuses to start with it - until 2026-10-05 it started and failed the first upload). With more than one API or worker replica, `UPLOAD_ROOT` must be one durable volume they all mount: a proof saved by one replica is read back by another. The `http` SMS transport POSTs `{"to","body","from"}` as JSON with a bearer token to `SMS_HTTP_URL`; put a provider-specific adapter in front of it |
+| Transports | `SMS_TRANSPORT` (`console`, `http`, `sns`, `null`), `STORAGE_BACKEND` (`local`; `object` is not built, and any environment refuses to start with it - until 2026-10-05 it started and failed the first upload). With more than one API or worker replica, `UPLOAD_ROOT` must be one durable volume they all mount: a proof saved by one replica is read back by another. The `http` SMS transport POSTs `{"to","body","from"}` as JSON with a bearer token to `SMS_HTTP_URL`; put a provider-specific adapter in front of it The `sns` transport publishes each text straight to the phone number through Amazon SNS ([ADR 0043](../decisions/0043-texts-go-through-amazon-sns-from-the-workers.md)): `SMS_SNS_REGION` (`ap-south-1`), `SMS_SNS_SENDER_ID` (empty until a name is registered) and `SMS_DEFAULT_COUNTRY_CODE` (`91`, put in front of a mobile stored without a country code). Its AWS credentials are not settings: the workers' environment carries the standard AWS chain (`AWS_PROFILE` and `AWS_SHARED_CREDENTIALS_FILE`, or a `credential_process`), and `HTTPS_PROXY` and `NO_PROXY` for the proxy |
 | Key service | See below |
 
 ## The key service
@@ -276,9 +276,38 @@ people the first time somebody signs in.
 
 Set `SMTP_SERVER` and the other four email settings to deliver email for
 real - they, the template every email is laid out in, and a test send are in
-[email/README.md](../email/README.md) - and `SMS_TRANSPORT=http` with the gateway URL and token. Outside
+[email/README.md](../email/README.md) - and `SMS_TRANSPORT=http` with the gateway URL and token, or
+`SMS_TRANSPORT=sns` with AWS credentials in the workers' environment. Outside
 local and test the console transports raise rather than pretend; in
 production the settings refuse to load at all.
+
+### Texts through Amazon SNS
+
+`SMS_TRANSPORT=sns` ([ADR 0043](../decisions/0043-texts-go-through-amazon-sns-from-the-workers.md)).
+Only the Celery workers send, so only their environment needs the AWS
+credentials and the proxy; the API reads the setting and never publishes.
+
+- **Credentials** are the standard AWS chain, never a platform setting: for
+  the demo a profile in a credentials file (`AWS_PROFILE`,
+  `AWS_SHARED_CREDENTIALS_FILE`) whose key may only `sns:Publish` to phone
+  numbers; before real users, IAM Roles Anywhere through a
+  `credential_process`, as the relay's collector uses.
+- **The proxy** is `HTTPS_PROXY` and `NO_PROXY`. `sns.<region>.amazonaws.com`
+  on port 443 must be allowed, with no TLS inspection.
+- **Numbers.** SNS takes E.164 only. A mobile stored with a plus goes as it
+  is; one stored without gets `SMS_DEFAULT_COUNTRY_CODE` in front on its way
+  out (`9876543210`, `09876543210` and `919876543210` all go as
+  `+919876543210`). The stored value does not change.
+- **The sandbox.** A new AWS account sends only to numbers verified in the
+  SNS console (up to 10), and to nobody else: every other text is refused
+  and logged as `sms.gateway_refused`. In test mode (`EMAIL_REDIRECT_TO`) a
+  text is still sent as an email and never reaches SNS.
+- **Check it** as the workers run, with their environment:
+  `.venv/bin/python scripts/send_test_sms.py --to <a verified mobile>`. It
+  prints the transport, the Region and which AWS variables are set (never a
+  value), and says whether SNS accepted the text.
+- **"Delivered" means SNS accepted it.** Whether the phone received it is in
+  SNS's delivery logs in CloudWatch, if they are switched on for the account.
 
 ## Secrets
 

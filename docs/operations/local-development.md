@@ -86,7 +86,7 @@ Settings worth checking in `.env` for local work:
 | `CONSOLE_BASE_URL` | `http://localhost:3000` | where staff links land: tickets, requests |
 | `MFA_REQUIRED_ROLES` | every staff role | the default; leave it |
 | `SMTP_SERVER` | empty | no email is sent; see the outbox, and `var/outbox-html/` for each email laid out |
-| `SMS_TRANSPORT` | `console` | nothing is sent; see the outbox |
+| `SMS_TRANSPORT` | `console` | nothing is sent; see the outbox. `sns` sends real texts through Amazon SNS and needs AWS credentials in the worker's environment ([configuration](configuration.md#texts-through-amazon-sns)): leave it off a development machine unless you are testing exactly that |
 | `DKMS_ENABLED` | `true` | personal fields are sealed; the key service must be up for any write |
 | `DKMS_URL` | `http://localhost:32688` | the key service from step 2 |
 | `BLIND_INDEX_KEY` | the `.env.example` value | must equal the key service's `DKMS_HASH_KEY` |

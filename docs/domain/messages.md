@@ -186,7 +186,7 @@ transport, which is what stops a message being sent around the catalogue.
 | `OTP_TTL_S`, `MFA_TTL_S` | `{minutes}` on the code messages |
 | `DKMS_ENABLED`, `DKMS_URL` | Opening the recipient, in the worker's environment as well as the API's |
 
-The transports themselves (the five email settings, `SMS_TRANSPORT`) are described
+The transports themselves (the five email settings, `SMS_TRANSPORT` and, for texts through Amazon SNS, its three settings) are described
 in [configuration.md](../operations/configuration.md); email - its settings,
 failures and a test send - in [email/README.md](../email/README.md), with every
 message, its task and the code that queues it in

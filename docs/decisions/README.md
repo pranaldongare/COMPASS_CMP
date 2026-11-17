@@ -48,6 +48,7 @@ one stays and points forward.
 | [0040](0040-asking-for-a-sign-in-code-says-when-there-is-no-account.md) | Asking for a sign-in code says when there is no account | accepted |
 | [0041](0041-the-portals-address-is-kept-by-the-administrator.md) | The portal's address is kept by the administrator | accepted |
 | [0042](0042-an-unclaimed-report-is-escalated-a-breach-may-change-office-and-the-reporter-is-only-acknowledged.md) | An unclaimed report is escalated, a breach may change office, and the reporter is only acknowledged | accepted |
+| [0043](0043-texts-go-through-amazon-sns-from-the-workers.md) | Texts go through Amazon SNS from the workers, with the standard AWS credentials | proposed 2026-11-17 |
 
 ## Writing one
 
