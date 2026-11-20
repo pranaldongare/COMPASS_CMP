@@ -64,6 +64,10 @@ class MessageOut(Out):
     #: is copied (0046). Never a message with a code, a link or a person's own
     #: record.
     copyable: bool = False
+    #: Who keeps its words, by role title, and whether the reader may change
+    #: them (2026-11-20). The Legal PoC keeps only the messages with legal weight.
+    editors: list[str] = Field(default_factory=list)
+    editable: bool = False
     #: Whether it may carry files by email - only files its recipient owns.
     attachable: bool = False
     copies: list[CopyOut] = Field(default_factory=list)
@@ -104,16 +108,21 @@ class PreviewOut(Out):
     body: str
 
 
+def _role(principal: Principal) -> str:
+    """The role the session acts in - a delegate acts in the role covered."""
+    return str(getattr(principal.role, "value", principal.role))
+
+
 @router.get("", response_model=list[MessageOut], summary="Every message, with the words in force")
 async def list_messages(principal: MessageReader) -> list[dict[str, Any]]:
     async with connection() as conn:
-        return await service.catalogue(conn)
+        return await service.catalogue(conn, role=_role(principal))
 
 
 @router.get("/{key}", response_model=MessageOut, summary="One message")
 async def get_message(key: KeyPath, principal: MessageReader) -> dict[str, Any]:
     async with connection() as conn:
-        return await service.one(conn, key)
+        return await service.one(conn, key, role=_role(principal))
 
 
 @router.post(
@@ -135,7 +144,11 @@ async def preview_message(
 async def save_copies(key: KeyPath, body: CopiesIn, principal: MessageWriter) -> dict[str, Any]:
     async with transaction() as conn:
         return await service.set_copies(
-            conn, key=key, addresses=body.addresses, actor_id=principal.user_id
+            conn,
+            key=key,
+            addresses=body.addresses,
+            actor_id=principal.user_id,
+            role=_role(principal),
         )
 
 
@@ -151,6 +164,7 @@ async def save_message(
             subject=body.subject,
             body=body.body,
             actor_id=principal.user_id,
+            role=_role(principal),
         )
 
 
@@ -159,4 +173,6 @@ async def reset_message(
     key: KeyPath, channel: ChannelPath, principal: MessageWriter
 ) -> dict[str, Any]:
     async with transaction() as conn:
-        return await service.reset(conn, key=key, channel=channel, actor_id=principal.user_id)
+        return await service.reset(
+            conn, key=key, channel=channel, actor_id=principal.user_id, role=_role(principal)
+        )

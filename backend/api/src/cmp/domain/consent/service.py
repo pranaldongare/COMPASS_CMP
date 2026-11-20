@@ -860,6 +860,17 @@ async def withdraw(
         stopped=stopped,
         continuing=continuing,
     )
+    # And on an R&D project, its owner and collector (2026-11-20).
+    from cmp.domain import alerts
+
+    await alerts.rnd_withdrawal(
+        conn,
+        notice_id=int(current["notice_id"]),
+        user=user,
+        consent_reference=str(artefact["consent_uuid"]),
+        stopped=stopped,
+        continuing=continuing,
+    )
     # DataVault is told to restrict the assets held under it (0071): by the
     # worker, from what was saved here. This only has it look now.
     _datavault_look_soon()

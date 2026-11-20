@@ -208,6 +208,10 @@ async def revoke(
         subject_user_id=row["delegate_user_id"],
         detail={"delegator": str(row["delegator_uuid"]), "delegate": str(row["delegate_uuid"])},
     )
+    # Both people, whoever ended it (2026-11-20), as both were told it began.
+    from cmp.domain import alerts
+
+    await alerts.delegation_ended(conn, row=row, actor_id=actor_id)
     return {
         "ok": True,
         "message": f"{row['delegate_name']} is no longer covering for {row['delegator_name']}.",

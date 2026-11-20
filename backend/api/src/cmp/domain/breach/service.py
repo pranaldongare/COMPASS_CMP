@@ -284,6 +284,12 @@ async def record(
     await record_event(
         conn, breach, Event.BREACH_RECORDED, actor_id=actor_id, detail={"location": kind.value}
     )
+    # The office's other officers hear it is on the register (2026-11-20).
+    from cmp.domain import alerts
+
+    await alerts.breach_recorded(
+        conn, breach=breach, what="was recorded as an incident", actor_id=actor_id
+    )
     if cyber_attack == "yes":
         return await mark_cert_in(conn, breach_uuid=str(created["breach_uuid"]), actor_id=actor_id)
     return await detail(conn, str(created["breach_uuid"]))
@@ -387,6 +393,15 @@ async def _record_as_breach(
             Event.BREACH_CONFIRMED,
             actor_id=actor_id,
             detail={"reference": made["reference"]},
+        )
+        # Its duties start now: the office's other officers hear so.
+        from cmp.domain import alerts
+
+        await alerts.breach_recorded(
+            conn,
+            breach=recorded,
+            what="was confirmed as a personal data breach",
+            actor_id=actor_id,
         )
     return recorded
 
@@ -695,6 +710,18 @@ async def mark_cert_in(conn: Conn, *, breach_uuid: str, actor_id: int) -> Row:
         actor_id=actor_id,
         detail={"duty": Duty.CERT_IN.value, "due_at": due.isoformat() if due else None},
     )
+    from cmp.domain import alerts
+
+    await alerts.breach_duty_changed(
+        conn,
+        breach=breach,
+        change=(
+            f"reporting to CERT-In was marked as required, due {alerts.moment(due)}"
+            if due
+            else "reporting to CERT-In was marked as required"
+        ),
+        actor_id=actor_id,
+    )
     return await detail(conn, breach_uuid)
 
 
@@ -893,6 +920,14 @@ async def extend_report(
         Event.BREACH_OBLIGATION_EXTENDED,
         actor_id=actor_id,
         detail={"duty": Duty.BOARD_REPORT.value, "due_at": allowed_until.isoformat()},
+    )
+    from cmp.domain import alerts
+
+    await alerts.breach_duty_changed(
+        conn,
+        breach=breach,
+        change=f"the report to the Board was extended to {alerts.moment(allowed_until)}",
+        actor_id=actor_id,
     )
     return await detail(conn, breach_uuid)
 

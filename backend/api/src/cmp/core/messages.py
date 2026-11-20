@@ -115,6 +115,39 @@ class Message(StrEnum):
     STAFF_ROLE_CHANGED = "staff_role_changed"
     STAFF_ACCESS_ENDED = "staff_access_ended"
     DELEGATION_ARRANGED = "delegation_arranged"
+    # 2026-11-20: every event the notification review found nobody was told of.
+    PASSWORD_CHANGED = "password_changed"  # noqa: S105 - a message key, not a secret
+    MFA_RESET = "mfa_reset"
+    ACCOUNT_LOCKED = "account_locked"
+    SESSIONS_REVOKED = "sessions_revoked"
+    CONTACT_CHANGED = "contact_changed"
+    STAFF_ACCESS_RESTORED = "staff_access_restored"
+    DELEGATION_ENDED = "delegation_ended"
+    NOMINEE_REQUEST_MADE = "nominee_request_made"
+    NOMINATION_DECLINED = "nomination_declined"
+    NOMINATION_REVOKED = "nomination_revoked"
+    RIGHTS_IN_PROGRESS = "rights_in_progress"
+    RIGHTS_REVIEWER_ASSIGNED = "rights_reviewer_assigned"
+    RIGHTS_OVERDUE_ESCALATION = "rights_overdue_escalation"
+    RIGHTS_RETENTION_FLOOR_PASSED = "rights_retention_floor_passed"
+    PROCESSOR_REQUESTED = "processor_requested"
+    PROCESSOR_DECIDED = "processor_decided"
+    REGISTRY_SUSPENDED = "registry_suspended"
+    SITE_DEACTIVATED = "site_deactivated"
+    RND_WITHDRAWAL_NOTICE = "rnd_withdrawal_notice"
+    RETENTION_LAPSED = "retention_lapsed"
+    HR_TEMPLATE_VERSION_DECIDED = "hr_template_version_decided"
+    HR_RESPONDENT_CHANGED = "hr_respondent_changed"
+    BREACH_TICKET_MESSAGE = "breach_ticket_message"
+    BREACH_TICKET_HOLDER_REPLIED = "breach_ticket_holder_replied"
+    BREACH_RECORDED = "breach_recorded"
+    BREACH_DUTY_CHANGED = "breach_duty_changed"
+    BREACH_REPORT_UNDELIVERED = "breach_report_undelivered"
+    BREACH_NOTICES_UNDELIVERED = "breach_notices_undelivered"
+    TEMPORARY_ACCESS_ENDED = "temporary_access_ended"
+    AUDIT_CHAIN_BROKEN = "audit_chain_broken"
+    DATAVAULT_PROBLEM = "datavault_problem"
+    SETTINGS_CHANGED = "settings_changed"
 
 
 @dataclass(frozen=True, slots=True)
@@ -154,6 +187,16 @@ class Junction:
         return self.key in COPYABLE
 
     @property
+    def editors(self) -> frozenset[str]:
+        """The roles that may change this message's words and copies (2026-11-20).
+
+        The administrator and the DPO keep every message, as before. The Legal
+        PoC joins them on the messages whose words carry legal weight - what a
+        person is told of her rights, a breach, a nomination, a withdrawal, and
+        the HR track Legal governs (ADR 0033) - and on no others."""
+        return LEGAL_EDITORS if self.key in LEGAL_REVIEWED else EDITORS
+
+    @property
     def attachable(self) -> bool:
         """Whether this message may carry files by email."""
         return self.key in ATTACHABLE
@@ -177,6 +220,31 @@ MINUTES = Variable("minutes", "How many minutes the code is valid for.", "10")
 HOURS = Variable("hours", "How many hours the code is valid for.", "48")
 REFERENCE = Variable("reference", "The rights request reference.", "RR-2026-000042")
 
+CONSOLE_URL = Variable(
+    "console_url", "The staff console (CONSOLE_BASE_URL).", "https://console.example.org"
+)
+FULL_NAME = Variable("full_name", "The recipient's name.", "Asha Rao")
+WHEN = Variable("when", "When it happened.", "20 November 2026, 09:14 UTC")
+MINUTES_PAUSED = Variable("minutes", "How many minutes sign-in is paused for.", "30")
+REQUEST_KIND = Variable("request_kind", "The kind of request, in words.", "access request")
+REQUEST_URL = Variable(
+    "request_url",
+    "The request in the console.",
+    "https://console.example.org/requests/7c3cbb28",
+)
+PROJECT_NAME = Variable("project_name", "The project.", "Gait Study 2026")
+PROCESSOR_NAME = Variable("processor_name", "The processor.", "Acme Analytics Pvt Ltd")
+PROJECT_URL = Variable(
+    "project_url", "The project in the console.", "https://console.example.org/projects/7c3c"
+)
+TICKETS_URL = Variable(
+    "tickets_url", "The holder's tickets in the console.", "https://console.example.org/tickets"
+)
+BREACH_REFERENCE = Variable("breach_reference", "The breach's reference.", "BR-2026-0007")
+BREACH_URL = Variable(
+    "breach_url", "The breach in the console.", "https://console.example.org/breaches/7c3c"
+)
+
 #: Who signs a report to the organisation's board: whoever finalised it.
 SENDER_NAME: Final = Variable(
     "sender_name", "Who finalised the report, and so signs it.", "Dee Pee"
@@ -185,6 +253,11 @@ SENDER_ROLE: Final = Variable("sender_role", "Their role.", "Data Protection Off
 
 _SIGN_OFF_EMAIL = (
     "\n\nIf you were not expecting this message, please tell the Privacy Office at {organisation}."
+)
+#: Every email that carries a one-time code says this, in the same words.
+_DO_NOT_SHARE = (
+    "\n\nDo not share this code with anyone. {organisation} will never ask you for it by "
+    "phone, message or email."
 )
 _BOARD_ROUTE = (
     "\n\nIf you are not satisfied with how this was handled you may raise a grievance with "
@@ -230,6 +303,7 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "Your sign-in code is:\n\n    {code}\n\n"
             "Enter it to open your account. It works once and expires in {minutes} minutes.\n\n"
             "There is no password on your account: this code is how you sign in each time."
+            + _DO_NOT_SHARE
             + _SIGN_OFF_EMAIL
         ),
         sms_body=(
@@ -254,12 +328,11 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "It confirms that this email address is yours and that we can reach you here. "
             "It works once and expires in {minutes} minutes.\n\n"
             "If you gave a mobile number as well, a separate code has gone there; both are "
-            "needed." + _SIGN_OFF_EMAIL
+            "needed." + _DO_NOT_SHARE + _SIGN_OFF_EMAIL
         ),
         sms_body=(
-            "{code} confirms this mobile number. Enter it to finish signing "
-            "up. Expires in {minutes} minutes."
-            " - {organisation}"
+            "Your OTP to verify this mobile number for sign-up is {code}. It is valid for "
+            "{minutes} minutes. Do not share it with anyone. - {organisation}"
         ),
         to="The person signing up, at each email and mobile they gave.",
     ),
@@ -281,12 +354,12 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "It expires in {minutes} minutes.\n\n"
             "You are about to read a notice for {project_name}. You have not agreed to "
             "anything yet: this code only confirms that we can reach you, so that the record "
-            "of whatever you decide is yours." + _SIGN_OFF_EMAIL
+            "of whatever you decide is yours." + _DO_NOT_SHARE + _SIGN_OFF_EMAIL
         ),
         sms_body=(
-            "{code} confirms your contact for {project_name}. You have not "
-            "agreed to anything yet. Expires in {minutes} minutes."
-            " - {organisation}"
+            "Your OTP for {project_name} is {code}, valid for {minutes} minutes. It only "
+            "confirms your contact; you have not agreed to anything yet. Do not share it. "
+            "- {organisation}"
         ),
         to="The person giving consent through a link, at the contact they gave.",
     ),
@@ -304,7 +377,7 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "It works once and expires in {minutes} minutes. Your current password keeps "
             "working until a new one is set.\n\n"
             "If it was not you, nothing has changed and nothing will; you can ignore this "
-            "message, and you may want to tell the Privacy Office."
+            "message, and you may want to tell the Privacy Office." + _DO_NOT_SHARE
         ),
         sms_body=None,
         to="The member of staff who asked, at their primary email.",
@@ -340,7 +413,7 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             '"Forgotten your password?" on the sign-in page and a new one will be sent to '
             "this address.\n\n"
             "Afterwards you sign in with your password and a six-digit code sent here each "
-            "time." + _SIGN_OFF_EMAIL
+            "time." + _DO_NOT_SHARE + _SIGN_OFF_EMAIL
         ),
         sms_body=None,
         to="The new member of staff, at the email the administrator gave.",
@@ -360,12 +433,11 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "You added this address to your {organisation} account. Enter this code on "
             "your account page to confirm it:\n\n    {code}\n\n"
             "It works once and expires in {minutes} minutes. Until the address is "
-            "confirmed it cannot be used to sign in." + _SIGN_OFF_EMAIL
+            "confirmed it cannot be used to sign in." + _DO_NOT_SHARE + _SIGN_OFF_EMAIL
         ),
         sms_body=(
-            "{code} confirms this mobile number. Enter it on your account "
-            "page. Expires in {minutes} minutes."
-            " - {organisation}"
+            "Your OTP to confirm this mobile number is {code}. It is valid for {minutes} "
+            "minutes. Do not share it with anyone. - {organisation}"
         ),
         to="The account holder, at the email or mobile they have just added.",
     ),
@@ -386,13 +458,11 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "open your account page and enter this code there to confirm it:\n\n    {code}\n\n"
             "It works once and expires in {hours} hours. Until the address is confirmed it "
             "cannot be used to sign in. If you were not expecting this, tell your privacy "
-            "office." + _SIGN_OFF_EMAIL
+            "office." + _DO_NOT_SHARE + _SIGN_OFF_EMAIL
         ),
         sms_body=(
-            "This number was added to your account. {code} confirms it is "
-            "yours - sign in, open your account page and enter it there. Valid for {hours} "
-            "hours."
-            " - {organisation}"
+            "This number was added to your account. Your OTP to confirm it is {code}, valid "
+            "for {hours} hours: enter it on your account page. Do not share it. - {organisation}"
         ),
         to="The account holder, at the email or mobile an administrator added.",
     ),
@@ -641,12 +711,11 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "It confirms that request {reference} came from you. It expires in {minutes} "
             "minutes. Nothing has yet been decided about the request itself.\n\n"
             "If you did not make a request, ignore this message: without the code, the "
-            "request goes no further." + _SIGN_OFF_EMAIL
+            "request goes no further." + _DO_NOT_SHARE + _SIGN_OFF_EMAIL
         ),
         sms_body=(
-            "{code} confirms request {reference} is yours. Expires in "
-            "{minutes} minutes. Not you? Ignore this message."
-            " - {organisation}"
+            "Your OTP to confirm request {reference} is {code}. It is valid for {minutes} "
+            "minutes. Do not share it. Not you? Ignore this message. - {organisation}"
         ),
         to=(
             "The requester, at the contact already on file: an account's, or the address a "
@@ -777,12 +846,13 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
         email_body=(
             "Your verification code is:\n\n    {code}\n\n"
             "Enter it to accept or decline the nomination. It expires in {minutes} minutes. "
-            "Entering it is not itself an acceptance: you choose on the page." + _SIGN_OFF_EMAIL
+            "Entering it is not itself an acceptance: you choose on the page."
+            + _DO_NOT_SHARE
+            + _SIGN_OFF_EMAIL
         ),
         sms_body=(
-            "{code} is your nomination code. Enter it to accept or decline. "
-            "Expires in {minutes} minutes."
-            " - {organisation}"
+            "Your OTP to accept or decline a nomination is {code}. It is valid for {minutes} "
+            "minutes. Do not share it with anyone. - {organisation}"
         ),
         to="The nominee, at the contact the principal recorded for them.",
     ),
@@ -1038,6 +1108,7 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "Your code is:\n\n    {code}\n\n"
             "Enter it on the ticket's page to open it. It expires in {minutes} minutes and "
             "works once. If you did not open the ticket's link, you can ignore this email."
+            + _DO_NOT_SHARE
             + _SIGN_OFF_EMAIL
         ),
         sms_body=None,
@@ -1049,15 +1120,16 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
         title="Note from the Privacy Office",
         description="A notification resent to a person by the office from the console.",
         group="Staff",
-        channels=EMAIL_ONLY,
+        channels=BOTH,
         variables=(
-            Variable("event", "What the notification was about.", "project.approved"),
+            Variable("event", "What the notification was about.", "Projects: approved"),
             Variable("occurred_on", "When it happened.", "8 September 2026"),
             Variable(
                 "console_url",
                 "The staff console (CONSOLE_BASE_URL).",
                 "https://console.example.org",
             ),
+            PORTAL_URL,
             ORGANISATION,
         ),
         email_subject="A message from the {organisation} Privacy Office",
@@ -1066,7 +1138,10 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "regarding {event} on {occurred_on}.\n\n"
             "Sign in to the console to see it in context:\n{console_url}"
         ),
-        sms_body=None,
+        sms_body=(
+            "You have a message from the {organisation} Privacy Office about {event} on "
+            "{occurred_on}. Sign in to read it: {portal_url} - {organisation}"
+        ),
         to="The person the office chose to resend a notification to.",
     ),
     # ----------------------------------------------------------------- breach
@@ -1771,7 +1846,7 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
         email_body=(
             "Enter this code to send your report to the {organisation} Privacy Office:\n\n"
             "    {code}\n\n"
-            "It expires in {minutes} minutes." + _SIGN_OFF_EMAIL
+            "It expires in {minutes} minutes." + _DO_NOT_SHARE + _SIGN_OFF_EMAIL
         ),
         sms_body=None,
         to="Whoever is reporting an incident, at the email address they typed.",
@@ -1997,6 +2072,863 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
         sms_body=None,
         to="The person being covered and the colleague covering, each at their primary email.",
     ),
+    # ======================================================= 2026-11-20 additions
+    # Every event the review of 2026-11-20 found nobody was told of. Each names
+    # what happened and where to look, never a person's own words or data.
+    # ----------------------------------------------------------- security
+    Junction(
+        key=Message.PASSWORD_CHANGED,
+        title="Your password was changed",
+        description=(
+            "A security notice to a member of staff whose password was changed, reset or set "
+            "for the first time. Every other session has already been ended."
+        ),
+        group="Security",
+        channels=EMAIL_ONLY,
+        variables=(
+            FULL_NAME,
+            Variable(
+                "how",
+                "How it changed, as a phrase.",
+                "changed from your account page",
+            ),
+            WHEN,
+            ORGANISATION,
+        ),
+        email_subject="Security notice: your {organisation} password was changed",
+        email_body=(
+            "Dear {full_name},\n\n"
+            "The password on your {organisation} console account was {how} on {when}. "
+            "For your protection, every other signed-in session has been ended.\n\n"
+            "If you made this change, no further action is needed.\n\n"
+            "If you did not, your account may be at risk. Reset your password straight away "
+            'from the sign-in page ("Forgotten your password?") and inform the Privacy Office.'
+        ),
+        sms_body=None,
+        to="The member of staff whose password changed, at their primary email.",
+    ),
+    Junction(
+        key=Message.MFA_RESET,
+        title="Your second sign-in step was reset",
+        description=(
+            "A security notice to a member of staff when an administrator resets their "
+            "second sign-in step."
+        ),
+        group="Security",
+        channels=EMAIL_ONLY,
+        variables=(FULL_NAME, WHEN, ORGANISATION),
+        email_subject="Security notice: your {organisation} sign-in step was reset",
+        email_body=(
+            "Dear {full_name},\n\n"
+            "An administrator reset the second sign-in step on your {organisation} console "
+            "account on {when}. Any sign-in code already sent to you no longer works; the "
+            "next time you sign in, a new code will be sent to this address.\n\n"
+            "If you did not ask for this, please inform the Privacy Office."
+        ),
+        sms_body=None,
+        to="The member of staff whose second step was reset, at their primary email.",
+    ),
+    Junction(
+        key=Message.ACCOUNT_LOCKED,
+        title="Sign-in paused after failed attempts",
+        description=(
+            "A security notice to a member of staff when repeated wrong passwords pause "
+            "sign-in to their account. Sent once per lockout."
+        ),
+        group="Security",
+        channels=EMAIL_ONLY,
+        variables=(
+            FULL_NAME,
+            Variable("failures", "How many attempts failed.", "5"),
+            MINUTES_PAUSED,
+            WHEN,
+            ORGANISATION,
+        ),
+        email_subject="Security notice: sign-in to your {organisation} account is paused",
+        email_body=(
+            "Dear {full_name},\n\n"
+            "After {failures} unsuccessful sign-in attempts, sign-in to your {organisation} "
+            "console account was paused on {when} for {minutes} minutes.\n\n"
+            "If these attempts were yours, wait and try again, or reset your password from "
+            'the sign-in page ("Forgotten your password?").\n\n'
+            "If they were not, somebody may be trying to guess your password. Your account "
+            "is safe while it is paused; please inform the Privacy Office, and consider "
+            "changing your password once you are signed in."
+        ),
+        sms_body=None,
+        to="The member of staff whose account was paused, at their primary email.",
+    ),
+    Junction(
+        key=Message.SESSIONS_REVOKED,
+        title="You were signed out everywhere",
+        description=(
+            "A security notice to a member of staff when an administrator ends every one of "
+            "their signed-in sessions."
+        ),
+        group="Security",
+        channels=EMAIL_ONLY,
+        variables=(FULL_NAME, WHEN, CONSOLE_URL, ORGANISATION),
+        email_subject="Security notice: you were signed out of {organisation}",
+        email_body=(
+            "Dear {full_name},\n\n"
+            "An administrator signed you out of every device and browser on {when}. To "
+            "continue, sign in again: {console_url}\n\n"
+            "If you were not expecting this, please contact the Privacy Office."
+        ),
+        sms_body=None,
+        to="The member of staff who was signed out, at their primary email.",
+    ),
+    Junction(
+        key=Message.CONTACT_CHANGED,
+        title="A contact on your account changed",
+        description=(
+            "A security notice sent to the contacts already on an account when a mobile "
+            "number or email address is added, replaced or removed. The new contact itself "
+            "is never shown."
+        ),
+        group="Security",
+        channels=BOTH,
+        variables=(
+            Variable(
+                "change",
+                "What changed, as a phrase.",
+                "a mobile number was added to your account",
+            ),
+            Variable("actor", "Who made the change.", "you, from your account page"),
+            WHEN,
+            ORGANISATION,
+        ),
+        email_subject="Security notice: a contact on your {organisation} account changed",
+        email_body=(
+            "This is a security notice about your {organisation} account.\n\n"
+            "On {when}, {change}. The change was made by {actor}. For your privacy, the "
+            "new contact is not shown in this message.\n\n"
+            "If you made this change, no action is needed.\n\n"
+            "If you did not, please contact the Privacy Office straight away so that we can "
+            "secure your account."
+        ),
+        sms_body=(
+            "Security notice: on {when}, {change}. Not you? Contact us straight away. "
+            "- {organisation}"
+        ),
+        to="Every confirmed contact already on the account other than the one that changed.",
+    ),
+    # ----------------------------------------------------------- accounts
+    Junction(
+        key=Message.STAFF_ACCESS_RESTORED,
+        title="Your account is active again",
+        description="Sent when an administrator reactivates an account.",
+        group="Accounts",
+        channels=EMAIL_ONLY,
+        variables=(FULL_NAME, CONSOLE_URL, ORGANISATION),
+        email_subject="Your {organisation} account is active again",
+        email_body=(
+            "Dear {full_name},\n\n"
+            "An administrator has reactivated your {organisation} account. You can sign in "
+            "again with your existing details: {console_url}\n\n"
+            "If you were not expecting this, please inform the Privacy Office."
+        ),
+        sms_body=None,
+        to="The person whose account was reactivated, at their primary email.",
+    ),
+    Junction(
+        key=Message.DELEGATION_ENDED,
+        title="Cover ended",
+        description=(
+            "Sent to both people when cover is ended early - by either of them or by an "
+            "administrator."
+        ),
+        group="Accounts",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("delegator_name", "The person who was covered.", "Dee Pee"),
+            Variable("delegate_name", "The colleague who was covering.", "Priya Menon"),
+            Variable("role_title", "The role covered.", "Data Protection Officer"),
+            Variable("ended_by", "Who ended it.", "Dee Pee"),
+            WHEN,
+            ORGANISATION,
+        ),
+        email_subject="Cover ended: {delegate_name} no longer covers {delegator_name}",
+        email_body=(
+            "The cover arranged for {delegator_name} as {role_title} was ended by {ended_by} "
+            "on {when}.\n\n"
+            "From now on {delegate_name} no longer acts for {delegator_name}, and the work "
+            "returns to {delegator_name}. Anything done under the cover remains recorded as "
+            "it was." + _SIGN_OFF_EMAIL
+        ),
+        sms_body=None,
+        to="The person who was covered and the colleague covering, each at their primary email.",
+    ),
+    # -------------------------------------------------- rights: principal side
+    Junction(
+        key=Message.NOMINEE_REQUEST_MADE,
+        title="Your nominee made a request for you",
+        description=(
+            "Sent to the data principal when the nominee she appointed makes a rights request "
+            "on her behalf. It is her safeguard against a nomination being misused."
+        ),
+        group="Rights",
+        channels=BOTH,
+        variables=(
+            FULL_NAME,
+            Variable("nominee_name", "The nominee.", "Ravi Kumar"),
+            REQUEST_KIND,
+            REFERENCE,
+            Variable(
+                "grounds",
+                "What the nominee told us, as a phrase.",
+                "you are unable to act for yourself",
+            ),
+            PORTAL_URL,
+            ORGANISATION,
+        ),
+        email_subject="Your nominee has made a request on your behalf ({reference})",
+        email_body=(
+            "Dear {full_name},\n\n"
+            "{nominee_name}, whom you appointed as your nominee, has made a {request_kind} "
+            "on your behalf (reference {reference}). They have told us that {grounds}.\n\n"
+            "Before acting on it, we will check the evidence they have provided.\n\n"
+            "If you are able to read this and did not expect it, please contact the Privacy "
+            "Office straight away, quoting {reference}. You can also review or revoke the "
+            "nomination in your account: {portal_url}"
+        ),
+        sms_body=(
+            "Your nominee {nominee_name} has made a {request_kind} for you, ref {reference}. "
+            "Not expected? Contact us at once: {portal_url} - {organisation}"
+        ),
+        to="The data principal, at her primary contact.",
+    ),
+    Junction(
+        key=Message.NOMINATION_DECLINED,
+        title="Your nomination was declined",
+        description="Sent to the data principal when the person she nominated declines.",
+        group="Rights",
+        channels=BOTH,
+        variables=(
+            FULL_NAME,
+            Variable("nominee_name", "The person nominated.", "Ravi Kumar"),
+            PORTAL_URL,
+            ORGANISATION,
+        ),
+        email_subject="{nominee_name} has declined your nomination",
+        email_body=(
+            "Dear {full_name},\n\n"
+            "{nominee_name} has declined to act as your nominee under the Digital Personal "
+            "Data Protection Act, 2023, so the nomination is not in effect.\n\n"
+            "If you wish, you may nominate somebody else from your account: {portal_url}"
+            + _SIGN_OFF_EMAIL
+        ),
+        sms_body=(
+            "{nominee_name} has declined your nomination, so it is not in effect. You may "
+            "nominate someone else at {portal_url} - {organisation}"
+        ),
+        to="The data principal, at her primary contact.",
+    ),
+    Junction(
+        key=Message.NOMINATION_REVOKED,
+        title="A nomination was withdrawn",
+        description="Sent to the nominee when the data principal revokes the nomination.",
+        group="Rights",
+        channels=BOTH,
+        variables=(
+            Variable("principal_name", "The person who nominated them.", "Asha Rao"),
+            ORGANISATION,
+        ),
+        email_subject="{principal_name} has withdrawn your nomination",
+        email_body=(
+            "{principal_name} has withdrawn the nomination that appointed you to act for them "
+            "under the Digital Personal Data Protection Act, 2023.\n\n"
+            "You can no longer make requests on their behalf, and any reference or link we "
+            "sent you for the nomination no longer works. No action is needed from you."
+            + _SIGN_OFF_EMAIL
+        ),
+        sms_body=(
+            "{principal_name} has withdrawn your nomination. You can no longer act for them; "
+            "no action is needed. - {organisation}"
+        ),
+        to="The nominee, at every contact the principal recorded for them.",
+    ),
+    Junction(
+        key=Message.RIGHTS_IN_PROGRESS,
+        title="We are working on your request",
+        description=(
+            "Sent to the requester once the office has verified and classified the request "
+            "and work on it has begun."
+        ),
+        group="Rights",
+        channels=BOTH,
+        variables=(
+            REFERENCE,
+            REQUEST_KIND,
+            Variable("due_on", "The date we will respond by.", "5 November 2026"),
+            PORTAL_URL,
+            ORGANISATION,
+        ),
+        email_subject="Your {request_kind} ({reference}) is in progress",
+        email_body=(
+            "We have verified your {request_kind} (reference {reference}) and have started "
+            "work on it.\n\n"
+            "Where other teams or partners hold your data, we are asking them for it now. We "
+            "will respond by {due_on}, and you can follow the request in your account: "
+            "{portal_url}" + _SIGN_OFF_EMAIL
+        ),
+        sms_body=(
+            "Your {request_kind}, ref {reference}, is in progress. We will respond by "
+            "{due_on}. Track it at {portal_url} - {organisation}"
+        ),
+        to="The requester, at the contact on file (a nominee's request: the nominee).",
+    ),
+    # ---------------------------------------------------- rights: office side
+    Junction(
+        key=Message.RIGHTS_REVIEWER_ASSIGNED,
+        title="You are the reviewer of a grievance",
+        description=(
+            "Sent to the administrator named as the independent reviewer of a grievance about "
+            "an office."
+        ),
+        group="Rights",
+        channels=EMAIL_ONLY,
+        variables=(FULL_NAME, REFERENCE, REQUEST_URL, ORGANISATION),
+        email_subject="You are the reviewer of grievance {reference}",
+        email_body=(
+            "Dear {full_name},\n\n"
+            "You have been named the independent reviewer of grievance {reference}. It "
+            "concerns an office's own handling, so that office cannot review it.\n\n"
+            "The grievance and its deadline are in the console:\n{request_url}"
+        ),
+        sms_body=None,
+        to="The administrator named as reviewer, at their primary email.",
+    ),
+    Junction(
+        key=Message.RIGHTS_OVERDUE_ESCALATION,
+        title="Rights requests are overdue",
+        description=(
+            "The administrators' daily word, sent only when an office has rights requests "
+            "past their due date."
+        ),
+        group="Rights",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("count", "How many requests are overdue.", "2"),
+            Variable(
+                "requests",
+                "One line per overdue request: reference, office and how late.",
+                "  - RR-2026-000042, DPO office: overdue by 3 days",
+            ),
+            CONSOLE_URL,
+            ORGANISATION,
+        ),
+        email_subject="Escalation: {count} rights requests are overdue",
+        email_body=(
+            "The following rights requests are past the date by which the data principal was "
+            "promised a response:\n\n{requests}\n\n"
+            "The responsible office has been reminded. Late responses may be raised with the "
+            "Data Protection Board of India, so please follow these up with the office "
+            "concerned.\n\nThe queue is in the console: {console_url}/requests"
+        ),
+        sms_body=None,
+        to="Every active administrator, at their primary email.",
+    ),
+    Junction(
+        key=Message.RIGHTS_RETENTION_FLOOR_PASSED,
+        title="Retained data may now be erased",
+        description=(
+            "Sent to an office's officers when items they kept back from an erasure, for a "
+            "legal retention period, reach the end of that period."
+        ),
+        group="Rights",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("count", "How many items reached the end of their period.", "3"),
+            Variable(
+                "requests",
+                "One line per request: reference and how many items.",
+                "  - RR-2026-000042: 3 items",
+            ),
+            CONSOLE_URL,
+            ORGANISATION,
+        ),
+        email_subject="{count} retained items may now be erased",
+        email_body=(
+            "The legal retention period has ended for {count} items that were kept back from "
+            "erasure:\n\n{requests}\n\n"
+            "There is no longer a reason recorded for keeping them. Please review each request "
+            "and complete the erasure: {console_url}/requests"
+        ),
+        sms_body=None,
+        to="Every active officer of the request's office, at their primary email.",
+    ),
+    # ----------------------------------------------------------- projects
+    Junction(
+        key=Message.PROCESSOR_REQUESTED,
+        title="A collector is waiting for approval",
+        description=(
+            "Sent to the officers when an R&D User asks to add a processor to a project that is "
+            "already under review or approved."
+        ),
+        group="Projects",
+        channels=EMAIL_ONLY,
+        variables=(
+            PROJECT_NAME,
+            PROCESSOR_NAME,
+            Variable("requested_by", "Who asked.", "Asha Rao"),
+            PROJECT_URL,
+            ORGANISATION,
+        ),
+        email_subject="{processor_name} is waiting for approval on {project_name}",
+        email_body=(
+            "{requested_by} has asked to add {processor_name} as a collector on "
+            "{project_name}.\n\n"
+            "Nothing can be collected under {processor_name} until you approve it. Please "
+            "review the request: {project_url}"
+        ),
+        sms_body=None,
+        to="Every active officer of the project's office, at their primary email.",
+    ),
+    Junction(
+        key=Message.PROCESSOR_DECIDED,
+        title="Your collector request was decided",
+        description="Sent to a project's owner when the office approves or refuses a processor.",
+        group="Projects",
+        channels=EMAIL_ONLY,
+        variables=(
+            FULL_NAME,
+            PROJECT_NAME,
+            PROCESSOR_NAME,
+            Variable("decision", "approved, or not approved.", "approved"),
+            Variable("reason", "The office's reason, or '-'.", "-"),
+            PROJECT_URL,
+            ORGANISATION,
+        ),
+        email_subject="{processor_name} was {decision} for {project_name}",
+        email_body=(
+            "Dear {full_name},\n\n"
+            "Your request to add {processor_name} as a collector on {project_name} was "
+            "{decision}.\n\nReason given: {reason}\n\n"
+            "The project is in the console: {project_url}"
+        ),
+        sms_body=None,
+        to="The R&D User who owns the project, at their primary email.",
+    ),
+    Junction(
+        key=Message.REGISTRY_SUSPENDED,
+        title="A collector or source your project uses was suspended",
+        description=(
+            "Sent to the owner and the collector of every project using a processor or a data "
+            "source that has just been suspended."
+        ),
+        group="Projects",
+        channels=EMAIL_ONLY,
+        variables=(
+            FULL_NAME,
+            Variable("kind", "processor, or data source.", "processor"),
+            Variable("name", "Its name.", "Acme Analytics Pvt Ltd"),
+            PROJECT_NAME,
+            PROJECT_URL,
+            ORGANISATION,
+        ),
+        email_subject="{name} was suspended: {project_name} is affected",
+        email_body=(
+            "Dear {full_name},\n\n"
+            "The {kind} {name} has been suspended in the {organisation} registry. "
+            "{project_name} uses it, so no new data may be collected through it until it is "
+            "reinstated or replaced.\n\n"
+            "Please review the project and, if needed, arrange an alternative: {project_url}"
+        ),
+        sms_body=None,
+        to="The owner and the Data Collection Owner of each affected project.",
+    ),
+    Junction(
+        key=Message.SITE_DEACTIVATED,
+        title="A collection site was deactivated",
+        description=(
+            "Sent to a project's owner and collector when one of its sites is deactivated and "
+            "its consent links stop working."
+        ),
+        group="Projects",
+        channels=EMAIL_ONLY,
+        variables=(
+            FULL_NAME,
+            PROJECT_NAME,
+            Variable("site_label", "The site.", "Pune clinic"),
+            Variable("links_revoked", "How many live links stopped working.", "2"),
+            PROJECT_URL,
+            ORGANISATION,
+        ),
+        email_subject="{site_label} on {project_name} was deactivated",
+        email_body=(
+            "Dear {full_name},\n\n"
+            "The collection site {site_label} on {project_name} has been deactivated. "
+            "{links_revoked} consent link(s) for the project stopped working at the same "
+            "time, so any field agent still holding one will need a new link.\n\n"
+            "The project is in the console: {project_url}"
+        ),
+        sms_body=None,
+        to="The owner and the Data Collection Owner of the project, at their primary email.",
+    ),
+    # ------------------------------------------------------------- consent
+    Junction(
+        key=Message.RND_WITHDRAWAL_NOTICE,
+        title="Withdrawal notice to a project's team",
+        description=(
+            "Sent to a project's owner and collector when a participant withdraws consent on an "
+            "R&D project, so that processing under the withdrawn purposes stops. Names the "
+            "participant by reference only."
+        ),
+        group="Consent",
+        channels=EMAIL_ONLY,
+        variables=(
+            PROJECT_NAME,
+            Variable("principal_ref", "The participant's principal ID.", "PR-7c3cbb28"),
+            Variable("stopped", "The purposes withdrawn.", "Contact about follow-up sessions"),
+            Variable("continuing", "The purposes still in force, or 'none'.", "Gait analysis"),
+            Variable(
+                "consent_reference",
+                "The consent record's reference.",
+                "7c3cbb28-4b74-4600-975c-a3d0cc169368",
+            ),
+            PROJECT_URL,
+            ORGANISATION,
+        ),
+        email_subject="Consent withdrawn on {project_name} - stop processing for {principal_ref}",
+        email_body=(
+            "A participant ({principal_ref}) has withdrawn consent on {project_name}.\n\n"
+            "Withdrawn: {stopped}\nStill in force: {continuing}\n\n"
+            "Please stop processing their data under the withdrawn purposes. Withdrawal does "
+            "not by itself erase data already collected; any erasure will reach you separately "
+            "as a rights request.\n\n"
+            "Consent record: {consent_reference}\nProject: {project_url}"
+        ),
+        sms_body=None,
+        to="The R&D User who owns the project and its Data Collection Owner.",
+    ),
+    Junction(
+        key=Message.RETENTION_LAPSED,
+        title="Consent validity ran out",
+        description=(
+            "The nightly word to an office's officers when consent for some purposes has "
+            "reached the end of its validity and the data held under it was quarantined or "
+            "marked for erasure."
+        ),
+        group="Consent",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("quarantined", "How many holdings were quarantined.", "12"),
+            Variable("erase_due", "How many holdings are due for erasure.", "3"),
+            Variable("purposes", "The purposes concerned.", "GAIT-01, FOLLOWUP-02"),
+            CONSOLE_URL,
+            ORGANISATION,
+        ),
+        email_subject="Consent validity ran out for {purposes}",
+        email_body=(
+            "Consent for the following purposes has reached the end of its validity period: "
+            "{purposes}.\n\n"
+            "Quarantined: {quarantined} holding(s)\nDue for erasure: {erase_due} holding(s)\n\n"
+            "Data held under an expired consent may no longer be processed. Please review the "
+            "holdings due for erasure and arrange it: {console_url}"
+        ),
+        sms_body=None,
+        to="Every active officer of the purposes' office, at their primary email.",
+    ),
+    Junction(
+        key=Message.HR_TEMPLATE_VERSION_DECIDED,
+        title="A consent template version changed",
+        description=(
+            "Sent to the HR PoCs of a category when Legal approves or retires a version of its "
+            "consent template."
+        ),
+        group="Consent",
+        channels=EMAIL_ONLY,
+        variables=(
+            FULL_NAME,
+            Variable("template_name", "The template and its version.", "Background check v3"),
+            Variable("decision", "approved, or retired.", "approved"),
+            Variable(
+                "next_step",
+                "What it means for their activities.",
+                "You may now move your activities to this version.",
+            ),
+            CONSOLE_URL,
+            ORGANISATION,
+        ),
+        email_subject="{template_name} was {decision}",
+        email_body=(
+            "Dear {full_name},\n\n"
+            "Legal has {decision} {template_name}. {next_step}\n\n"
+            "Your activities are in the console: {console_url}/hr-activities"
+        ),
+        sms_body=None,
+        to="Every active HR PoC assigned to a category the template serves.",
+    ),
+    Junction(
+        key=Message.HR_RESPONDENT_CHANGED,
+        title="You were added to or removed from an HR category",
+        description=(
+            "Sent to a person when Legal adds or removes them as a respondent of an HR "
+            "category - one of the people told to stop processing when consent is withdrawn."
+        ),
+        group="Consent",
+        channels=EMAIL_ONLY,
+        variables=(
+            FULL_NAME,
+            Variable("category_name", "The HR category.", "Background verification"),
+            Variable("change", "added as, or removed as.", "added as"),
+            ORGANISATION,
+        ),
+        email_subject="You were {change} a respondent for {category_name}",
+        email_body=(
+            "Dear {full_name},\n\n"
+            "Legal has {change} a respondent for the HR category {category_name}.\n\n"
+            "Respondents are told when a participant withdraws consent, and must then stop "
+            "processing their data under the withdrawn purposes. If you think this is a "
+            "mistake, please contact the Legal office."
+        ),
+        sms_body=None,
+        to="The person added or removed, at their primary email.",
+    ),
+    # -------------------------------------------------------------- breach
+    Junction(
+        key=Message.BREACH_TICKET_MESSAGE,
+        title="A new message on your ticket",
+        description=(
+            "Sent to a breach ticket's holder when the Privacy Office writes on the ticket. "
+            "Names no breach (BD-18): the message is read in the console."
+        ),
+        group="Breach",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("holder_name", "The ticket's holder.", "Nikhil Joshi"),
+            TICKETS_URL,
+            ORGANISATION,
+        ),
+        email_subject="A new message from the {organisation} Privacy Office on your ticket",
+        email_body=(
+            "Dear {holder_name},\n\n"
+            "The Privacy Office has written on a ticket you hold. For confidentiality the "
+            "message is not repeated here; please sign in to read it and reply:\n{tickets_url}"
+        ),
+        sms_body=None,
+        to="The member of staff holding the breach ticket, at their primary email.",
+    ),
+    Junction(
+        key=Message.BREACH_TICKET_HOLDER_REPLIED,
+        title="A ticket holder wrote on a breach ticket",
+        description="Sent to the breach office's officers when a ticket's holder writes on it.",
+        group="Breach",
+        channels=EMAIL_ONLY,
+        variables=(
+            BREACH_REFERENCE,
+            Variable("holder_name", "Who wrote.", "Nikhil Joshi"),
+            BREACH_URL,
+            ORGANISATION,
+        ),
+        email_subject="{breach_reference}: {holder_name} wrote on their ticket",
+        email_body=(
+            "{holder_name} has written on their ticket for {breach_reference}.\n\n"
+            "Read and reply in the console: {breach_url}"
+        ),
+        sms_body=None,
+        to="Every active officer of the breach's office, at their primary email.",
+    ),
+    Junction(
+        key=Message.BREACH_RECORDED,
+        title="A breach was recorded or confirmed",
+        description=(
+            "Sent to the officers of the breach's office when an incident is recorded in the "
+            "console, or confirmed as a personal data breach - the moment its duties start."
+        ),
+        group="Breach",
+        channels=EMAIL_ONLY,
+        variables=(
+            BREACH_REFERENCE,
+            Variable(
+                "what",
+                "What happened, as a phrase.",
+                "was confirmed as a personal data breach",
+            ),
+            Variable("actor", "Who did it.", "Dee Pee"),
+            BREACH_URL,
+            ORGANISATION,
+        ),
+        email_subject="{breach_reference} {what}",
+        email_body=(
+            "{breach_reference} {what} by {actor}.\n\n"
+            "Its duties and their deadlines are in the console: {breach_url}"
+        ),
+        sms_body=None,
+        to="Every active officer of the breach's office, at their primary email.",
+    ),
+    Junction(
+        key=Message.BREACH_DUTY_CHANGED,
+        title="A breach duty changed",
+        description=(
+            "Sent to the officers of the breach's office when a duty's clock changes: CERT-In "
+            "reporting marked or set aside, or a report deadline extended."
+        ),
+        group="Breach",
+        channels=EMAIL_ONLY,
+        variables=(
+            BREACH_REFERENCE,
+            Variable("change", "What changed.", "the 72-hour report was extended"),
+            Variable("actor", "Who changed it.", "Dee Pee"),
+            BREACH_URL,
+            ORGANISATION,
+        ),
+        email_subject="{breach_reference}: {change}",
+        email_body=(
+            "On {breach_reference}, {change} by {actor}.\n\n"
+            "The duties and their deadlines are in the console: {breach_url}"
+        ),
+        sms_body=None,
+        to="Every active officer of the breach's office, at their primary email.",
+    ),
+    Junction(
+        key=Message.BREACH_REPORT_UNDELIVERED,
+        title="A breach report email was not delivered",
+        description=(
+            "Sent to the breach office's officers when a report to the organisation's board, "
+            "or for the regulator, could not be delivered to one of its addresses."
+        ),
+        group="Breach",
+        channels=EMAIL_ONLY,
+        variables=(
+            BREACH_REFERENCE,
+            Variable("report_title", "The report.", "72-hour report to the Board"),
+            Variable("error", "What the mail server said, or '-'.", "mailbox unavailable"),
+            BREACH_URL,
+            ORGANISATION,
+        ),
+        email_subject="Not delivered: {report_title} for {breach_reference}",
+        email_body=(
+            "The {report_title} for {breach_reference} could not be delivered to one of its "
+            "addresses after every retry.\n\nReason given: {error}\n\n"
+            "The duty may not be met until it reaches everybody. Check the address and send "
+            "it again from the console: {breach_url}"
+        ),
+        sms_body=None,
+        to="Every active officer of the breach's office, at their primary email.",
+    ),
+    Junction(
+        key=Message.BREACH_NOTICES_UNDELIVERED,
+        title="Some breach notices were not delivered",
+        description=(
+            "Sent to the breach office's officers, at most once every six hours per breach, "
+            "when notices to affected people fail after every retry."
+        ),
+        group="Breach",
+        channels=EMAIL_ONLY,
+        variables=(BREACH_REFERENCE, BREACH_URL, ORGANISATION),
+        email_subject="Some breach notices for {breach_reference} were not delivered",
+        email_body=(
+            "One or more notices to people affected by {breach_reference} could not be "
+            "delivered after every retry.\n\n"
+            "The duty to inform them is not met for those people. Review the failed contacts "
+            "and resend or reach them another way: {breach_url}"
+        ),
+        sms_body=None,
+        to="Every active officer of the breach's office, at their primary email.",
+    ),
+    Junction(
+        key=Message.TEMPORARY_ACCESS_ENDED,
+        title="Your temporary access has ended",
+        description=(
+            "Sent to somebody given a temporary login for a breach ticket when that access ends."
+        ),
+        group="Breach",
+        channels=EMAIL_ONLY,
+        variables=(FULL_NAME, ORGANISATION),
+        email_subject="Your temporary {organisation} access has ended",
+        email_body=(
+            "Dear {full_name},\n\n"
+            "The temporary console access you were given to help the Privacy Office has ended, "
+            "and you can no longer sign in with it. Thank you for your help.\n\n"
+            "If you are asked to help again, a new invitation will be sent to this address."
+        ),
+        sms_body=None,
+        to="The person whose temporary login ended, at the work email it was given to.",
+    ),
+    # ----------------------------------------------------------- oversight
+    Junction(
+        key=Message.AUDIT_CHAIN_BROKEN,
+        title="The audit trail failed its integrity check",
+        description=(
+            "Sent to every administrator and officer when the nightly check finds the audit "
+            "trail's hash chain broken - a sign that a record may have been altered."
+        ),
+        group="Oversight",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("position", "Where the chain first breaks.", "entry 104233"),
+            WHEN,
+            CONSOLE_URL,
+            ORGANISATION,
+        ),
+        email_subject="Urgent: the {organisation} audit trail failed its integrity check",
+        email_body=(
+            "The integrity check of the audit trail on {when} found the chain broken at "
+            "{position}.\n\n"
+            "This can mean that a record was altered or removed outside the platform. Please "
+            "treat it as a possible security incident: preserve the database as it is, verify "
+            "the trail from the console and inform your security team.\n\n"
+            "Audit trail: {console_url}/audit"
+        ),
+        sms_body=None,
+        to="Every active administrator, Data Protection Officer and Legal PoC.",
+    ),
+    Junction(
+        key=Message.DATAVAULT_PROBLEM,
+        title="DataVault did not take an instruction",
+        description=(
+            "Sent to the administrators and the office's officers when DataVault refuses or "
+            "fails an erasure, or a consent change cannot be delivered to it. Said once a day "
+            "per instruction."
+        ),
+        group="Oversight",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("what", "What did not go through.", "An erasure for request RR-2026-000042"),
+            Variable("failure", "What DataVault said.", "status_422"),
+            WHEN,
+            CONSOLE_URL,
+            ORGANISATION,
+        ),
+        email_subject="DataVault did not complete an instruction",
+        email_body=(
+            "{what} did not go through to DataVault on {when}.\n\nReason: {failure}\n\n"
+            "Until it does, data in DataVault may still be held or processed against the "
+            "person's wishes. Please check the DataVault connection and the instruction in the "
+            "console: {console_url}"
+        ),
+        sms_body=None,
+        to="Every active administrator, and the officers of the office concerned.",
+    ),
+    Junction(
+        key=Message.SETTINGS_CHANGED,
+        title="A platform setting was changed",
+        description=(
+            "Sent to the administrators and officers when a sensitive setting changes: the "
+            "DataVault connection, the portal address, breach settings, or a message template "
+            "or its copies. The one who changed it is told as well, so a change nobody made is "
+            "noticed."
+        ),
+        group="Oversight",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("setting", "What changed.", "the DataVault connection"),
+            Variable("actor", "Who changed it.", "Dee Pee (Administrator)"),
+            WHEN,
+            CONSOLE_URL,
+            ORGANISATION,
+        ),
+        email_subject="{organisation}: {setting} was changed",
+        email_body=(
+            "{actor} changed {setting} on {when}.\n\n"
+            "If you expected this, no action is needed. If not, review the change in the audit "
+            "trail and inform your administrator: {console_url}/audit"
+        ),
+        sms_body=None,
+        to="Every active administrator and officer, the one who made the change included.",
+    ),
 )
 
 JUNCTIONS: Final[dict[str, Junction]] = {j.key.value: j for j in CATALOGUE}
@@ -2031,6 +2963,73 @@ COPYABLE: Final[frozenset[Message]] = frozenset(
         Message.STAFF_ACCESS_ENDED,
         Message.DELEGATION_ARRANGED,
         Message.HR_WITHDRAWAL_NOTICE,
+        # 2026-11-20: the work between the office and its staff that the
+        # review added. Never a security notice to one person about their own
+        # account, never one to a data principal or a nominee.
+        Message.STAFF_ACCESS_RESTORED,
+        Message.DELEGATION_ENDED,
+        Message.RIGHTS_REVIEWER_ASSIGNED,
+        Message.RIGHTS_OVERDUE_ESCALATION,
+        Message.RIGHTS_RETENTION_FLOOR_PASSED,
+        Message.PROCESSOR_REQUESTED,
+        Message.PROCESSOR_DECIDED,
+        Message.REGISTRY_SUSPENDED,
+        Message.SITE_DEACTIVATED,
+        Message.RND_WITHDRAWAL_NOTICE,
+        Message.RETENTION_LAPSED,
+        Message.HR_TEMPLATE_VERSION_DECIDED,
+        Message.HR_RESPONDENT_CHANGED,
+        Message.BREACH_TICKET_MESSAGE,
+        Message.BREACH_TICKET_HOLDER_REPLIED,
+        Message.BREACH_RECORDED,
+        Message.BREACH_DUTY_CHANGED,
+        Message.BREACH_REPORT_UNDELIVERED,
+        Message.BREACH_NOTICES_UNDELIVERED,
+        Message.AUDIT_CHAIN_BROKEN,
+        Message.DATAVAULT_PROBLEM,
+    }
+)
+
+#: Who may change a message's words, by role value (2026-11-20). Strings, not
+#: `Role`, so that this module stays data with no import of the permission
+#: table; `tests/unit/core/test_messages.py` holds them to `Role`.
+EDITORS: Final[frozenset[str]] = frozenset({"admin", "dpo"})
+LEGAL_EDITORS: Final[frozenset[str]] = EDITORS | {"legal"}
+
+#: The messages whose words are the Legal office's as well as the DPO's and
+#: the administrator's: what a person is told about her rights and how they
+#: were handled, a breach that may affect her, a nomination, a withdrawal and
+#: its consequences, a report to the organisation's board, and the HR track
+#: Legal governs. Everything else - codes, staff alerts, security notices - is
+#: kept by the administrator and the DPO.
+LEGAL_REVIEWED: Final[frozenset[Message]] = frozenset(
+    {
+        Message.CONSENT_RECEIPT,
+        Message.WITHDRAWAL_CONFIRMATION,
+        Message.HR_RECONSENT_REQUEST,
+        Message.HR_WITHDRAWAL_NOTICE,
+        Message.RND_WITHDRAWAL_NOTICE,
+        Message.RETENTION_LAPSED,
+        Message.HR_TEMPLATE_VERSION_DECIDED,
+        Message.HR_RESPONDENT_CHANGED,
+        Message.RIGHTS_ACKNOWLEDGEMENT,
+        Message.RIGHTS_IN_PROGRESS,
+        Message.RIGHTS_RESPONSE_READY,
+        Message.RIGHTS_RESPONSE,
+        Message.RIGHTS_CLOSED,
+        Message.RIGHTS_RETENTION_FLOOR_PASSED,
+        Message.RIGHTS_OVERDUE_ESCALATION,
+        Message.NOMINATION_INVITATION,
+        Message.NOMINATION_ACCEPTED,
+        Message.NOMINATION_DECLINED,
+        Message.NOMINATION_REVOKED,
+        Message.NOMINEE_REQUEST_MADE,
+        Message.BREACH_NOTICE,
+        Message.BREACH_NOTICE_DIRECT,
+        Message.BREACH_BOARD_REPORT,
+        Message.BREACH_REPORT_FINALISED,
+        Message.INCIDENT_REPORT_RECEIVED,
+        Message.INCIDENT_REPORT_ACKNOWLEDGED,
     }
 )
 

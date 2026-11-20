@@ -524,3 +524,22 @@ async def store(
         actor_user_id=actor_id,
         detail=detail,
     )
+    went_wrong = failed or (detail.get("failed") or 0)
+    if went_wrong:
+        # The instruction was refused, or DataVault could not erase some of it
+        # (2026-11-20): the administrators and the request's office hear.
+        from cmp.db.repositories import rights as rights_repo
+        from cmp.domain import alerts
+
+        request = await rights_repo.by_id(conn, what.request_id)
+        await alerts.datavault_problem(
+            conn,
+            what=f"An erasure for request {what.reference}",
+            failure=(
+                failure_said(failed)
+                if failed
+                else f"{detail['failed']} asset(s) could not be erased"
+            ),
+            office=request.get("office_code") if request else None,
+            marker=f"erasure:{what.erasure_uuid}:{failed or 'assets'}",
+        )

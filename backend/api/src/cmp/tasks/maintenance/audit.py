@@ -73,6 +73,13 @@ def verify_audit_chain() -> dict[str, Any]:
                         occurred_at=str(brk["occurred_at"]),
                         reason=brk["reason"],
                     )
+                    # A log line is read by nobody at 03:00 (2026-11-20): every
+                    # administrator and officer is told, by email.
+                    from cmp.domain import alerts
+
+                    await alerts.audit_chain_broken(
+                        conn, position=f"entry {brk['log_id']} ({brk['reason']})"
+                    )
                 else:
                     await audit.record(
                         conn,

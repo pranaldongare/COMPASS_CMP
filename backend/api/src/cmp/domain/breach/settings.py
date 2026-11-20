@@ -43,6 +43,12 @@ async def _trail(conn: Conn, *, actor_id: int, detail: dict[str, Any]) -> None:
         actor_user_id=actor_id,
         detail=detail,
     )
+    if "board_recipient" not in detail:
+        # The board list has a word of its own (0064); every other breach
+        # setting is told here (2026-11-20).
+        from cmp.domain import alerts
+
+        await alerts.setting_changed(conn, setting="the breach settings", actor_id=actor_id)
 
 
 async def _officers_told(conn: Conn, *, change: str, recipient: Row, actor_id: int) -> None:

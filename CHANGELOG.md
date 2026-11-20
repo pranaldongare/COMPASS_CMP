@@ -8,6 +8,30 @@ as a release yet.
 ## [Unreleased]
 
 ### Added
+- **Every event now reaches the people it concerns** (2026-11-20, no
+  migration). A review of every audited event found 32 that told nobody; each
+  now has a message (54 → 86 emails, 21 → 27 texts), listed by recipient in
+  `docs/notifications/README.md`. Security notices to staff (password
+  changed, sign-in step reset, sign-in paused, signed out everywhere,
+  reactivated); a contact changed, to the contacts already on the account;
+  the principal told her nominee acted, or declined, and the nominee told the
+  nomination was withdrawn; a request in progress; collectors requested and
+  decided, processors and sources suspended, sites deactivated and R&D
+  withdrawals, to the project's people; breach tickets messaging both ways,
+  a breach recorded or confirmed, duties changed, report and notice mail not
+  delivered; retention floors and consent validity run out; and the
+  oversight alarms - the audit chain broken, DataVault refusing an
+  instruction, a sensitive setting or message changed. The Note from the
+  Privacy Office also goes by text. An incapacity claim now tells the
+  principal "your nominee has made a request for you" instead of
+  acknowledging a request she did not make.
+- **The Legal PoC keeps the words of the messages with legal weight**
+  (2026-11-20). `Junction.editors` says who may change each message: the
+  administrator and the DPO every message, the Legal PoC also those in
+  `LEGAL_REVIEWED`. The API refuses anybody else (403); Message templates is
+  now in the Legal PoC's navigation and shows other messages read-only,
+  naming who keeps them. Every one-time-code message says not to share the
+  code, in the same words, and every code text follows the DLT shape.
 - **Texts through Amazon SNS** (2026-11-17, ADR 0043, no migration). A
   fourth SMS transport, `SMS_TRANSPORT=sns`, publishes each text straight to
   the phone number as Transactional. Three settings: `SMS_SNS_REGION`

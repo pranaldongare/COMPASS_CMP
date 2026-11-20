@@ -53,23 +53,26 @@ MODULES: list[tuple[str, str, tuple[str, ...], str]] = [
     (
         "users.md",
         "Users, sign-in and accounts",
-        ("Sign-in", "Accounts", "Staff"),
+        ("Sign-in", "Security", "Accounts", "Staff"),
         "Signing in, signing up, confirming a contact, staff invitations and password "
-        "resets, a member of staff's role or account changing, a cover arranged, and a note "
-        "the office resends.",
+        "resets, the security notices about a person's own account, a member of staff's role "
+        "or account changing, a cover arranged or ended, and a note the office resends.",
     ),
     (
         "projects.md",
         "Projects and approvals",
         ("Projects",),
         "A project's way from draft to approved: submitted, approved, sent back, closed, and "
-        "the collectors named on it.",
+        "the collectors named on it, a collector asked for or decided, a processor or source "
+        "suspended, and a site deactivated.",
     ),
     (
         "consent.md",
         "Consent",
         ("Consent",),
-        "What a data principal is sent when she gives or withdraws consent.",
+        "What a data principal is sent when she gives or withdraws consent, what a project's "
+        "or an HR activity's people are told when she withdraws, consent validity running "
+        "out, and the HR track's template and respondent changes.",
     ),
     (
         "rights.md",
@@ -84,6 +87,13 @@ MODULES: list[tuple[str, str, tuple[str, ...], str]] = [
         ("Breach",),
         "The people a breach affected, the staff asked to help on a ticket, the DPO's alerts "
         "on the breach's duties, reports to the organisation's board, and the public link.",
+    ),
+    (
+        "oversight.md",
+        "Oversight",
+        ("Oversight",),
+        "The alarms for the people who answer for the platform: the audit trail failing its "
+        "check, DataVault not taking an instruction, a sensitive setting changed.",
     ),
 ]
 

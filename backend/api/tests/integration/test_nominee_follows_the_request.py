@@ -46,6 +46,7 @@ from tests.conftest import plain
 pytestmark = pytest.mark.integration
 
 ACKNOWLEDGEMENT = "cmp.notifications.send_rights_acknowledgement"
+NOMINEE_ACTED = "cmp.notifications.send_nominee_request_made"
 
 #: Inside a block nothing seeds and no manual probe reaches for. A contact a
 #: live probe has already committed collides on the unique index, and the
@@ -328,19 +329,22 @@ class TestRevocation:
 
 
 class TestWhoIsTold:
-    async def test_on_incapacity_she_is_acknowledged_as_well_as_him(
+    async def test_on_incapacity_she_is_told_her_nominee_acted_as_well_as_him(
         self, conn: Any, seeded: dict[str, Any], request_context: Any, queued: Any
     ) -> None:
         """Her account stays open and the request appears in her own list.
         Somebody exercising her rights in her name is a thing she should hear
         from us, not discover - and incapacity is the claim she might be in a
-        position to dispute."""
+        position to dispute. Since 2026-11-20 she is told in words written for
+        her ("your nominee has made a request for you"), not sent an
+        acknowledgement of a request she did not make."""
         accepted = await nominate_and_accept(conn, seeded["subject"]["id"])
         row = await raise_request(conn, accepted, event="incapacity")
 
-        told = [plain(args[0]) for name, args in queued if name == ACKNOWLEDGEMENT]
-        assert NOMINEE_MOBILE in told, "the nominee is the requester and hears first"
-        assert "subject@test.local" in told, "and she is told it was done in her name"
+        acknowledged = [plain(args[0]) for name, args in queued if name == ACKNOWLEDGEMENT]
+        assert acknowledged == [NOMINEE_MOBILE], "the nominee is the requester and hears first"
+        told = [plain(args[0]) for name, args in queued if name == NOMINEE_ACTED]
+        assert told == ["subject@test.local"], "and she is told it was done in her name"
         assert row["trigger_event"] == "incapacity"
 
     async def test_on_death_only_he_is_written_to(

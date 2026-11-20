@@ -29,7 +29,6 @@ from cmp.core.enums import RightsRequestStatus as Status
 from cmp.core.enums import RightsRequestType as Kind
 from cmp.core.enums import RightsScopeDecision as Decision
 from cmp.core.enums import RightsTicketStatus as Ticket
-from cmp.core.enums import RightsTriggerEvent as TriggerEvent
 from cmp.core.errors import (
     BadRequest,
     Conflict,
@@ -435,12 +434,10 @@ def _acknowledge_to(row: Row) -> list[str]:
     be in a position to dispute. On a death claim there is nobody to write to,
     and writing anyway would be its own cruelty.
     """
-    out = [c for c in (contact_for(row),) if c]
-    if row["channel"] == Channel.NOMINEE and row.get("trigger_event") == TriggerEvent.INCAPACITY:
-        her = row.get("subject_email") or row.get("subject_mobile")
-        if her and str(her) not in out:
-            out.append(str(her))
-    return out
+    # Her own word on an incapacity claim is "Your nominee made a request for
+    # you" (`alerts.nominee_request_made`, 2026-11-20), queued as the nominee
+    # submits; an acknowledgement of a request she did not make would mislead.
+    return [c for c in (contact_for(row),) if c]
 
 
 # -------------------------------------------------------------- public form
@@ -1028,6 +1025,9 @@ async def assign_reviewer(
         actor_user_id=actor_id,
         detail={"reviewer": reviewer_uuid},
     )
+    from cmp.domain import alerts
+
+    await alerts.reviewer_assigned(conn, request=row, reviewer=reviewer)
     return row
 
 
@@ -1059,6 +1059,11 @@ async def transition(
     await repo.update(conn, int(row["request_id"]), status=match.to.value)
     row = await reload(conn, row)
     await _record(conn, row, Event.RIGHTS_STATUS_CHANGED, actor_user_id=actor_id, detail=detail)
+    if before == Status.RECEIVED and row["status"] == Status.IN_PROGRESS:
+        # Verified, classified and under way: the requester hears so, once.
+        from cmp.domain import alerts
+
+        await alerts.rights_in_progress(conn, request=row, contact=contact_for(row))
     return row
 
 
@@ -4310,6 +4315,10 @@ async def decline_nomination(conn: Conn, raw_token: str, *, code: str) -> Row:
     )
     fresh = await repo.nomination_by_uuid(conn, str(row["nomination_uuid"]))
     assert fresh is not None
+    # She hears that it is not in effect, and may nominate somebody else.
+    from cmp.domain import alerts
+
+    await alerts.nomination_declined(conn, nomination=fresh)
     return fresh
 
 
@@ -4337,6 +4346,12 @@ async def revoke_nomination(conn: Conn, *, nomination_uuid: str, principal_user_
     )
     fresh = await repo.nomination_by_uuid(conn, nomination_uuid)
     assert fresh is not None
+    # He hears that he can no longer act - only once it was put to him: one
+    # never sent is nothing he knows of. Every contact she recorded for him.
+    if row["status"] in (NominationStatus.PENDING, NominationStatus.ACTIVE):
+        from cmp.domain import alerts
+
+        await alerts.nomination_revoked(conn, nomination=fresh)
     return fresh
 
 
@@ -4454,6 +4469,14 @@ async def nominee_submit(
             "event": trigger_event,
         },
     )
+    # On incapacity, she is told her nominee has acted in her name, in words
+    # written for her rather than an acknowledgement of a request she did not
+    # make (2026-11-20). On death, nobody is written to.
+    from cmp.domain import alerts
+
+    await alerts.nominee_request_made(
+        conn, nomination=row, request=created, trigger_event=trigger_event
+    )
     return created
 
 
@@ -4477,10 +4500,16 @@ async def sweep(conn: Conn, *, today: date | None = None) -> dict[str, int]:
         )
         closed += 1
     floors = 0
+    floor_requests: dict[int, Row] = {}
+    floor_counts: dict[int, int] = {}
     for item in await repo.retained_items_past_floor(conn, day):
         await repo.update_item(conn, int(item["item_id"]), floor_passed_at=datetime.now(UTC))
         request = await repo.by_id(conn, int(item["request_id"]))
         if request:
+            floor_requests[int(request["request_id"])] = request
+            floor_counts[int(request["request_id"])] = (
+                floor_counts.get(int(request["request_id"]), 0) + 1
+            )
             await _record(
                 conn,
                 request,
@@ -4499,6 +4528,9 @@ async def sweep(conn: Conn, *, today: date | None = None) -> dict[str, int]:
     from cmp.domain import alerts
 
     digest = await alerts.rights_due(conn)
+    if floor_requests:
+        # The office's word that what it kept back may now be erased (2026-11-20).
+        await alerts.retention_floors_passed(conn, floor_requests, floor_counts)
     # Erasures still waiting on a store, or that failed: tried again (S2-03).
     executed = await erasure.execute_pending(conn)
     log.info(

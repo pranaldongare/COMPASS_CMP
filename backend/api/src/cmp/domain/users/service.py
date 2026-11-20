@@ -360,6 +360,11 @@ async def update_profile(
             subject_user_id=user["id"],
             detail={"medium": "mobile", "action": "set", "by": "administrator"},
         )
+        from cmp.domain import alerts
+
+        await alerts.contact_changed(
+            conn, before=user, medium="mobile", action="set", by_admin=True
+        )
         await auth_service.request_contact_code_on_behalf(conn, user=updated, contact=str(mobile))
     return updated
 
@@ -461,6 +466,10 @@ async def reactivate(conn: Conn, user_uuid: str) -> dict[str, Any]:
         entity_id=user["id"],
         subject_user_id=user["id"],
     )
+    if user.get("status") != "active":
+        from cmp.domain import alerts
+
+        await alerts.access_restored(conn, user=user)
     return user
 
 
@@ -475,6 +484,9 @@ async def record_forced_sign_out(conn: Conn, user_uuid: str) -> dict[str, Any]:
         subject_user_id=user["id"],
         detail={"forced": True},
     )
+    from cmp.domain import alerts
+
+    await alerts.sessions_revoked(conn, user=user)
     return user
 
 
@@ -490,6 +502,9 @@ async def reset_mfa(conn: Conn, user_uuid: str) -> dict[str, Any]:
         entity_id=user["id"],
         subject_user_id=user["id"],
     )
+    from cmp.domain import alerts
+
+    await alerts.mfa_reset(conn, user=user)
     return user
 
 
@@ -547,6 +562,11 @@ async def update_own_profile(
                 entity_id=user_id,
                 subject_user_id=user_id,
                 detail={"medium": "mobile", "action": "set"},
+            )
+            from cmp.domain import alerts
+
+            await alerts.contact_changed(
+                conn, before=before, medium="mobile", action="set", by_admin=False
             )
         await auth_service.request_contact_code(conn, user=updated, contact=str(mobile))
     if secondary_email is not None:

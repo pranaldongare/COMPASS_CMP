@@ -40,6 +40,12 @@ export interface MessageTemplate {
   /** Whether the office may copy it by email to somebody else (2026-10-08).
    *  Never a message with a code, a link or a person's own record. */
   copyable: boolean;
+  /** Who keeps its words, by role title (2026-11-20). The administrator and
+   *  the DPO keep every message; the Legal PoC also keeps those with legal
+   *  weight. */
+  editors?: string[];
+  /** Whether the signed-in user may change its words and copies. */
+  editable?: boolean;
   /** How many addresses the deployment copies every copyable email to
    *  (EMAIL_CC_ADDRESSES), on top of the office's own. A count only. */
   deployment_copies?: number;

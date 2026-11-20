@@ -59,7 +59,13 @@ export function MessageEditor({ message }: { message: MessageTemplate }) {
           ))}
         </div>
       )}
-      <CopyTo message={message} />
+      {message.editable === false && (
+        <Alert tone="info">
+          You can read this message. Its words are kept by{" "}
+          {(message.editors ?? []).join(", ") || "the administrator and the DPO"}.
+        </Alert>
+      )}
+      {message.editable !== false && <CopyTo message={message} />}
       {message.attachable && (
         <p className="text-xs text-text-muted">
           By email it can carry a file - only one its recipient owns, attached by the platform.
@@ -88,6 +94,9 @@ function ChannelEditor({
   const reset = useResetMessage();
   const preview = usePreviewMessage();
   const isEmail = template.channel === "email";
+  // Read-only for a message somebody else keeps (2026-11-20): the server
+  // refuses the save anyway; this says so before anybody types.
+  const locked = message.editable === false;
 
   const [subject, setSubject] = React.useState(template.subject ?? "");
   const [body, setBody] = React.useState(template.body);
@@ -177,6 +186,7 @@ function ChannelEditor({
             <Input
               {...p}
               value={subject}
+              readOnly={locked}
               maxLength={200}
               onChange={(e) => setSubject(e.target.value)}
             />
@@ -200,6 +210,7 @@ function ChannelEditor({
             rows={isEmail ? 12 : 4}
             maxLength={isEmail ? 6000 : 480}
             value={body}
+            readOnly={locked}
             onChange={(e) => setBody(e.target.value)}
             className="font-mono text-sm"
           />
@@ -215,6 +226,7 @@ function ChannelEditor({
             <li key={v.name}>
               <button
                 type="button"
+                disabled={locked}
                 onClick={() => insertVariable(v.name)}
                 title={`${v.description} Example: ${v.sample}`}
                 className="bg-surface-subtle hover:bg-surface-muted rounded-md border border-border px-2 py-0.5 font-mono text-xs"
@@ -239,21 +251,24 @@ function ChannelEditor({
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant="primary"
-          size="sm"
-          loading={save.isPending}
-          disabled={!dirty}
-          onClick={onSave}
-        >
-          <Save className="size-4" aria-hidden="true" />
-          Save
-        </Button>
+        {!locked && (
+          <Button
+            variant="primary"
+            size="sm"
+            loading={save.isPending}
+            disabled={!dirty}
+            onClick={onSave}
+          >
+            <Save className="size-4" aria-hidden="true" />
+            Save
+          </Button>
+        )}
         <Button variant="subtle" size="sm" loading={preview.isPending} onClick={onPreview}>
           <Eye className="size-4" aria-hidden="true" />
           Preview
         </Button>
         {template.customised &&
+          !locked &&
           (confirmingReset ? (
             <>
               <Button

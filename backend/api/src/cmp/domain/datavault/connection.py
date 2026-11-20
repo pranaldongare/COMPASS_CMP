@@ -232,4 +232,9 @@ async def save(
             "consent_changes_were": bool(before["consent_changes"]),
         },
     )
+    # Where erasures and consent changes go is a setting a stolen session would
+    # want to change; everybody who answers for the platform hears (2026-11-20).
+    from cmp.domain import alerts
+
+    await alerts.setting_changed(conn, setting="the DataVault connection", actor_id=actor_id)
     return await overview(conn)

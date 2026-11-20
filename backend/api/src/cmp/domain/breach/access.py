@@ -268,6 +268,12 @@ async def end(conn: Conn, grant_row: Row, *, cause: str, actor_id: int | None) -
         actor_user_id=actor_id,
         detail={"reference": await _reference(conn, grant_row), "cause": cause},
     )
+    if cause != ACCOUNT_DEACTIVATED:
+        # An account ended is told so by its own message; any other end is
+        # this one (2026-11-20).
+        from cmp.domain import alerts
+
+        await alerts.temporary_access_ended(conn, user_id=user_id)
 
 
 async def _reference(conn: Conn, grant_row: Row) -> str:

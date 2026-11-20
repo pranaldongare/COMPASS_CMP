@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from cmp.core.errors import NotFound, ValidationFailed
+from cmp.core.errors import Forbidden, NotFound, ValidationFailed
 from cmp.core.logging import get_logger
 from cmp.core.messages import (
     CATALOGUE,
@@ -37,6 +37,22 @@ def _junction(key: str) -> Junction:
         raise NotFound("Message") from None
 
 
+#: How a role is named where the console says who keeps a message.
+_KEEPER_TITLES = {"admin": "Administrator", "dpo": "Data Protection Officer", "legal": "Legal PoC"}
+
+
+def may_edit(junction: Junction, role: str | None) -> bool:
+    """Whether this role may change the message's words and copies. `None` is
+    the platform itself (a script, a test), which the routes never pass."""
+    return role is None or str(role) in junction.editors
+
+
+def _require_editor(junction: Junction, role: str | None) -> None:
+    if not may_edit(junction, role):
+        keepers = ", ".join(_KEEPER_TITLES[r] for r in sorted(junction.editors))
+        raise Forbidden(f"'{junction.title}' is kept by: {keepers}")
+
+
 def _channel(junction: Junction, channel: str) -> Channel:
     try:
         ch = Channel(channel)
@@ -62,10 +78,17 @@ def _channel_view(junction: Junction, ch: Channel, stored: Row | None) -> dict[s
 
 
 def _view(
-    junction: Junction, stored: dict[str, Row], copies: list[Row] | None = None
+    junction: Junction,
+    stored: dict[str, Row],
+    copies: list[Row] | None = None,
+    role: str | None = None,
 ) -> dict[str, Any]:
     return {
         "key": junction.key.value,
+        # Who keeps its words (2026-11-20): the administrator and the DPO keep
+        # every message; the Legal PoC also keeps those with legal weight.
+        "editors": [_KEEPER_TITLES[r] for r in sorted(junction.editors)],
+        "editable": may_edit(junction, role),
         "title": junction.title,
         "description": junction.description,
         "group": junction.group,
@@ -82,7 +105,7 @@ def _view(
     }
 
 
-async def catalogue(conn: Conn) -> list[dict[str, Any]]:
+async def catalogue(conn: Conn, *, role: str | None = None) -> list[dict[str, Any]]:
     """Every junction, with the words in force and whether they are the default."""
     rows = await repo.list_all(conn)
     by_key: dict[str, dict[str, Row]] = {}
@@ -91,15 +114,15 @@ async def catalogue(conn: Conn) -> list[dict[str, Any]]:
     copied: dict[str, list[Row]] = {}
     for c in await repo.copies(conn):
         copied.setdefault(str(c["key"]), []).append(c)
-    return [_view(j, by_key.get(j.key.value, {}), copied.get(j.key.value)) for j in CATALOGUE]
+    return [_view(j, by_key.get(j.key.value, {}), copied.get(j.key.value), role) for j in CATALOGUE]
 
 
-async def one(conn: Conn, key: str) -> dict[str, Any]:
+async def one(conn: Conn, key: str, *, role: str | None = None) -> dict[str, Any]:
     junction = _junction(key)
     rows = await repo.list_all(conn)
     stored = {str(r["channel"]): r for r in rows if str(r["key"]) == key}
     copied = [c for c in await repo.copies(conn) if str(c["key"]) == key]
-    return _view(junction, stored, copied)
+    return _view(junction, stored, copied, role)
 
 
 def preview(key: str, channel: str, subject: str | None, body: str) -> dict[str, Any]:
@@ -117,6 +140,14 @@ def preview(key: str, channel: str, subject: str | None, body: str) -> dict[str,
     }
 
 
+async def _told(conn: Conn, setting: str, actor_id: int) -> None:
+    """A message's words or copies are what people are told; a change to them
+    is told to everybody who answers for the platform (2026-11-20)."""
+    from cmp.domain import alerts
+
+    await alerts.setting_changed(conn, setting=setting, actor_id=actor_id)
+
+
 async def _forget_mirror() -> None:
     try:
         await get_redis().delete(MIRROR_KEY, COPIES_KEY)
@@ -125,9 +156,17 @@ async def _forget_mirror() -> None:
 
 
 async def save(
-    conn: Conn, *, key: str, channel: str, subject: str | None, body: str, actor_id: int
+    conn: Conn,
+    *,
+    key: str,
+    channel: str,
+    subject: str | None,
+    body: str,
+    actor_id: int,
+    role: str | None = None,
 ) -> dict[str, Any]:
     junction = _junction(key)
+    _require_editor(junction, role)
     ch = _channel(junction, channel)
     problems = check_template(junction.key, ch, subject, body)
     if problems:
@@ -151,11 +190,15 @@ async def save(
     )
     await _forget_mirror()
     log.info("messages.template_saved", message=junction.key.value, channel=ch.value)
-    return await one(conn, key)
+    await _told(conn, f"the words of the message '{junction.title}' ({ch.value})", actor_id)
+    return await one(conn, key, role=role)
 
 
-async def reset(conn: Conn, *, key: str, channel: str, actor_id: int) -> dict[str, Any]:
+async def reset(
+    conn: Conn, *, key: str, channel: str, actor_id: int, role: str | None = None
+) -> dict[str, Any]:
     junction = _junction(key)
+    _require_editor(junction, role)
     ch = _channel(junction, channel)
     row = await repo.delete(conn, key=junction.key.value, channel=ch.value)
     if row:
@@ -169,15 +212,21 @@ async def reset(conn: Conn, *, key: str, channel: str, actor_id: int) -> dict[st
         )
         await _forget_mirror()
         log.info("messages.template_reset", message=junction.key.value, channel=ch.value)
-    return await one(conn, key)
+        await _told(
+            conn,
+            f"the words of the message '{junction.title}' ({ch.value}), back to the default",
+            actor_id,
+        )
+    return await one(conn, key, role=role)
 
 
 async def set_copies(
-    conn: Conn, *, key: str, addresses: list[str], actor_id: int
+    conn: Conn, *, key: str, addresses: list[str], actor_id: int, role: str | None = None
 ) -> dict[str, Any]:
     """Who a message is copied to by email: up to five addresses, only on a
     message the catalogue lets be copied."""
     junction = _junction(key)
+    _require_editor(junction, role)
     if not junction.copyable:
         raise ValidationFailed(
             "This message cannot be copied: it carries a code or a link, or a person's own "
@@ -207,7 +256,8 @@ async def set_copies(
     )
     await _forget_mirror()
     log.info("messages.copies_saved", message=junction.key.value, copies=len(seen))
-    return await one(conn, key)
+    await _told(conn, f"who the message '{junction.title}' is copied to", actor_id)
+    return await one(conn, key, role=role)
 
 
 def keys() -> list[str]:

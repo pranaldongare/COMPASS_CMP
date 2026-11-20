@@ -538,6 +538,10 @@ async def office_message(
     row = await _office_row(conn, breach, ticket_uuid)
     events = (await _events_by_ticket(conn, [int(row["ticket_id"])]))[int(row["ticket_id"])]
     await _write(conn, row, events, side="office", body=body, actor_id=actor_id, evidence=evidence)
+    # The holder hears a message waits - not what it says, nor the breach (BD-18).
+    from cmp.domain import alerts
+
+    await alerts.breach_ticket_office_wrote(conn, ticket=row)
     return await office_detail(conn, breach_uuid=breach_uuid, ticket_uuid=ticket_uuid)
 
 
@@ -553,6 +557,10 @@ async def holder_message(
     await service.locked_open(conn, str(row["breach_uuid"]))
     events = (await _events_by_ticket(conn, [int(row["ticket_id"])]))[int(row["ticket_id"])]
     await _write(conn, row, events, side="holder", body=body, actor_id=user_id, evidence=evidence)
+    # The breach office's officers hear the holder has written (2026-11-20).
+    from cmp.domain import alerts
+
+    await alerts.breach_ticket_holder_wrote(conn, ticket=row)
     return await my_detail(conn, user_id=user_id, ticket_uuid=ticket_uuid)
 
 

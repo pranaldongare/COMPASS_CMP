@@ -209,6 +209,16 @@ async def request_processor(
             "awaiting_dpo": needs_decision,
         },
     )
+    if needs_decision:
+        # The officers decide it, so they hear of it (2026-11-20).
+        from cmp.domain import alerts
+
+        await alerts.processor_requested(
+            conn,
+            project=project,
+            processor_name=str(processor["legal_name"]),
+            actor_id=actor_id,
+        )
     return {
         "project_uuid": project_uuid,
         "processor_uuid": processor_uuid,
@@ -279,6 +289,16 @@ async def decide_processor(
             "reason_given": bool(reason),
             "in_house": bool(processor["is_in_house"]),
         },
+    )
+    # The owner who asked hears the answer, with the reason (2026-11-20).
+    from cmp.domain import alerts
+
+    await alerts.processor_decided(
+        conn,
+        project=project,
+        processor_name=str(processor["legal_name"]),
+        approved=approved,
+        reason=reason,
     )
     return {
         "project_uuid": project_uuid,
@@ -883,6 +903,14 @@ async def deactivate_site(conn: Conn, site_uuid: str, *, role: Role | str, actor
         entity_type="project_site",
         entity_id=site["site_id"],
         detail={"links_revoked": revoked},
+    )
+    from cmp.domain import alerts
+
+    await alerts.site_deactivated(
+        conn,
+        project_id=int(site["project_id"]),
+        site_label=str(site.get("site_label") or "A site"),
+        links_revoked=int(revoked),
     )
     return int(revoked)
 

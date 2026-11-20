@@ -14,8 +14,11 @@
  * beside the list jumps straight to a message. The filters live in the URL,
  * so a link can open the page on one category.
  *
- * Reachable by the administrator and the DPO. Everyone else receives these
- * words; these two roles choose them.
+ * Reachable by the administrator, the DPO and the Legal PoC. The first two
+ * keep every message; the Legal PoC reads them all and keeps the ones with
+ * legal weight - what a person is told of her rights, a breach, a nomination,
+ * a withdrawal, and the HR track (2026-11-20). Which is the server's word,
+ * per message (`editable`).
  */
 "use client";
 
@@ -50,9 +53,16 @@ const ABOUT: Record<string, string> = {
   Consent: "Receipts for consent given and withdrawn.",
   Rights: "Rights requests, from acknowledgement to response, and the tickets to holders.",
   Breach: "Breach notices and the tickets and access that go with them.",
-  Projects: "Approvals, sites and closure, to the staff who run a project.",
+  Projects: "Approvals, collectors, sites and suspensions, to the staff who run a project.",
   Staff: "Changes to a staff member's own role, access and cover.",
+  Security: "Notices to a person about their own account: password, sign-in, contacts.",
+  Oversight: "Alarms for administrators and officers: the audit trail, DataVault, settings.",
 };
+
+const EDITABLE = [
+  { value: "mine", label: "I can edit" },
+  { value: "others", label: "Kept by others" },
+];
 
 const CHANNELS = [
   { value: "email", label: "Email" },
@@ -78,6 +88,7 @@ function MessagesPageView() {
   const [group, setGroup] = useFilterParam("group");
   const [channel, setChannel] = useFilterParam("channel");
   const [changed, setChanged] = useFilterParam("changed");
+  const [editable, setEditable] = useFilterParam("editable");
 
   const all = React.useMemo(() => messages.data ?? [], [messages.data]);
 
@@ -94,6 +105,7 @@ function MessagesPageView() {
     return all.filter((m) => {
       if (group && m.group !== group) return false;
       if (channel && !m.channels.some((c) => c.channel === channel)) return false;
+      if (editable && (editable === "mine") !== (m.editable !== false)) return false;
       if (changed) {
         const isChanged = m.channels.some((c) => c.customised);
         if ((changed === "changed") !== isChanged) return false;
@@ -101,7 +113,7 @@ function MessagesPageView() {
       if (!term) return true;
       return [m.title, m.description, m.key, m.group].some((s) => s.toLowerCase().includes(term));
     });
-  }, [all, q, group, channel, changed]);
+  }, [all, q, group, channel, changed, editable]);
 
   const groups = React.useMemo(() => {
     const order: string[] = [];
@@ -116,13 +128,15 @@ function MessagesPageView() {
     return order.map((g) => ({ group: g, items: byGroup.get(g) ?? [] }));
   }, [shown]);
 
-  const filtered = Boolean(q || group || channel || changed);
+  const filtered = Boolean(q || group || channel || changed || editable);
   const clear = () => {
     setQ("");
     setGroup("");
     setChannel("");
     setChanged("");
+    setEditable("");
   };
+  const readOnly = all.filter((m) => m.editable === false).length;
 
   return (
     <>
@@ -137,6 +151,13 @@ function MessagesPageView() {
         when a message is sent. Each message lists the ones it provides; a save that names
         any other is refused. Email and SMS are edited separately, because a phone screen is
         not an inbox.
+        {readOnly > 0 && (
+          <>
+            {" "}
+            You can read every message; {all.length - readOnly} of them are yours to edit. The
+            others are kept by the administrator and the DPO.
+          </>
+        )}
       </Alert>
 
       {messages.isLoading ? (
@@ -186,6 +207,15 @@ function MessagesPageView() {
               options={CHANGED}
               allLabel="Changed or not"
             />
+            {readOnly > 0 && (
+              <FilterSelect
+                label="Editing"
+                value={editable}
+                onChange={setEditable}
+                options={EDITABLE}
+                allLabel="Every message"
+              />
+            )}
             {filtered && (
               <Button variant="ghost" size="sm" onClick={clear}>
                 Clear filters

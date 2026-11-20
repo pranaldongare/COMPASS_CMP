@@ -192,6 +192,16 @@ async def suspend_processor(conn: Conn, processor_uuid: str) -> None:
         entity_type="processor",
         entity_id=processor["processor_id"],
     )
+    # Every project using it: its owner and its collector (2026-11-20).
+    from cmp.db.repositories import alerts as alerts_repo
+    from cmp.domain import alerts
+
+    await alerts.registry_suspended(
+        conn,
+        kind="processor",
+        name=str(processor["legal_name"]),
+        projects=await alerts_repo.projects_using_processor(conn, int(processor["processor_id"])),
+    )
 
 
 async def add_respondent(
@@ -476,8 +486,23 @@ async def assign_source_owner(
             )
         owner_id = owner["id"]
 
+    from cmp.db.repositories import alerts as alerts_repo
+
+    collectors_before = {
+        int(p["project_id"]): p.get("dco_id")
+        for p in await alerts_repo.projects_using_source(conn, int(source["source_id"]))
+    }
     moved = await repo.projects_using_source(conn, source["source_id"])
     updated = await repo.set_source_owner(conn, source["source_id"], owner_id)
+    # The trigger moved every project's collector; each new one is told, as
+    # when a site's source is set on one project (2026-11-20).
+    from cmp.domain import alerts
+
+    await alerts.collectors_moved(
+        conn,
+        before=collectors_before,
+        after=await alerts_repo.projects_using_source(conn, int(source["source_id"])),
+    )
 
     await audit.record(
         conn,
@@ -502,4 +527,13 @@ async def suspend_source(conn: Conn, source_uuid: str) -> None:
         event=Event.SOURCE_SUSPENDED,
         entity_type="data_source",
         entity_id=source["source_id"],
+    )
+    from cmp.db.repositories import alerts as alerts_repo
+    from cmp.domain import alerts
+
+    await alerts.registry_suspended(
+        conn,
+        kind="data source",
+        name=str(source.get("name") or source.get("source_code") or "A data source"),
+        projects=await alerts_repo.projects_using_source(conn, int(source["source_id"])),
     )

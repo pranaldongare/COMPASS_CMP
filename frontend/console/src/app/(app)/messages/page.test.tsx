@@ -108,4 +108,26 @@ describe("Message templates", () => {
     await user.click(screen.getByRole("button", { name: "Show every message" }));
     expect(await screen.findByText("4 messages in 3 categories")).toBeInTheDocument();
   });
+
+  it("shows a message somebody else keeps read-only, and says who keeps it", async () => {
+    const kept = {
+      ...message("mfa_reset", "Your second sign-in step was reset", "Security"),
+      editable: false,
+      editors: ["Administrator", "Data Protection Officer"],
+    };
+    const mine = { ...message("rights_closed", "Request closed", "Rights"), editable: true };
+    server.use(http.get(`${API}/messages`, () => HttpResponse.json([kept, mine])));
+    render(<MessagesPage />);
+
+    const card = (await screen.findByRole("heading", { name: kept.title })).closest(
+      "[id^='message-']",
+    ) as HTMLElement;
+    expect(
+      within(card).getByText(/kept by\s+Administrator, Data Protection Officer/),
+    ).toBeInTheDocument();
+    expect(within(card).queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+
+    const other = document.getElementById("message-rights_closed") as HTMLElement;
+    expect(within(other).getByRole("button", { name: "Save" })).toBeInTheDocument();
+  });
 });

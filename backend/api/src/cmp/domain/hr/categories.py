@@ -225,6 +225,16 @@ async def set_processors(
             ],
         },
     )
+    # Respondents added or removed are told (2026-11-20): they are the people
+    # a withdrawal on the category reaches, and should know whether they are.
+    was = {int(r["respondent_user_id"]) for r in before if r.get("respondent_user_id")}
+    now = {int(w["respondent_user_id"]) for w in wanted.values() if w["respondent_user_id"]}
+    if was != now:
+        from cmp.domain import alerts
+
+        await alerts.hr_respondents_changed(
+            conn, category_name=str(category["name"]), added=now - was, removed=was - now
+        )
     return await repo.processors_of(conn, category["category_id"])
 
 

@@ -350,10 +350,13 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         Role.LEGAL: Grant(Scope.ALL),
     },
     # The words of every message the platform sends. The two supervising
-    # roles may replace them; everyone else receives them.
+    # roles may replace them; everyone else receives them. The Legal PoC may
+    # read them all and replace those with legal weight (2026-11-20) - which
+    # ones is the catalogue's (`Junction.editors`), checked by the service.
     "message_template": {
         Role.DPO: Grant(Scope.ALL, write=True),
         Role.ADMIN: Grant(Scope.ALL, write=True),
+        Role.LEGAL: Grant(Scope.ALL, write=True),
     },
     # The data principal's own record. The profile and contact routes under
     # `/me` are the exception to this row: they admit every full session, since
@@ -643,6 +646,8 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "processors",
         "users",
         "audit",
+        # The words of the messages with legal weight (2026-11-20).
+        "messages",
         *PERSONAL,
     ),
     Role.HR_USER: (

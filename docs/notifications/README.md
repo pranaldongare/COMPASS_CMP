@@ -14,8 +14,9 @@ the template; this folder explains the messages.
 | [consent.md](consent.md) | Consent given and withdrawn |
 | [rights.md](rights.md) | Rights requests: the requester's emails, the nominee's, the holders' tickets, and the office's alerts |
 | [breach.md](breach.md) | The breach notice, breach tickets, the DPO's duty alerts, reports to the organisation's board, and the public link |
+| [oversight.md](oversight.md) | The audit trail failing its check, DataVault not taking an instruction, a sensitive setting changed |
 
-The five module files are **generated from the code** by
+The six module files are **generated from the code** by
 `docs/tools/generate-email-docs.py`. Each one lists every email of its module,
 then gives each one end to end: when it is sent, to whom, its CC, its
 attachment, the default subject and body, the SMS where there is one, the
@@ -26,7 +27,7 @@ cannot drift: `--check` fails when one is out of date.
 
 ### 1. One path
 
-Every email - all 50 - goes the same way:
+Every message - all 86 - goes the same way:
 
 | # | Step | Where (backend/api/src/cmp/…) |
 |---|---|---|
@@ -162,6 +163,59 @@ is recorded, because the principals' duty counts them.
 | [Consent](consent.md) | 4 | The data principal; an HR activity's participants and respondents |
 | [Rights requests](rights.md) | 17 | The requester, the nominee, the holder's responder (inside the organisation in full; outside, the link and the code), every DPO, every administrator |
 | [Breaches](breach.md) | 13 | The people affected, the ticket holder, the breach office's officers, the officers of both offices when the board's list changes, the organisation's board, and the reporter |
+
+## Who keeps the words (2026-11-20)
+
+Every message's subject and body can be changed in **Message templates**. Who
+may change them is set per message in the catalogue (`Junction.editors`), and
+the API refuses anybody else (403):
+
+| Role | Reads | Changes |
+|---|---|---|
+| Administrator | every message | every message |
+| Data Protection Officer | every message | every message |
+| Legal PoC | every message | the messages with legal weight (`LEGAL_REVIEWED`): consent receipts and withdrawals, the HR track's messages, what a requester is told of her request and its outcome, nominations, breach notices to people, reports to the organisation's board, and the incident reporter's acknowledgements |
+
+The console shows a message the reader does not keep read-only, naming who
+does. Every change to a message's words or copies is told to every
+administrator and officer (**A platform setting was changed**).
+
+Every message carrying a one-time code says, in the same words, not to share
+it, and that the organisation never asks for it. Every code text (SMS) follows
+the DLT shape: "Your OTP to … is {code}. It is valid for … Do not share it … -
+{organisation}".
+
+## The review of 2026-11-20
+
+Every audited event was checked for whether anybody is told of it. 32 messages
+were added (54 → 86 emails, 21 → 27 texts):
+
+| Who | New |
+|---|---|
+| Every member of staff | password changed, reset or first set; second sign-in step reset; sign-in paused after failed attempts; signed out everywhere; account reactivated |
+| Anybody with an account | a contact added, replaced or removed - to the contacts already there, never naming the new one (email and text) |
+| A data principal | her nominee made a request for her (incapacity only, as before); her nomination was declined; her request is in progress (email and text) |
+| A nominee | the nomination was withdrawn (email and text) |
+| An R&D User | a collector they asked for was decided; a processor or source their project uses was suspended; a site deactivated; a participant withdrew |
+| A Data Collection Owner | the same suspensions, deactivations and withdrawals; the new collector of every project when a source's owner changes in the registry |
+| An officer (DPO, Legal PoC) | a collector waiting for approval; retained items past their retention floor; consent validity run out; a breach recorded or confirmed; CERT-In marked or a report deadline extended; a breach ticket holder wrote; a board or regulator report not delivered; breach notices not delivered (once per six hours per breach) |
+| An administrator | named reviewer of a grievance; rights requests overdue (daily); DataVault refused an instruction (once a day per instruction) |
+| Everybody who answers for the platform | the audit trail failed its check; a sensitive setting changed (DataVault connection, portal address, breach settings, a message's words or copies) |
+| A breach ticket holder | a new message from the Privacy Office (naming no breach, BD-18); temporary access ended |
+| HR PoCs and respondents | a template version approved or retired; added or removed as a category's respondent |
+
+The **Note from the Privacy Office** now goes by text as well, to a person with
+a mobile only, and names the event as a person reads it.
+
+Left out on purpose:
+
+| What | Why |
+|---|---|
+| A legal hold, to the person | Telling her could tip off the investigation or litigation the hold is for; her erasure response says what was kept |
+| A field agent assigned to a site | The agent is a free-text reference with no contact on the platform |
+| An HR activity's first invitation to employees | There is no list of participants before they consent; the HR PoC shares the link. Sending it needs a decision on where the list comes from |
+| CERT-In set aside | It mails nobody, by decision (2026-11-07) |
+| An incident report dismissed, to the reporter | ADR 0042: the reporter is only acknowledged |
 
 ## Adding an email
 

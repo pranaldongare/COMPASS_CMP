@@ -401,3 +401,15 @@ async def undelivered(conn: Conn, row: Row, *, failure: str) -> None:
         log.warning("datavault.consent_change_undelivered", **said)
     else:
         log.error("datavault.consent_change_undelivered", **said)
+    if not mends or int(row["attempts"]) + 1 >= 5:
+        # Refused, or still not through after five tries (2026-11-20): the
+        # administrators and both offices' officers hear, once a day per change.
+        from cmp.domain import alerts
+
+        await alerts.datavault_problem(
+            conn,
+            what=f"A consent change (number {int(row['change_id'])})",
+            failure=failure,
+            office=None,
+            marker=f"consent_change:{int(row['change_id'])}",
+        )

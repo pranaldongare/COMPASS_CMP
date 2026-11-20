@@ -271,6 +271,10 @@ async def approve(conn: Conn, template: Row, version: Row, *, actor_id: int) -> 
         hashes[lang["language_code"]] = digest
     await repo.approve(conn, int(version["version_id"]), approved_by=actor_id)
     await _record(conn, version, Event.TEMPLATE_VERSION_APPROVED, hashes=hashes)
+    # The HR PoCs whose activities may move to it (2026-11-20).
+    from cmp.domain import alerts
+
+    await alerts.hr_template_version_decided(conn, version=version, decision="approved")
     return await detail(conn, version)
 
 
@@ -284,6 +288,9 @@ async def retire(conn: Conn, version: Row, *, actor_id: int) -> Row:
         )
     await repo.retire(conn, int(version["version_id"]), retired_by=actor_id)
     await _record(conn, version, Event.TEMPLATE_VERSION_RETIRED)
+    from cmp.domain import alerts
+
+    await alerts.hr_template_version_decided(conn, version=version, decision="retired")
     return await detail(conn, version)
 
 

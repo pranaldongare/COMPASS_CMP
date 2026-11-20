@@ -331,6 +331,12 @@ async def record_result(
     )
     breach = await breach_repo.by_breach_id(conn, int(row["breach_id"]))
     assert breach is not None
+    if status == "failed":
+        # A person the duty is owed to was not reached (2026-11-20). Said at
+        # most once every six hours per breach.
+        from cmp.domain import alerts
+
+        await alerts.breach_notices_undelivered(conn, breach=breach)
     await settle(conn, breach, actor_id=None)
 
 

@@ -89,7 +89,11 @@ def apply_retention_lapse() -> dict[str, Any]:
                 )
 
                 quarantined, erase_due = 0, 0
+                by_purpose: dict[str, dict[str, int]] = {}
                 for row in lapsed:
+                    counts = by_purpose.setdefault(
+                        str(row["purpose_code"]), {"quarantined": 0, "erase_due": 0}
+                    )
                     if row["lapse_behaviour"] == "quarantine":
                         await conn.execute(
                             """UPDATE asset_consent
@@ -98,8 +102,10 @@ def apply_retention_lapse() -> dict[str, Any]:
                             (row["asset_consent_id"],),
                         )
                         quarantined += 1
+                        counts["quarantined"] += 1
                     else:
                         erase_due += 1
+                        counts["erase_due"] += 1
 
                 if quarantined or erase_due:
                     await audit.record(
@@ -114,6 +120,10 @@ def apply_retention_lapse() -> dict[str, Any]:
                             "cause": "consent_validity_elapsed",
                         },
                     )
+                    # The office's officers hear what lapsed, by purpose (2026-11-20).
+                    from cmp.domain import alerts
+
+                    await alerts.retention_lapsed(conn, by_purpose=by_purpose)
 
             log.info("maintenance.retention_applied", quarantined=quarantined, erase_due=erase_due)
             return {"quarantined": quarantined, "erase_due": erase_due}

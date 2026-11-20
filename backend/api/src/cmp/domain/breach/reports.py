@@ -1523,6 +1523,16 @@ async def record_result(
             **({"error": detail["error"]} if status == "failed" and detail.get("error") else {}),
         },
     )
+    if status == "failed":
+        # After every retry: the sender's office hears, to check and resend.
+        from cmp.domain import alerts
+
+        await alerts.breach_report_undelivered(
+            conn,
+            breach=breach,
+            report_title=TITLES.get(Kind(report["kind"]), "report"),
+            error=str(detail.get("error") or ""),
+        )
 
 
 async def settle(conn: Conn, *, delivery_uuid: str) -> None:

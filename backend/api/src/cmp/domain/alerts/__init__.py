@@ -211,6 +211,8 @@ async def rights_due(conn: Conn, *, now: datetime | None = None) -> int:
         mine = [r for r in rows if r.get("office_code") in (office, None)]
         if mine:
             await _digest(conn, office, mine, at)
+    # What is already late goes to the administrators as well (2026-11-20).
+    await rights_overdue(conn, rows, at)
     return len(rows)
 
 
@@ -465,3 +467,636 @@ async def delegation_arranged(
             day(starts_at or datetime.now(UTC)),
             day(ends_at) if ends_at else "until it is ended",
         )
+
+
+# ======================================================= 2026-11-20 additions
+# Every event the notification review found nobody was told of. Same rules as
+# above: one task per recipient, queued after the commit; addresses sealed as
+# read, opened at `deliver()`; never a person's words, never a breach named to
+# a ticket's holder (BD-18).
+
+
+def _now() -> str:
+    return moment(datetime.now(UTC))
+
+
+async def _name(conn: Conn, user_id: int | None, fallback: str = "A member of staff") -> str:
+    person = await user_repo.by_id(conn, int(user_id)) if user_id else None
+    return str(person["full_name"]) if person and person.get("full_name") else fallback
+
+
+async def _actor(conn: Conn, user_id: int | None) -> str:
+    """Who did it, with their role: "Dee Pee (Data Protection Officer)"."""
+    person = await user_repo.by_id(conn, int(user_id)) if user_id else None
+    if not person:
+        return "the platform"
+    role = ROLE_TITLES.get(str(person.get("role")), str(person.get("role") or ""))
+    return f"{person.get('full_name') or 'A member of staff'} ({role})"
+
+
+def _unique(emails: list[str]) -> list[str]:
+    seen: list[str] = []
+    for e in emails:
+        if e and e not in seen:
+            seen.append(e)
+    return seen
+
+
+async def _oversight(conn: Conn) -> list[str]:
+    """Every active administrator and officer: the people who answer for the
+    platform as a whole."""
+    out: list[str] = []
+    for role in ("admin", "dpo", "legal"):
+        out += await _role(conn, role)
+    return _unique(out)
+
+
+async def _once(*parts: str, hours: int) -> bool:
+    """True the first time in `hours` this is said; False after."""
+    try:
+        marker = rkey(K_CACHE, "alert", *parts)
+        return bool(await get_redis().set(marker, "1", nx=True, ex=hours * 3600))
+    except Exception as exc:  # no memory: say it rather than stay silent
+        log.warning("alerts.once_unavailable", error=str(exc))
+        return True
+
+
+# ------------------------------------------------------------------ security
+
+
+async def password_changed(conn: Conn, *, user: Row, how: str) -> None:
+    from cmp.tasks.notifications import updates as tasks
+
+    if user.get("email") and user.get("role") != "data_subject":
+        _queue(tasks.send_password_changed, user["email"], user["full_name"] or "", how, _now())
+
+
+async def mfa_reset(conn: Conn, *, user: Row) -> None:
+    from cmp.tasks.notifications import updates as tasks
+
+    if user.get("email"):
+        _queue(tasks.send_mfa_reset, user["email"], user["full_name"] or "", _now())
+
+
+async def account_locked(conn: Conn, *, user: Row, failures: int, minutes: int) -> None:
+    from cmp.tasks.notifications import updates as tasks
+
+    if user.get("email"):
+        _queue(
+            tasks.send_account_locked,
+            user["email"],
+            user.get("full_name") or "",
+            failures,
+            minutes,
+            _now(),
+        )
+
+
+async def sessions_revoked(conn: Conn, *, user: Row) -> None:
+    from cmp.tasks.notifications import updates as tasks
+
+    if user.get("email"):
+        _queue(tasks.send_sessions_revoked, user["email"], user["full_name"] or "", _now())
+
+
+#: What changed, as the notice says it, by medium and action.
+CONTACT_CHANGES: Final[dict[tuple[str, str], str]] = {
+    ("mobile", "set"): "a mobile number was added to or changed on your account",
+    ("secondary_email", "set"): "a second email address was added to or changed on your account",
+    ("secondary_email", "removed"): "the second email address was removed from your account",
+}
+
+
+async def contact_changed(
+    conn: Conn, *, before: Row, medium: str, action: str, by_admin: bool
+) -> None:
+    """A security notice to every confirmed contact the account already had,
+    other than the one that changed: the alarm against a contact being swapped
+    by somebody holding the session. The new contact is never named."""
+    from cmp.tasks.notifications import updates as tasks
+
+    change = CONTACT_CHANGES.get((medium, action))
+    if change is None:
+        return
+
+    def confirmed(medium_: str) -> str | None:
+        value = before.get(medium_)
+        if not value:
+            return None
+        # A member of staff's primary email is confirmed by the invitation.
+        staff_email = medium_ == "email" and before.get("role") != "data_subject"
+        return str(value) if (before.get(f"{medium_}_verified_at") or staff_email) else None
+
+    # Every confirmed contact the account had - the one replaced or removed
+    # included, since whoever held it should know it went.
+    to = [c for c in (confirmed("email"), confirmed("mobile"), confirmed("secondary_email")) if c]
+    actor = "an administrator" if by_admin else "the account holder, from the account page"
+    when = _now()
+    for contact in _unique(to):
+        _queue(tasks.send_contact_changed, contact, change, actor, when)
+
+
+# ------------------------------------------------------------------ accounts
+
+
+async def access_restored(conn: Conn, *, user: Row) -> None:
+    from cmp.tasks.notifications import updates as tasks
+
+    if user.get("email") and user.get("role") != "data_subject":
+        _queue(tasks.send_staff_access_restored, user["email"], user["full_name"] or "")
+
+
+async def delegation_ended(conn: Conn, *, row: Row, actor_id: int) -> None:
+    """Both people, whoever ended it."""
+    from cmp.tasks.notifications import updates as tasks
+
+    delegator = await _person(conn, row.get("delegator_user_id"))
+    delegate = await _person(conn, row.get("delegate_user_id"))
+    if delegator is None or delegate is None:
+        return
+    role = str(row.get("role") or delegator.get("role") or "")
+    by = await _name(conn, actor_id, "An administrator")
+    when = _now()
+    for person in (delegator, delegate):
+        _queue(
+            tasks.send_delegation_ended,
+            person["email"],
+            delegator["full_name"],
+            delegate["full_name"],
+            ROLE_TITLES.get(role, role),
+            by,
+            when,
+        )
+
+
+async def temporary_access_ended(conn: Conn, *, user_id: int) -> None:
+    from cmp.tasks.notifications import updates as tasks
+
+    person = await _person(conn, user_id)
+    if person:
+        _queue(tasks.send_temporary_access_ended, person["email"], person.get("full_name") or "")
+
+
+# -------------------------------------------------------------------- rights
+
+
+async def _principal_contact(conn: Conn, user_id: int | None) -> tuple[str | None, str]:
+    from cmp.domain.consent.service import receipt_contact
+
+    person = await user_repo.by_id(conn, int(user_id)) if user_id else None
+    if not person:
+        return None, ""
+    return receipt_contact(person), str(person.get("full_name") or "")
+
+
+async def nominee_request_made(
+    conn: Conn, *, nomination: Row, request: Row, trigger_event: str
+) -> None:
+    """Her safeguard: the nominee she appointed has acted in her name. On a
+    claim of incapacity only - on a claim of death there is nobody to write to,
+    and writing anyway would be its own cruelty (as the acknowledgement)."""
+    from cmp.tasks.notifications import updates as tasks
+
+    if trigger_event != "incapacity":
+        return
+    contact, name = await _principal_contact(conn, nomination.get("principal_user_id"))
+    if not contact:
+        return
+    _queue(
+        tasks.send_nominee_request_made,
+        contact,
+        name,
+        str(nomination.get("nominee_name") or "Your nominee"),
+        str(request["request_type"]),
+        str(request["reference"]),
+        trigger_event,
+    )
+
+
+async def nomination_declined(conn: Conn, *, nomination: Row) -> None:
+    from cmp.tasks.notifications import updates as tasks
+
+    contact, name = await _principal_contact(conn, nomination.get("principal_user_id"))
+    if contact:
+        _queue(
+            tasks.send_nomination_declined,
+            contact,
+            name,
+            str(nomination.get("nominee_name") or "The person you nominated"),
+        )
+
+
+async def nomination_revoked(conn: Conn, *, nomination: Row) -> None:
+    """Every contact she recorded for him: whichever he reads."""
+    from cmp.tasks.notifications import updates as tasks
+
+    principal = await _name(
+        conn, nomination.get("principal_user_id"), "The person who nominated you"
+    )
+    for contact in (nomination.get("nominee_mobile"), nomination.get("nominee_email")):
+        if contact:
+            _queue(tasks.send_nomination_revoked, str(contact), principal)
+
+
+async def rights_in_progress(conn: Conn, *, request: Row, contact: str | None) -> None:
+    from cmp.tasks.notifications import updates as tasks
+
+    if contact and request.get("due_at"):
+        _queue(
+            tasks.send_rights_in_progress,
+            contact,
+            str(request["reference"]),
+            str(request["request_type"]),
+            day(request["due_at"]),
+        )
+
+
+async def reviewer_assigned(conn: Conn, *, request: Row, reviewer: Row) -> None:
+    from cmp.tasks.notifications import updates as tasks
+
+    if reviewer.get("email"):
+        _queue(
+            tasks.send_rights_reviewer_assigned,
+            reviewer["email"],
+            reviewer.get("full_name") or "",
+            str(request["reference"]),
+            str(request["request_uuid"]),
+        )
+
+
+async def rights_overdue(conn: Conn, rows: list[Row], at: datetime) -> int:
+    """The administrators' word on what is already late. Nothing when nothing is."""
+    from cmp.tasks.notifications import updates as tasks
+
+    late = [r for r in rows if r["due_at"] < at]
+    if not late:
+        return 0
+    lines = []
+    for r in late:
+        days = max(1, (at.date() - r["due_at"].date()).days)
+        office = OFFICE_TITLES.get(str(r.get("office_code")), "the shared intake")
+        lines.append(
+            f"  - {r['reference']} {r['request_type']}, {office}: "
+            f"overdue by {days} day{'s' if days != 1 else ''}"
+        )
+    for email in await _role(conn, "admin"):
+        _queue(tasks.send_rights_overdue_escalation, email, len(late), "\n".join(lines))
+    return len(late)
+
+
+async def retention_floors_passed(
+    conn: Conn, by_request: dict[int, Row], counts: dict[int, int]
+) -> None:
+    """The office's word that retained items reached the end of their period."""
+    from cmp.tasks.notifications import updates as tasks
+
+    by_office: dict[str | None, list[str]] = {}
+    total: dict[str | None, int] = {}
+    for request_id, request in by_request.items():
+        office = request.get("office_code")
+        n = counts.get(request_id, 0)
+        by_office.setdefault(office, []).append(
+            f"  - {request['reference']}: {n} item{'s' if n != 1 else ''}"
+        )
+        total[office] = total.get(office, 0) + n
+    for office, lines in by_office.items():
+        for email in await _officers(conn, office):
+            _queue(tasks.send_rights_retention_floor_passed, email, total[office], "\n".join(lines))
+
+
+# ------------------------------------------------------------------ projects
+
+
+async def processor_requested(
+    conn: Conn, *, project: Row, processor_name: str, actor_id: int
+) -> None:
+    from cmp.db.repositories import alerts as alerts_repo
+    from cmp.tasks.notifications import updates as tasks
+
+    people = await alerts_repo.project_people(conn, int(project["project_id"]))
+    office = people.get("office_code") if people else None
+    by = await _name(conn, actor_id, "An R&D User")
+    for email in await _officers(conn, office or "rnd"):
+        _queue(
+            tasks.send_processor_requested,
+            email,
+            str(project["project_name"]),
+            processor_name,
+            by,
+            str(project["project_uuid"]),
+        )
+
+
+async def processor_decided(
+    conn: Conn, *, project: Row, processor_name: str, approved: bool, reason: str | None
+) -> None:
+    from cmp.tasks.notifications import updates as tasks
+
+    owner = await _person(conn, project.get("created_by"))
+    if owner:
+        _queue(
+            tasks.send_processor_decided,
+            owner["email"],
+            owner["full_name"],
+            str(project["project_name"]),
+            processor_name,
+            approved,
+            reason or "",
+            str(project["project_uuid"]),
+        )
+
+
+async def _project_team(conn: Conn, project: Row) -> list[Row]:
+    """The project's owner and its collector, each once."""
+    out: list[Row] = []
+    for user_id in (project.get("owner_id"), project.get("dco_id")):
+        person = await _person(conn, user_id)
+        if person and all(p["id"] != person["id"] for p in out):
+            out.append(person)
+    return out
+
+
+async def registry_suspended(conn: Conn, *, kind: str, name: str, projects: list[Row]) -> None:
+    from cmp.tasks.notifications import updates as tasks
+
+    for project in projects:
+        for person in await _project_team(conn, project):
+            _queue(
+                tasks.send_registry_suspended,
+                person["email"],
+                person["full_name"],
+                kind,
+                name,
+                str(project["project_name"]),
+                str(project["project_uuid"]),
+            )
+
+
+async def site_deactivated(
+    conn: Conn, *, project_id: int, site_label: str, links_revoked: int
+) -> None:
+    from cmp.db.repositories import alerts as alerts_repo
+    from cmp.tasks.notifications import updates as tasks
+
+    project = await alerts_repo.project_people(conn, project_id)
+    if not project:
+        return
+    for person in await _project_team(conn, project):
+        _queue(
+            tasks.send_site_deactivated,
+            person["email"],
+            person["full_name"],
+            str(project["project_name"]),
+            site_label,
+            links_revoked,
+            str(project["project_uuid"]),
+        )
+
+
+async def collectors_moved(conn: Conn, *, before: dict[int, int | None], after: list[Row]) -> None:
+    """A source's owner changed in the registry, and with it the collector of
+    every project collecting from it (by trigger): each new collector is told,
+    as when the owner is set on one project."""
+    for project in after:
+        was = before.get(int(project["project_id"]))
+        if project.get("dco_id") and project["dco_id"] != was:
+            await collector_assigned(conn, project=project, dco_user_id=int(project["dco_id"]))
+
+
+# ------------------------------------------------------------------- consent
+
+
+async def rnd_withdrawal(
+    conn: Conn,
+    *,
+    notice_id: int,
+    user: Row | None,
+    consent_reference: str,
+    stopped: list[str],
+    continuing: list[str],
+) -> int:
+    """A withdrawal on an R&D project: its owner and collector are told to stop
+    processing, as an HR activity's respondents are (ADR 0033). The participant
+    by her principal ID only."""
+    from cmp.db.repositories import alerts as alerts_repo
+    from cmp.tasks.notifications import updates as tasks
+
+    project = await alerts_repo.project_of_notice(conn, notice_id)
+    if not project or not user or project.get("office_code") != "rnd" or not stopped:
+        return 0
+    team = await _project_team(conn, project)
+    for person in team:
+        _queue(
+            tasks.send_rnd_withdrawal_notice,
+            person["email"],
+            str(project["project_name"]),
+            str(user["uuid"]),
+            stopped,
+            continuing,
+            consent_reference,
+            str(project["project_uuid"]),
+        )
+    return len(team)
+
+
+async def retention_lapsed(conn: Conn, *, by_purpose: dict[str, dict[str, int]]) -> None:
+    """The nightly word on consent whose validity ran out: per office, counts
+    and purpose codes, never a person."""
+    from cmp.db.repositories import alerts as alerts_repo
+    from cmp.tasks.notifications import updates as tasks
+
+    offices = {
+        str(r["purpose_code"]): str(r["office_code"])
+        for r in await alerts_repo.purposes_lapsed_offices(conn, list(by_purpose))
+    }
+    grouped: dict[str, dict[str, Any]] = {}
+    for code, counts in by_purpose.items():
+        g = grouped.setdefault(offices.get(code, "rnd"), {"q": 0, "e": 0, "codes": []})
+        g["q"] += counts.get("quarantined", 0)
+        g["e"] += counts.get("erase_due", 0)
+        g["codes"].append(code)
+    for office, g in grouped.items():
+        for email in await _officers(conn, office):
+            _queue(
+                tasks.send_retention_lapsed, email, g["q"], g["e"], ", ".join(sorted(g["codes"]))
+            )
+
+
+async def hr_template_version_decided(conn: Conn, *, version: Row, decision: str) -> None:
+    """The HR PoCs of the category the template serves."""
+    from cmp.db.repositories import alerts as alerts_repo
+    from cmp.tasks.notifications import updates as tasks
+
+    template_id = int(version["template_id"])
+    title = await alerts_repo.template_title(conn, template_id)
+    name = f"{title or 'The consent template'} v{version.get('version')}"
+    for user_id in await alerts_repo.hr_pocs_for_template(conn, template_id):
+        person = await _person(conn, user_id)
+        if person:
+            _queue(
+                tasks.send_hr_template_version_decided,
+                person["email"],
+                person["full_name"],
+                name,
+                decision,
+            )
+
+
+async def hr_respondents_changed(
+    conn: Conn, *, category_name: str, added: set[int], removed: set[int]
+) -> None:
+    from cmp.tasks.notifications import updates as tasks
+
+    for ids, was_added in ((added, True), (removed, False)):
+        for user_id in sorted(ids):
+            person = await _person(conn, user_id)
+            if person:
+                _queue(
+                    tasks.send_hr_respondent_changed,
+                    person["email"],
+                    person["full_name"],
+                    category_name,
+                    was_added,
+                )
+
+
+# -------------------------------------------------------------------- breach
+
+
+def _breach_ref(breach: Row) -> str:
+    return str(breach.get("breach_reference") or breach.get("reference") or "")
+
+
+async def breach_ticket_office_wrote(conn: Conn, *, ticket: Row) -> None:
+    """The holder: a message waits. Names no breach and quotes nothing (BD-18)."""
+    from cmp.tasks.notifications import updates as tasks
+
+    if ticket.get("holder_email"):
+        _queue(
+            tasks.send_breach_ticket_message,
+            str(ticket["holder_email"]),
+            str(ticket.get("holder_name") or ""),
+        )
+
+
+async def breach_ticket_holder_wrote(conn: Conn, *, ticket: Row) -> None:
+    from cmp.tasks.notifications import updates as tasks
+
+    for email in await _officers(conn, ticket.get("office_code") or "rnd"):
+        _queue(
+            tasks.send_breach_ticket_holder_replied,
+            email,
+            _breach_ref(ticket),
+            str(ticket.get("holder_name") or "The holder"),
+            str(ticket["breach_uuid"]),
+        )
+
+
+async def breach_recorded(conn: Conn, *, breach: Row, what: str, actor_id: int | None) -> None:
+    """The breach office's officers, the one who did it excepted: they know."""
+    from cmp.tasks.notifications import updates as tasks
+
+    actor = await user_repo.by_id(conn, int(actor_id)) if actor_id else None
+    mine = str(actor["email"]) if actor and actor.get("email") else None
+    by = await _name(conn, actor_id, "the platform")
+    for email in await _officers(conn, breach.get("office_code") or "rnd"):
+        if mine is not None and email == mine:
+            continue
+        _queue(
+            tasks.send_breach_recorded,
+            email,
+            _breach_ref(breach),
+            what,
+            by,
+            str(breach["breach_uuid"]),
+        )
+
+
+async def breach_duty_changed(
+    conn: Conn, *, breach: Row, change: str, actor_id: int | None
+) -> None:
+    from cmp.tasks.notifications import updates as tasks
+
+    by = await _name(conn, actor_id, "the platform")
+    for email in await _officers(conn, breach.get("office_code") or "rnd"):
+        _queue(
+            tasks.send_breach_duty_changed,
+            email,
+            _breach_ref(breach),
+            change,
+            by,
+            str(breach["breach_uuid"]),
+        )
+
+
+async def breach_report_undelivered(
+    conn: Conn, *, breach: Row, report_title: str, error: str
+) -> None:
+    from cmp.tasks.notifications import updates as tasks
+
+    for email in await _officers(conn, breach.get("office_code") or "rnd"):
+        _queue(
+            tasks.send_breach_report_undelivered,
+            email,
+            _breach_ref(breach),
+            report_title,
+            error,
+            str(breach["breach_uuid"]),
+        )
+
+
+async def breach_notices_undelivered(conn: Conn, *, breach: Row) -> bool:
+    """At most once every six hours per breach: a list of thousands that fails
+    is one thing to look at, not thousands of mails."""
+    from cmp.tasks.notifications import updates as tasks
+
+    if not await _once("breach_notices_failed", str(breach["breach_uuid"]), hours=6):
+        return False
+    for email in await _officers(conn, breach.get("office_code") or "rnd"):
+        _queue(
+            tasks.send_breach_notices_undelivered,
+            email,
+            _breach_ref(breach),
+            str(breach["breach_uuid"]),
+        )
+    return True
+
+
+# ----------------------------------------------------------------- oversight
+
+
+async def audit_chain_broken(conn: Conn, *, position: str) -> None:
+    """Every administrator and officer: a trail nobody can erase that no longer
+    adds up is the alarm the trail exists to raise."""
+    from cmp.tasks.notifications import updates as tasks
+
+    when = _now()
+    for email in await _oversight(conn):
+        _queue(tasks.send_audit_chain_broken, email, position, when)
+
+
+async def datavault_problem(
+    conn: Conn, *, what: str, failure: str, office: str | None, marker: str
+) -> None:
+    """The administrators, who keep the connection (0070), and the office whose
+    instruction it was. Once a day per instruction."""
+    from cmp.tasks.notifications import updates as tasks
+
+    if not await _once("datavault", marker, hours=24):
+        return
+    to = await _role(conn, "admin") + await _officers(conn, office)
+    when = _now()
+    for email in _unique(to):
+        _queue(tasks.send_datavault_problem, email, what, failure, when)
+
+
+async def setting_changed(conn: Conn, *, setting: str, actor_id: int | None) -> None:
+    """Every administrator and officer, the one who changed it included: an
+    inbox told of a change its owner did not make is the alarm against a
+    stolen session (as the board list's, 0064)."""
+    from cmp.tasks.notifications import updates as tasks
+
+    actor = await _actor(conn, actor_id)
+    when = _now()
+    for email in await _oversight(conn):
+        _queue(tasks.send_settings_changed, email, setting, actor, when)

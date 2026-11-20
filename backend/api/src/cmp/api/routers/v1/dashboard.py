@@ -996,13 +996,26 @@ async def resend(log_uuid: UUID, principal: CurrentUser) -> dict[str, Any]:
         if not subject:
             raise NotFound("Notification recipient")
 
+    from cmp.domain.audit.vocabulary import event_types
+    from cmp.domain.consent.service import receipt_contact
     from cmp.tasks.dispatch import dispatch_required
     from cmp.tasks.notifications import send_office_note
 
+    # Her verified contact, a mobile when that is all she has (2026-11-20): an
+    # account opened with a mobile alone has no email to send the note to.
+    contact = receipt_contact(subject) or subject.get("email")
+    if not contact:
+        raise NotFound("Notification recipient")
+    # The event as a person reads it - "Consent: given" - not its key.
+    event = str(entry["event_type"])
+    said = next(
+        (f"{e['group_label']}: {e['label'].lower()}" for e in event_types() if e["value"] == event),
+        event,
+    )
     dispatch_required(
         send_office_note,
-        [subject["email"]],
-        str(entry["event_type"]),
+        [str(contact)],
+        said,
         f"{entry['occurred_at']:%d %B %Y}",
     )
     return {"ok": True, "message": "Queued for delivery."}

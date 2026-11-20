@@ -103,6 +103,19 @@ async def authenticate(
                 actor_user_id=user["id"],
                 detail={"failures": fails},
             )
+            if fails == settings.login_max_attempts:
+                # Once, as the pause begins (2026-11-20): the holder should hear
+                # that somebody is guessing at their password.
+                from cmp.domain import alerts
+
+                held = await user_repo.by_id(conn, int(user["id"]))
+                if held:
+                    await alerts.account_locked(
+                        conn,
+                        user=held,
+                        failures=fails,
+                        minutes=max(1, settings.login_lockout_duration_s // 60),
+                    )
         # The rows above are the durable record of the guess; the raise must
         # not roll them back with the request (SEC-3).
         raise with_evidence(Unauthenticated(_GENERIC_FAILURE))
@@ -433,6 +446,9 @@ async def change_password(
     # Every other session is invalidated. A password change is usually a response
     # to suspicion, and leaving other sessions alive defeats the point.
     await sessions.revoke_all(user_id)
+    from cmp.domain import alerts
+
+    await alerts.password_changed(conn, user=user, how="changed from your account page")
 
 
 async def request_password_reset(conn: Conn, *, email: str) -> None:
@@ -526,6 +542,17 @@ async def confirm_password_reset(conn: Conn, *, email: str, code: str, new_passw
         actor_user_id=user["id"],
     )
     await sessions.revoke_all(user["id"])
+    from cmp.domain import alerts
+
+    await alerts.password_changed(
+        conn,
+        user=user,
+        how=(
+            "set for the first time, which activated your account"
+            if user["status"] == UserStatus.PENDING.value
+            else "reset using a code sent to this address"
+        ),
+    )
 
 
 # ------------------------------------------------------------- provisioning
@@ -710,6 +737,11 @@ async def add_secondary_email(conn: Conn, *, user: dict[str, Any], email: str) -
             subject_user_id=user["id"],
             detail={"medium": "secondary_email", "action": "set"},
         )
+        from cmp.domain import alerts
+
+        await alerts.contact_changed(
+            conn, before=user, medium="secondary_email", action="set", by_admin=False
+        )
     if updated.get("secondary_email_verified_at") is None:
         await request_contact_code(conn, user=updated, contact=email)
     return updated
@@ -726,6 +758,11 @@ async def remove_secondary_email(conn: Conn, *, user: dict[str, Any]) -> dict[st
         entity_id=user["id"],
         subject_user_id=user["id"],
         detail={"medium": "secondary_email", "action": "removed"},
+    )
+    from cmp.domain import alerts
+
+    await alerts.contact_changed(
+        conn, before=user, medium="secondary_email", action="removed", by_admin=False
     )
     return updated
 

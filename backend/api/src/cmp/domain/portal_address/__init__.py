@@ -55,4 +55,9 @@ async def save(conn: Conn, *, portal_url: str | None, actor_id: int) -> dict[str
         # says where links pointed and when.
         detail={"address": address, "was": before, "changed": address != before},
     )
+    if address != before:
+        # Every link a person is sent starts here (2026-11-20).
+        from cmp.domain import alerts
+
+        await alerts.setting_changed(conn, setting="the portal address", actor_id=actor_id)
     return await overview(conn)
