@@ -273,14 +273,21 @@ class Settings(BaseSettings):
     # published, so ninety is the default and the value here is what the rights
     # page and every acknowledgement state. Copied onto each request at receipt,
     # so changing it does not move a clock already running.
-    rights_response_period_days: int = 90
-    # Grievances may run on a different period from requests. Same default.
-    grievance_response_period_days: int = 90
+    #
+    # Bounded to 1-90 (2026-11-20): a period beyond the outer limit would be
+    # published to every requester and stamped on every request as a promise
+    # the law does not allow, and zero or less is no period at all. A running
+    # request keeps the date stamped at its receipt whatever this says now.
+    rights_response_period_days: int = Field(default=90, ge=1, le=90)
+    # Grievances may run on a different period from requests. Same default,
+    # same limit.
+    grievance_response_period_days: int = Field(default=90, ge=1, le=90)
     # The relative checkpoints on the clock: acknowledge, ticket the holders,
     # and stop collecting to collate - as days after receipt, and before D.
-    rights_acknowledge_within_days: int = 2
-    rights_tickets_within_days: int = 5
-    rights_collate_before_days: int = 5
+    # Each must fall inside the shorter of the two periods (checked below).
+    rights_acknowledge_within_days: int = Field(default=2, ge=0)
+    rights_tickets_within_days: int = Field(default=5, ge=0)
+    rights_collate_before_days: int = Field(default=5, ge=0)
     # How long a released response stays downloadable from her dashboard.
     rights_download_ttl_days: int = 30
     # A request from the public form whose contact never verified is closed as
@@ -448,6 +455,22 @@ class Settings(BaseSettings):
         if len(seen) > 5:
             raise ValueError("at most five addresses")
         return tuple(seen)
+
+    @model_validator(mode="after")
+    def _rights_checkpoints_fit_the_period(self) -> Settings:
+        """A checkpoint after the response is due is a clock that cannot be
+        read: acknowledge and ticket the holders before D, collate after D0."""
+        period = min(self.rights_response_period_days, self.grievance_response_period_days)
+        for name in (
+            "rights_acknowledge_within_days",
+            "rights_tickets_within_days",
+            "rights_collate_before_days",
+        ):
+            if getattr(self, name) >= period:
+                raise ValueError(
+                    f"{name.upper()} must be fewer days than the response period ({period})"
+                )
+        return self
 
     @model_validator(mode="after")
     def _addresses(self) -> Settings:

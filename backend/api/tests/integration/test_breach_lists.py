@@ -491,10 +491,83 @@ async def test_a_contact_failure_is_an_outcome_and_names_the_contact(
     [failure] = view["failures"]
     assert failure["contact_uuid"] and failure["person_uuid"] is None
     assert plain(failure["full_name"]) == "Ravi"
-    assert view["unnotified"] == 0
+    assert view["unnotified"] == 0, "a failure is an outcome, as the duty counts it"
+    # ...but not a notice (review DPDP-6): the Board is told she was not reached.
+    report = await notices.account_for_report(conn, breach_uuid=uuid)
+    assert (report["notified"], report["not_reached"], report["awaiting"]) == (0, 1, 0)
+    assert "1 could not be reached" in report["statement"]
+    assert report["statement"].startswith("0 of the 1 ")
     # Sending again tries the failed SMS once more.
     await notices.send(conn, breach_uuid=uuid, actor_id=dpo)
     assert len(_sends(queued)) == 2
+
+
+async def test_notified_means_reached_and_a_retry_that_arrives_counts(
+    conn: Any, seeded: dict[str, Any], queued: list[Any]
+) -> None:
+    """Review DPDP-6: a person is notified once some channel delivered; one
+    whose every channel failed is "could not be reached"; one with a notice
+    still queued is "awaiting". A later attempt that is delivered moves her to
+    notified, and every failed attempt stays on the record."""
+    dpo = int(seeded["users"]["dpo"]["id"])
+    uuid = await _recorded(conn, seeded)
+    await _take(
+        conn,
+        seeded,
+        uuid,
+        "contacts",
+        _csv(
+            "name,email,mobile",
+            "Asha,asha@example.org,+919000011112",
+            "Ravi,,+919000011113",
+        ),
+    )
+    view = await notices.draft(conn, breach_uuid=uuid, words=WORDS, actor_id=dpo)
+    await notices.approve(
+        conn, breach_uuid=uuid, notice_uuid=str(view["versions"][-1]["notice_uuid"]), actor_id=dpo
+    )
+    await notices.send(conn, breach_uuid=uuid, actor_id=dpo)
+
+    async def deliveries() -> list[Any]:
+        return await fetch_all(
+            conn,
+            """SELECT d.delivery_uuid, d.channel, d.attempt, d.status, c.full_name
+                 FROM breach_notice_delivery d JOIN breach_notice n USING (notice_id)
+                 JOIN breach b USING (breach_id) JOIN breach_contact c USING (contact_id)
+                WHERE b.breach_uuid = %s ORDER BY d.delivery_id""",
+            (uuid,),
+        )
+
+    report = await notices.account_for_report(conn, breach_uuid=uuid)
+    assert (report["notified"], report["awaiting"]) == (0, 2), "queued is not a notice"
+
+    for row in await deliveries():
+        delivered = plain(row["full_name"]) == "Asha" and row["channel"] == "email"
+        await notices.record_result(
+            conn,
+            delivery_uuid=str(row["delivery_uuid"]),
+            status="delivered" if delivered else "failed",
+            detail={} if delivered else {"error": "ConnectionError", "attempts": 6},
+        )
+    report = await notices.account_for_report(conn, breach_uuid=uuid)
+    # Asha: her email arrived though her SMS failed. Ravi: his only channel failed.
+    assert (report["notified"], report["not_reached"], report["awaiting"]) == (1, 1, 0)
+    assert "1 of the 2 " in report["statement"] and "1 could not be reached" in report["statement"]
+
+    # Sent again: Ravi's SMS is tried once more, and arrives.
+    await notices.send(conn, breach_uuid=uuid, actor_id=dpo)
+    retried = [r for r in await deliveries() if r["attempt"] > 1 and r["status"] == "queued"]
+    assert retried, "the failed SMS is tried again"
+    report = await notices.account_for_report(conn, breach_uuid=uuid)
+    assert report["awaiting"] >= 1
+    for row in retried:
+        await notices.record_result(
+            conn, delivery_uuid=str(row["delivery_uuid"]), status="delivered", detail={}
+        )
+    report = await notices.account_for_report(conn, breach_uuid=uuid)
+    assert (report["notified"], report["not_reached"]) == (2, 0)
+    failed = [r for r in await deliveries() if r["status"] == "failed"]
+    assert failed, "the failed attempts stay on the record"
 
 
 async def test_contacts_listed_after_the_duty_was_done_reopen_it(

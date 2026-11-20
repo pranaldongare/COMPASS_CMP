@@ -259,6 +259,53 @@ async def test_a_legal_hold_on_the_person_stops_it(conn: Any, seeded: dict[str, 
     assert len(seen) == 1
 
 
+async def test_a_hold_placed_after_the_press_withholds_what_had_not_gone(
+    conn: Any, seeded: dict[str, Any]
+) -> None:
+    """Review ARCH-8: the press commits its instructions, then sends them with
+    no transaction open. A hold placed in between - before the last look each
+    instruction gets - keeps it from DataVault; released, it goes from "Check
+    status"; an instruction DataVault has already answered may always be asked
+    about again."""
+    dpo = int(seeded["users"]["dpo"]["id"])
+    await _on(conn, seeded)
+    consent = await _consent(conn, seeded)
+    row = await _erasure(conn, seeded)
+    await _check(conn, row, _answering(_three(consent)), dpo)
+    [ready] = await erasures.start(conn, row, role=DPO, actor_id=dpo)
+    assert await erasures.gate(conn, ready) is None, "nothing stands in its way yet"
+
+    hold = await holds.place(
+        conn,
+        asset_uuid=None,
+        subject_uuid=str(seeded["subject"]["uuid"]),
+        reason="Evidence in a live matter",
+        actor_id=dpo,
+    )
+    assert await erasures.gate(conn, ready) == "a legal hold now stands on the person"
+
+    await holds.release(conn, hold_uuid=str(hold["hold_uuid"]), actor_id=dpo)
+    [again] = await erasures.again(conn, row, role=DPO)
+    assert await erasures.gate(conn, again) is None
+    seen: list[dict[str, Any]] = []
+    await erasures.store(
+        conn, again, await erasures.ask(again, transport=_vault(seen)), actor_id=dpo
+    )
+    assert len(seen) == 1, "sent once, when nothing stood in its way"
+
+    await holds.place(
+        conn,
+        asset_uuid=None,
+        subject_uuid=str(seeded["subject"]["uuid"]),
+        reason="A second matter",
+        actor_id=dpo,
+    )
+    [asked] = await erasures.again(conn, row, role=DPO)
+    assert asked.answered and await erasures.gate(conn, asked) is None, (
+        "DataVault has it: asking how far it has got starts nothing"
+    )
+
+
 # ------------------------------------------------------------ what is sent
 async def test_the_assets_go_as_the_check_listed_them_and_each_answer_is_kept(
     conn: Any, seeded: dict[str, Any]

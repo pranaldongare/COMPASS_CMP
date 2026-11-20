@@ -766,6 +766,12 @@ async def withdraw(
         # Scope in the query result, not a separate permission check.
         raise NotFound("Consent record")
 
+    # The same lock as a capture (review ARCH-9, 2026-11-20): every writer of
+    # this person's chain on this notice waits for the one before it, then
+    # reads the head. Without it, a capture or a second withdrawal landing
+    # between the read and the insert made this one a constraint violation -
+    # a 500 - instead of the "superseded" answer below.
+    await repo.lock_capture(conn, user_id=user_id, notice_id=int(current["notice_id"]))
     live = await repo.current_for_user_notice(conn, user_id=user_id, notice_id=current["notice_id"])
     if not live or live["consent_id"] != current["consent_id"]:
         raise Conflict(

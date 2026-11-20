@@ -18,7 +18,10 @@ bridge - is where the relay's rules hold:
   started only with at least `RELAY_WRITE_BUDGET_S` left, so it can finish
   before the bridge gives up - what stops a consent the person saw fail from
   being recorded later. The time left is measured again after the write's
-  message is deleted, and the API call is given only what is left then.
+  message is deleted, and the API call is given only what is left then. And
+  it is measured once more before the reply is sent, and after a large
+  reply's body is stored: a reply ready only after the deadline is not sent,
+  and its stored body is removed (logged as `reply="too_late"`).
 * **On AWS's clock.** The deadline is set on the bridge's clock (EC2, synced to
   Amazon Time Sync). This host's clock is compared with AWS's on every first
   receive (`ApproximateFirstReceiveTimestamp`), and the time left is measured
@@ -546,14 +549,17 @@ class Collector:
             if time_left < budget:
                 note.status, note.reason, note.outcome = 503, "deadline_too_close", "refused"
                 answer = _error_answer(503, "deadline_too_close", _TOO_LATE, request.id)
-                self._reply(request, keys, answer, False)
+                self._reply(request, keys, answer, False, note)
                 self._discard_body(request)
                 return
 
         answer = self._call(request, method, route, url, headers, body, unsafe)
         note.status, note.reason = answer.status, answer.reason
         note.outcome = "executed"
-        self._reply(request, keys, answer, unsafe)
+        # The outcome stays `executed` even when the reply turns out too late
+        # to send: the API did the work, and a write it did stays done (its
+        # message is gone, so it is never run again). Only the reply is lost.
+        self._reply(request, keys, answer, unsafe, note)
         if not unsafe:
             self._delete(received)
 
@@ -700,7 +706,7 @@ class Collector:
         else:
             answer = _error_answer(503, "api_unavailable", _UNREACHABLE, request.id)
         note.status, note.reason, note.outcome = answer.status, answer.reason, "executed"
-        self._reply(request, keys, answer, unsafe=False)
+        self._reply(request, keys, answer, False, note)
         self._delete(received)
 
     # -------------------------------------------------------------- replies
@@ -711,7 +717,23 @@ class Collector:
         keys: sealing.RequestKeys,
         answer: _Answer,
         unsafe: bool,
+        note: _Note,
     ) -> None:
+        """Seal the answer and send it to the asking bridge, before the deadline.
+
+        The time left was last measured before the API was called (or before a
+        refusal's body was read), and the reply may only be ready much later:
+        the API's answer can arrive a little at a time up to its own timeout,
+        and a large body is stored in S3 through the proxy first. Past the
+        deadline the bridge has answered the browser (it waits only a short
+        grace for a reply already on its way), so a reply sent then is queue
+        and storage work for nothing, which the bridge deletes as
+        `late_reply`. So the time left is measured here before anything is
+        stored, and again in `_send`, after the store, just before the reply
+        goes; a reply too late at either point is not sent, and a body already
+        stored for it is removed."""
+        if self._too_late_to_reply(request, note):
+            return
         content = answer.content
         body: Body | None = None
         if content and len(content) <= INLINE_LIMIT:
@@ -726,11 +748,17 @@ class Collector:
                     502, "relay_error", _FAILED_WRITE if unsafe else _FAILED_READ, request.id
                 )
                 self._send(
-                    request, keys, answer.status, answer.headers, Body(inline=answer.content)
+                    request, keys, answer.status, answer.headers, Body(inline=answer.content), note
                 )
                 return
             body = Body(s3_key=key, size=len(sealed), sha256=digest)
-        self._send(request, keys, answer.status, answer.headers, body)
+        if not self._send(request, keys, answer.status, answer.headers, body, note) and (
+            body is not None and body.s3_key is not None
+        ):
+            # Stored, then too late to send: nothing will ever read it. Best
+            # effort; the bucket's lifecycle rule catches whatever this misses.
+            with contextlib.suppress(ClientError, BotoCoreError):
+                self._s3.delete_object(Bucket=self._settings.common.bucket, Key=body.s3_key)
 
     def _send(
         self,
@@ -739,10 +767,25 @@ class Collector:
         status: int,
         headers: list[tuple[str, str]],
         body: Body | None,
-    ) -> None:
+        note: _Note,
+    ) -> bool:
+        """Send the reply; False, sending nothing, when its deadline has passed."""
+        if self._too_late_to_reply(request, note):
+            return False
         reply = RelayResponse(id=request.id, status=status, headers=headers, body=body)
         blob = sealing.seal(keys.reply_key, sealing.REPLY, reply.to_bytes(), request.id)
         transport.send(self._sqs, request.reply_to, request.id, "r", blob)
+        return True
+
+    def _too_late_to_reply(self, request: RelayRequest, note: _Note) -> bool:
+        """True once the deadline has passed, on AWS's clock. Says so in the
+        message's one log line (`reply="too_late"`, a warning) and nothing
+        more: what the reply would have carried is never logged."""
+        if self._time_left_s(request) > 0:
+            return False
+        note.extra["reply"] = "too_late"
+        note.level = max(note.level, logging.WARNING)
+        return True
 
     # ------------------------------------------------- refusals and drops
 
@@ -758,7 +801,7 @@ class Collector:
     ) -> None:
         """Answer without calling the API, then let the message go."""
         note.status, note.reason, note.outcome = status, code, "refused"
-        self._reply(request, keys, _error_answer(status, code, message, request.id), False)
+        self._reply(request, keys, _error_answer(status, code, message, request.id), False, note)
         self._delete(received)
         self._discard_body(request)
 

@@ -67,12 +67,18 @@ async def test_the_dpo_writes_templates_without_a_project(
     )
     assert [(p["purpose_code"], p["is_mandatory"]) for p in shown["purposes"]] == [("P-TEST", True)]
     shown = await templates.set_language(
-        conn, first, language_code="hindi", rendered_text="हिंदी पाठ", actor_id=1
+        conn,
+        first,
+        language_code="hindi",
+        rendered_text="हिंदी पाठ",
+        actor_id=int(seeded["users"]["dpo"]["id"]),
     )
     assert {lang["language_code"] for lang in shown["languages"]} == {"english", "hindi"}
     shown = await templates.remove_language(conn, first, language_code="hindi")
     assert [lang["language_code"] for lang in shown["languages"]] == ["english"]
-    shown = await templates.update(conn, first, actor_id=1, title="Gait, adults only")
+    shown = await templates.update(
+        conn, first, actor_id=int(seeded["users"]["dpo"]["id"]), title="Gait, adults only"
+    )
     assert shown["title"] == "Gait, adults only"
 
 
@@ -106,7 +112,11 @@ async def test_an_rnd_user_attaches_one_by_its_id_as_a_copy(
 
     # A copy: the template changing changes nothing on the notice.
     await templates.set_language(
-        conn, made, language_code="english", rendered_text="Something else.", actor_id=1
+        conn,
+        made,
+        language_code="english",
+        rendered_text="Something else.",
+        actor_id=int(seeded["users"]["dpo"]["id"]),
     )
     [still] = await notice_repo.languages_of(conn, notice["notice_id"], with_text=True)
     assert still["rendered_text"] == TEXT
@@ -194,11 +204,19 @@ async def test_what_a_template_will_not_take(conn: Any, seeded: dict[str, Any]) 
     made = await _template(conn, seeded)
     with pytest.raises(ValidationFailed):
         await templates.set_language(
-            conn, made, language_code="klingon", rendered_text="x", actor_id=1
+            conn,
+            made,
+            language_code="klingon",
+            rendered_text="x",
+            actor_id=int(seeded["users"]["dpo"]["id"]),
         )
     with pytest.raises(ValidationFailed):
         await templates.set_language(
-            conn, made, language_code="english", rendered_text=" ", actor_id=1
+            conn,
+            made,
+            language_code="english",
+            rendered_text=" ",
+            actor_id=int(seeded["users"]["dpo"]["id"]),
         )
     with pytest.raises(ValidationFailed):
         await templates.set_status(conn, made, status="deleted")

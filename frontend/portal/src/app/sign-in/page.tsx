@@ -31,6 +31,7 @@ import { ReportIncidentLink } from "@/components/layout/report-incident-link";
 import { AuthPageGate } from "@/components/security";
 import { Alert, Button, Field, Input } from "@/components/ui/primitives";
 import { requestOtp, verifyOtp } from "@/features/auth";
+import { handOverContact, useHandedOverContact } from "@/features/auth/contact-handover";
 import { config } from "@/lib/config";
 import { ApiError } from "@/lib/errors";
 import { safeRedirectPath, useHydrated } from "@/lib/security";
@@ -117,22 +118,33 @@ function SubjectForm() {
   const [sent, setSent] = React.useState(false);
   const [contact, setContact] = React.useState("");
   const [failed, setFailed] = React.useState<string | null>(null);
-  // Mobile first: it is where her sign-in codes go by default. An email that
-  // arrived in the URL from sign-up switches the choice for her.
-  const [medium, setMedium] = React.useState<"mobile" | "email">(() =>
-    (params.get("contact") ?? "").includes("@") ? "email" : "mobile",
-  );
-
-  // Prefilled when arriving from sign-up, which sends the address it just
-  // registered. Retyping an address you entered one screen ago is the kind of
-  // friction that loses people between registering and ever signing in.
+  // Prefilled when arriving from sign-up, which hands over the address it just
+  // registered, or found already registered. Retyping an address you entered
+  // one screen ago is the kind of friction that loses people between
+  // registering and ever signing in.
   //
-  // Only an address is accepted, and it only ever populates a form field — it
-  // authorises nothing, and the code still has to arrive at that address.
+  // The URL says only that one was handed over (`prefill=1`); the address
+  // itself comes through this tab's storage, read once and removed, so it is
+  // never in the history, a log or a Referer (review SEC-6). A `contact` in
+  // the URL is not read. Only an address is accepted, and it only ever
+  // populates a form field — it authorises nothing, and the code still has
+  // to arrive at that address.
+  const arrivedWith = useHandedOverContact("sign-in", params.get("prefill") === "1");
+  // Mobile first: it is where her sign-in codes go by default. An email handed
+  // over from sign-up switches the choice for her, until she chooses.
+  const [chosen, setMedium] = React.useState<"mobile" | "email" | null>(null);
+  const medium = chosen ?? (arrivedWith.includes("@") ? "email" : "mobile");
+
   const form = useForm<OtpRequestForm>({
     resolver: zodResolver(otpRequestSchema),
-    defaultValues: { contact: params.get("contact") ?? "" },
+    defaultValues: { contact: arrivedWith },
   });
+
+  // When the page hydrates, the first render has no storage to read, so the
+  // address arrives a render later than the form's defaults.
+  React.useEffect(() => {
+    if (arrivedWith && !form.getValues("contact")) form.setValue("contact", arrivedWith);
+  }, [arrivedWith, form]);
 
   const onSubmit = form.handleSubmit(async (values) => {
     setFailed(null);
@@ -141,7 +153,9 @@ function SubjectForm() {
     } catch (err) {
       if (err instanceof ApiError && err.code === "account_not_found") {
         // No account: to sign-up, which says why and has the contact filled in.
-        const to = new URLSearchParams({ contact: values.contact.trim(), unregistered: "1" });
+        // The contact goes through this tab's storage, not the URL (SEC-6).
+        handOverContact(values.contact, "sign-up");
+        const to = new URLSearchParams({ unregistered: "1" });
         const next = params.get("next");
         if (next) to.set("next", next);
         router.push(`/sign-up?${to.toString()}`);

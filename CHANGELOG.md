@@ -7,6 +7,38 @@ as a release yet.
 
 ## [Unreleased]
 
+### Fixed (review of 58aafbe, 2026-11-20)
+- **The Board is no longer told a person was notified when every email and
+  SMS to them failed** (DPDP-6). "Notified" now means an email or SMS was
+  delivered; the report states apart how many could not be reached and how
+  many await an outcome, and the duty's completion records both. Failed
+  attempts stay on the record. Whether the duty completes while anybody is
+  unreached, and what the notice placed in an account establishes, are open
+  for Legal.
+- **A text keeps the country it was written for** (SEC-5): `00…` is
+  international; a national number of the wrong length is refused before SNS.
+- **A credential process or metadata endpoint that blinks is retried**
+  (SCALE-6), not a lost sign-in code; missing configuration stays terminal.
+- **The key service refuses a retired key under the active number**, a bad
+  identifier or a short key, at startup (SEC-8).
+- **Response periods are bounded to 1-90 days**, and the clock's checkpoints
+  must fall inside them (DPDP-7).
+- **A text too long once its values are in is refused before any gateway**,
+  with its own reason (SCALE-7).
+- **An erasure instruction gets a last look before it goes to DataVault**
+  (ARCH-8): a hold, a closure or a move since it was made ready withholds it;
+  hold placement and that look share one lock.
+- **SNS errors no longer carry the provider's words in worker tracebacks, and
+  botocore never logs requests at DEBUG** (SEC-7).
+- **The registration prefill no longer puts the contact in the URL** (SEC-6).
+- **`http://host:80` stays `:80`** in both frontends' address helpers (ARCH-7).
+- **A withdrawal takes the capture lock** before reading the chain's head
+  (ARCH-9).
+- **A file stored in a transaction that rolls back is removed** (ARCH-10).
+- **The collector never replies after the deadline** (SCALE-8).
+- Lint blocker and two tests that assumed a user with id 1 (TEST-1, TEST-2);
+  the tenancy guide on legal holds (DOC-1).
+
 ### Added
 - **Every event now reaches the people it concerns** (2026-11-20, no
   migration). A review of every audited event found 32 that told nobody; each

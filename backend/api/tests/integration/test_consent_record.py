@@ -307,3 +307,36 @@ async def test_an_id_not_found_or_out_of_scope_refuses_the_list_and_names_it(
             conn, [str(consent["consent_uuid"])], role=Role.DCO, user_id=stranger
         )
     assert caught.value.details["not_found"] == [str(consent["consent_uuid"])]
+
+
+async def test_a_withdrawal_takes_the_capture_lock_before_it_reads_the_head(
+    conn: Any, seeded: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Review ARCH-9: every writer of a person's chain on a notice serialises on
+    one lock and reads the head while holding it, so a capture racing a
+    withdrawal makes the loser "superseded", never a constraint violation."""
+    from cmp.db.repositories import consent as consent_repo
+
+    consent = await _consent(conn, seeded)
+    calls: list[str] = []
+    lock, head = consent_repo.lock_capture, consent_repo.current_for_user_notice
+
+    async def locking(*a: Any, **kw: Any) -> Any:
+        calls.append("lock")
+        return await lock(*a, **kw)
+
+    async def reading(*a: Any, **kw: Any) -> Any:
+        calls.append("head")
+        return await head(*a, **kw)
+
+    monkeypatch.setattr(consent_repo, "lock_capture", locking)
+    monkeypatch.setattr(consent_repo, "current_for_user_notice", reading)
+    await consent_service.withdraw(
+        conn,
+        consent_uuid=str(consent["consent_uuid"]),
+        user_id=seeded["subject"]["id"],
+        purpose_uuids=[],
+        withdraw_all=True,
+        ip_address="203.0.113.7",
+    )
+    assert calls[:2] == ["lock", "head"]

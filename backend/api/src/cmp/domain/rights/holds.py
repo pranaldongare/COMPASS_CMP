@@ -55,6 +55,9 @@ async def place(
         if not person:
             raise NotFound("Person")
         subject_id = int(person["id"])
+        # Waits for an erasure instruction about to go to DataVault for her;
+        # one that has gone went before the hold (review ARCH-8).
+        await hold_repo.lock_person(conn, subject_id)
     held = await hold_repo.place(
         conn,
         asset_id=asset_id,

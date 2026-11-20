@@ -95,6 +95,13 @@ class LocalFileStorage:
         tmp = target.with_suffix(target.suffix + ".part")
         tmp.write_bytes(payload)
         os.replace(tmp, target)
+        # The row that names this file is written after it, in a transaction
+        # that may still roll back; if it does, nothing names the file and it
+        # would sit outside every retention and erasure that works by
+        # reference (review ARCH-10). So it goes with the rollback.
+        from cmp.core import after_commit
+
+        after_commit.on_rollback(lambda: _remove_orphan(target))
 
         reference = f"{safe_subdir}/{name}"
         log.info("upload.stored", reference=reference, bytes=len(payload), sha256=digest)
@@ -122,3 +129,11 @@ class LocalFileStorage:
         candidate.unlink()
         log.info("upload.deleted", reference=reference)
         return True
+
+
+def _remove_orphan(target: Path) -> None:
+    try:
+        target.unlink(missing_ok=True)
+        log.info("upload.removed_after_rollback", reference=f"{target.parent.name}/{target.name}")
+    except OSError as exc:
+        log.error("upload.orphan_not_removed", error=type(exc).__name__)

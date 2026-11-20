@@ -42,6 +42,7 @@ import {
   Input,
   Select,
 } from "@/components/ui/primitives";
+import { handOverContact } from "@/features/auth/contact-handover";
 import { requestOtp } from "@/features/public-consent/api";
 import { LANGUAGE_NAMES, langTag } from "@/features/public-consent/components/languages";
 import { ApiError } from "@/lib/errors";
@@ -82,9 +83,10 @@ export function IdentifyStep({
     } catch (err) {
       if (err instanceof ApiError && err.code === "account_not_found") {
         // No account for that contact (2026-11-16): to sign-up, which says so,
-        // has it filled in, and comes back to this link afterwards.
+        // has it filled in, and comes back to this link afterwards. The
+        // contact goes through this tab's storage, not the URL (SEC-6).
+        handOverContact(contact, "sign-up");
         const to = new URLSearchParams({
-          contact: contact.trim(),
           unregistered: "1",
           next: `/c/${token}`,
         });

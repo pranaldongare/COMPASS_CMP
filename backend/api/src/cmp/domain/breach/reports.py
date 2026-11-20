@@ -280,6 +280,7 @@ async def _facts(conn: Conn, breach_uuid: str) -> Row:
         "statement": str(account["statement"]),
         "listed": int(account["listed"]),
         "notified": int(account["notified"]),
+        "not_reached": int(account.get("not_reached") or 0),
         "duties": duties,
     }
 
@@ -306,7 +307,12 @@ def _drafted(kind: Kind, facts: Row) -> dict[str, str]:
             "what_happened": nature,
             "timing": facts["timing"],
             "location": facts["location"],
-            "people": f"{facts['listed']} listed as affected; {facts['notified']} notified.",
+            "people": f"{facts['listed']} listed as affected; {facts['notified']} notified"
+            + (
+                f"; {facts['not_reached']} could not be reached."
+                if facts.get("not_reached")
+                else "."
+            ),
             "duties": facts["duties"],
         }
     if kind == Kind.BOARD_INTIMATION:

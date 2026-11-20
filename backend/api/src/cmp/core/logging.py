@@ -128,6 +128,11 @@ def configure_logging() -> None:
         logging.getLogger(noisy).propagate = True
 
     logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+    # botocore logs each request's parameters at DEBUG - for a text, the phone
+    # number and the message, a one-time code among them (review SEC-7). The
+    # AWS libraries say what went wrong at WARNING, whatever LOG_LEVEL is.
+    for chatty in ("botocore", "boto3", "urllib3", "s3transfer"):
+        logging.getLogger(chatty).setLevel(logging.WARNING)
 
 
 def get_logger(name: str = "cmp") -> structlog.stdlib.BoundLogger:

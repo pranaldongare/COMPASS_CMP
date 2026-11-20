@@ -85,6 +85,26 @@ ciphertext is written under, and `DKMS_PREVIOUS_KEYS` keeps retired keys so
 that what they wrote still opens. Adding a version and raising the number is
 supported.
 
+**The key ring is checked at startup.** Every version number must mean exactly
+one key, so the key service refuses to start, with a settings validation error,
+when:
+
+- `DKMS_PREVIOUS_KEYS` names the version in `DKMS_KEY_VERSION`. Identifiers
+  are compared as integers, so `"01"` collides with `1`. Before this check the
+  retired key took that number's place, and new ciphertext was sealed under
+  retired material while its header named the active version.
+- two entries in `DKMS_PREVIOUS_KEYS` are the same version spelt differently
+  (`"1"` and `"01"`), or the same identifier appears twice in the JSON.
+- an identifier is not plain decimal digits between 1 and 255, the range the
+  envelope's one version byte can hold.
+- any master key, active or retired, is not valid base64 or decodes to fewer
+  than 32 bytes. A master key is the input to HKDF-SHA256, which derives the
+  32-byte AES-256 key per type and version. Longer input is accepted.
+
+`LocalAesProvider` makes the same collision and length checks when it is built
+directly, outside the settings. `backend/dkms/tests/test_key_ring.py` walks a
+rotation end to end and each refusal.
+
 **No tool re-encrypts today.** `scripts/reseal.py` seals plaintext and skips
 any value that already starts `SE::`, so it does not move old ciphertext to a
 new version. After a rotation the old key has to stay in

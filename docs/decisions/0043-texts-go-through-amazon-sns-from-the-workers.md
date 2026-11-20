@@ -31,7 +31,13 @@ travel in its payload anyway.
    organisation's sign-in. `sns.ap-south-1.amazonaws.com` is one more name
    on the proxy, with no TLS inspection.
 4. A number stored without a country code gets `SMS_DEFAULT_COUNTRY_CODE`
-   (91) on its way to SNS. Stored values do not change.
+   (91) on its way to SNS. Stored values do not change. Amended 2026-11-20
+   (review SEC-5): a number starting `00` is international and keeps the
+   code written after it (`0044…` is `+44…`, not `+9144…`); for a default
+   code whose plan has a fixed length (91 and 1, ten digits) a national
+   number of any other length is refused before Publish, never sent
+   somewhere else. Supporting further plans, or how a person corrects an
+   ambiguous number, is a product decision still open.
 5. Production accepts `http` or `sns`.
 6. Failures keep the HTTP transport's contract: passing trouble is a
    `ConnectionError` or `TimeoutError` and is retried; a refusal is a

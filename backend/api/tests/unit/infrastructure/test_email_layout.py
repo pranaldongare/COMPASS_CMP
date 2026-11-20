@@ -172,7 +172,9 @@ def test_the_badge_and_label_follow_what_the_message_carries() -> None:
         return next(w for w in ("Verification", "Action needed", "Notice") if f">{w}<" in page)
 
     assert label("Your code", "Your code is:\n\n482913\n\nIt expires soon.") == "Verification"
-    assert label("A ticket", "Open it here:\nhttps://console.example.org/tickets") == "Action needed"
+    assert (
+        label("A ticket", "Open it here:\nhttps://console.example.org/tickets") == "Action needed"
+    )
     assert label("Action required by 24 September", "Please return it.") == "Action needed"
     assert label("Your consent is recorded", "Thank you.") == "Notice"
 

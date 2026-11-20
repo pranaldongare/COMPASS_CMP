@@ -161,6 +161,16 @@ def render(
     return (render_text(subject, values) if subject else None), render_text(body, values)
 
 
+#: The most a text may be once its values are in: SNS's limit for one Publish
+#: (ten parts), and more than any gateway joins into one message.
+MAX_RENDERED_SMS_CHARS = 1600
+
+
+class MessageTooLong(RuntimeError):
+    """A text that cannot be sent at this length. A RuntimeError: a refusal no
+    retry will mend, as the transports' contract has it."""
+
+
 def channel_for(contact: str) -> Channel:
     return Channel.EMAIL if "@" in contact else Channel.SMS
 
@@ -230,6 +240,23 @@ def deliver(
         raise ValueError(f"'{j.key.value}' does not carry files")
 
     subject, body = render(key, ch, variables)
+    if ch is Channel.SMS and len(body) > MAX_RENDERED_SMS_CHARS:
+        # Refused here, before any gateway, and said plainly (review SCALE-7,
+        # 2026-11-20). A template fits in 480 characters, but its values may
+        # not: a breach notice to somebody with no account carries what
+        # happened and what to do, up to 4,000 characters each. SNS refuses a
+        # text over 1,600, and an HTTP gateway would split or cut it. Not
+        # retried: no retry makes it shorter.
+        log.error(
+            "message.too_long_for_sms",
+            message=j.key.value,
+            length=len(body),
+            limit=MAX_RENDERED_SMS_CHARS,
+        )
+        raise MessageTooLong(
+            f"'{j.key.value}' renders to {len(body)} characters; a text takes at most "
+            f"{MAX_RENDERED_SMS_CHARS}"
+        )
     if settings.email_redirect_to:
         # Test mode (EMAIL_REDIRECT_TO): nobody real is written to.
         result = _redirected(j, ch, to=to, subject=subject, body=body, attachments=attachments)
@@ -320,7 +347,9 @@ def _redirected(
 
 __all__ = [
     "COPIES_KEY",
+    "MAX_RENDERED_SMS_CHARS",
     "MIRROR_KEY",
+    "MessageTooLong",
     "Overrides",
     "channel_for",
     "common_variables",

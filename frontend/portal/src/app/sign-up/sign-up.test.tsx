@@ -8,7 +8,8 @@ import { HttpResponse, http } from "msw";
 import { describe, expect, it, vi } from "vitest";
 
 import SignUpPage from "@/app/sign-up/page";
-import { render, screen, waitFor } from "@/test/render";
+import { takeHandedOverContact } from "@/features/auth/contact-handover";
+import { fireEvent, render, screen, waitFor } from "@/test/render";
 import { API, server } from "@/test/server";
 
 vi.mock("next/navigation", () => ({
@@ -132,10 +133,12 @@ describe("confirming the contacts", () => {
     // The refusal names no code: it is not put on the mobile's field.
     expect(mobileCode).not.toHaveAttribute("aria-invalid");
     expect(screen.getByText(HINT)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /sign in instead/i })).toHaveAttribute(
-      "href",
-      `/sign-in?contact=${encodeURIComponent("+919870700009")}`,
-    );
+    // The mobile goes to sign-in through this tab's storage, not the URL (SEC-6).
+    const instead = screen.getByRole("link", { name: /sign in instead/i });
+    expect(instead).toHaveAttribute("href", "/sign-in?prefill=1");
+    window.sessionStorage.clear();
+    fireEvent.click(instead);
+    expect(takeHandedOverContact("sign-in")).toBe("+919870700009");
 
     // No way back to change a contact: the codes would not follow it.
     expect(
@@ -313,10 +316,12 @@ describe("giving the details", () => {
     ).toBeInTheDocument();
     expect(screen.getByLabelText(/email address/i)).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByLabelText(/mobile number/i)).not.toHaveAttribute("aria-invalid");
-    expect(screen.getByRole("link", { name: /sign in with this email/i })).toHaveAttribute(
-      "href",
-      `/sign-in?contact=${encodeURIComponent("staff@example.org")}`,
-    );
+    // The email goes to sign-in through this tab's storage, not the URL (SEC-6).
+    const withIt = screen.getByRole("link", { name: /sign in with this email/i });
+    expect(withIt).toHaveAttribute("href", "/sign-in?prefill=1");
+    window.sessionStorage.clear();
+    fireEvent.click(withIt);
+    expect(takeHandedOverContact("sign-in")).toBe("staff@example.org");
     expect(
       screen.queryByRole("heading", { name: /confirm your contacts/i }),
     ).not.toBeInTheDocument();

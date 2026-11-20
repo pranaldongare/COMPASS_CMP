@@ -119,6 +119,44 @@ class TestAStoredNumberBecomesE164:
         with pytest.raises(ValueError):
             transport.to_e164(stored, "91")
 
+    @pytest.mark.parametrize(
+        ("stored", "sent"),
+        [
+            # Review SEC-5: `00` is the international prefix. A UK number
+            # (Ofcom's drama range) went to India as +9144...
+            ("00447700900123", "+447700900123"),
+            ("0044 7700 900123", "+447700900123"),
+            ("+447700900123", "+447700900123"),
+        ],
+    )
+    def test_an_explicit_foreign_code_is_kept_whatever_the_default(
+        self, stored: str, sent: str
+    ) -> None:
+        assert transport.to_e164(stored, "91") == sent
+
+    @pytest.mark.parametrize(
+        ("stored", "default"),
+        [
+            # A national number of the wrong length is refused, never sent to
+            # some other number: nine, eleven and thirteen digits for India...
+            ("987654321", "91"),
+            ("98765432101", "91"),
+            ("9198765432101", "91"),
+            # ...and a seven-digit local number where the default is 1.
+            ("5550101", "1"),
+        ],
+    )
+    def test_a_national_number_of_the_wrong_length_is_refused(
+        self, stored: str, default: str
+    ) -> None:
+        with pytest.raises(ValueError):
+            transport.to_e164(stored, default)
+
+    def test_a_refused_length_never_reaches_publish(self, stub: Stubber) -> None:
+        with pytest.raises(RuntimeError):
+            _sns().send(to="98765432101", body=BODY)
+        stub.assert_no_pending_responses()
+
     def test_a_refused_number_publishes_nothing_and_is_not_retried(self, stub: Stubber) -> None:
         with capture_logs() as logs, pytest.raises(RuntimeError) as raised:
             _sns().send(to="12345", body=BODY)
@@ -162,7 +200,6 @@ PASSING = [
 NOT_CONFIGURED = [
     aws.NoCredentialsError(),
     aws.PartialCredentialsError(provider="env", cred_var="AWS_SECRET_ACCESS_KEY"),
-    aws.CredentialRetrievalError(provider="custom-process", error_msg="exit 1"),
     aws.ProfileNotFound(profile="cmp-sms"),
     aws.ConfigNotFound(path="/etc/cmp/aws-credentials"),
 ]
@@ -348,3 +385,76 @@ class TestTheClientIsMadeOnceAndLate:
         ):
             monkeypatch.setattr(settings, "sms_transport", name)
             assert isinstance(build_sms_transport(), kind)
+
+
+class TestCredentialsThatBlinkAreRetried:
+    """Review SCALE-6: a credential process or the metadata endpoint that did
+    not answer this time is passing trouble, retried like an endpoint outage;
+    configuration that is plainly missing stays terminal (above)."""
+
+    @pytest.mark.parametrize(
+        "exc",
+        [
+            aws.CredentialRetrievalError(provider="custom-process", error_msg="exit 1"),
+            aws.MetadataRetrievalError(error_msg="timed out"),
+        ],
+        ids=["credential-process", "metadata"],
+    )
+    def test_it_is_retried_and_the_next_try_sends(
+        self, monkeypatch: pytest.MonkeyPatch, exc: Exception
+    ) -> None:
+        tries: list[int] = []
+
+        class Client:
+            def publish(self, **_: Any) -> dict[str, Any]:
+                tries.append(1)
+                if len(tries) == 1:
+                    raise exc
+                return {"MessageId": "m-after"}
+
+        monkeypatch.setattr(transport, "_sns_client", lambda *_: Client())
+        with capture_logs() as logs, pytest.raises(ConnectionError) as raised:
+            _sns().send(to="9876543210", body=BODY)
+        assert _retried(raised.value)
+        assert [line["event"] for line in logs] == ["sms.credentials_unavailable"]
+        assert _sns().send(to="9876543210", body=BODY)["message_id"] == "m-after"
+
+
+class TestTheProviderErrorIsNotChained:
+    """Review SEC-7: a worker's traceback renders the exception's cause, and
+    SNS's own words can quote the number. Every error the transport raises
+    stands alone."""
+
+    @pytest.mark.parametrize("outcome", ["refused", "busy", "unreachable", "credentials"])
+    def test_no_cause_carries_the_providers_words(
+        self, monkeypatch: pytest.MonkeyPatch, stub: Stubber, outcome: str
+    ) -> None:
+        import traceback
+
+        quoted = "Invalid parameter: PhoneNumber +919876543210"
+        if outcome == "refused":
+            stub.add_client_error("publish", "InvalidParameter", quoted, 400)
+        elif outcome == "busy":
+            stub.add_client_error("publish", "Throttled", quoted, 429)
+        elif outcome == "unreachable":
+            _raising(monkeypatch, aws.EndpointConnectionError(endpoint_url=URL))
+        else:
+            _raising(monkeypatch, aws.CredentialRetrievalError(provider="p", error_msg=quoted))
+        with pytest.raises(Exception) as raised:
+            _sns().send(to="9876543210", body=BODY)
+        # The chain as a worker log renders it, less the frames (which hold
+        # this test's own source).
+        err = raised.value
+        rendered = "".join(traceback.format_exception(type(err), err, None))
+        assert raised.value.__cause__ is None
+        assert "9876543210" not in rendered and CODE not in rendered
+
+
+def test_botocore_never_logs_a_request_at_debug() -> None:
+    """Review SEC-7: botocore logs request parameters at DEBUG."""
+    import logging
+
+    from cmp.core.logging import configure_logging
+
+    configure_logging()
+    assert logging.getLogger("botocore").getEffectiveLevel() >= logging.WARNING

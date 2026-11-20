@@ -254,6 +254,11 @@ async def settle(conn: Conn, breach: Row, *, actor_id: int | None) -> bool:
     listed = await listed_count(conn, breach_id)
     if listed == 0 or await repo.unnotified(conn, breach_id) > 0:
         return False
+    # Who was actually told, beside the count the duty settles on (review
+    # DPDP-6): a person every channel failed for has an outcome, not a notice.
+    # Whether the duty should complete while anybody is unreached is Legal's
+    # call; until then it settles as ADR 0021 says, and says so on the record.
+    reached = await repo.reach(conn, breach_id)
     await breach_repo.add_obligation_event(
         conn,
         int(found[0]["obligation_id"]),
@@ -266,7 +271,13 @@ async def settle(conn: Conn, breach: Row, *, actor_id: int | None) -> bool:
         breach,
         Event.BREACH_OBLIGATION_COMPLETED,
         actor_id=actor_id,
-        detail={"duty": Duty.PRINCIPALS.value, "notified": listed, "by": "delivery"},
+        detail={
+            "duty": Duty.PRINCIPALS.value,
+            "listed": listed,
+            "notified": int(reached["reached"]),
+            "not_reached": int(reached["not_reached"]),
+            "by": "delivery",
+        },
     )
     return True
 
@@ -389,28 +400,55 @@ async def account_for_report(conn: Conn, *, breach_uuid: str) -> Row:
         counts[str(r["status"])] = int(r["people"])
     listed = await listed_count(conn, breach_id)
     contacts = await list_repo.count_contacts(conn, breach_id)
-    notified = listed - await repo.unnotified(conn, breach_id)
+    # Notified means reached (review DPDP-6): a person whose every email and
+    # SMS failed is counted apart, never as notified.
+    reach = await repo.reach(conn, breach_id)
+    notified = int(reach["reached"])
+    not_reached = int(reach["not_reached"])
+    awaiting = int(reach["awaiting"])
     if not rows:
         statement = "No notice has yet been sent to the Data Principals affected. " + (
             f"{listed} are listed as affected." if listed else "Nobody is yet listed as affected."
         )
     else:
-        statement = (
-            f"{notified} of the {listed} Data Principals listed as affected have been notified: "
-            "every email and SMS to them has an outcome, delivered or failed after retrying"
+        with_account = listed - contacts
+        parts = [
+            f"{notified} of the {listed} Data Principals listed as affected have been notified "
+            "by an email or SMS that was delivered"
             + (
-                f", and the notice is in the account of each of the {listed - contacts} "
-                f"with one; the other {contacts} have no account and were written to by "
-                "email and SMS."
-                if contacts
-                else ", and the notice is in each one's account."
+                f"; the notice is also in the account of each of the {with_account} with one"
+                if with_account
+                else ""
             )
-        )
+            + (
+                f"; the other {contacts} have no account"
+                if contacts and with_account
+                else "; they have no account and were written to by email and SMS"
+                if contacts
+                else ""
+            )
+            + "."
+        ]
+        if not_reached:
+            parts.append(
+                f"{not_reached} could not be reached: every email and SMS to them failed "
+                "after retrying"
+                + (
+                    ", though the notice is in the account of those with one."
+                    if with_account
+                    else "."
+                )
+            )
+        if awaiting:
+            parts.append(f"{awaiting} are awaiting the outcome of a notice still being sent.")
+        statement = " ".join(parts)
     return {
         "sent": bool(rows),
         "statement": statement,
         "listed": listed,
         "notified": notified,
+        "not_reached": not_reached,
+        "awaiting": awaiting,
         "versions": [
             {
                 "version": version,

@@ -137,6 +137,11 @@ class Send:
     assets: list[dict[str, Any]]
     #: Sent before: this ask is for where it has got to.
     again: bool
+    #: DataVault has answered this instruction before, so it has it: asking
+    #: again starts nothing new.
+    answered: bool = False
+    #: The request's office when the instruction was made ready.
+    office: str | None = None
 
 
 def applies(row: Row) -> bool:
@@ -332,6 +337,34 @@ def _guard(row: Row, role: Role | str) -> None:
         raise Forbidden("This request is not yours to act on")
 
 
+async def gate(conn: Conn, what: Send) -> str | None:
+    """Whether an instruction made ready may go now, or why not - the point
+    after which it is DataVault's (review ARCH-8, 2026-11-20).
+
+    Run in a short transaction of its own just before the call, never across
+    it: it takes the lock a hold on the person takes, then reads the request
+    and the hold afresh. A hold placed, the request closed or moved to the
+    other office after the instruction was made ready withholds it; one placed
+    after this commits finds the instruction gone, and the hold is recorded
+    after it. An instruction DataVault has already answered may always be
+    asked about again: it has it, and asking starts nothing new. One withheld
+    stays as it was, unanswered, and goes - through this gate again - from
+    "Check status" once nothing stands in its way."""
+    if what.answered:
+        return None
+    await hold_repo.lock_person(conn, what.subject_user_id)
+    request = await rights_repo.by_id(conn, what.request_id)
+    if request is None:
+        return "the request is gone"
+    if request.get("office_code") != what.office:
+        return "the request moved to the other office"
+    if not what.again and (request["status"] == "closed" or str(request["status"]) not in WORKING):
+        return "the request is no longer being worked on"
+    if await _held(conn, request):
+        return "a legal hold now stands on the person"
+    return None
+
+
 async def start(conn: Conn, row: Row, *, role: Role | str, actor_id: int) -> list[Send]:
     """A press of "Erase in DataVault": the instructions, written and ready to
     go. The caller commits before any of them is sent."""
@@ -385,6 +418,7 @@ async def start(conn: Conn, row: Row, *, role: Role | str, actor_id: int) -> lis
                 person_named=person_named,
                 assets=[_as_sent(p["asset_ref"], p["consent_sent"]) for p in part],
                 again=False,
+                office=row.get("office_code"),
             )
         )
     await audit.record(
@@ -448,6 +482,8 @@ async def again(conn: Conn, row: Row, *, role: Role | str) -> list[Send]:
                 person_named=person_named,
                 assets=[_as_sent(str(a["asset_ref"]), a["consent_sent"]) for a in named],
                 again=True,
+                answered=e["answered_at"] is not None,
+                office=row.get("office_code"),
             )
         )
     if not sends:

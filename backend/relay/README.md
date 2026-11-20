@@ -518,7 +518,8 @@ SQS and S3, in process.
 
 - **`test_collector.py`**: the collector against moto and a fake API, with
   the test playing the bridge. What reaches the API and what never does (404
-  off the list, 422 for a sealed value); expiry and the write budget; when a
+  off the list, 422 for a sealed value); expiry and the write budget; no
+  reply, and no stored reply body, once the deadline has passed; when a
   write's and a read's message is deleted; duplicate ids; replies only to
   listed queues; messages that do not open, are malformed or name another
   id; pings; bodies through S3 both ways; the API failing, slow or

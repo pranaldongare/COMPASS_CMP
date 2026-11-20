@@ -64,11 +64,19 @@ export function addresses(env: Env, repositoryEnv: Env = {}): Addresses {
     if (!/^https?:$/.test(url.protocol) || url.pathname !== "/") {
       throw new Error(`${name} must be http(s)://<ip or name>[:port], no path`);
     }
-    // `http://<ip>` gets that part's port; one written with a port, or an
-    // https name, is used as it is.
-    return url.protocol === "http:" && !url.port && defaultPort
-      ? `${raw}:${defaultPort}`
-      : raw;
+    // Built from the parsed parts, not by appending to the text: `URL`
+    // drops a written default port (`http://api.example:80` has an empty
+    // `.port`), so the text alone cannot say whether a port was written
+    // (review ARCH-7). A port written in the address is kept as written,
+    // the scheme's default included; `http://<ip>` with none gets that
+    // part's port; an https name with none is used as it is.
+    const written =
+      /^[a-z][a-z0-9+.-]*:\/\/(?:[^@/?#]*@)?(?:\[[^\]]*\]|[^:/?#]*):(\d+)/i.exec(raw)?.[1];
+    const effective =
+      url.port ||
+      (written !== undefined ? (url.protocol === "https:" ? "443" : "80") : "") ||
+      (url.protocol === "http:" && defaultPort ? String(defaultPort) : "");
+    return `${url.protocol}//${url.hostname}${effective ? `:${effective}` : ""}`;
   };
   const api =
     read("API_ORIGIN") ??

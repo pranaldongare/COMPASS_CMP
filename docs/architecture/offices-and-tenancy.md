@@ -53,7 +53,7 @@ named below (0059 adds `breach_report` through `breach`, and
 Not policed: `auth_user` and `person_type_history` (one person, both
 tracks), `audit_log` (one chain; the read is filtered), `processor`,
 `processor_respondent`, `data_source`, `collection_owner_processor`,
-`delegation`, `nomination`, `legal_hold`, `message_template`,
+`delegation`, `nomination`, `message_template`,
 `message_copy`, `restricted_country`, `breach_temporary_access`,
 `incident_report`, `breach_settings`, `breach_board_recipient`,
 `breach_board_recipient_event`. These hold no office-specific consent evidence
@@ -85,10 +85,15 @@ offices see that list. The request and who erased it are on the request's own
 trail, in its office: `incident_report.reporter_erased` carries the request's
 office, not the report's, so the other office's trail never shows it (2026-11-08).
 
-`legal_hold` carries no office scope in its queries yet (`list_holds()`
-returns every hold); only the matrix, which gives it to the DPO alone,
-keeps it within one office, and increment 7 scopes it before the Legal
-PoC holds it (open point F-21).
+`legal_hold` is policed by office since migration 0055: it carries
+`office_id` (the asset's project's office, or the placing officer's for a hold
+on a person), with row level security forced, and `list_holds()` and
+`by_uuid()` read only the session's office (`cmp_office_visible`). One read
+crosses the wall on purpose: before anything is erased, `active_covering()`
+looks for a hold on the asset or the person whichever office placed it
+(`across_offices`), so neither office can erase what the other holds. The same
+check runs just before an erasure instruction goes to DataVault (review
+ARCH-8, 2026-11-20).
 
 ## Who belongs where
 

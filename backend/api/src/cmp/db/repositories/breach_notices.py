@@ -247,6 +247,56 @@ async def unnotified(conn: Conn, breach_id: int) -> int:
     return int(row["n"]) if row else 0
 
 
+async def reach(conn: Conn, breach_id: int) -> Row:
+    """Each listed person in one of three states, from the latest attempt on
+    each channel of every version (review DPDP-6, 2026-11-20):
+
+    * `reached` - an email or SMS to her was delivered. The notice placed
+      in her account does not count on its own: what that establishes is an
+      open question for Legal (2026-11-20), and the report says it apart;
+    * `awaiting` - not reached, and something is still queued or nothing has
+      gone yet;
+    * `not_reached` - not reached, and every email and SMS failed after
+      retrying.
+
+    `unnotified` above counts a failure as an outcome, which settling the
+    duty needs (ADR 0021); this says who was actually told. The failed
+    attempts stay where they are, append-only.
+    """
+    row = await fetch_one(
+        conn,
+        f"""WITH latest AS ({_LATEST}),
+                 per AS (
+                   SELECT auth_user_id, contact_id,
+                          bool_or(status = 'delivered' AND channel <> 'portal') AS reached,
+                          bool_or(status = 'queued') AS waiting
+                     FROM latest GROUP BY auth_user_id, contact_id
+                 ),
+                 listed AS (
+                   SELECT a.auth_user_id, NULL::int AS contact_id FROM breach_affected a
+                    WHERE a.breach_id = %(b)s
+                   UNION ALL
+                   SELECT NULL::int, c.contact_id FROM breach_contact c
+                    WHERE c.breach_id = %(b)s
+                 ),
+                 states AS (
+                   SELECT coalesce(p.reached, false) AS reached,
+                          (p.auth_user_id IS NULL AND p.contact_id IS NULL)
+                            OR coalesce(p.waiting, false) AS waiting
+                     FROM listed l
+                     LEFT JOIN per p
+                       ON (l.auth_user_id IS NOT NULL AND p.auth_user_id = l.auth_user_id)
+                       OR (l.contact_id IS NOT NULL AND p.contact_id = l.contact_id)
+                 )
+            SELECT count(*) FILTER (WHERE reached) AS reached,
+                   count(*) FILTER (WHERE NOT reached AND waiting) AS awaiting,
+                   count(*) FILTER (WHERE NOT reached AND NOT waiting) AS not_reached
+              FROM states""",
+        {"b": breach_id},
+    )
+    return row or {"reached": 0, "awaiting": 0, "not_reached": 0}
+
+
 async def account(conn: Conn, breach_id: int) -> list[Row]:
     """Per version and channel, how many people are in each state."""
     return await fetch_all(

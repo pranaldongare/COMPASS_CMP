@@ -33,6 +33,10 @@ log = get_logger("cmp.after_commit")
 Hook = Callable[[], object]
 
 _pending: ContextVar[list[Hook] | None] = ContextVar("cmp_after_commit", default=None)
+#: Undo for work done outside the database that the transaction's rollback
+#: cannot reach: a file written to storage before the row that names it
+#: (review ARCH-10, 2026-11-20). Run, in reverse, only if it rolls back.
+_undo: ContextVar[list[Hook] | None] = ContextVar("cmp_after_rollback", default=None)
 
 
 @contextmanager
@@ -48,17 +52,26 @@ def unit_of_work() -> Generator[None]:
         return
 
     token = _pending.set([])
+    undo_token = _undo.set([])
     try:
         yield
     except BaseException:
         dropped = _pending.get() or []
+        undo = _undo.get() or []
         _pending.reset(token)
+        _undo.reset(undo_token)
         if dropped:
             log.info("after_commit.dropped", hooks=len(dropped))
+        for hook in reversed(undo):
+            try:
+                hook()
+            except Exception as exc:  # one failed undo must not stop the rest
+                log.error("after_rollback.hook_failed", error=str(exc))
         raise
     else:
         hooks = _pending.get() or []
         _pending.reset(token)
+        _undo.reset(undo_token)
         for hook in hooks:
             try:
                 hook()
@@ -76,6 +89,17 @@ def defer(hook: Hook) -> bool:
     if pending is None:
         return False
     pending.append(hook)
+    return True
+
+
+def on_rollback(hook: Hook) -> bool:
+    """Register `hook` to run if the enclosing transaction rolls back.
+
+    Returns False outside a unit of work, where nothing will roll back."""
+    undo = _undo.get()
+    if undo is None:
+        return False
+    undo.append(hook)
     return True
 
 

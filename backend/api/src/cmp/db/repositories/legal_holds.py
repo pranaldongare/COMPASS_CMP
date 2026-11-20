@@ -120,3 +120,13 @@ async def what_it_covers(conn: Conn, hold_id: int) -> Row | None:
         "SELECT asset_id, subject_user_id FROM legal_hold WHERE hold_id = %s",
         (hold_id,),
     )
+
+
+async def lock_person(conn: Conn, subject_user_id: int) -> None:
+    """A hold placed on a person, and an erasure instruction about to go to
+    DataVault for her, one at a time until the caller's transaction ends
+    (review ARCH-8, 2026-11-20). A key of its own, as the erasure lock has."""
+    await conn.execute(
+        "SELECT pg_advisory_xact_lock(hashtextextended('cmp.legal_hold.person', %s))",
+        (subject_user_id,),
+    )

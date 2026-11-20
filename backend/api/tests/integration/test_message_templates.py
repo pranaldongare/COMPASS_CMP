@@ -117,3 +117,38 @@ class TestWorkerSide:
     def test_deliver_refuses_a_channel_the_message_does_not_use(self) -> None:
         with pytest.raises(ValueError):
             messaging.deliver(Message.MFA_CODE, to="+919000000001", code="1", minutes=5)
+
+    def _direct(self, what_happened: str) -> dict[str, str]:
+        return {
+            "breach_reference": "BR-2026-0001",
+            "what_happened": what_happened,
+            "consequences": "c",
+            "measures": "m",
+            "protective_steps": "Change your password.",
+            "contact": "privacy@example.org",
+        }
+
+    def test_a_text_too_long_once_its_values_are_in_is_refused_before_any_gateway(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Review SCALE-7: a breach notice to somebody with no account carries
+        what happened in full; at 2,000 characters it cannot go as one text."""
+        from cmp.infrastructure import sms
+
+        sent: list[str] = []
+
+        class Gateway:
+            def send(self, *, to: str, body: str) -> dict[str, object]:
+                sent.append(body)
+                return {"delivered": True}
+
+        monkeypatch.setattr(sms, "build_sms_transport", lambda: Gateway())
+        with pytest.raises(messaging.MessageTooLong):
+            messaging.deliver(
+                Message.BREACH_NOTICE_DIRECT, to="+919000000001", **self._direct("x" * 2000)
+            )
+        assert sent == []
+        messaging.deliver(
+            Message.BREACH_NOTICE_DIRECT, to="+919000000001", **self._direct("A short account.")
+        )
+        assert len(sent) == 1 and len(sent[0]) <= messaging.MAX_RENDERED_SMS_CHARS

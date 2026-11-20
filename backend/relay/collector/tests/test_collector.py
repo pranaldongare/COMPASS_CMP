@@ -760,6 +760,162 @@ def test_the_write_gets_the_time_left_after_the_delete(
     assert 18.5 <= timeout["read"] <= 19.5
 
 
+# ----------------------------------------------- the reply, then the time
+
+
+class _SlowPut:
+    """An S3 client whose PutObject takes `delay_ms` on the collector's clock
+    (moved on, not slept on), as an upload through a slow proxy would."""
+
+    def __init__(self, real: Any, shift: dict[str, int], delay_ms: int) -> None:
+        self._real = real
+        self._shift = shift
+        self._delay_ms = delay_ms
+        self.puts = 0
+
+    def put_object(self, **kwargs: Any) -> Any:
+        self.puts += 1
+        self._shift["ms"] += self._delay_ms
+        return self._real.put_object(**kwargs)
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._real, name)
+
+
+def _slow_answer(world: World, shift: dict[str, int], delay_ms: int, content: bytes) -> None:
+    """The API answers after `delay_ms` on the collector's clock. httpx's own
+    timeouts run on the monotonic clock and never fire: what is tested is the
+    collector's own measure of the deadline after the call."""
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        shift["ms"] += delay_ms
+        return httpx.Response(201 if request.method == "POST" else 200, content=content)
+
+    world.api.respond = respond
+
+
+def _handled(caplog: pytest.LogCaptureFixture) -> dict[str, Any]:
+    [record] = [r for r in caplog.records if r.getMessage() == "relay.handled"]
+    fields: dict[str, Any] = record.fields  # type: ignore[attr-defined]
+    fields["level"] = record.levelno
+    return fields
+
+
+def test_a_reply_ready_before_the_deadline_is_sent(
+    world: World, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    caplog.set_level(logging.INFO, logger="cmp_relay.collector")
+    shift = {"ms": 0}
+    _shift_clock(monkeypatch, shift)
+    _slow_answer(world, shift, 20_000, b'{"ok":true}')  # 5 s of 25 left after
+    rid, keys = world.send(method="POST", path=f"/c/{TOKEN}/consent", body=b"{}")
+    world.pump()
+    assert world.reply(rid, keys).status == 201
+    fields = _handled(caplog)
+    assert fields["outcome"] == "executed"
+    assert "reply" not in fields
+    assert fields["level"] == logging.INFO
+
+
+def test_a_read_whose_answer_comes_after_the_deadline_gets_no_reply(
+    world: World, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    caplog.set_level(logging.INFO, logger="cmp_relay.collector")
+    shift = {"ms": 0}
+    _shift_clock(monkeypatch, shift)
+    _slow_answer(world, shift, 26_000, b'{"name":"Asha Verma"}')
+    world.send()
+    world.pump()
+    assert len(world.api.calls) == 1
+    assert world.replies() == []
+    assert world.depth(world.request_q) == 0  # the read's message still goes
+    fields = _handled(caplog)
+    assert fields["outcome"] == "executed"
+    assert fields["status"] == 200
+    assert fields["reply"] == "too_late"
+    assert fields["level"] == logging.WARNING
+    assert "Asha" not in json.dumps(fields)
+
+
+def test_a_write_done_after_the_deadline_stays_executed_but_gets_no_reply(
+    world: World, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    caplog.set_level(logging.INFO, logger="cmp_relay.collector")
+    shift = {"ms": 0}
+    _shift_clock(monkeypatch, shift)
+    _slow_answer(world, shift, 26_000, b'{"id":"c1"}')
+    world.send(method="POST", path=f"/c/{TOKEN}/consent", body=b"{}")
+    world.pump()
+    assert len(world.api.calls) == 1  # once, and never again
+    assert world.replies() == []
+    assert world.depth(world.request_q) == 0
+    fields = _handled(caplog)
+    # The API recorded the write: the log says so, and that no reply went.
+    assert fields["outcome"] == "executed"
+    assert fields["status"] == 201
+    assert fields["reply"] == "too_late"
+
+
+def test_a_large_reply_ready_after_the_deadline_is_never_stored(
+    world: World, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    caplog.set_level(logging.INFO, logger="cmp_relay.collector")
+    shift = {"ms": 0}
+    _shift_clock(monkeypatch, shift)
+    s3 = _SlowPut(world.s3, shift, 0)
+    http = httpx.Client(transport=httpx.MockTransport(world.api))
+    collector = Collector(world.settings, sqs=world.sqs, s3=s3, http=http)
+    _slow_answer(world, shift, 26_000, b"Asha Verma " * 40_000)
+    world.send(path="/me/consents/c1/record")
+    world.pump(collector)
+    assert s3.puts == 0
+    assert world.objects() == []
+    assert world.replies() == []
+    assert _handled(caplog)["reply"] == "too_late"
+
+
+def test_a_large_reply_stored_after_the_deadline_is_removed_not_sent(
+    world: World, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    caplog.set_level(logging.INFO, logger="cmp_relay.collector")
+    shift = {"ms": 0}
+    _shift_clock(monkeypatch, shift)
+    # The answer comes with 5 s left; storing its body takes 10 s.
+    s3 = _SlowPut(world.s3, shift, 10_000)
+    http = httpx.Client(transport=httpx.MockTransport(world.api))
+    collector = Collector(world.settings, sqs=world.sqs, s3=s3, http=http)
+    _slow_answer(world, shift, 20_000, b"Asha Verma " * 40_000)
+    world.send(path="/me/consents/c1/record")
+    world.pump(collector)
+    assert s3.puts == 1
+    assert world.objects() == []  # stored, then removed
+    assert world.replies() == []
+    assert world.depth(world.request_q) == 0
+    fields = _handled(caplog)
+    assert fields["outcome"] == "executed"
+    assert fields["reply"] == "too_late"
+    assert "Asha" not in json.dumps(fields)
+
+
+def test_a_large_reply_stored_in_time_is_sent(
+    world: World, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    caplog.set_level(logging.INFO, logger="cmp_relay.collector")
+    shift = {"ms": 0}
+    _shift_clock(monkeypatch, shift)
+    s3 = _SlowPut(world.s3, shift, 3_000)  # 5 s left, 2 s once stored
+    http = httpx.Client(transport=httpx.MockTransport(world.api))
+    collector = Collector(world.settings, sqs=world.sqs, s3=s3, http=http)
+    content = b"Asha Verma " * 40_000
+    _slow_answer(world, shift, 20_000, content)
+    rid, keys = world.send(path="/me/consents/c1/record")
+    world.pump(collector)
+    response = world.reply(rid, keys)
+    assert response.body is not None and response.body.s3_key is not None
+    assert world.body_of(response, keys) == content
+    assert "reply" not in _handled(caplog)
+
+
 # ------------------------------------------------------ at most once, once
 
 

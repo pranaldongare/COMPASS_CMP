@@ -86,8 +86,26 @@ class LocalAesProvider:
             raise DkmsError("the master key must be at least 32 bytes")
         if not 0 < version < 256:
             raise DkmsError("the key version must fit in one byte")
+        previous = previous or {}
+        # The settings already refuse both of these at startup; they are
+        # checked again here because this constructor is also called directly,
+        # by tests and scripts, and the failure is silent if it is not. The
+        # mapping below used to be built with the ring spread after the active
+        # key, so a retired key under the active number replaced it: new
+        # ciphertext was sealed under retired material while its header named
+        # the active version. Neither order is right, so neither is chosen.
+        if version in previous:
+            raise DkmsError(
+                f"version {version} is both the active key and a retired one; "
+                "a retired key must have a number of its own"
+            )
+        for old, material in previous.items():
+            if not 0 < old < 256:
+                raise DkmsError(f"retired key version {old} does not fit in one byte")
+            if len(material) < 32:
+                raise DkmsError(f"the retired key for version {old} must be at least 32 bytes")
         self._version = version
-        self._masters: dict[int, bytes] = {version: master_key, **(previous or {})}
+        self._masters: dict[int, bytes] = {**previous, version: master_key}
         #: Derived lazily and kept: HKDF is cheap, but not per record per field.
         self._keys: dict[tuple[int, DataType], AESGCM] = {}
 

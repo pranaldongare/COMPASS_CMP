@@ -25,11 +25,14 @@ from cmp.api.dependencies import (
     RightsReader,
     RightsWriter,
 )
+from cmp.core.logging import get_logger
 from cmp.db.pool import across_offices, connection, transaction
 from cmp.domain.datavault import checks, erasures
 from cmp.domain.datavault import connection as settings
 from cmp.domain.rights import service as rights
 from cmp.schemas.common import Out, Schema
+
+log = get_logger("cmp.datavault")
 
 connection_router = APIRouter(prefix="/datavault-connection", tags=["datavault"])
 request_router = APIRouter(prefix="/requests", tags=["datavault"])
@@ -233,6 +236,13 @@ async def _ask_each(
     """Send each instruction with no transaction open, write each answer, and
     read the request's DataVault view back."""
     for send in sends:
+        # The last look before it is DataVault's (review ARCH-8): a hold, a
+        # closure or a move since the instruction was made ready withholds it.
+        async with transaction() as conn:
+            withheld = await erasures.gate(conn, send)
+        if withheld:
+            log.warning("datavault.erasure_withheld", reference=send.reference, why=withheld)
+            continue
         answer = await erasures.ask(send)
         async with transaction() as conn:
             await erasures.store(conn, send, answer, actor_id=principal.user_id)

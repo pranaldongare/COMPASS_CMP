@@ -130,8 +130,11 @@ class HttpSmsTransport:
 #: not a zero (E.164).
 _E164: Final = re.compile(r"\+[1-9][0-9]{7,14}")
 
-#: How long a national number is where the default country code is India's.
-_NATIONAL_DIGITS: Final = 10
+#: How long a national number is, by country code, for the plans whose length
+#: is fixed (2026-11-20, review SEC-5). A national number for one of these that
+#: is not this long is refused rather than guessed at. A default country code
+#: not listed here is taken on trust, as before, and checked only as E.164.
+_NATIONAL_DIGITS: Final[dict[str, int]] = {"91": 10, "1": 10}
 
 
 def to_e164(stored: str, country_code: str) -> str:
@@ -139,20 +142,33 @@ def to_e164(stored: str, country_code: str) -> str:
 
     A mobile is stored as it was typed, less its punctuation: with a plus if
     one was typed, and with no country code assumed if none was
-    (`normalise_mobile`). SNS takes E.164 only. A number with a plus is taken
-    as it is. One without loses its leading zeros - a trunk prefix (`098…`) or
-    an international one (`0091…`) - and gets `country_code` in front, unless
-    it carries it already: it starts with the code and is exactly ten digits
-    longer, the length of India's national number. So `9198765432`, ten digits
-    that happen to start with 91, is a national number and gets the code;
-    `919876543210` has it.
+    (`normalise_mobile`). SNS takes E.164 only.
+
+    * With a plus, it is international and taken as it is.
+    * Starting `00`, it is international too - the prefix dialled for "+" -
+      and the country code is the one written after it. Stripping the zeros
+      and putting the default code in front, as this did before, sent
+      `0044…` to India (review SEC-5).
+    * Otherwise it is national: one trunk zero (`098…`) is dropped, and the
+      default code is put in front unless the number carries it already. For
+      a plan of fixed length (India, North America) the number must then be
+      exactly the national length, or the code and the national length; any
+      other length is refused, never sent somewhere else. So `9198765432`,
+      ten digits that happen to start with 91, is a national number and gets
+      the code; `919876543210` has it.
     """
     number = normalise_mobile(stored)
-    if not number.startswith("+"):
-        digits = number.lstrip("0")
-        carries_code = (
-            digits.startswith(country_code) and len(digits) == len(country_code) + _NATIONAL_DIGITS
-        )
+    if number.startswith("00"):
+        number = "+" + number[2:]
+    elif not number.startswith("+"):
+        digits = number[1:] if number.startswith("0") else number
+        national = _NATIONAL_DIGITS.get(country_code)
+        if national is None or len(digits) == national:
+            carries_code = False
+        elif digits.startswith(country_code) and len(digits) == len(country_code) + national:
+            carries_code = True
+        else:
+            raise ValueError("not a national number of the default country's plan")
         number = "+" + (digits if carries_code else country_code + digits)
     if not _E164.fullmatch(number):
         raise ValueError("not a phone number SNS can send to")
@@ -232,9 +248,9 @@ class SnsSmsTransport:
         who = obscure(to)
         try:
             number = to_e164(to, self._country_code)
-        except ValueError as exc:
+        except ValueError:
             log.error("sms.gateway_refused", to=who, code="bad_number")
-            raise RuntimeError("SNS cannot send to this number: not E.164") from exc
+            raise RuntimeError("SNS cannot send to this number: not E.164") from None
 
         attributes: dict[str, dict[str, str]] = {
             "AWS.SNS.SMS.SMSType": {"DataType": "String", "StringValue": "Transactional"}
@@ -257,31 +273,43 @@ class SnsSmsTransport:
             )
         except (aws.ConnectTimeoutError, aws.ReadTimeoutError) as exc:
             log.warning("sms.gateway_timeout", to=who)
-            raise TimeoutError(f"SNS timed out: {type(exc).__name__}") from exc
-        except aws.SSLError as exc:
+            raise TimeoutError(f"SNS timed out: {type(exc).__name__}") from None
+        except aws.SSLError:
             log.warning(
                 "sms.gateway_tls_failed",
                 to=who,
                 hint=f"is the proxy inspecting sns.{self._region}.amazonaws.com?",
             )
-            raise ConnectionError("SNS could not be reached: the TLS handshake failed") from exc
+            raise ConnectionError("SNS could not be reached: the TLS handshake failed") from None
         except (aws.ConnectionError, aws.HTTPClientError) as exc:
             log.warning("sms.gateway_unreachable", to=who)
-            raise ConnectionError(f"SNS unreachable: {type(exc).__name__}") from exc
+            raise ConnectionError(f"SNS unreachable: {type(exc).__name__}") from None
         except aws.ClientError as exc:
             status = int(exc.response.get("ResponseMetadata", {}).get("HTTPStatusCode") or 0)
             code = str(exc.response.get("Error", {}).get("Code") or "")
             if status == 429 or status >= 500 or code in _SNS_BUSY:
                 log.warning("sms.gateway_busy", to=who, status=status, code=code)
-                raise GatewayBusy(f"SNS answered {status} {code}") from exc
+                raise GatewayBusy(f"SNS answered {status} {code}") from None
             # A bad number, a number that opted out, a key that may not
-            # publish: SNS's words can quote the number, so only its code.
+            # publish: SNS's words can quote the number, so only its code -
+            # and the provider's exception is dropped from the chain (`from
+            # None`) everywhere here, since a worker's traceback renders it
+            # (review SEC-7).
             log.error("sms.gateway_refused", to=who, status=status, code=code)
-            raise RuntimeError(f"SNS refused the text: {status} {code}") from exc
+            raise RuntimeError(f"SNS refused the text: {status} {code}") from None
+        except (aws.CredentialRetrievalError, aws.MetadataRetrievalError) as exc:
+            # The chain asked something for credentials - a credential
+            # process, the container or instance metadata endpoint - and it
+            # did not answer this time. That passes, so it is retried like an
+            # endpoint outage (review SCALE-6); configuration that is plainly
+            # missing or wrong, below, is not.
+            log.warning("sms.credentials_unavailable", reason=type(exc).__name__)
+            raise ConnectionError(
+                f"SNS credentials not available yet: {type(exc).__name__}"
+            ) from None
         except (
             aws.NoCredentialsError,
             aws.PartialCredentialsError,
-            aws.CredentialRetrievalError,
             aws.ProfileNotFound,
             aws.ConfigNotFound,
             aws.TokenRetrievalError,
@@ -293,10 +321,10 @@ class SnsSmsTransport:
                 hint="this process found no usable AWS credentials: check AWS_PROFILE and "
                 "AWS_SHARED_CREDENTIALS_FILE in its environment",
             )
-            raise RuntimeError(f"SNS has no credentials: {type(exc).__name__}") from exc
+            raise RuntimeError(f"SNS has no credentials: {type(exc).__name__}") from None
         except aws.BotoCoreError as exc:
             log.error("sms.gateway_refused", to=who, code=type(exc).__name__)
-            raise RuntimeError(f"SNS could not send the text: {type(exc).__name__}") from exc
+            raise RuntimeError(f"SNS could not send the text: {type(exc).__name__}") from None
 
         message_id = response.get("MessageId")
         log.info("sms.delivered", to=who, transport="sns", message_id=message_id)

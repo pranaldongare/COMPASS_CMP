@@ -32,6 +32,9 @@ import {
   registerVerify,
   type RegistrationDetails,
 } from "@/features/auth";
+// Not through the index: that file is shared with the console, which has no
+// sign-up (`shared-files.test.ts`).
+import { handOverContact, useHandedOverContact } from "@/features/auth/contact-handover";
 import { ApiError } from "@/lib/errors";
 import { safeRedirectPath } from "@/lib/security";
 import { useAuth } from "@/providers";
@@ -72,9 +75,14 @@ function SignUpFlow() {
   // Sent here by sign-in or a consent link that found no account for a
   // contact (2026-11-16): it is filled in, and the reason is said once. It
   // only populates a field; codes still have to arrive where she says.
+  //
+  // The URL says only that she was sent (`unregistered=1`); the contact
+  // itself comes through this tab's storage, read once and removed, so it is
+  // never in the history, a log or a Referer (review SEC-6). Storage
+  // blocked: the field stays empty.
   const params = useSearchParams();
-  const arrivedWith = (params.get("contact") ?? "").trim().slice(0, 254);
-  const unregistered = params.get("unregistered") === "1" && arrivedWith !== "";
+  const arrivedWith = useHandedOverContact("sign-up", params.get("unregistered") === "1");
+  const unregistered = arrivedWith !== "";
   const arrivedByEmail = arrivedWith.includes("@");
 
   const form = useForm<Values>({
@@ -86,6 +94,14 @@ function SignUpFlow() {
       dob: "",
     },
   });
+
+  // When the page hydrates, the first render has no storage to read, so the
+  // value arrives a render later than the form's defaults.
+  React.useEffect(() => {
+    if (arrivedWith && !form.getValues(arrivedByEmail ? "email" : "mobile")) {
+      form.setValue(arrivedByEmail ? "email" : "mobile", arrivedWith);
+    }
+  }, [arrivedWith, arrivedByEmail, form]);
 
   const onSubmit = form.handleSubmit(async (values) => {
     setError(null);
@@ -170,7 +186,9 @@ function SignUpFlow() {
             </p>
             <p className="mt-2">
               <Link
-                href={`/sign-in?contact=${encodeURIComponent(taken.value)}`}
+                // The contact goes through this tab's storage, not the URL (SEC-6).
+                href="/sign-in?prefill=1"
+                onClick={() => handOverContact(taken.value, "sign-in")}
                 className="font-medium text-accent-text underline underline-offset-2"
               >
                 Sign in with this {taken.field}
@@ -366,7 +384,9 @@ function VerifyStep({ details }: { details: RegistrationDetails }) {
         <p className="text-center text-sm text-text-muted">
           If you have already finished signing up,{" "}
           <Link
-            href={`/sign-in?contact=${encodeURIComponent(mobile)}`}
+            // The mobile goes through this tab's storage, not the URL (SEC-6).
+            href="/sign-in?prefill=1"
+            onClick={() => handOverContact(mobile, "sign-in")}
             className="font-medium text-accent-text hover:underline"
           >
             sign in instead
