@@ -143,6 +143,17 @@ class TestWorkerSide:
                 return {"delivered": True}
 
         monkeypatch.setattr(sms, "build_sms_transport", lambda: Gateway())
+        # The default text carries a link, not the words (2026-11-20); an
+        # office that puts the words back in is still held to the limit.
+        monkeypatch.setattr(
+            messaging,
+            "load_overrides",
+            lambda: {
+                "breach_notice_direct:sms": {
+                    "body": "{breach_reference}: {what_happened} {notice_url} - {organisation}"
+                }
+            },
+        )
         with pytest.raises(messaging.MessageTooLong):
             messaging.deliver(
                 Message.BREACH_NOTICE_DIRECT, to="+919000000001", **self._direct("x" * 2000)

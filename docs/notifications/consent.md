@@ -141,7 +141,7 @@ Key `withdrawal_confirmation` · channels: email, sms
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_withdrawal_confirmation` (`backend/api/src/cmp/tasks/notifications/withdrawal.py:38`) |
-| Queued from | `backend/api/src/cmp/domain/consent/service.py:849` |
+| Queued from | `backend/api/src/cmp/domain/consent/service.py:855` |
 | Variables | `reference` (The new record's reference.), `stopped` (The purposes withdrawn, comma-separated.), `continuing` (The purposes still in force, comma-separated, or empty.), `continuing_note` (A sentence about what continues, or empty when nothing does.), `rights_url` (Where to ask for erasure.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Your withdrawal has been recorded`

@@ -358,6 +358,9 @@ class Event:
     BREACH_NOTICE_SENT = "breach.notice_sent"
     #: Written against her: the notice is in her account. Her portal's bell.
     BREACH_NOTICE_DELIVERED = "breach_notice.delivered"
+    #: A person with no account opened the notice's link with the code sent to
+    #: the mobile it went to (2026-11-20). Against the breach, no actor.
+    BREACH_NOTICE_OPENED = "breach_notice.opened"
     # Breach tickets (S3-08), against `breach_ticket`, subject the holder.
     BREACH_TICKET_ASSIGNED = "breach_ticket.assigned"
     BREACH_TICKET_MESSAGE = "breach_ticket.message"

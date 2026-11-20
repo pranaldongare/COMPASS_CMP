@@ -64,7 +64,7 @@ The API (`_production_guards` in `core/config.py`):
 | `CORS_ORIGINS` contains `*` | With `allow_credentials`, that hands the session to any origin |
 | `SMTP_SERVER` is empty | Email would go to the local outbox, which writes nothing outside local/test; a code nobody receives is a sign-in nobody completes |
 | `SENDER_EMAIL` is on `example.org` or `example.com` | Mail from a placeholder address is mail a real server may refuse and nobody can reply to |
-| `SMS_TRANSPORT` is not `http` or `sns` | The same, for the data principal's primary sign-in. With `http`, `SMS_HTTP_URL` must be `https://`; with `sns`, `SMS_SNS_REGION` must be an AWS Region, `SMS_DEFAULT_COUNTRY_CODE` 1 to 3 digits, and `SMS_SNS_SENDER_ID` empty or one SNS takes (both checked in any environment) |
+| `SMS_TRANSPORT` is not `http` or `sns` | The same, for the data principal's primary sign-in. With `http`, `SMS_HTTP_URL` must be `https://`; with `sns`, `SMS_SNS_REGION` must be an AWS Region, `SMS_DEFAULT_COUNTRY_CODE` 91 (texts go to India only), and `SMS_SNS_SENDER_ID` empty or one SNS takes (both checked in any environment) |
 | `DKMS_ENABLED` is false | Personal data would be written in the clear, and nothing would ever report it |
 | `BLIND_INDEX_KEY` starts `dev-only` or is under 32 bytes | Every lookup hash could be recomputed by anyone holding this repository |
 | The database user (`POSTGRES_USER`) is a superuser or holds `BYPASSRLS` | No row-level security policy binds such a role, so the wall between the offices would stand in the schema and stop nothing ([ADR 0032](../decisions/0032-offices-are-logical-tenants-in-one-database.md)). Checked against the live database at startup, outside `local` and `test` |
@@ -319,10 +319,11 @@ credentials and the proxy; the API reads the setting and never publishes.
   `credential_process`, as the relay's collector uses.
 - **The proxy** is `HTTPS_PROXY` and `NO_PROXY`. `sns.<region>.amazonaws.com`
   on port 443 must be allowed, with no TLS inspection.
-- **Numbers.** SNS takes E.164 only. A mobile stored with a plus goes as it
-  is; one stored without gets `SMS_DEFAULT_COUNTRY_CODE` in front on its way
-  out (`9876543210`, `09876543210` and `919876543210` all go as
-  `+919876543210`). The stored value does not change.
+- **Numbers.** Texts go to Indian mobiles only (2026-11-20). `9876543210`,
+  `09876543210`, `919876543210`, `0091 98765 43210` and `+91 98765 43210` all
+  go as `+919876543210`; any other number - a foreign code, another length -
+  is refused before it is sent, by either gateway, and forms refuse it where
+  it is typed. The stored value does not change.
 - **The sandbox.** A new AWS account sends only to numbers verified in the
   SNS console (up to 10), and to nobody else: every other text is refused
   and logged as `sms.gateway_refused`. In test mode (`EMAIL_REDIRECT_TO`) a

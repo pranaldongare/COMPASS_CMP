@@ -2088,6 +2088,151 @@
         }
       }
     },
+    "/breach-notices/{token}": {
+      "get": {
+        "tags": [
+          "breach notices"
+        ],
+        "summary": "What the link opens, before the code",
+        "operationId": "open_link_breach_notices__token__get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 64,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachNoticeLinkOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breach-notices/{token}/code": {
+      "post": {
+        "tags": [
+          "breach notices"
+        ],
+        "summary": "Send a code to the mobile",
+        "operationId": "send_code_breach_notices__token__code_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 64,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Acknowledged"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/breach-notices/{token}/open": {
+      "post": {
+        "tags": [
+          "breach notices"
+        ],
+        "summary": "Enter the code: the notice",
+        "operationId": "open_notice_breach_notices__token__open_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 64,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BreachNoticeCodeIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BreachNoticeByLinkOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/incident-reports/code": {
       "post": {
         "tags": [
@@ -26309,6 +26454,80 @@
         "title": "BreachNoticeAccountOut",
         "description": "Rule 7(2)(b)(vi). Present whether or not anything was sent."
       },
+      "BreachNoticeByLinkOut": {
+        "properties": {
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "approved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approved At"
+          },
+          "what_happened": {
+            "type": "string",
+            "title": "What Happened"
+          },
+          "consequences": {
+            "type": "string",
+            "title": "Consequences"
+          },
+          "measures": {
+            "type": "string",
+            "title": "Measures"
+          },
+          "protective_steps": {
+            "type": "string",
+            "title": "Protective Steps"
+          },
+          "contact": {
+            "type": "string",
+            "title": "Contact"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reference",
+          "version",
+          "approved_at",
+          "what_happened",
+          "consequences",
+          "measures",
+          "protective_steps",
+          "contact"
+        ],
+        "title": "BreachNoticeByLinkOut",
+        "description": "The notice, in full: the five things Rule 7(1) requires."
+      },
+      "BreachNoticeCodeIn": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 10,
+            "minLength": 4,
+            "pattern": "^[0-9]+$",
+            "title": "Code"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "title": "BreachNoticeCodeIn"
+      },
       "BreachNoticeContentOut": {
         "properties": {
           "key": {
@@ -26394,6 +26613,25 @@
         "type": "object",
         "title": "BreachNoticeIn",
         "description": "The five things Rule 7(1) requires. A draft may leave any empty;\napproval may not. Written to be sent to everyone listed: name nobody."
+      },
+      "BreachNoticeLinkOut": {
+        "properties": {
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "code_goes_to": {
+            "type": "string",
+            "title": "Code Goes To"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reference",
+          "code_goes_to"
+        ],
+        "title": "BreachNoticeLinkOut",
+        "description": "What the link alone shows."
       },
       "BreachNoticeOut": {
         "properties": {
@@ -44966,6 +45204,18 @@
           "copyable": {
             "type": "boolean",
             "title": "Copyable",
+            "default": false
+          },
+          "editors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Editors"
+          },
+          "editable": {
+            "type": "boolean",
+            "title": "Editable",
             "default": false
           },
           "attachable": {

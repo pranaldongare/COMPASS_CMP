@@ -64,6 +64,9 @@ class Scope:
     #: address they typed (0058). Keyed on the address's `contact_key`, so
     #: Redis holds no address of somebody who may be blowing a whistle.
     INCIDENT_REPORT = "incident_report"
+    #: Somebody with no account opening a breach notice's link, proving the
+    #: mobile it was sent to (2026-11-20). Keyed "<notice uuid>:<contact uuid>".
+    BREACH_NOTICE = "breach_notice"
     #: Development only: the stand-in provider's sign-in, proving the address
     #: typed on its page (`SSO_MOCK`). Keyed "<state>:<email>".
     SSO_MOCK = "sso_mock"

@@ -45,6 +45,10 @@ No request body.
     "description": "string",
     "group": "string",
     "copyable": false,
+    "editors": [
+      "string"
+    ],
+    "editable": false,
     "attachable": false,
     "copies": [
       {
@@ -110,6 +114,10 @@ No request body.
   "description": "string",
   "group": "string",
   "copyable": false,
+  "editors": [
+    "string"
+  ],
+  "editable": false,
   "attachable": false,
   "copies": [
     {
@@ -267,6 +275,10 @@ Request body required: **yes**.
   "description": "string",
   "group": "string",
   "copyable": false,
+  "editors": [
+    "string"
+  ],
+  "editable": false,
   "attachable": false,
   "copies": [
     {
@@ -360,6 +372,10 @@ Request body required: **yes**.
   "description": "string",
   "group": "string",
   "copyable": false,
+  "editors": [
+    "string"
+  ],
+  "editable": false,
   "attachable": false,
   "copies": [
     {
@@ -443,6 +459,10 @@ No request body.
   "description": "string",
   "group": "string",
   "copyable": false,
+  "editors": [
+    "string"
+  ],
+  "editable": false,
   "attachable": false,
   "copies": [
     {
@@ -528,6 +548,8 @@ Every address the message is now copied to; an empty list copies it to nobody.
 | `description` | `string` | Yes | — | — |
 | `group` | `string` | Yes | — | — |
 | `copyable` | `boolean` | No | default: `False` | — |
+| `editors` | array of `string` | No | — | — |
+| `editable` | `boolean` | No | default: `False` | — |
 | `attachable` | `boolean` | No | default: `False` | — |
 | `copies` | array of [`CopyOut`](#schema-copyout) | No | — | — |
 | `deployment_copies` | `integer` | No | default: `0` | — |

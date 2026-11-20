@@ -103,16 +103,15 @@ class TestAStoredNumberBecomesE164:
             ("+919876543210", "+919876543210"),
             # Ten digits that happen to start with 91: a national number.
             ("9198765432", "+919198765432"),
-            # A plus is taken at its word, whatever the default.
-            ("+12065550101", "+12065550101"),
         ],
     )
     def test_it_is_sent_as(self, stored: str, sent: str) -> None:
         assert transport.to_e164(stored, "91") == sent
 
-    def test_another_default_country_code(self) -> None:
-        assert transport.to_e164("2065550101", "1") == "+12065550101"
-        assert transport.to_e164("12065550101", "1") == "+12065550101"
+    def test_india_is_the_only_default(self) -> None:
+        """Texts go to Indian mobiles only (the product owner, 2026-11-20)."""
+        with pytest.raises(ValueError):
+            transport.to_e164("2065550101", "1")
 
     @pytest.mark.parametrize("stored", ["12345", "", "+0123456789", "+9198765432109876543"])
     def test_what_is_no_phone_number_is_refused(self, stored: str) -> None:
@@ -120,19 +119,14 @@ class TestAStoredNumberBecomesE164:
             transport.to_e164(stored, "91")
 
     @pytest.mark.parametrize(
-        ("stored", "sent"),
-        [
-            # Review SEC-5: `00` is the international prefix. A UK number
-            # (Ofcom's drama range) went to India as +9144...
-            ("00447700900123", "+447700900123"),
-            ("0044 7700 900123", "+447700900123"),
-            ("+447700900123", "+447700900123"),
-        ],
+        "stored",
+        # Review SEC-5: `0044…` went to India as +9144…; now any foreign
+        # number is refused, however written (India only, 2026-11-20).
+        ["00447700900123", "0044 7700 900123", "+447700900123", "+12065550101"],
     )
-    def test_an_explicit_foreign_code_is_kept_whatever_the_default(
-        self, stored: str, sent: str
-    ) -> None:
-        assert transport.to_e164(stored, "91") == sent
+    def test_a_foreign_number_is_refused_not_rewritten(self, stored: str) -> None:
+        with pytest.raises(ValueError):
+            transport.to_e164(stored, "91")
 
     @pytest.mark.parametrize(
         ("stored", "default"),
@@ -142,8 +136,6 @@ class TestAStoredNumberBecomesE164:
             ("987654321", "91"),
             ("98765432101", "91"),
             ("9198765432101", "91"),
-            # ...and a seven-digit local number where the default is 1.
-            ("5550101", "1"),
         ],
     )
     def test_a_national_number_of_the_wrong_length_is_refused(

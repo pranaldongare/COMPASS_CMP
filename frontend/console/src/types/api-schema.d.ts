@@ -916,6 +916,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/breach-notices/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What the link opens, before the code */
+        get: operations["open_link_breach_notices__token__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breach-notices/{token}/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a code to the mobile */
+        post: operations["send_code_breach_notices__token__code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/breach-notices/{token}/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enter the code: the notice */
+        post: operations["open_notice_breach_notices__token__open_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/incident-reports/code": {
         parameters: {
             query?: never;
@@ -8811,6 +8862,33 @@ export interface components {
             /** Versions */
             versions: components["schemas"]["BreachNoticeVersionCountOut"][];
         };
+        /**
+         * BreachNoticeByLinkOut
+         * @description The notice, in full: the five things Rule 7(1) requires.
+         */
+        BreachNoticeByLinkOut: {
+            /** Reference */
+            reference: string;
+            /** Version */
+            version: number;
+            /** Approved At */
+            approved_at: string | null;
+            /** What Happened */
+            what_happened: string;
+            /** Consequences */
+            consequences: string;
+            /** Measures */
+            measures: string;
+            /** Protective Steps */
+            protective_steps: string;
+            /** Contact */
+            contact: string;
+        };
+        /** BreachNoticeCodeIn */
+        BreachNoticeCodeIn: {
+            /** Code */
+            code: string;
+        };
         /** BreachNoticeContentOut */
         BreachNoticeContentOut: {
             /** Key */
@@ -8834,6 +8912,16 @@ export interface components {
             protective_steps?: string | null;
             /** Contact */
             contact?: string | null;
+        };
+        /**
+         * BreachNoticeLinkOut
+         * @description What the link alone shows.
+         */
+        BreachNoticeLinkOut: {
+            /** Reference */
+            reference: string;
+            /** Code Goes To */
+            code_goes_to: string;
         };
         /** BreachNoticeOut */
         BreachNoticeOut: {
@@ -15103,6 +15191,13 @@ export interface components {
              * @default false
              */
             copyable: boolean;
+            /** Editors */
+            editors?: string[];
+            /**
+             * Editable
+             * @default false
+             */
+            editable: boolean;
             /**
              * Attachable
              * @default false
@@ -16676,6 +16771,103 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    open_link_breach_notices__token__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachNoticeLinkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_code_breach_notices__token__code_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Acknowledged"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    open_notice_breach_notices__token__open_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BreachNoticeCodeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BreachNoticeByLinkOut"];
                 };
             };
             /** @description Validation Error */

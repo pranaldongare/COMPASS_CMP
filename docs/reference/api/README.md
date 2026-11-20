@@ -1,6 +1,6 @@
 # API documentation
 
-Reference for **414 operations over 363 paths**, grouped by OpenAPI module/tag.
+Reference for **417 operations over 366 paths**, grouped by OpenAPI module/tag.
 
 ## How to read an endpoint
 
@@ -19,6 +19,7 @@ Generated values are structural examples, not production credentials or semantic
 |---|---:|---|
 | Audit | 7 | [`modules/audit/api.md`](modules/audit/api.md) |
 | Auth | 15 | [`modules/auth/api.md`](modules/auth/api.md) |
+| Breach Notices | 3 | [`modules/breach_notices/api.md`](modules/breach_notices/api.md) |
 | Breach Settings | 7 | [`modules/breach_settings/api.md`](modules/breach_settings/api.md) |
 | Breach Tickets | 7 | [`modules/breach_tickets/api.md`](modules/breach_tickets/api.md) |
 | Breaches | 58 | [`modules/breaches/api.md`](modules/breaches/api.md) |

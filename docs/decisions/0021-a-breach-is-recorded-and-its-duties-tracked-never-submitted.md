@@ -81,7 +81,15 @@ for an extension, or for a determination made by a person.
   every channel is an append-only delivery row - the account Rule 7(2)(b)(vi)
   asks for. A resend adds only what is missing; an update is a new version sent
   to everyone. The principals' duty completes by delivery, never by hand, and
-  reopens for people listed after it. The words are sealed like every other
+  reopens for people listed after it. Amended 2026-11-20 (review DPDP-6,
+  Legal's answer): the duty completes once every listed person has an
+  outcome, even if some could not be reached, and the notice placed in a
+  person's account counts as notifying them. But the account given to the
+  Board says "notified" only of those reached - in their account, or by an
+  email or SMS delivered - and states apart how many could not be reached
+  and how many await an outcome; the completion's record carries both. A
+  person with no account reached only by mobile is sent a link to the notice
+  that opens with a code sent to that mobile, not the notice itself. The words are sealed like every other
   narrative about the breach; the worker opens them at `deliver()`.
 - **The Board's documents are drafted, never sent.** The initial intimation
   (7(2)(a)) and the detailed report (7(2)(b)(i)-(vi)) are generated from the

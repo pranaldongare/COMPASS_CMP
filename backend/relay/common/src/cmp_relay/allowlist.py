@@ -130,6 +130,10 @@ PUBLIC_ROUTES: tuple[tuple[str, str], ...] = (
     # Reporting an incident, with no account (public/incident_reports, ADR 0037)
     ("POST", "/incident-reports/code"),
     ("POST", "/incident-reports"),
+    # A breach notice by its link, for somebody with no account (2026-11-20)
+    ("GET", "/breach-notices/{token}"),
+    ("POST", "/breach-notices/{token}/code"),
+    ("POST", "/breach-notices/{token}/open"),
     # An outside holder's ticket (public/holder_tickets)
     ("GET", "/holder-tickets/{token}"),
     ("POST", "/holder-tickets/{token}/code"),

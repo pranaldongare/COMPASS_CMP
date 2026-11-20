@@ -256,8 +256,8 @@ async def settle(conn: Conn, breach: Row, *, actor_id: int | None) -> bool:
         return False
     # Who was actually told, beside the count the duty settles on (review
     # DPDP-6): a person every channel failed for has an outcome, not a notice.
-    # Whether the duty should complete while anybody is unreached is Legal's
-    # call; until then it settles as ADR 0021 says, and says so on the record.
+    # The duty completes all the same once everybody has an outcome (Legal,
+    # 2026-11-20), and its record says how many were reached and how many not.
     reached = await repo.reach(conn, breach_id)
     await breach_repo.add_obligation_event(
         conn,
@@ -412,18 +412,18 @@ async def account_for_report(conn: Conn, *, breach_uuid: str) -> Row:
         )
     else:
         with_account = listed - contacts
+        # Placement in her account is a notice (Legal, 2026-11-20); somebody
+        # with no account is notified once an email or SMS was delivered.
         parts = [
-            f"{notified} of the {listed} Data Principals listed as affected have been notified "
-            "by an email or SMS that was delivered"
+            f"{notified} of the {listed} Data Principals listed as affected have been notified"
             + (
-                f"; the notice is also in the account of each of the {with_account} with one"
+                f": the notice is in the account of each of the {with_account} with one"
                 if with_account
                 else ""
             )
             + (
-                f"; the other {contacts} have no account"
-                if contacts and with_account
-                else "; they have no account and were written to by email and SMS"
+                f"{'; the other' if with_account else ': the'} {contacts} with no account were "
+                "written to by email and SMS, and are notified once one was delivered"
                 if contacts
                 else ""
             )
@@ -431,13 +431,8 @@ async def account_for_report(conn: Conn, *, breach_uuid: str) -> Row:
         ]
         if not_reached:
             parts.append(
-                f"{not_reached} could not be reached: every email and SMS to them failed "
-                "after retrying"
-                + (
-                    ", though the notice is in the account of those with one."
-                    if with_account
-                    else "."
-                )
+                f"{not_reached} with no account could not be reached: every email and SMS "
+                "to them failed after retrying."
             )
         if awaiting:
             parts.append(f"{awaiting} are awaiting the outcome of a notice still being sent.")

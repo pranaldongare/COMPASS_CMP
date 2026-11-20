@@ -198,7 +198,8 @@ async def job(conn: Conn, delivery_uuid: str) -> Row | None:
     return await fetch_one(
         conn,
         f"""SELECT d.delivery_uuid, d.notice_id, d.auth_user_id, d.contact_id, d.channel,
-                   d.attempt, d.status,
+                   d.attempt, d.status, n.notice_uuid::text AS notice_uuid,
+                   c.contact_uuid::text AS contact_uuid,
                    n.breach_id, coalesce(rec.reference, b.reference) AS reference,
                    {", ".join("n." + c for c in CONTENTS)},
                    coalesce(u.email, c.email) AS email, coalesce(u.mobile, c.mobile) AS mobile,
@@ -251,9 +252,9 @@ async def reach(conn: Conn, breach_id: int) -> Row:
     """Each listed person in one of three states, from the latest attempt on
     each channel of every version (review DPDP-6, 2026-11-20):
 
-    * `reached` - an email or SMS to her was delivered. The notice placed
-      in her account does not count on its own: what that establishes is an
-      open question for Legal (2026-11-20), and the report says it apart;
+    * `reached` - the notice was placed in her account, or an email or SMS
+      to her was delivered. Placement in her account counts (Legal,
+      2026-11-20): it is where she reads it, and it is there at the send;
     * `awaiting` - not reached, and something is still queued or nothing has
       gone yet;
     * `not_reached` - not reached, and every email and SMS failed after
@@ -268,7 +269,7 @@ async def reach(conn: Conn, breach_id: int) -> Row:
         f"""WITH latest AS ({_LATEST}),
                  per AS (
                    SELECT auth_user_id, contact_id,
-                          bool_or(status = 'delivered' AND channel <> 'portal') AS reached,
+                          bool_or(status = 'delivered') AS reached,
                           bool_or(status = 'queued') AS waiting
                      FROM latest GROUP BY auth_user_id, contact_id
                  ),
@@ -342,3 +343,26 @@ async def for_person(conn: Conn, person_id: int) -> list[Row]:
              ORDER BY d.recorded_at DESC, n.version DESC""",
         (person_id,),
     )
+
+
+async def by_link(conn: Conn, *, notice_uuid: str, contact_uuid: str) -> Row | None:
+    """An approved notice and a contact of its breach, as a link names them
+    (2026-11-20). Across offices: the person opening it has no session."""
+    from cmp.db.pool import across_offices
+
+    async with across_offices(conn):
+        return await fetch_one(
+            conn,
+            """SELECT n.notice_id, n.notice_uuid::text AS notice_uuid, n.version,
+                      n.what_happened, n.consequences, n.measures, n.protective_steps,
+                      n.contact, n.approved_at,
+                      b.breach_id, b.breach_uuid::text AS breach_uuid,
+                      coalesce(rec.reference, b.reference) AS reference,
+                      c.contact_uuid::text AS contact_uuid, c.mobile
+                 FROM breach_notice n
+                 JOIN breach b ON b.breach_id = n.breach_id
+                 LEFT JOIN breach_recording rec ON rec.breach_id = b.breach_id
+                 JOIN breach_contact c ON c.breach_id = n.breach_id AND c.contact_uuid = %s
+                WHERE n.notice_uuid = %s AND n.approved_at IS NOT NULL""",
+            (contact_uuid, notice_uuid),
+        )

@@ -79,3 +79,15 @@ def send_contact_confirmation(user_uuid: str, contact: str, code: str) -> dict[s
 @shared_task(name="cmp.notifications.send_password_reset", **RETRY_KW)
 def send_password_reset(user_uuid: str, email: str, code: str) -> dict[str, Any]:
     return deliver(Message.PASSWORD_RESET, to=email, code=code, minutes=15)
+
+
+@shared_task(name="cmp.notifications.send_breach_notice_code", **RETRY_KW)
+def send_breach_notice_code(mobile: str, code: str, breach_reference: str) -> dict[str, Any]:
+    """The code that opens a breach notice's link (2026-11-20)."""
+    return deliver(
+        Message.BREACH_NOTICE_CODE,
+        to=mobile,
+        code=code,
+        minutes=settings.otp_ttl_s // 60,
+        breach_reference=breach_reference,
+    )

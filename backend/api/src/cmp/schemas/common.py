@@ -111,7 +111,20 @@ LongText = Annotated[str, StringConstraints(min_length=1, max_length=20_000)]
 #: the lawful document. The request body limit still bounds it - `MAX_UPLOAD_BYTES`,
 #: 25 MB by default, enforced by `BodyLimitMiddleware`.
 NoticeText = Annotated[str, StringConstraints(min_length=1)]
-Mobile = Annotated[str, StringConstraints(min_length=6, max_length=20, pattern=r"^\+?[0-9 \-]+$")]
+#: Indian only (2026-11-20, `cmp.validation.contacts.indian_mobile`).
+Mobile = Annotated[
+    str,
+    StringConstraints(min_length=6, max_length=20, pattern=r"^\+?[0-9 \-]+$"),
+    AfterValidator(lambda v: _indian(v)),
+]
+
+
+def _indian(value: str) -> str:
+    from cmp.validation.contacts import require_indian_mobile
+
+    return require_indian_mobile(value)
+
+
 OtpCode = Annotated[str, StringConstraints(min_length=4, max_length=10, pattern=r"^[0-9]+$")]
 
 #: Where a processor is, for s.16: ISO 3166-1 alpha-2, upper-cased on the way in.

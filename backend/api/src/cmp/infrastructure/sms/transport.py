@@ -17,7 +17,7 @@ from typing import Any, Final, Protocol, runtime_checkable
 from cmp.core.config import settings
 from cmp.core.logging import get_logger
 from cmp.infrastructure.email.transport import obscure
-from cmp.validation.contacts import normalise_mobile
+from cmp.validation.contacts import indian_mobile
 
 log = get_logger("cmp.infrastructure.sms")
 
@@ -130,48 +130,22 @@ class HttpSmsTransport:
 #: not a zero (E.164).
 _E164: Final = re.compile(r"\+[1-9][0-9]{7,14}")
 
-#: How long a national number is, by country code, for the plans whose length
-#: is fixed (2026-11-20, review SEC-5). A national number for one of these that
-#: is not this long is refused rather than guessed at. A default country code
-#: not listed here is taken on trust, as before, and checked only as E.164.
-_NATIONAL_DIGITS: Final[dict[str, int]] = {"91": 10, "1": 10}
 
-
-def to_e164(stored: str, country_code: str) -> str:
+def to_e164(stored: str, country_code: str = "91") -> str:
     """A stored mobile as SNS takes it, or `ValueError`.
 
-    A mobile is stored as it was typed, less its punctuation: with a plus if
-    one was typed, and with no country code assumed if none was
-    (`normalise_mobile`). SNS takes E.164 only.
-
-    * With a plus, it is international and taken as it is.
-    * Starting `00`, it is international too - the prefix dialled for "+" -
-      and the country code is the one written after it. Stripping the zeros
-      and putting the default code in front, as this did before, sent
-      `0044…` to India (review SEC-5).
-    * Otherwise it is national: one trunk zero (`098…`) is dropped, and the
-      default code is put in front unless the number carries it already. For
-      a plan of fixed length (India, North America) the number must then be
-      exactly the national length, or the code and the national length; any
-      other length is refused, never sent somewhere else. So `9198765432`,
-      ten digits that happen to start with 91, is a national number and gets
-      the code; `919876543210` has it.
+    Texts go to Indian mobiles only (the product owner, 2026-11-20), so this
+    is `+91` and the ten digits, from however the number was stored: with a
+    plus, `0091`, `91` and twelve digits, a trunk `0`, or the ten digits
+    alone (`indian_mobile`). Any other number is refused before Publish -
+    never sent somewhere it was not meant for (review SEC-5). `country_code`
+    is kept for its callers and must be 91; settings refuse anything else.
     """
-    number = normalise_mobile(stored)
-    if number.startswith("00"):
-        number = "+" + number[2:]
-    elif not number.startswith("+"):
-        digits = number[1:] if number.startswith("0") else number
-        national = _NATIONAL_DIGITS.get(country_code)
-        if national is None or len(digits) == national:
-            carries_code = False
-        elif digits.startswith(country_code) and len(digits) == len(country_code) + national:
-            carries_code = True
-        else:
-            raise ValueError("not a national number of the default country's plan")
-        number = "+" + (digits if carries_code else country_code + digits)
-    if not _E164.fullmatch(number):
-        raise ValueError("not a phone number SNS can send to")
+    if country_code != "91":
+        raise ValueError("texts go to Indian mobiles only")
+    number = indian_mobile(stored)
+    if number is None or not _E164.fullmatch(number):
+        raise ValueError("not an Indian mobile number")
     return number
 
 

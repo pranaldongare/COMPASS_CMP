@@ -11,6 +11,12 @@ describe("isPublicPath", () => {
     expect(isPublicPath("/report-incident")).toBe(true);
   });
 
+  it("lets a breach notice's link through, for somebody with no account", () => {
+    expect(isPublicPath(`/breach-notice/${"a".repeat(64)}`)).toBe(true);
+    // Her own notices, on her account, stay behind sign-in.
+    expect(isPublicPath("/breach-notices")).toBe(false);
+  });
+
   it("keeps an account's pages behind sign-in", () => {
     expect(isPublicPath("/home")).toBe(false);
     expect(isPublicPath("/my-consents")).toBe(false);

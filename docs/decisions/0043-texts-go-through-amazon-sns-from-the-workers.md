@@ -32,12 +32,14 @@ travel in its payload anyway.
    on the proxy, with no TLS inspection.
 4. A number stored without a country code gets `SMS_DEFAULT_COUNTRY_CODE`
    (91) on its way to SNS. Stored values do not change. Amended 2026-11-20
-   (review SEC-5): a number starting `00` is international and keeps the
-   code written after it (`0044…` is `+44…`, not `+9144…`); for a default
-   code whose plan has a fixed length (91 and 1, ten digits) a national
-   number of any other length is refused before Publish, never sent
-   somewhere else. Supporting further plans, or how a person corrects an
-   ambiguous number, is a product decision still open.
+   (review SEC-5) and by the product owner: **texts go to Indian mobiles
+   only.** A number is `+91` and ten digits however it was written (`+91…`,
+   `0091…`, `91…` with twelve digits, a trunk `0`, or the ten digits alone);
+   anything else is refused where it is typed - every form's mobile field and
+   a breach's contact list say "Enter an Indian mobile number" - and again
+   before any text goes, whichever gateway (`NotAnIndianMobile`). A foreign
+   number stored before the rule is never rewritten into an Indian one.
+   `SMS_DEFAULT_COUNTRY_CODE` must be 91.
 5. Production accepts `http` or `sns`.
 6. Failures keep the HTTP transport's contract: passing trouble is a
    `ConnectionError` or `TimeoutError` and is retried; a refusal is a

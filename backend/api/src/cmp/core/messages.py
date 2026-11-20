@@ -148,6 +148,8 @@ class Message(StrEnum):
     AUDIT_CHAIN_BROKEN = "audit_chain_broken"
     DATAVAULT_PROBLEM = "datavault_problem"
     SETTINGS_CHANGED = "settings_changed"
+    #: The code that opens a breach notice's link, to the mobile it was sent to.
+    BREACH_NOTICE_CODE = "breach_notice_code"
 
 
 @dataclass(frozen=True, slots=True)
@@ -1212,8 +1214,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
         title="Personal data breach notice, to someone with no account",
         description=(
             "Rule 7(1), to a person the breach affected who has no account here - named in a "
-            "list sent to the Privacy Office (2026-10-07). The same five as the notice, in "
-            "full, with no account to point to: by email, and by SMS."
+            "list sent to the Privacy Office (2026-10-07). By email, the same five as the "
+            "notice, in full. By SMS, a link to the notice that opens only with a code sent "
+            "to the same mobile (2026-11-20): a text cannot carry the whole notice."
         ),
         group="Breach",
         channels=BOTH,
@@ -1244,6 +1247,11 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
                 "Rule 7(1)(e): whom to ask.",
                 "The Privacy Office, privacy@example.org, +91 20 0000 0000",
             ),
+            Variable(
+                "notice_url",
+                "The notice on the portal, opened with a code sent to this mobile (SMS only).",
+                "https://portal.example.org/breach-notice/AbCd1234",
+            ),
             ORGANISATION,
         ),
         email_subject="{organisation}: a personal data breach that may affect you",
@@ -1257,9 +1265,9 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
             "Questions\n{contact}"
         ),
         sms_body=(
-            "A personal data breach may affect your data ({breach_reference}). "
-            "{what_happened} What you can do: {protective_steps} Questions: {contact}"
-            " - {organisation}"
+            "A personal data breach may affect your data ({breach_reference}). Read what "
+            "happened and what you can do at {notice_url} - a code will be sent to this "
+            "number to open it. - {organisation}"
         ),
         to=(
             "Each person a breach affected who has no account, at the email and mobile in the "
@@ -2846,6 +2854,24 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
         ),
         sms_body=None,
         to="The person whose temporary login ended, at the work email it was given to.",
+    ),
+    Junction(
+        key=Message.BREACH_NOTICE_CODE,
+        title="Code to open a breach notice",
+        description=(
+            "Proves that whoever opened the link in a breach notice's text holds the mobile "
+            "it was sent to, before the notice is shown (2026-11-20). SMS only."
+        ),
+        group="Breach",
+        channels=(Channel.SMS,),
+        variables=(CODE, MINUTES, BREACH_REFERENCE, ORGANISATION),
+        email_subject=None,
+        email_body=None,
+        sms_body=(
+            "Your OTP to open the notice {breach_reference} is {code}. It is valid for "
+            "{minutes} minutes. Do not share it with anyone. - {organisation}"
+        ),
+        to="The person the notice was sent to, at the mobile in the breach's list.",
     ),
     # ----------------------------------------------------------- oversight
     Junction(

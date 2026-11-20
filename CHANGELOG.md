@@ -7,6 +7,24 @@ as a release yet.
 
 ## [Unreleased]
 
+### Changed (the product owner's and Legal's answers, 2026-11-20)
+- **Texts go to Indian mobiles only.** Every form's mobile field, and a
+  breach's contact list, refuse any other number ("Enter an Indian mobile
+  number"); `deliver()` refuses one stored before the rule, whichever gateway
+  (`NotAnIndianMobile`); `SMS_DEFAULT_COUNTRY_CODE` must be 91. Stored values
+  are not changed.
+- **A breach notice to somebody with no account comes by text as a link**:
+  `/breach-notice/<token>` on the portal opens the notice in full only with a
+  code sent to the mobile on the breach's list (*Code to open a breach
+  notice*). New public routes `/breach-notices/{token}`, `/code`, `/open`,
+  in the relay's allowlist; opening is on the breach's trail
+  (`breach_notice.opened`). The email still carries all five.
+- **The principals' duty completes when everybody has an outcome**, reached or
+  not, and the notice placed in an account counts as notifying (ADR 0021
+  amended); the Board's account still says "notified" only of those reached.
+- **An erasure instruction's last look is the cut-off**: a hold placed after
+  it is recorded after the instruction went (ADR 0039 amended).
+
 ### Fixed (review of 58aafbe, 2026-11-20)
 - **The Board is no longer told a person was notified when every email and
   SMS to them failed** (DPDP-6). "Notified" now means an email or SMS was

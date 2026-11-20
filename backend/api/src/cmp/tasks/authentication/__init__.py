@@ -5,6 +5,7 @@ is waiting for each of these with a code box open.
 """
 
 from cmp.tasks.authentication.otp import (
+    send_breach_notice_code,
     send_consent_code,
     send_contact_confirmation,
     send_login_code,
@@ -14,6 +15,7 @@ from cmp.tasks.authentication.otp import (
 )
 
 __all__ = [
+    "send_breach_notice_code",
     "send_consent_code",
     "send_contact_confirmation",
     "send_login_code",

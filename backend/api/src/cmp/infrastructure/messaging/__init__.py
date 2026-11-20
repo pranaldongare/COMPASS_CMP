@@ -171,6 +171,10 @@ class MessageTooLong(RuntimeError):
     retry will mend, as the transports' contract has it."""
 
 
+class NotAnIndianMobile(RuntimeError):
+    """A text to a number that is not India's: refused, never retried."""
+
+
 def channel_for(contact: str) -> Channel:
     return Channel.EMAIL if "@" in contact else Channel.SMS
 
@@ -239,6 +243,15 @@ def deliver(
     if attachments and not j.attachable:
         raise ValueError(f"'{j.key.value}' does not carry files")
 
+    if ch is Channel.SMS:
+        from cmp.validation.contacts import indian_mobile
+
+        if indian_mobile(to) is None:
+            # Texts go to Indian mobiles only (the product owner, 2026-11-20),
+            # whichever gateway carries them. A number stored before that rule,
+            # or of another country, is refused here and never sent.
+            log.error("message.not_an_indian_mobile", message=j.key.value)
+            raise NotAnIndianMobile(f"'{j.key.value}' is not sent: not an Indian mobile number")
     subject, body = render(key, ch, variables)
     if ch is Channel.SMS and len(body) > MAX_RENDERED_SMS_CHARS:
         # Refused here, before any gateway, and said plainly (review SCALE-7,
@@ -350,6 +363,7 @@ __all__ = [
     "MAX_RENDERED_SMS_CHARS",
     "MIRROR_KEY",
     "MessageTooLong",
+    "NotAnIndianMobile",
     "Overrides",
     "channel_for",
     "common_variables",

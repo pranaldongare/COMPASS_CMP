@@ -603,10 +603,9 @@ class Settings(BaseSettings):
                     "SMS_SNS_REGION must be an AWS Region, such as ap-south-1, "
                     "when SMS_TRANSPORT=sns"
                 )
-            if not re.fullmatch(r"[1-9][0-9]{0,2}", self.sms_default_country_code):
-                raise ValueError(
-                    "SMS_DEFAULT_COUNTRY_CODE must be 1 to 3 digits with no plus, such as 91"
-                )
+            if self.sms_default_country_code != "91":
+                # Texts go to Indian mobiles only (the product owner, 2026-11-20).
+                raise ValueError("SMS_DEFAULT_COUNTRY_CODE must be 91: texts go to India only")
             sender = self.sms_sns_sender_id
             if sender and not (
                 re.fullmatch(r"[A-Za-z0-9-]{3,11}", sender) and re.search(r"[A-Za-z]", sender)

@@ -495,7 +495,7 @@ async def test_a_contact_failure_is_an_outcome_and_names_the_contact(
     # ...but not a notice (review DPDP-6): the Board is told she was not reached.
     report = await notices.account_for_report(conn, breach_uuid=uuid)
     assert (report["notified"], report["not_reached"], report["awaiting"]) == (0, 1, 0)
-    assert "1 could not be reached" in report["statement"]
+    assert "1 with no account could not be reached" in report["statement"]
     assert report["statement"].startswith("0 of the 1 ")
     # Sending again tries the failed SMS once more.
     await notices.send(conn, breach_uuid=uuid, actor_id=dpo)
@@ -552,7 +552,10 @@ async def test_notified_means_reached_and_a_retry_that_arrives_counts(
     report = await notices.account_for_report(conn, breach_uuid=uuid)
     # Asha: her email arrived though her SMS failed. Ravi: his only channel failed.
     assert (report["notified"], report["not_reached"], report["awaiting"]) == (1, 1, 0)
-    assert "1 of the 2 " in report["statement"] and "1 could not be reached" in report["statement"]
+    assert (
+        "1 of the 2 " in report["statement"]
+        and "1 with no account could not be reached" in report["statement"]
+    )
 
     # Sent again: Ravi's SMS is tried once more, and arrives.
     await notices.send(conn, breach_uuid=uuid, actor_id=dpo)

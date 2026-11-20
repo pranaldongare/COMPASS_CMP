@@ -11,7 +11,7 @@ import re
 from typing import Annotated
 
 import email_validator
-from pydantic import EmailStr, StringConstraints
+from pydantic import AfterValidator, EmailStr, StringConstraints
 
 from cmp.core.config import settings
 
@@ -43,7 +43,13 @@ Email = Annotated[EmailStr, StringConstraints(max_length=255)]
 #: written with a country code, spaces or dashes. Normalising aggressively would
 #: reject numbers people actually have, and a number we cannot reach is worse
 #: than a number stored with a space in it.
-Mobile = Annotated[str, StringConstraints(min_length=6, max_length=20, pattern=r"^\+?[0-9 \-]+$")]
+#: And Indian (2026-11-20): texts go to Indian mobiles only, so a number of
+#: any other country is refused where it is typed. Kept as typed.
+Mobile = Annotated[
+    str,
+    StringConstraints(min_length=6, max_length=20, pattern=r"^\+?[0-9 \-]+$"),
+    AfterValidator(lambda v: require_indian_mobile(v)),
+]
 
 #: Either of the above, for the sign-in form that accepts both.
 Contact = Annotated[str, StringConstraints(min_length=3, max_length=255)]
@@ -67,6 +73,45 @@ def normalise_mobile(value: str) -> str:
     # A plus before the first digit, however it is bracketed: "(+91) 90000 00001".
     plus = re.match(r"^[^0-9+]*\+", raw) is not None
     return ("+" if plus else "") + _NOT_DIGIT.sub("", raw)
+
+
+#: The one message every form and list gives a number that is not India's.
+NOT_INDIAN = "Enter an Indian mobile number: ten digits, with or without +91"
+
+
+def indian_mobile(value: str) -> str | None:
+    """The number as `+91` and its ten digits, or None if it is not India's.
+
+    Texts go to Indian mobiles only (the product owner, 2026-11-20). Accepted,
+    however punctuated: `+91 98765 43210`, `0091…`, `91…` with twelve digits,
+    a trunk `0` and ten digits, or the ten digits alone. Anything else - a
+    foreign code, a number of another length - is None, so that it is refused
+    where it is typed rather than sent somewhere it was not meant for.
+    """
+    number = normalise_mobile(value)
+    if number.startswith("+"):
+        digits = number[1:]
+        national = digits[2:] if digits.startswith("91") else ""
+    elif number.startswith("00"):
+        digits = number[2:]
+        national = digits[2:] if digits.startswith("91") else ""
+    elif len(number) == 12 and number.startswith("91"):
+        national = number[2:]
+    elif len(number) == 11 and number.startswith("0"):
+        national = number[1:]
+    else:
+        national = number
+    if len(national) != 10 or not national.isdigit() or national.startswith("0"):
+        return None
+    return "+91" + national
+
+
+def require_indian_mobile(value: str) -> str:
+    """For a form's mobile field: the value as typed, if it is India's.
+    Stored as typed, as before; only its shape is checked."""
+    if indian_mobile(value) is None:
+        raise ValueError(NOT_INDIAN)
+    return value
 
 
 def normalise_contact(contact: str) -> str:

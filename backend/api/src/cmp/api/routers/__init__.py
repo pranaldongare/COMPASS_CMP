@@ -25,6 +25,7 @@ ROUTERS: tuple[APIRouter, ...] = (
     public.rights_router,
     # An outside holder's ticket, by its link (0049).
     public.holder_tickets_router,
+    public.breach_notices_router,
     # Reporting an incident with no account (0058).
     public.incident_reports_router,
     # Identity and the reference registry.

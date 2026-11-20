@@ -90,7 +90,8 @@ async def test_the_detailed_report_carries_all_six_items_and_the_account_of_noti
     }
     assert plain(report["assessment"]["nature_extent"]) == "One export file"
     account = report["notices"]
-    assert account["sent"] is True and account["listed"] == 1 and account["notified"] == 0
+    assert account["sent"] is True and account["listed"] == 1 and account["notified"] == 1
+    # The notice placed in her account notifies her (Legal, 2026-11-20).
     [version] = account["versions"]
     assert {c["channel"]: (c["delivered"], c["queued"]) for c in version["channels"]} == {
         "portal": (1, 0),

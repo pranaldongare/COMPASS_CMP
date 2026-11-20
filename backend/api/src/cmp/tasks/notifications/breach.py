@@ -162,9 +162,12 @@ def send_breach_notice(self: Any, delivery_uuid: str) -> dict[str, Any]:
             "contact": job["contact"],
         }
         if job.get("contact_id"):
-            # Somebody with no account (0045) is told in full, with no account
-            # to point to.
-            deliver(Message.BREACH_NOTICE_DIRECT, to=contact, **words)
+            # Somebody with no account (0045) is told in full by email; by text,
+            # given a link to the notice that only this mobile opens (2026-11-20).
+            from cmp.domain.breach import notice_link
+
+            link = notice_link.url(str(job["notice_uuid"]), str(job["contact_uuid"]))
+            deliver(Message.BREACH_NOTICE_DIRECT, to=contact, notice_url=link, **words)
         else:
             deliver(Message.BREACH_NOTICE, to=contact, **words)
         sent = True

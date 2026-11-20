@@ -4,3 +4,4 @@
 
 export * from "@/features/breach-notices/api";
 export * from "@/features/breach-notices/queries";
+export * from "@/features/breach-notices/link-api";

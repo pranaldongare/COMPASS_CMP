@@ -639,8 +639,13 @@ listed, on the platform or not.
   and points to her account, where the same notice is. **A contact with no
   account** is sent the email and the SMS only, in their own words (*Personal
   data breach notice, to someone with no account*): the email has all five
-  with no account to point to, and the SMS carries what happened, what they
-  can do and whom to ask.
+  with no account to point to. The SMS carries a link instead of the notice
+  (2026-11-20): a page on the portal, `/breach-notice/<token>`, that shows the
+  reference and, masked, the mobile a code goes to, and opens the notice in
+  full once the code sent to the mobile on the breach's list comes back. The
+  link names one approved version and one contact, under a keyed digest, so
+  it opens nothing for anybody else; opening it is on the breach's trail
+  (`breach_notice.opened`). A text goes to an Indian mobile only.
 - **A resend never duplicates.** Send writes only what is missing for the
   latest approved version: people newly listed, channels never tried, and a new
   attempt where the last one failed. Two sends at once write each state once
@@ -662,7 +667,11 @@ listed, on the platform or not.
   failed after the worker's retries (five, from five seconds and doubling; a
   failure no retry will mend, such as a contact that cannot be opened, is
   recorded at once). Nobody can mark it done by hand. People listed after it
-  completed **reopen** it, and the next send notifies them.
+  completed **reopen** it, and the next send notifies them. It completes even
+  if somebody could not be reached on any channel (Legal, 2026-11-20); the
+  account for the Board then says "notified" only of those reached - in their
+  account, or by an email or SMS delivered - and how many could not be
+  reached, and the completion's record carries both.
 
 The words are sealed, like every narrative about the breach; the console and
 her portal open them, and the worker opens them at `deliver()`. They go to

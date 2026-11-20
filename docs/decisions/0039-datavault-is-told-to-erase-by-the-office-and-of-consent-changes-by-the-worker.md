@@ -62,6 +62,17 @@ The product owner settled the rest on 2026-11-13, one question at a time.
    DataVault never received it. One DataVault refused outright (a 4xx but a
    timeout or too many at once) it never took: its assets are marked not
    erased, with why, and a later press sends them under a new `erasure_id`.
+   **The last look (2026-11-20, review ARCH-8; Legal and Engineering agreed
+   the cut-off).** Each instruction is made ready and committed, then sent
+   with no transaction open. Just before it goes, a short transaction takes
+   a lock per person that placing a hold on that person also takes, and reads
+   the hold, the request's state and its office afresh: a hold placed, the
+   request closed or moved to the other office since it was made ready
+   withholds it, and it waits, unanswered, for "Check status". That commit is
+   the point after which the instruction is DataVault's: a hold placed after
+   it is recorded after the instruction went, which is accepted. An
+   instruction DataVault has already answered may always be asked about
+   again: it has it.
 6. **Closing does not wait for DataVault.** The page shows each asset's
    status and warns before closing how many are still pending.
 7. **Every consent change is told, by the worker.** A withdrawal in full or

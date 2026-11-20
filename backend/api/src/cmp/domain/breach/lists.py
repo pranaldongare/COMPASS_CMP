@@ -54,7 +54,7 @@ from cmp.infrastructure.spreadsheets import (
     read_rows,
 )
 from cmp.validation import normalise_mobile
-from cmp.validation.contacts import Email
+from cmp.validation.contacts import Email, indian_mobile
 
 Row = dict[str, Any]
 
@@ -390,9 +390,9 @@ async def _plan_contacts(conn: Conn, breach_id: int, reading: Reading) -> Plan:
                 continue
         if mobile:
             mobile = normalise_mobile(mobile)
-            digits = mobile.lstrip("+")
-            if not 8 <= len(digits) <= 15:
-                reading.refuse(number, "Not a mobile number: give it with its country code")
+            if indian_mobile(mobile) is None:
+                # Texts go to Indian mobiles only (2026-11-20).
+                reading.refuse(number, f"Not an Indian mobile number: {mobile[:20]}")
                 continue
         good.append(
             (
