@@ -10,6 +10,8 @@ client exists, a `v2` package can carry changed contracts while `v1` keeps
 serving the first one, and the mount point is one line in `bootstrap.routers`.
 """
 
+from cmp.api.routers.v1.analytics import reports_router
+from cmp.api.routers.v1.analytics import router as analytics_router
 from cmp.api.routers.v1.audit import router as audit_router
 from cmp.api.routers.v1.auth import router as auth_router
 from cmp.api.routers.v1.breach_settings import router as breach_settings_router
@@ -41,6 +43,7 @@ from cmp.api.routers.v1.transfers import router as transfers_router
 from cmp.api.routers.v1.users import router as users_router
 
 __all__ = [
+    "analytics_router",
     "audit_router",
     "auth_router",
     "breach_settings_router",
@@ -64,6 +67,7 @@ __all__ = [
     "portal_address_router",
     "projects_router",
     "registry_router",
+    "reports_router",
     "rights_router",
     "rights_subject_router",
     "system_router",

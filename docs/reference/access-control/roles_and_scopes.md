@@ -17,40 +17,48 @@ Roles refer to the **effective session role**. A staff account signed in through
 | `data_subject` | Data Subject |
 | `legal` | Legal PoC: the Legal office's officer for the HR track (ADR 0032, 0033). Holds the Legal office's categories, purposes, templates and versions, and its rights requests, breaches and legal holds as the DPO holds the DPO office's. |
 | `hr_user` | HR PoC: runs HR activities in the categories the administrator assigned them (`hr_poc_category`). |
+| `management` | Management: a read-only login to the analytics across both offices ([ADR 0045](../../decisions/0045-analytics-are-figures-counted-from-the-record.md)). Writes nothing but its own reports and the tickets addressed to it; always steps up to a second factor, whatever `MFA_REQUIRED_ROLES` lists. Sees Analytics, Tickets, Notifications and Profile. |
 | `breach_holder` | Temporary ticket holder: a breach-only login (S3-09, [ADR 0023](../../decisions/0023-breach-tickets-and-breach-only-logins.md)). Never given by hand; set while the person holds a breach ticket and put back when the last one ends. Signs in to the console with a password and the emailed second factor; sees Tickets, Notifications and Profile, and nothing else. |
 
 ## Static resource matrix
 
 `R` = resource read grant; `RW` = read/write grant. This table alone is insufficient to determine endpoint access: handlers and services can narrow or bypass the matrix. The endpoint matrix records those differences.
 
-| Resource | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| user | R / ALL | RW / ALL | NO | NO | NO | NO | NO | NO | R / ALL | NO |
-| purpose | RW / ALL | R / ALL | R / ALL | R / ALL | R / ALL | R / ALL | NO | NO | RW / ALL | NO |
-| processor | RW / ALL | RW / ALL | R / ALL | R / ALL | R / ALL | R / ALL | NO | NO | R / ALL | NO |
-| data_source | RW / ALL | RW / ALL | RW / SCOPED | RW / ALL | RW / SCOPED | R / ALL | NO | NO | NO | NO |
-| project | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | RW / OWN | NO | NO | R / ALL | RW / SCOPED |
-| approval | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | RW / OWN | NO | NO | NO | NO |
-| site | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | R / OWN | NO | NO | R / ALL | R / SCOPED |
-| notice | RW / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | RW / OWN [^notice] | NO | NO | R / ALL | R / SCOPED |
-| link | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | NO | NO | NO | R / ALL | RW / SCOPED |
-| consent | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | R / OWN | NO | NO | R / ALL | R / SCOPED |
-| export | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | NO | NO | NO | RW / ALL | RW / SCOPED |
-| import | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | R / OWN | NO | NO | NO | NO |
-| collection | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | R / OWN | NO | NO | NO | NO |
-| asset | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | R / OWN | NO | NO | NO | NO |
-| audit | R / ALL | R / ALL | NO | NO | NO | NO | NO | NO | R / ALL | NO |
-| message_template | RW / ALL | RW / ALL | NO | NO | NO | NO | NO | NO | NO | NO |
-| me | NO | NO | NO | NO | NO | NO | RW / OWN | NO | NO | NO |
-| rights_request | RW / ALL | RW / SCOPED | NO | NO | NO | NO | NO | NO | RW / ALL | NO |
-| legal_hold | RW / ALL | NO | NO | NO | NO | NO | NO | NO | RW / ALL | NO |
-| breach | RW / ALL (others 404) | NO | NO | NO | NO | NO | NO | NO | RW / ALL (others 404) | NO |
-| breach_settings | RW / ALL | RW / ALL | NO | NO | NO | NO | NO | NO | RW / ALL | NO |
-| restricted_country | RW / ALL | R / ALL | NO | NO | NO | NO | NO | NO | NO | NO |
-| notice_template | RW / ALL | NO | NO | NO | NO | NO | NO | NO | RW / ALL | NO |
-| hr_category | NO | R / ALL | NO | NO | NO | NO | NO | NO | RW / ALL | R / SCOPED |
-| ticket | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | NO | RW / OWN | RW / OWN | RW / OWN |
-| breach_ticket | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | NO | RW / OWN | RW / OWN | RW / OWN |
+| Resource | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC | Management |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| user | R / ALL | RW / ALL | NO | NO | NO | NO | NO | NO | R / ALL | NO | NO |
+| purpose | RW / ALL | R / ALL | R / ALL | R / ALL | R / ALL | R / ALL | NO | NO | RW / ALL | NO | NO |
+| processor | RW / ALL | RW / ALL | R / ALL | R / ALL | R / ALL | R / ALL | NO | NO | R / ALL | NO | NO |
+| data_source | RW / ALL | RW / ALL | RW / ALL | RW / ALL | RW / ALL | R / ALL | NO | NO | NO | NO | NO |
+| project | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | RW / OWN | NO | NO | R / ALL | RW / SCOPED | NO |
+| approval | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | RW / OWN | NO | NO | NO | NO | NO |
+| site | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | R / OWN | NO | NO | R / ALL | R / SCOPED | NO |
+| notice | RW / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | RW / OWN | NO | NO | R / ALL | R / SCOPED | NO |
+| link | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | NO | NO | NO | R / ALL | RW / SCOPED | NO |
+| consent | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | R / OWN | NO | NO | R / ALL | R / SCOPED | NO |
+| export | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | NO | NO | NO | RW / ALL | RW / SCOPED | NO |
+| import | RW / ALL | NO | RW / SCOPED | RW / SCOPED | RW / SCOPED | R / OWN | NO | NO | NO | NO | NO |
+| collection | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | R / OWN | NO | NO | NO | NO | NO |
+| asset | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | R / OWN | NO | NO | NO | NO | NO |
+| audit | R / ALL | R / ALL | NO | NO | NO | NO | NO | NO | R / ALL | NO | NO |
+| message_template | RW / ALL | RW / ALL | NO | NO | NO | NO | NO | NO | RW / ALL | NO | NO |
+| me | NO | NO | NO | NO | NO | NO | RW / OWN | NO | NO | NO | NO |
+| rights_request | RW / ALL | RW / SCOPED | NO | NO | NO | NO | NO | NO | RW / ALL | NO | NO |
+| legal_hold | RW / ALL | NO | NO | NO | NO | NO | NO | NO | RW / ALL | NO | NO |
+| breach | RW / ALL | NO | NO | NO | NO | NO | NO | NO | RW / ALL | NO | NO |
+| breach_settings | RW / ALL | RW / ALL | NO | NO | NO | NO | NO | NO | RW / ALL | NO | NO |
+| datavault_connection | NO | RW / ALL | NO | NO | NO | NO | NO | NO | NO | NO | NO |
+| portal_address | NO | RW / ALL | NO | NO | NO | NO | NO | NO | NO | NO | NO |
+| restricted_country | RW / ALL | R / ALL | NO | NO | NO | NO | NO | NO | NO | NO | NO |
+| notice_template | RW / ALL | NO | NO | NO | NO | NO | NO | NO | RW / ALL | NO | NO |
+| hr_category | NO | R / ALL | NO | NO | NO | NO | NO | NO | RW / ALL | R / SCOPED | NO |
+| ticket | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | NO | RW / OWN | RW / OWN | RW / OWN | RW / OWN |
+| breach_ticket | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | RW / OWN | NO | RW / OWN | RW / OWN | RW / OWN | RW / OWN |
+| analytics | R / ALL | NO | R / SCOPED | R / SCOPED | R / SCOPED | R / OWN | NO | NO | R / ALL | R / SCOPED | R / ALL |
+| audit_report | R / ALL | R / ALL | NO | NO | NO | NO | NO | NO | R / ALL | NO | NO |
+| health_report | NO | R / ALL | NO | NO | NO | NO | NO | NO | NO | NO | NO |
+| analytics_setting | R / ALL | RW / ALL | NO | NO | NO | NO | NO | NO | R / ALL | NO | R / ALL |
+| report | RW / ALL | RW / ALL | RW / SCOPED | RW / SCOPED | RW / SCOPED | RW / OWN | NO | NO | RW / ALL | RW / SCOPED | RW / ALL |
 
 ## What scopes mean in this code
 

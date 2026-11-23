@@ -25,6 +25,7 @@ and the rows each may see are a scope compiled into every query.
 | Data principal | `data_subject` | The person the data is about | Reads and withdraws her consents, sees her disclosures, makes and follows rights requests, names a nominee |
 | Legal PoC | `legal` | The Legal office | Governs the HR track: categories, HR purposes, templates and their versions, the category's processors; sees every HR register and the HR audit trail; runs the HR track's rights queue, breaches and legal holds |
 | HR PoC | `hr_user` | An HR point of contact | Creates activities in the categories assigned to them from an approved template version, chooses purposes, writes the description, mints and shares the open link, watches the activity's register by name, exports the consented list, answers tickets addressed to them |
+| Management | `management` | The people the organisation reports to | Reads the analytics - the management scorecard, the analytics and the record of processing - across both offices, combined or one at a time; asks for, schedules, downloads and deletes their reports; answers any ticket addressed to them; nothing else. Always steps up to a second factor ([ADR 0045](../decisions/0045-analytics-are-figures-counted-from-the-record.md)) |
 | Temporary ticket holder | `breach_holder` | Somebody inside the organisation, with no console login, asked to act on a breach or - since 0049 - to answer a rights ticket | Answers the breach and rights tickets addressed to them, and brings colleagues into a breach ticket; nothing else. Never given by hand: set when the DPO (or a holder) asks them by email, or a rights ticket is sent to their internal address; the administrator's End temporary access is the off switch ([ADR 0023](../decisions/0023-breach-tickets-and-breach-only-logins.md)) |
 
 ## The matrix
@@ -32,34 +33,41 @@ and the rows each may see are a scope compiled into every query.
 Each cell is a scope, and `+w` means the role may also write. A blank cell is
 denied: no wildcard, no inheritance.
 
-| Resource | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC |
-|---|---|---|---|---|---|---|---|---|---|---|
-| user | all | all +w |  |  |  |  |  |  | all |  |
-| purpose | all +w | all | all | all | all | all |  |  | all +w |  |
-| hr_category |  | all |  |  |  |  |  |  | all +w | scoped |
-| processor | all +w | all +w | all | all | all | all |  |  | all |  |
-| data_source | all +w | all +w | all +w | all +w | all +w | all |  |  |  |  |
-| project | all +w |  | scoped +w | scoped +w | scoped +w | own +w |  |  | all | scoped +w |
-| approval | all |  | scoped | scoped | scoped | own +w |  |  |  |  |
-| site | all +w |  | scoped +w | scoped +w | scoped +w | own |  |  | all | scoped |
-| notice | all +w |  | scoped | scoped | scoped | own +w |  |  | all | scoped |
-| notice_template | all +w |  |  |  |  |  |  |  | all +w |  |
-| link | all +w |  | scoped +w | scoped +w | scoped +w |  |  |  | all | scoped +w |
-| consent | all |  | scoped | scoped | scoped | own |  |  | all | scoped |
-| export | all +w |  | scoped +w | scoped +w | scoped +w |  |  |  | all +w | scoped +w |
-| import | all +w |  | scoped +w | scoped +w | scoped +w | own |  |  |  |  |
-| collection | all |  | scoped | scoped | scoped | own |  |  |  |  |
-| asset | all |  | scoped | scoped | scoped | own |  |  |  |  |
-| audit | all | all |  |  |  |  |  |  | all |  |
-| message_template | all +w | all +w |  |  |  |  |  |  |  |  |
-| rights_request | all +w | scoped +w |  |  |  |  |  |  | all +w |  |
-| legal_hold | all +w |  |  |  |  |  |  |  | all +w |  |
-| restricted_country | all +w | all |  |  |  |  |  |  |  |  |
-| breach | all +w |  |  |  |  |  |  |  | all +w |  |
-| breach_settings | all +w | all +w |  |  |  |  |  |  | all +w |  |
-| ticket | own +w | own +w | own +w | own +w | own +w | own +w |  | own +w | own +w | own +w |
-| breach_ticket | own +w | own +w | own +w | own +w | own +w | own +w |  | own +w | own +w | own +w |
-| me |  |  |  |  |  |  | own +w |  |  |  |
+| Resource | DPO | Admin | DCO | DCO Admin | RCO | R&D | Principal | Temporary holder | Legal PoC | HR PoC | Management |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| user | all | all +w |  |  |  |  |  |  | all |  |  |
+| purpose | all +w | all | all | all | all | all |  |  | all +w |  |  |
+| processor | all +w | all +w | all | all | all | all |  |  | all |  |  |
+| data_source | all +w | all +w | all +w | all +w | all +w | all |  |  |  |  |  |
+| project | all +w |  | scoped +w | scoped +w | scoped +w | own +w |  |  | all | scoped +w |  |
+| approval | all |  | scoped | scoped | scoped | own +w |  |  |  |  |  |
+| site | all +w |  | scoped +w | scoped +w | scoped +w | own |  |  | all | scoped |  |
+| notice | all +w |  | scoped | scoped | scoped | own +w |  |  | all | scoped |  |
+| link | all +w |  | scoped +w | scoped +w | scoped +w |  |  |  | all | scoped +w |  |
+| consent | all |  | scoped | scoped | scoped | own |  |  | all | scoped |  |
+| export | all +w |  | scoped +w | scoped +w | scoped +w |  |  |  | all +w | scoped +w |  |
+| import | all +w |  | scoped +w | scoped +w | scoped +w | own |  |  |  |  |  |
+| collection | all |  | scoped | scoped | scoped | own |  |  |  |  |  |
+| asset | all |  | scoped | scoped | scoped | own |  |  |  |  |  |
+| audit | all | all |  |  |  |  |  |  | all |  |  |
+| message_template | all +w | all +w |  |  |  |  |  |  | all +w |  |  |
+| me |  |  |  |  |  |  | own +w |  |  |  |  |
+| rights_request | all +w | scoped +w |  |  |  |  |  |  | all +w |  |  |
+| legal_hold | all +w |  |  |  |  |  |  |  | all +w |  |  |
+| breach | all +w |  |  |  |  |  |  |  | all +w |  |  |
+| breach_settings | all +w | all +w |  |  |  |  |  |  | all +w |  |  |
+| datavault_connection |  | all +w |  |  |  |  |  |  |  |  |  |
+| portal_address |  | all +w |  |  |  |  |  |  |  |  |  |
+| restricted_country | all +w | all |  |  |  |  |  |  |  |  |  |
+| notice_template | all +w |  |  |  |  |  |  |  | all +w |  |  |
+| hr_category |  | all |  |  |  |  |  |  | all +w | scoped |  |
+| ticket | own +w | own +w | own +w | own +w | own +w | own +w |  | own +w | own +w | own +w | own +w |
+| breach_ticket | own +w | own +w | own +w | own +w | own +w | own +w |  | own +w | own +w | own +w | own +w |
+| analytics | all |  | scoped | scoped | scoped | own |  |  | all | scoped | all |
+| audit_report | all | all |  |  |  |  |  |  | all |  |  |
+| health_report |  | all |  |  |  |  |  |  |  |  |  |
+| analytics_setting | all | all +w |  |  |  |  |  |  | all |  | all |
+| report | all +w | all +w | scoped +w | scoped +w | scoped +w | own +w |  |  | all +w | scoped +w | all +w |
 
 The R&D User's write on a notice is narrower than the row can say. They bring
 one, by uploading the filled-in document, re-uploading a corrected one, or

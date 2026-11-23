@@ -49,7 +49,8 @@ backend/api/
     main.py               ASGI entrypoint; `python -m cmp` supplies the event loop
     bootstrap/            assembly: factory, lifespan, middleware, routers, container
     api/
-      routers/v1/         audit, auth, breach_settings, breach_tickets, breaches, consents, dashboard,
+      routers/v1/         analytics (and /reports), audit, auth, breach_settings, breach_tickets,
+                          breaches, consents, dashboard,
                           delegations, exchange, legal_holds, me, messages,
                           notice_templates, notices, projects, registry, rights,
                           system, transfers, users
@@ -178,6 +179,7 @@ Both portals share one shape:
 | A queue | `tasks/app.py` (`task_routes`) |
 | An error code | `core/errors.py` |
 | An email or SMS wording | `core/messages.py` (the catalogue), `infrastructure/messaging/` (rendering and delivery) |
+| An analytics figure, a report kind, an audit report | `core/metrics.py` (the catalogue), `db/repositories/analytics.py` (how each is counted), `domain/analytics/` |
 | Which columns are sealed, and as what | `infrastructure/dkms/fields.py` (`ENCRYPTED_FIELDS`, `BLIND_INDEXED`, `NGRAM_INDEXED`) |
 | How a sealed column is looked up | `infrastructure/dkms/blind.py` |
 | Where a portal opens a sealed value | `src/app/dkms/decrypt/route.ts` and `src/lib/dkms/` in either portal |

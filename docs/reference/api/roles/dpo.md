@@ -2,15 +2,18 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `projects`, `approvals`, `notices`, `purposes`, `sites`, `collections`, `processors`, `sources`, `consents`, `links`, `exports`, `imports`, `requests`, `breaches`, `breach-settings`, `audit`, `users`, `messages`, `delegate`, `tickets`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `analytics`, `projects`, `approvals`, `notices`, `purposes`, `sites`, `collections`, `processors`, `sources`, `consents`, `links`, `exports`, `imports`, `requests`, `breaches`, `breach-settings`, `audit`, `users`, `messages`, `delegate`, `tickets`, `notifications`, `profile`.
 
 ## Resource access
 
 | Resource | Read | Write | Scope | What the scope means |
 |---|---:|---:|---|---|
+| `analytics` | Yes | No | `all` | All rows |
+| `analytics_setting` | Yes | No | `all` | All rows |
 | `approval` | Yes | No | `all` | All rows |
 | `asset` | Yes | No | `all` | All rows |
 | `audit` | Yes | No | `all` | All rows |
+| `audit_report` | Yes | No | `all` | All rows |
 | `breach` | Yes | Yes | `all` | All rows |
 | `breach_settings` | Yes | Yes | `all` | All rows |
 | `breach_ticket` | Yes | Yes | `own` | Own or addressed rows |
@@ -19,6 +22,7 @@ Navigation returned after sign-in: `dashboard`, `projects`, `approvals`, `notice
 | `data_source` | Yes | Yes | `all` | All rows |
 | `datavault_connection` | No | No | `none` | Denied |
 | `export` | Yes | Yes | `all` | All rows |
+| `health_report` | No | No | `none` | Denied |
 | `hr_category` | No | No | `none` | Denied |
 | `import` | Yes | Yes | `all` | All rows |
 | `legal_hold` | Yes | Yes | `all` | All rows |
@@ -31,6 +35,7 @@ Navigation returned after sign-in: `dashboard`, `projects`, `approvals`, `notice
 | `processor` | Yes | Yes | `all` | All rows |
 | `project` | Yes | Yes | `all` | All rows |
 | `purpose` | Yes | Yes | `all` | All rows |
+| `report` | Yes | Yes | `all` | All rows |
 | `restricted_country` | Yes | Yes | `all` | All rows |
 | `rights_request` | Yes | Yes | `all` | All rows |
 | `site` | Yes | Yes | `all` | All rows |

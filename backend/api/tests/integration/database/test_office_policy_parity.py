@@ -35,6 +35,10 @@ OWN = {
     # 0055 (open point F-21): the asset's project's office, or the placing
     # officer's for a hold on a person.
     "legal_hold",
+    # 0074 (ADR 0045): a report and its schedule, of one office or of both;
+    # one of both is read only by a session of no office.
+    "report",
+    "report_schedule",
 }
 
 #: The children, policed through their parent.

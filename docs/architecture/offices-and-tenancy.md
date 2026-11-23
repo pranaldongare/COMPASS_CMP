@@ -48,7 +48,10 @@ named below (0059 adds `breach_report` through `breach`, and
 `breach_report`);
 `template_version_language`, `template_version_purpose` through
 `template_version`; `category_processor`, `hr_poc_category` through
-`hr_category`.
+`hr_category`. `report` and `report_schedule` (0074, ADR 0045) carry an
+`office_id` of their own, NULL for a report of both offices: the policy
+hides those from a session of one office, so an officer never reads the other
+office's figures through a combined report.
 
 Not policed: `auth_user` and `person_type_history` (one person, both
 tracks), `audit_log` (one chain; the read is filtered), `processor`,

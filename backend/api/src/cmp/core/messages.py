@@ -150,6 +150,8 @@ class Message(StrEnum):
     SETTINGS_CHANGED = "settings_changed"
     #: The code that opens a breach notice's link, to the mobile it was sent to.
     BREACH_NOTICE_CODE = "breach_notice_code"
+    #: A scheduled report, attached (ADR 0045).
+    REPORT_READY = "report_ready"
 
 
 @dataclass(frozen=True, slots=True)
@@ -2873,6 +2875,33 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
         ),
         to="The person the notice was sent to, at the mobile in the breach's list.",
     ),
+    Junction(
+        key=Message.REPORT_READY,
+        title="A scheduled report",
+        description=(
+            "A report made on a schedule (ADR 0045), mailed to each active account of the roles "
+            "the schedule names - only roles that may read it - with the report attached."
+        ),
+        group="Reports",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("report_title", "The report.", "Management scorecard - October 2026"),
+            Variable("period", "The period it covers.", "October 2026"),
+            CONSOLE_URL,
+            ORGANISATION,
+        ),
+        email_subject="{report_title}",
+        email_body=(
+            "Your scheduled report, {report_title}, for {period}, is attached.\n\n"
+            "It is also kept under Analytics, Reports, in the console: {console_url}/analytics"
+            "?tab=reports\n\n"
+            "Please treat it as confidential and do not forward it outside the people it is "
+            "meant for."
+        ),
+        sms_body=None,
+        to="Each active account of the roles the schedule names.",
+        attachment="The report, as made: PDF, Excel or CSV.",
+    ),
     # ----------------------------------------------------------- oversight
     Junction(
         key=Message.AUDIT_CHAIN_BROKEN,
@@ -3069,6 +3098,8 @@ ATTACHABLE: Final[frozenset[Message]] = frozenset(
         Message.TICKET_MESSAGE,
         Message.BREACH_BOARD_REPORT,
         Message.BREACH_REPORT_FINALISED,
+        # A scheduled report, to the roles that may read it (ADR 0045).
+        Message.REPORT_READY,
     }
 )
 

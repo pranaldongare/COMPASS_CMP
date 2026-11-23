@@ -2,15 +2,18 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `projects`, `notices`, `processors`, `approvals`, `imports`, `collections`, `tickets`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `analytics`, `projects`, `notices`, `processors`, `approvals`, `imports`, `collections`, `tickets`, `notifications`, `profile`.
 
 ## Resource access
 
 | Resource | Read | Write | Scope | What the scope means |
 |---|---:|---:|---|---|
+| `analytics` | Yes | No | `own` | Own or addressed rows |
+| `analytics_setting` | No | No | `none` | Denied |
 | `approval` | Yes | Yes | `own` | Own or addressed rows |
 | `asset` | Yes | No | `own` | Own or addressed rows |
 | `audit` | No | No | `none` | Denied |
+| `audit_report` | No | No | `none` | Denied |
 | `breach` | No | No | `none` | Denied |
 | `breach_settings` | No | No | `none` | Denied |
 | `breach_ticket` | Yes | Yes | `own` | Own or addressed rows |
@@ -19,6 +22,7 @@ Navigation returned after sign-in: `dashboard`, `projects`, `notices`, `processo
 | `data_source` | Yes | No | `all` | All rows |
 | `datavault_connection` | No | No | `none` | Denied |
 | `export` | No | No | `none` | Denied |
+| `health_report` | No | No | `none` | Denied |
 | `hr_category` | No | No | `none` | Denied |
 | `import` | Yes | No | `own` | Own or addressed rows |
 | `legal_hold` | No | No | `none` | Denied |
@@ -31,6 +35,7 @@ Navigation returned after sign-in: `dashboard`, `projects`, `notices`, `processo
 | `processor` | Yes | No | `all` | All rows |
 | `project` | Yes | Yes | `own` | Own or addressed rows |
 | `purpose` | Yes | No | `all` | All rows |
+| `report` | Yes | Yes | `own` | Own or addressed rows |
 | `restricted_country` | No | No | `none` | Denied |
 | `rights_request` | No | No | `none` | Denied |
 | `site` | Yes | No | `own` | Own or addressed rows |

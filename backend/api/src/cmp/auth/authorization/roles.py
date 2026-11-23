@@ -67,5 +67,10 @@ def requires_mfa(role: Role | str, *, configured: tuple[str, ...] | None = None)
     # on a password alone.
     if str(role) == Role.BREACH_HOLDER.value:
         return True
+    # The same for management (ADR 0045): the role is newer than every
+    # deployed MFA_REQUIRED_ROLES, which list roles by name, and it reads the
+    # whole organisation's figures.
+    if str(role) == Role.MANAGEMENT.value:
+        return True
     allowed = configured if configured is not None else settings.mfa_required_roles
     return str(role) in allowed

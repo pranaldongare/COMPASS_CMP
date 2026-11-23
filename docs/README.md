@@ -18,7 +18,8 @@ you need. **Every document is in this tree.** The one exception is a
 **Working on a feature**
 
 - [Domain model](architecture/domain-model.md): the tables, the state machines, and the invariants the database holds
-- [Roles and access](domain/roles-and-access.md): the eight roles and what each may reach
+- [Roles and access](domain/roles-and-access.md): the eleven roles and what each may reach
+- [Analytics and reports](domain/analytics.md): the management scorecard, analytics, audit and health reports, the record of processing, and reports made, kept and scheduled ([ADR 0045](decisions/0045-analytics-are-figures-counted-from-the-record.md)); every figure is in the generated [reference](domain/analytics-metrics.md); [UAT cases](uat/analytics-uat-cases.md)
 - Behaviour, by obligation: [consent lifecycle](domain/consent-lifecycle.md), [collection and routing](domain/collection-and-routing.md), [rights requests](domain/rights-requests.md) (and [the ticket redesign](domain/rights-tickets-redesign.md) of 2026-10-08: the guided path, the review step, holders outside the console), [personal data breaches](domain/breaches.md), [messages the platform sends](domain/messages.md), [reading the audit trail](domain/audit-trail.md)
 - The HR track: [hr-track.md](domain/hr-track.md) - a second consent track governed by a Legal office: categories, approved template versions, activities, SSO on employee links, and how requests and breaches are routed by office; the wall between the offices is [offices-and-tenancy.md](architecture/offices-and-tenancy.md); the schema is [hr-track-migration-plan.md](database/hr-track-migration-plan.md); the plan, [hr-track-implementation-plan.md](plans/hr-track-implementation-plan.md), with its [open points](plans/hr-track-open-points.md) and [UAT cases](uat/hr-track-uat-cases.md)
 - [Personal data](domain/personal-data.md): every table, store and endpoint that holds or moves something about a person, and what protects it

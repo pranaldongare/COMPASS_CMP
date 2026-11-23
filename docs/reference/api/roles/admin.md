@@ -2,15 +2,18 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `users`, `messages`, `processors`, `sources`, `requests`, `breach-settings`, `datavault`, `portal-address`, `audit`, `delegate`, `tickets`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `analytics`, `users`, `messages`, `processors`, `sources`, `requests`, `breach-settings`, `datavault`, `portal-address`, `audit`, `delegate`, `tickets`, `notifications`, `profile`.
 
 ## Resource access
 
 | Resource | Read | Write | Scope | What the scope means |
 |---|---:|---:|---|---|
+| `analytics` | No | No | `none` | Denied |
+| `analytics_setting` | Yes | Yes | `all` | All rows |
 | `approval` | No | No | `none` | Denied |
 | `asset` | No | No | `none` | Denied |
 | `audit` | Yes | No | `all` | All rows |
+| `audit_report` | Yes | No | `all` | All rows |
 | `breach` | No | No | `none` | Denied |
 | `breach_settings` | Yes | Yes | `all` | All rows |
 | `breach_ticket` | Yes | Yes | `own` | Own or addressed rows |
@@ -19,6 +22,7 @@ Navigation returned after sign-in: `dashboard`, `users`, `messages`, `processors
 | `data_source` | Yes | Yes | `all` | All rows |
 | `datavault_connection` | Yes | Yes | `all` | All rows |
 | `export` | No | No | `none` | Denied |
+| `health_report` | Yes | No | `all` | All rows |
 | `hr_category` | Yes | No | `all` | All rows |
 | `import` | No | No | `none` | Denied |
 | `legal_hold` | No | No | `none` | Denied |
@@ -31,6 +35,7 @@ Navigation returned after sign-in: `dashboard`, `users`, `messages`, `processors
 | `processor` | Yes | Yes | `all` | All rows |
 | `project` | No | No | `none` | Denied |
 | `purpose` | Yes | No | `all` | All rows |
+| `report` | Yes | Yes | `all` | All rows |
 | `restricted_country` | Yes | No | `all` | All rows |
 | `rights_request` | Yes | Yes | `scoped` | Assigned project/organisational rows |
 | `site` | No | No | `none` | Denied |

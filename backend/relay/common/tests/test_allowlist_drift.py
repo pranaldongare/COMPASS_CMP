@@ -37,6 +37,8 @@ pytestmark = pytest.mark.skipif(
 #: Paths built by a helper: (file under src/, the expression) -> what it builds.
 HELPERS: dict[tuple[str, str], str] = {
     ("features/holder-ticket/api.ts", "base(token)"): "/holder-tickets/{token}",
+    # A breach notice by its link, for somebody with no account (2026-11-20).
+    ("features/breach-notices/link-api.ts", "base(token)"): "/breach-notices/{token}",
 }
 
 #: Calls that only pass on a path written by their caller, which is scanned.

@@ -73,6 +73,12 @@ MESSAGE_TEMPLATE: Final = "message_template"
 NOTICE_TEMPLATE: Final = "notice_template"
 #: A category of HR activity, the Legal office's registry (ADR 0033).
 HR_CATEGORY: Final = "hr_category"
+#: Analytics and reports (2026-11-23, ADR 0045).
+ANALYTICS: Final = "analytics"
+AUDIT_REPORT: Final = "audit_report"
+HEALTH_REPORT: Final = "health_report"
+ANALYTICS_SETTING: Final = "analytics_setting"
+REPORT: Final = "report"
 
 #: Every resource this system knows about. `verify_resources()` asserts the
 #: matrix and this set agree, so a resource named in one and not the other is an
@@ -98,6 +104,11 @@ ALL: Final[frozenset[str]] = frozenset(
         RIGHTS_REQUEST,
         MESSAGE_TEMPLATE,
         TICKET,
+        ANALYTICS,
+        AUDIT_REPORT,
+        HEALTH_REPORT,
+        ANALYTICS_SETTING,
+        REPORT,
         LEGAL_HOLD,
         RESTRICTED_COUNTRY,
         BREACH,

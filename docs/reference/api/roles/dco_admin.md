@@ -2,15 +2,18 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `projects`, `sites`, `sources`, `links`, `consents`, `exports`, `imports`, `collections`, `delegate`, `tickets`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `analytics`, `projects`, `sites`, `sources`, `links`, `consents`, `exports`, `imports`, `collections`, `delegate`, `tickets`, `notifications`, `profile`.
 
 ## Resource access
 
 | Resource | Read | Write | Scope | What the scope means |
 |---|---:|---:|---|---|
+| `analytics` | Yes | No | `scoped` | Assigned project/organisational rows |
+| `analytics_setting` | No | No | `none` | Denied |
 | `approval` | Yes | No | `scoped` | Assigned project/organisational rows |
 | `asset` | Yes | No | `scoped` | Assigned project/organisational rows |
 | `audit` | No | No | `none` | Denied |
+| `audit_report` | No | No | `none` | Denied |
 | `breach` | No | No | `none` | Denied |
 | `breach_settings` | No | No | `none` | Denied |
 | `breach_ticket` | Yes | Yes | `own` | Own or addressed rows |
@@ -19,6 +22,7 @@ Navigation returned after sign-in: `dashboard`, `projects`, `sites`, `sources`, 
 | `data_source` | Yes | Yes | `all` | All rows |
 | `datavault_connection` | No | No | `none` | Denied |
 | `export` | Yes | Yes | `scoped` | Assigned project/organisational rows |
+| `health_report` | No | No | `none` | Denied |
 | `hr_category` | No | No | `none` | Denied |
 | `import` | Yes | Yes | `scoped` | Assigned project/organisational rows |
 | `legal_hold` | No | No | `none` | Denied |
@@ -31,6 +35,7 @@ Navigation returned after sign-in: `dashboard`, `projects`, `sites`, `sources`, 
 | `processor` | Yes | No | `all` | All rows |
 | `project` | Yes | Yes | `scoped` | Assigned project/organisational rows |
 | `purpose` | Yes | No | `all` | All rows |
+| `report` | Yes | Yes | `scoped` | Assigned project/organisational rows |
 | `restricted_country` | No | No | `none` | Denied |
 | `rights_request` | No | No | `none` | Denied |
 | `site` | Yes | Yes | `scoped` | Assigned project/organisational rows |

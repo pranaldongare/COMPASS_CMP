@@ -105,6 +105,8 @@ class AuditFilters:
     event_type: str | None = None
     #: The part of the event type before the dot: `consent`, `rights`, `auth`.
     event_group: str | None = None
+    #: Any of these event types: an audit report's set (ADR 0045).
+    event_types: tuple[str, ...] | None = None
     date_from: datetime | None = None
     date_to: datetime | None = None
     #: Free text, matched against the event type, the recorded detail (a
@@ -227,6 +229,9 @@ def _where(f: AuditFilters) -> tuple[str, list[Any]]:
     if f.event_group:
         where.append("l.event_type LIKE %s")
         params.append(f"{f.event_group}.%")
+    if f.event_types:
+        where.append("l.event_type = ANY(%s)")
+        params.append(list(f.event_types))
     if f.date_from:
         where.append("l.occurred_at >= %s")
         params.append(f.date_from)

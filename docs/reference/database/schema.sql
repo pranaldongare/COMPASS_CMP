@@ -2,10 +2,10 @@
 -- PostgreSQL database dump
 --
 
-\restrict rUXfgRjKDPJUjSift7wvK6C5wdYVoVvL7hG1tLwL3CBEaP81aUAWEBmQLjegx1U
+\restrict tO9fX14Wi1cfbfOBy9jhAOcjZVadWjUZOHlA321laQnJ6AG2kEq9W7ZmfpcWELH
 
--- Dumped from database version 16.15
--- Dumped by pg_dump version 16.15
+-- Dumped from database version 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)
+-- Dumped by pg_dump version 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -518,7 +518,8 @@ CREATE TYPE public.user_role AS ENUM (
     'rco',
     'breach_holder',
     'legal',
-    'hr_user'
+    'hr_user',
+    'management'
 );
 
 
@@ -1814,6 +1815,40 @@ SET default_table_access_method = heap;
 CREATE TABLE public.alembic_version (
     version_num character varying(32) NOT NULL
 );
+
+
+--
+-- Name: analytics_setting; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.analytics_setting (
+    setting_id integer DEFAULT 1 NOT NULL,
+    small_number_threshold integer DEFAULT 1 NOT NULL,
+    updated_by integer,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT analytics_setting_setting_id_check CHECK ((setting_id = 1)),
+    CONSTRAINT analytics_setting_small_number_threshold_check CHECK (((small_number_threshold >= 1) AND (small_number_threshold <= 100)))
+);
+
+
+--
+-- Name: analytics_target; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.analytics_target (
+    metric_key character varying(64) NOT NULL,
+    target numeric NOT NULL,
+    amber numeric,
+    updated_by integer NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- Name: TABLE analytics_target; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.analytics_target IS 'The administrator''s target and amber line for a metric; none: the catalogue default';
 
 
 --
@@ -6123,6 +6158,103 @@ ALTER SEQUENCE public.purpose_purpose_id_seq OWNED BY public.purpose.purpose_id;
 
 
 --
+-- Name: report; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.report (
+    report_id integer NOT NULL,
+    report_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    kind character varying(48) NOT NULL,
+    title text NOT NULL,
+    params jsonb DEFAULT '{}'::jsonb NOT NULL,
+    office_id integer,
+    format character varying(8) NOT NULL,
+    status character varying(12) DEFAULT 'queued'::character varying NOT NULL,
+    file_ref text,
+    file_sha256 text,
+    file_bytes integer,
+    error text,
+    requested_by integer,
+    requested_role public.user_role NOT NULL,
+    schedule_id integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    ready_at timestamp with time zone,
+    CONSTRAINT report_format CHECK (((format)::text = ANY ((ARRAY['pdf'::character varying, 'xlsx'::character varying, 'csv'::character varying])::text[]))),
+    CONSTRAINT report_ready_has_a_file CHECK ((((status)::text <> 'ready'::text) OR ((file_ref IS NOT NULL) AND (file_sha256 IS NOT NULL)))),
+    CONSTRAINT report_status CHECK (((status)::text = ANY ((ARRAY['queued'::character varying, 'ready'::character varying, 'failed'::character varying])::text[])))
+);
+
+ALTER TABLE ONLY public.report FORCE ROW LEVEL SECURITY;
+
+
+--
+-- Name: report_report_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.report_report_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: report_report_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.report_report_id_seq OWNED BY public.report.report_id;
+
+
+--
+-- Name: report_schedule; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.report_schedule (
+    schedule_id integer NOT NULL,
+    schedule_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    kind character varying(48) NOT NULL,
+    title text NOT NULL,
+    params jsonb DEFAULT '{}'::jsonb NOT NULL,
+    format character varying(8) NOT NULL,
+    cadence character varying(12) NOT NULL,
+    recipient_roles text[] DEFAULT '{}'::text[] NOT NULL,
+    office_id integer,
+    active boolean DEFAULT true NOT NULL,
+    created_by integer NOT NULL,
+    created_role public.user_role NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    last_run_at timestamp with time zone,
+    next_run_at timestamp with time zone NOT NULL,
+    CONSTRAINT report_schedule_cadence CHECK (((cadence)::text = ANY ((ARRAY['weekly'::character varying, 'monthly'::character varying, 'quarterly'::character varying])::text[]))),
+    CONSTRAINT report_schedule_format CHECK (((format)::text = ANY ((ARRAY['pdf'::character varying, 'xlsx'::character varying, 'csv'::character varying])::text[])))
+);
+
+ALTER TABLE ONLY public.report_schedule FORCE ROW LEVEL SECURITY;
+
+
+--
+-- Name: report_schedule_schedule_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.report_schedule_schedule_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: report_schedule_schedule_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.report_schedule_schedule_id_seq OWNED BY public.report_schedule.schedule_id;
+
+
+--
 -- Name: restricted_country; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -7359,6 +7491,20 @@ ALTER TABLE ONLY public.purpose ALTER COLUMN purpose_code SET DEFAULT ('PUR-'::t
 
 
 --
+-- Name: report report_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.report ALTER COLUMN report_id SET DEFAULT nextval('public.report_report_id_seq'::regclass);
+
+
+--
+-- Name: report_schedule schedule_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.report_schedule ALTER COLUMN schedule_id SET DEFAULT nextval('public.report_schedule_schedule_id_seq'::regclass);
+
+
+--
 -- Name: restricted_country country_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -7441,6 +7587,22 @@ ALTER TABLE ONLY public.template_version_purpose ALTER COLUMN version_purpose_id
 
 ALTER TABLE ONLY public.alembic_version
     ADD CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num);
+
+
+--
+-- Name: analytics_setting analytics_setting_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.analytics_setting
+    ADD CONSTRAINT analytics_setting_pkey PRIMARY KEY (setting_id);
+
+
+--
+-- Name: analytics_target analytics_target_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.analytics_target
+    ADD CONSTRAINT analytics_target_pkey PRIMARY KEY (metric_key);
 
 
 --
@@ -8740,6 +8902,38 @@ ALTER TABLE ONLY public.purpose
 
 
 --
+-- Name: report report_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.report
+    ADD CONSTRAINT report_pkey PRIMARY KEY (report_id);
+
+
+--
+-- Name: report report_report_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.report
+    ADD CONSTRAINT report_report_uuid_key UNIQUE (report_uuid);
+
+
+--
+-- Name: report_schedule report_schedule_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.report_schedule
+    ADD CONSTRAINT report_schedule_pkey PRIMARY KEY (schedule_id);
+
+
+--
+-- Name: report_schedule report_schedule_schedule_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.report_schedule
+    ADD CONSTRAINT report_schedule_schedule_uuid_key UNIQUE (schedule_uuid);
+
+
+--
 -- Name: restricted_country restricted_country_country_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9620,6 +9814,41 @@ CREATE INDEX idx_purpose_office ON public.purpose USING btree (office_id);
 
 
 --
+-- Name: idx_report_created; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_report_created ON public.report USING btree (created_at DESC);
+
+
+--
+-- Name: idx_report_kind; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_report_kind ON public.report USING btree (kind, created_at DESC);
+
+
+--
+-- Name: idx_report_office; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_report_office ON public.report USING btree (office_id);
+
+
+--
+-- Name: idx_report_schedule_due; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_report_schedule_due ON public.report_schedule USING btree (next_run_at) WHERE active;
+
+
+--
+-- Name: idx_report_schedule_office; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_report_schedule_office ON public.report_schedule USING btree (office_id);
+
+
+--
 -- Name: idx_rights_holder_request; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -10471,6 +10700,22 @@ CREATE TRIGGER trg_template_version_touch BEFORE UPDATE ON public.template_versi
 --
 
 CREATE TRIGGER trg_ticket_message_append_only BEFORE DELETE OR UPDATE ON public.rights_ticket_message FOR EACH STATEMENT EXECUTE FUNCTION public.cmp_append_only();
+
+
+--
+-- Name: analytics_setting analytics_setting_updated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.analytics_setting
+    ADD CONSTRAINT analytics_setting_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: analytics_target analytics_target_updated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.analytics_target
+    ADD CONSTRAINT analytics_target_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES public.auth_user(id);
 
 
 --
@@ -12082,6 +12327,46 @@ ALTER TABLE ONLY public.purpose
 
 
 --
+-- Name: report report_office_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.report
+    ADD CONSTRAINT report_office_id_fkey FOREIGN KEY (office_id) REFERENCES public.office(office_id);
+
+
+--
+-- Name: report report_requested_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.report
+    ADD CONSTRAINT report_requested_by_fkey FOREIGN KEY (requested_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: report_schedule report_schedule_created_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.report_schedule
+    ADD CONSTRAINT report_schedule_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: report report_schedule_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.report
+    ADD CONSTRAINT report_schedule_id_fkey FOREIGN KEY (schedule_id) REFERENCES public.report_schedule(schedule_id) ON DELETE SET NULL;
+
+
+--
+-- Name: report_schedule report_schedule_office_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.report_schedule
+    ADD CONSTRAINT report_schedule_office_id_fkey FOREIGN KEY (office_id) REFERENCES public.office(office_id);
+
+
+--
 -- Name: restricted_country restricted_country_lifted_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -13266,6 +13551,28 @@ CREATE POLICY office_isolation ON public.purpose USING (((current_setting('app.o
 
 
 --
+-- Name: report office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.report USING (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true)))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true))))));
+
+
+--
+-- Name: report_schedule office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.report_schedule USING (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true)))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true))))));
+
+
+--
 -- Name: rights_item_execution office_isolation; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -13416,6 +13723,18 @@ ALTER TABLE public.project_status_history ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.purpose ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: report; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.report ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: report_schedule; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.report_schedule ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: rights_item_execution; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -13479,5 +13798,5 @@ ALTER TABLE public.template_version_purpose ENABLE ROW LEVEL SECURITY;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict rUXfgRjKDPJUjSift7wvK6C5wdYVoVvL7hG1tLwL3CBEaP81aUAWEBmQLjegx1U
+\unrestrict tO9fX14Wi1cfbfOBy9jhAOcjZVadWjUZOHlA321laQnJ6AG2kEq9W7ZmfpcWELH
 

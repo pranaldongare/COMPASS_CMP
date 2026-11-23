@@ -7,6 +7,29 @@ as a release yet.
 
 ## [Unreleased]
 
+### Added (2026-11-23, migration 0074, ADR 0045)
+- **Analytics**, a section of the console apart from the Dashboard: a
+  management scorecard, analytics, the record of processing, audit reports,
+  platform health and data quality, each for a period - calendar or financial
+  year (April-March) - compared with the one before and judged against targets.
+  69 metrics in one catalogue (`cmp.core.metrics`), counted from the record when
+  asked; the reference `docs/domain/analytics-metrics.md` is generated from it.
+- **A management role** (`management`): reads both offices combined or one at a
+  time, writes nothing but its reports and the tickets addressed to it, and
+  always steps up to a second factor. The administrator reads audit and health
+  only; the DPO and the Legal PoC read their own office; the R&D User, DCO, DCO
+  Admin, RCO and HR PoC read the figures of their own work.
+- **Targets** and the **small-number threshold** (1 to start), set by the
+  administrator under Analytics, Settings; counts of fewer people are withheld.
+- **Reports** - management scorecard, board pack, analytics summary, your work,
+  seven audit reports, platform health, evidence packs, record of processing,
+  data quality - as PDF, Excel or CSV, made by the workers on the `reports`
+  queue, kept with their hash until deleted, every download and deletion on the
+  trail; **schedules** that mail them weekly, monthly or quarterly to the roles
+  that may read them (*A scheduled report*).
+- Routes `/analytics/*` and `/reports/*`; the nightly audit-chain check now
+  records a broken chain on the trail as well.
+
 ### Changed (the product owner's and Legal's answers, 2026-11-20)
 - **Texts go to Indian mobiles only.** Every form's mobile field, and a
   breach's contact list, refuse any other number ("Enter an Indian mobile

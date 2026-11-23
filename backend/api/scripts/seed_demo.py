@@ -187,6 +187,19 @@ HR_STAFF: list[dict[str, str]] = [
     },
 ]
 
+#: The people the organisation reports to (ADR 0045): read-only analytics
+#: across both offices, so no office of their own.
+MANAGEMENT_STAFF: list[dict[str, str]] = [
+    {
+        "key": "mgmt1",
+        "full_name": "Sanjay Kapoor",
+        "email": "sanjay.kapoor@cmp.local",
+        "role": "management",
+        "org": "EMP-1001",
+        "office": "",
+    },
+]
+
 #: The Legal office's categories of HR activity (0052): the processors that
 #: hold each one's data, by key and what each is to it, and its HR PoCs.
 HR_CATEGORIES: list[dict[str, Any]] = [
@@ -861,7 +874,7 @@ async def invite_staff(
     # office for its people.
     offices = (await api.call("GET", "/offices", actor=admin)).json()
     office_uuid = {o["office_code"]: o["office_uuid"] for o in offices}
-    for s in STAFF + HR_STAFF if people is None else people:
+    for s in STAFF + HR_STAFF + MANAGEMENT_STAFF if people is None else people:
         await api.call(
             "POST",
             "/users",
@@ -873,7 +886,9 @@ async def invite_staff(
                 "role": s["role"],
                 "organization_id": s["org"],
                 "person_type": "employee",
-                "office_uuid": office_uuid[s.get("office", "rnd")],
+                "office_uuid": office_uuid[s.get("office", "rnd")]
+                if s.get("office", "rnd")
+                else None,
             },
         )
         code = api.code(INVITATION, 4)

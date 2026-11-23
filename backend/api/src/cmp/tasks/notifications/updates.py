@@ -401,3 +401,30 @@ def send_datavault_problem(to: str, what: str, failure: str, when: str) -> dict[
 @shared_task(name="cmp.notifications.send_settings_changed", **RETRY_KW)
 def send_settings_changed(to: str, setting: str, actor: str, when: str) -> dict[str, Any]:
     return deliver(Message.SETTINGS_CHANGED, to=to, setting=setting, actor=actor, when=when)
+
+
+@shared_task(name="cmp.notifications.send_report_ready", **RETRY_KW)
+def send_report_ready(
+    to: str, report_title: str, period: str, file_ref: str, fmt: str
+) -> dict[str, Any]:
+    """A scheduled report, attached (ADR 0045). Only to an account of a role
+    that may read it: the schedule's roles are checked when it is set up."""
+    from cmp.infrastructure.email import Attachment
+    from cmp.infrastructure.report_files import MIME
+    from cmp.infrastructure.storage.service import read_upload
+
+    data = read_upload(file_ref)
+    name = "".join(ch if ch.isalnum() or ch in "-_" else "-" for ch in report_title)[:80]
+    return deliver(
+        Message.REPORT_READY,
+        to=to,
+        attachments=[
+            Attachment(
+                filename=f"{name.strip('-') or 'report'}.{fmt}",
+                content_type=MIME[fmt].split(";")[0],
+                data=data,
+            )
+        ],
+        report_title=report_title,
+        period=period,
+    )

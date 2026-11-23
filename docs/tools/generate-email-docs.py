@@ -91,9 +91,10 @@ MODULES: list[tuple[str, str, tuple[str, ...], str]] = [
     (
         "oversight.md",
         "Oversight",
-        ("Oversight",),
+        ("Oversight", "Reports"),
         "The alarms for the people who answer for the platform: the audit trail failing its "
-        "check, DataVault not taking an instruction, a sensitive setting changed.",
+        "check, DataVault not taking an instruction, a sensitive setting changed; and a "
+        "scheduled report, mailed with the report attached.",
     ),
 ]
 

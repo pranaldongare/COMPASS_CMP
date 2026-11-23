@@ -1,6 +1,6 @@
 # API documentation
 
-Reference for **417 operations over 366 paths**, grouped by OpenAPI module/tag.
+Reference for **434 operations over 378 paths**, grouped by OpenAPI module/tag.
 
 ## How to read an endpoint
 
@@ -17,6 +17,7 @@ Generated values are structural examples, not production credentials or semantic
 
 | Module | Operations | File |
 |---|---:|---|
+| Analytics | 8 | [`modules/analytics/api.md`](modules/analytics/api.md) |
 | Audit | 7 | [`modules/audit/api.md`](modules/audit/api.md) |
 | Auth | 15 | [`modules/auth/api.md`](modules/auth/api.md) |
 | Breach Notices | 3 | [`modules/breach_notices/api.md`](modules/breach_notices/api.md) |
@@ -43,6 +44,7 @@ Generated values are structural examples, not production credentials or semantic
 | Public Consent | 9 | [`modules/public_consent/api.md`](modules/public_consent/api.md) |
 | Public Information | 10 | [`modules/public_information/api.md`](modules/public_information/api.md) |
 | Registry | 29 | [`modules/registry/api.md`](modules/registry/api.md) |
+| Reports | 9 | [`modules/reports/api.md`](modules/reports/api.md) |
 | Rights | 54 | [`modules/rights/api.md`](modules/rights/api.md) |
 | System | 5 | [`modules/system/api.md`](modules/system/api.md) |
 | Tickets | 6 | [`modules/tickets/api.md`](modules/tickets/api.md) |

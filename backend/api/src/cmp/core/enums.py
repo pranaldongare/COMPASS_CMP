@@ -45,6 +45,8 @@ class UserRole(StrEnum):
     LEGAL = "legal"
     #: An HR point of contact (0051, ADR 0033).
     HR_USER = "hr_user"
+    #: Read-only analytics across both offices (0074, ADR 0045).
+    MANAGEMENT = "management"
 
 
 class PersonType(StrEnum):

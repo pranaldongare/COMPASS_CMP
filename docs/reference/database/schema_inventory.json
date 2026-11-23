@@ -1,6 +1,6 @@
 {
-  "commit": "39669f069554e157d9b9b184cd1c43b172554376",
-  "migration_head": "0073",
+  "commit": "9fa1dfe54dd8a770c4caccd760f07cd710241716",
+  "migration_head": "0074",
   "migrations": [
     {
       "revision": "0001",
@@ -289,6 +289,10 @@
     {
       "revision": "0073",
       "source": "backend/api/migrations/versions/0073_escalation_reassignment_acknowledgement.py"
+    },
+    {
+      "revision": "0074",
+      "source": "backend/api/migrations/versions/0074_analytics_and_reports.py"
     }
   ],
   "postgres_version": "16.15",
@@ -302,6 +306,16 @@
       "name": "alembic_version",
       "kind": "r",
       "comment": null
+    },
+    {
+      "name": "analytics_setting",
+      "kind": "r",
+      "comment": null
+    },
+    {
+      "name": "analytics_target",
+      "kind": "r",
+      "comment": "The administrator's target and amber line for a metric; none: the catalogue default"
     },
     {
       "name": "asset_consent",
@@ -674,6 +688,16 @@
       "comment": null
     },
     {
+      "name": "report",
+      "kind": "r",
+      "comment": null
+    },
+    {
+      "name": "report_schedule",
+      "kind": "r",
+      "comment": null
+    },
+    {
       "name": "restricted_country",
       "kind": "r",
       "comment": "Countries the Government has notified under s.16 - data, maintained by the Privacy Office"
@@ -737,6 +761,87 @@
       "type": "character varying(32)",
       "not_null": true,
       "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "analytics_setting",
+      "name": "setting_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "1",
+      "comment": null
+    },
+    {
+      "table_name": "analytics_setting",
+      "name": "small_number_threshold",
+      "position": 2,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "1",
+      "comment": null
+    },
+    {
+      "table_name": "analytics_setting",
+      "name": "updated_by",
+      "position": 3,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "analytics_setting",
+      "name": "updated_at",
+      "position": 4,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "analytics_target",
+      "name": "metric_key",
+      "position": 1,
+      "type": "character varying(64)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "analytics_target",
+      "name": "target",
+      "position": 2,
+      "type": "numeric",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "analytics_target",
+      "name": "amber",
+      "position": 3,
+      "type": "numeric",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "analytics_target",
+      "name": "updated_by",
+      "position": 4,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "analytics_target",
+      "name": "updated_at",
+      "position": 5,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
       "comment": null
     },
     {
@@ -7895,6 +8000,294 @@
       "comment": null
     },
     {
+      "table_name": "report",
+      "name": "report_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('report_report_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "report",
+      "name": "report_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "report",
+      "name": "kind",
+      "position": 3,
+      "type": "character varying(48)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "report",
+      "name": "title",
+      "position": 4,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "report",
+      "name": "params",
+      "position": 5,
+      "type": "jsonb",
+      "not_null": true,
+      "default_value": "'{}'::jsonb",
+      "comment": null
+    },
+    {
+      "table_name": "report",
+      "name": "office_id",
+      "position": 6,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "report",
+      "name": "format",
+      "position": 7,
+      "type": "character varying(8)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "report",
+      "name": "status",
+      "position": 8,
+      "type": "character varying(12)",
+      "not_null": true,
+      "default_value": "'queued'::character varying",
+      "comment": null
+    },
+    {
+      "table_name": "report",
+      "name": "file_ref",
+      "position": 9,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "report",
+      "name": "file_sha256",
+      "position": 10,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "report",
+      "name": "file_bytes",
+      "position": 11,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "report",
+      "name": "error",
+      "position": 12,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "report",
+      "name": "requested_by",
+      "position": 13,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "report",
+      "name": "requested_role",
+      "position": 14,
+      "type": "user_role",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "report",
+      "name": "schedule_id",
+      "position": 15,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "report",
+      "name": "created_at",
+      "position": 16,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "report",
+      "name": "ready_at",
+      "position": 17,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "schedule_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('report_schedule_schedule_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "schedule_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "kind",
+      "position": 3,
+      "type": "character varying(48)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "title",
+      "position": 4,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "params",
+      "position": 5,
+      "type": "jsonb",
+      "not_null": true,
+      "default_value": "'{}'::jsonb",
+      "comment": null
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "format",
+      "position": 6,
+      "type": "character varying(8)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "cadence",
+      "position": 7,
+      "type": "character varying(12)",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "recipient_roles",
+      "position": 8,
+      "type": "text[]",
+      "not_null": true,
+      "default_value": "'{}'::text[]",
+      "comment": null
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "office_id",
+      "position": 9,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "active",
+      "position": 10,
+      "type": "boolean",
+      "not_null": true,
+      "default_value": "true",
+      "comment": null
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "created_by",
+      "position": 11,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "created_role",
+      "position": 12,
+      "type": "user_role",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "created_at",
+      "position": 13,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "last_run_at",
+      "position": 14,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "next_run_at",
+      "position": 15,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
       "table_name": "restricted_country",
       "name": "country_id",
       "position": 1,
@@ -9762,6 +10155,100 @@
       "referenced_columns": [],
       "delete_action": " ",
       "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "analytics_setting",
+      "name": "analytics_setting_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (setting_id)",
+      "columns": [
+        "setting_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "analytics_setting",
+      "name": "analytics_setting_setting_id_check",
+      "kind": "c",
+      "definition": "CHECK ((setting_id = 1))",
+      "columns": [
+        "setting_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "analytics_setting",
+      "name": "analytics_setting_small_number_threshold_check",
+      "kind": "c",
+      "definition": "CHECK (((small_number_threshold >= 1) AND (small_number_threshold <= 100)))",
+      "columns": [
+        "small_number_threshold"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "analytics_setting",
+      "name": "analytics_setting_updated_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (updated_by) REFERENCES auth_user(id)",
+      "columns": [
+        "updated_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "analytics_target",
+      "name": "analytics_target_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (metric_key)",
+      "columns": [
+        "metric_key"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "analytics_target",
+      "name": "analytics_target_updated_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (updated_by) REFERENCES auth_user(id)",
+      "columns": [
+        "updated_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
       "deferrable": false,
       "initially_deferred": false
     },
@@ -17472,6 +17959,228 @@
       "initially_deferred": false
     },
     {
+      "table_name": "report",
+      "name": "report_format",
+      "kind": "c",
+      "definition": "CHECK (((format)::text = ANY ((ARRAY['pdf'::character varying, 'xlsx'::character varying, 'csv'::character varying])::text[])))",
+      "columns": [
+        "format"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "report",
+      "name": "report_office_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (office_id) REFERENCES office(office_id)",
+      "columns": [
+        "office_id"
+      ],
+      "referenced_table": "office",
+      "referenced_columns": [
+        "office_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "report",
+      "name": "report_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (report_id)",
+      "columns": [
+        "report_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "report",
+      "name": "report_ready_has_a_file",
+      "kind": "c",
+      "definition": "CHECK ((((status)::text <> 'ready'::text) OR ((file_ref IS NOT NULL) AND (file_sha256 IS NOT NULL))))",
+      "columns": [
+        "status",
+        "file_ref",
+        "file_sha256"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "report",
+      "name": "report_report_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (report_uuid)",
+      "columns": [
+        "report_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "report",
+      "name": "report_requested_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (requested_by) REFERENCES auth_user(id)",
+      "columns": [
+        "requested_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "report",
+      "name": "report_schedule_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (schedule_id) REFERENCES report_schedule(schedule_id) ON DELETE SET NULL",
+      "columns": [
+        "schedule_id"
+      ],
+      "referenced_table": "report_schedule",
+      "referenced_columns": [
+        "schedule_id"
+      ],
+      "delete_action": "n",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "report",
+      "name": "report_status",
+      "kind": "c",
+      "definition": "CHECK (((status)::text = ANY ((ARRAY['queued'::character varying, 'ready'::character varying, 'failed'::character varying])::text[])))",
+      "columns": [
+        "status"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "report_schedule_cadence",
+      "kind": "c",
+      "definition": "CHECK (((cadence)::text = ANY ((ARRAY['weekly'::character varying, 'monthly'::character varying, 'quarterly'::character varying])::text[])))",
+      "columns": [
+        "cadence"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "report_schedule_created_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (created_by) REFERENCES auth_user(id)",
+      "columns": [
+        "created_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "report_schedule_format",
+      "kind": "c",
+      "definition": "CHECK (((format)::text = ANY ((ARRAY['pdf'::character varying, 'xlsx'::character varying, 'csv'::character varying])::text[])))",
+      "columns": [
+        "format"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "report_schedule_office_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (office_id) REFERENCES office(office_id)",
+      "columns": [
+        "office_id"
+      ],
+      "referenced_table": "office",
+      "referenced_columns": [
+        "office_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "report_schedule_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (schedule_id)",
+      "columns": [
+        "schedule_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "report_schedule_schedule_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (schedule_uuid)",
+      "columns": [
+        "schedule_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "restricted_country",
       "name": "restricted_country_country_uuid_key",
       "kind": "u",
@@ -19139,6 +19848,16 @@
       "definition": "CREATE UNIQUE INDEX alembic_version_pkc ON public.alembic_version USING btree (version_num)"
     },
     {
+      "table_name": "analytics_setting",
+      "name": "analytics_setting_pkey",
+      "definition": "CREATE UNIQUE INDEX analytics_setting_pkey ON public.analytics_setting USING btree (setting_id)"
+    },
+    {
+      "table_name": "analytics_target",
+      "name": "analytics_target_pkey",
+      "definition": "CREATE UNIQUE INDEX analytics_target_pkey ON public.analytics_target USING btree (metric_key)"
+    },
+    {
       "table_name": "asset_consent",
       "name": "asset_consent_pkey",
       "definition": "CREATE UNIQUE INDEX asset_consent_pkey ON public.asset_consent USING btree (asset_consent_id)"
@@ -20519,6 +21238,51 @@
       "definition": "CREATE UNIQUE INDEX purpose_purpose_uuid_key ON public.purpose USING btree (purpose_uuid)"
     },
     {
+      "table_name": "report",
+      "name": "idx_report_created",
+      "definition": "CREATE INDEX idx_report_created ON public.report USING btree (created_at DESC)"
+    },
+    {
+      "table_name": "report",
+      "name": "idx_report_kind",
+      "definition": "CREATE INDEX idx_report_kind ON public.report USING btree (kind, created_at DESC)"
+    },
+    {
+      "table_name": "report",
+      "name": "idx_report_office",
+      "definition": "CREATE INDEX idx_report_office ON public.report USING btree (office_id)"
+    },
+    {
+      "table_name": "report",
+      "name": "report_pkey",
+      "definition": "CREATE UNIQUE INDEX report_pkey ON public.report USING btree (report_id)"
+    },
+    {
+      "table_name": "report",
+      "name": "report_report_uuid_key",
+      "definition": "CREATE UNIQUE INDEX report_report_uuid_key ON public.report USING btree (report_uuid)"
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "idx_report_schedule_due",
+      "definition": "CREATE INDEX idx_report_schedule_due ON public.report_schedule USING btree (next_run_at) WHERE active"
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "idx_report_schedule_office",
+      "definition": "CREATE INDEX idx_report_schedule_office ON public.report_schedule USING btree (office_id)"
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "report_schedule_pkey",
+      "definition": "CREATE UNIQUE INDEX report_schedule_pkey ON public.report_schedule USING btree (schedule_id)"
+    },
+    {
+      "table_name": "report_schedule",
+      "name": "report_schedule_schedule_uuid_key",
+      "definition": "CREATE UNIQUE INDEX report_schedule_schedule_uuid_key ON public.report_schedule USING btree (schedule_uuid)"
+    },
+    {
       "table_name": "restricted_country",
       "name": "restricted_country_country_uuid_key",
       "definition": "CREATE UNIQUE INDEX restricted_country_country_uuid_key ON public.restricted_country USING btree (country_uuid)"
@@ -21090,7 +21854,8 @@
         "rco",
         "breach_holder",
         "legal",
-        "hr_user"
+        "hr_user",
+        "management"
       ]
     },
     {
@@ -21763,6 +22528,12 @@
       "name": "purpose_purpose_id_seq"
     },
     {
+      "name": "report_report_id_seq"
+    },
+    {
+      "name": "report_schedule_schedule_id_seq"
+    },
+    {
       "name": "restricted_country_country_id_seq"
     },
     {
@@ -21940,13 +22711,13 @@
     }
   ],
   "counts": {
-    "application_tables": 85,
+    "application_tables": 89,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 987,
-    "foreign_keys": 243,
+    "table_columns": 1028,
+    "foreign_keys": 250,
     "enums": 39,
     "triggers": 84,
-    "checks": 150
+    "checks": 157
   }
 }

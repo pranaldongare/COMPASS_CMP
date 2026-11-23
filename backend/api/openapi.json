@@ -21392,6 +21392,904 @@
         }
       }
     },
+    "/analytics/catalogue": {
+      "get": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "What this reader may see",
+        "operationId": "get_catalogue_analytics_catalogue_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogueOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/figures": {
+      "get": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Figures for a period",
+        "description": "The figures of a section, or the metrics named, for the period, with\nthe previous period, the target and its status, a line and a breakdown.",
+        "operationId": "get_figures_analytics_figures_get",
+        "parameters": [
+          {
+            "name": "section",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 24
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Section"
+            }
+          },
+          {
+            "name": "keys",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 60
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Keys"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "A preset: last_7_days, last_30_days, this_month, last_month, this_quarter, last_quarter, this_year, last_year, this_fy, last_fy, custom",
+              "default": "this_month",
+              "title": "Period"
+            },
+            "description": "A preset: last_7_days, last_30_days, this_month, last_month, this_quarter, last_quarter, this_year, last_year, this_fy, last_fy, custom"
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "custom: the first or last day, India time",
+              "title": "Start"
+            },
+            "description": "custom: the first or last day, India time"
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "custom: the first or last day, India time",
+              "title": "End"
+            },
+            "description": "custom: the first or last day, India time"
+          },
+          {
+            "name": "office",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(rnd|hr)$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Management only: one office",
+              "title": "Office"
+            },
+            "description": "Management only: one office"
+          },
+          {
+            "name": "dim",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 24
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Dim"
+            }
+          },
+          {
+            "name": "compare",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Compare"
+            }
+          },
+          {
+            "name": "trend",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Trend"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FiguresOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/inventory": {
+      "get": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "The record of processing",
+        "operationId": "get_inventory_analytics_inventory_get",
+        "parameters": [
+          {
+            "name": "office",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^(rnd|hr)$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Management only: one office",
+              "title": "Office"
+            },
+            "description": "Management only: one office"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/audit-reports/{key}": {
+      "get": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "One ready-made audit report",
+        "operationId": "get_audit_report_analytics_audit_reports__key__get",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 32,
+              "title": "Key"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "A preset: last_7_days, last_30_days, this_month, last_month, this_quarter, last_quarter, this_year, last_year, this_fy, last_fy, custom",
+              "default": "last_30_days",
+              "title": "Period"
+            },
+            "description": "A preset: last_7_days, last_30_days, this_month, last_month, this_quarter, last_quarter, this_year, last_year, this_fy, last_fy, custom"
+          },
+          {
+            "name": "start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "custom: the first or last day, India time",
+              "title": "Start"
+            },
+            "description": "custom: the first or last day, India time"
+          },
+          {
+            "name": "end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "custom: the first or last day, India time",
+              "title": "End"
+            },
+            "description": "custom: the first or last day, India time"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 200,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 512
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 64
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sort"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/settings": {
+      "get": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Targets and the threshold",
+        "operationId": "get_settings_analytics_settings_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/targets/{key}": {
+      "put": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Set a metric's target",
+        "operationId": "put_target_analytics_targets__key__put",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 64,
+              "title": "Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TargetIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "Back to the default target",
+        "operationId": "delete_target_analytics_targets__key__delete",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 64,
+              "title": "Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/analytics/settings/threshold": {
+      "put": {
+        "tags": [
+          "analytics"
+        ],
+        "summary": "The small-number threshold",
+        "operationId": "put_threshold_analytics_settings_threshold_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ThresholdIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "The reports this reader may see",
+        "operationId": "list_reports_reports_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ReportOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Reports Reports Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Ask for a report",
+        "operationId": "create_report_reports_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports/schedules": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Report schedules",
+        "operationId": "list_schedules_reports_schedules_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ScheduleOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Schedules Reports Schedules Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Make a report on a cadence and mail it",
+        "operationId": "create_schedule_reports_schedules_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports/schedules/{schedule_uuid}": {
+      "patch": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Pause or resume a schedule",
+        "operationId": "change_schedule_reports_schedules__schedule_uuid__patch",
+        "parameters": [
+          {
+            "name": "schedule_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Schedule Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScheduleChangeIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScheduleOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Remove a schedule",
+        "operationId": "remove_schedule_reports_schedules__schedule_uuid__delete",
+        "parameters": [
+          {
+            "name": "schedule_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Schedule Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Acknowledged"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports/{report_uuid}": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "One report",
+        "operationId": "get_report_reports__report_uuid__get",
+        "parameters": [
+          {
+            "name": "report_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReportOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Delete a report",
+        "operationId": "delete_report_reports__report_uuid__delete",
+        "parameters": [
+          {
+            "name": "report_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Acknowledged"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/reports/{report_uuid}/file": {
+      "get": {
+        "tags": [
+          "reports"
+        ],
+        "summary": "Download a report, as it was made",
+        "operationId": "download_report_reports__report_uuid__file_get",
+        "parameters": [
+          {
+            "name": "report_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Report Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/messages": {
       "get": {
         "tags": [
@@ -22728,6 +23626,200 @@
           "occurred_at"
         ],
         "title": "AuditEntry"
+      },
+      "AuditReportInfo": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "title",
+          "description"
+        ],
+        "title": "AuditReportInfo"
+      },
+      "AuditReportOut": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "events": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "period": {
+            "$ref": "#/components/schemas/PeriodOut"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AuditRowOut"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "summary": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Summary"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "title",
+          "description",
+          "events",
+          "period",
+          "items",
+          "next_cursor",
+          "total",
+          "summary"
+        ],
+        "title": "AuditReportOut"
+      },
+      "AuditRowOut": {
+        "properties": {
+          "log_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Log Uuid"
+          },
+          "event_type": {
+            "type": "string",
+            "title": "Event Type"
+          },
+          "entity_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Type"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Occurred At"
+          },
+          "actor_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Uuid"
+          },
+          "actor_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Name"
+          },
+          "actor_role": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actor Role"
+          },
+          "subject_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Uuid"
+          },
+          "subject_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subject Name"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "log_uuid",
+          "event_type",
+          "occurred_at"
+        ],
+        "title": "AuditRowOut"
       },
       "AuditSummary": {
         "properties": {
@@ -28592,6 +29684,92 @@
         ],
         "title": "BreachUploadOut"
       },
+      "CatalogueOut": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "office": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Office"
+          },
+          "may_choose_office": {
+            "type": "boolean",
+            "title": "May Choose Office"
+          },
+          "sections": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Sections"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/MetricInfo"
+            },
+            "type": "array",
+            "title": "Metrics"
+          },
+          "dimensions": {
+            "items": {
+              "$ref": "#/components/schemas/Choice"
+            },
+            "type": "array",
+            "title": "Dimensions"
+          },
+          "periods": {
+            "items": {
+              "$ref": "#/components/schemas/Choice"
+            },
+            "type": "array",
+            "title": "Periods"
+          },
+          "cadences": {
+            "items": {
+              "$ref": "#/components/schemas/Choice"
+            },
+            "type": "array",
+            "title": "Cadences"
+          },
+          "reports": {
+            "items": {
+              "$ref": "#/components/schemas/ReportKindInfo"
+            },
+            "type": "array",
+            "title": "Reports"
+          },
+          "audit_reports": {
+            "items": {
+              "$ref": "#/components/schemas/AuditReportInfo"
+            },
+            "type": "array",
+            "title": "Audit Reports"
+          }
+        },
+        "type": "object",
+        "required": [
+          "role",
+          "office",
+          "may_choose_office",
+          "sections",
+          "metrics",
+          "dimensions",
+          "periods",
+          "cadences",
+          "reports",
+          "audit_reports"
+        ],
+        "title": "CatalogueOut"
+      },
       "CategoryDetailOut": {
         "properties": {
           "category_uuid": {
@@ -29281,6 +30459,24 @@
           "site_count"
         ],
         "title": "Checklist"
+      },
+      "Choice": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label"
+        ],
+        "title": "Choice"
       },
       "ClassifyIn": {
         "properties": {
@@ -31943,6 +33139,232 @@
         ],
         "title": "ExportOut"
       },
+      "FigureOut": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "definition": {
+            "type": "string",
+            "title": "Definition"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "section": {
+            "type": "string",
+            "title": "Section"
+          },
+          "group": {
+            "type": "string",
+            "title": "Group"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "dims": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Dims"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "suppressed": {
+            "type": "boolean",
+            "title": "Suppressed"
+          },
+          "previous": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previous"
+          },
+          "previous_suppressed": {
+            "type": "boolean",
+            "title": "Previous Suppressed"
+          },
+          "change": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "amber": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amber"
+          },
+          "higher_is_better": {
+            "type": "boolean",
+            "title": "Higher Is Better"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/PointOut"
+            },
+            "type": "array",
+            "title": "Series"
+          },
+          "breakdown": {
+            "items": {
+              "$ref": "#/components/schemas/PartOut"
+            },
+            "type": "array",
+            "title": "Breakdown"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "title",
+          "definition",
+          "unit",
+          "section",
+          "group",
+          "kind",
+          "dims",
+          "value",
+          "suppressed",
+          "previous",
+          "previous_suppressed",
+          "change",
+          "target",
+          "amber",
+          "higher_is_better",
+          "status",
+          "series",
+          "breakdown"
+        ],
+        "title": "FigureOut"
+      },
+      "FiguresOut": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodOut"
+          },
+          "previous": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PeriodOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "office": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Office"
+          },
+          "dim": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dim"
+          },
+          "grain": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grain"
+          },
+          "threshold": {
+            "type": "integer",
+            "title": "Threshold"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/FigureOut"
+            },
+            "type": "array",
+            "title": "Metrics"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "previous",
+          "office",
+          "dim",
+          "grain",
+          "threshold",
+          "metrics"
+        ],
+        "title": "FiguresOut"
+      },
       "GrantOut": {
         "properties": {
           "purpose_uuid": {
@@ -33568,6 +34990,41 @@
         ],
         "title": "IntakeRolesIn"
       },
+      "InventoryOut": {
+        "properties": {
+          "purposes": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Purposes"
+          },
+          "processors": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Processors"
+          },
+          "sources": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Sources"
+          }
+        },
+        "type": "object",
+        "required": [
+          "purposes",
+          "processors",
+          "sources"
+        ],
+        "title": "InventoryOut"
+      },
       "IssueTicketsIn": {
         "properties": {
           "instruction": {
@@ -35098,6 +36555,62 @@
           "nav"
         ],
         "title": "MeResponse"
+      },
+      "MetricInfo": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "definition": {
+            "type": "string",
+            "title": "Definition"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "section": {
+            "type": "string",
+            "title": "Section"
+          },
+          "group": {
+            "type": "string",
+            "title": "Group"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "dims": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Dims"
+          },
+          "people": {
+            "type": "boolean",
+            "title": "People"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "title",
+          "definition",
+          "unit",
+          "section",
+          "group",
+          "kind",
+          "dims",
+          "people"
+        ],
+        "title": "MetricInfo"
       },
       "MfaVerifyRequest": {
         "properties": {
@@ -37387,6 +38900,48 @@
         ],
         "title": "Page[UserOut]"
       },
+      "PartOut": {
+        "properties": {
+          "key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "suppressed": {
+            "type": "boolean",
+            "title": "Suppressed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "label",
+          "value",
+          "suppressed"
+        ],
+        "title": "PartOut"
+      },
       "PasswordChange": {
         "properties": {
           "current_password": {
@@ -37409,6 +38964,48 @@
           "new_password"
         ],
         "title": "PasswordChange"
+      },
+      "PeriodOut": {
+        "properties": {
+          "preset": {
+            "type": "string",
+            "title": "Preset"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "type": "string",
+            "format": "date",
+            "title": "End Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "preset",
+          "start",
+          "end",
+          "label",
+          "start_date",
+          "end_date"
+        ],
+        "title": "PeriodOut"
       },
       "PersonTypeChange": {
         "properties": {
@@ -37523,6 +39120,44 @@
         ],
         "title": "PocCategory",
         "description": "A category an HR PoC runs activities in (0052)."
+      },
+      "PointOut": {
+        "properties": {
+          "bucket": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bucket"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "suppressed": {
+            "type": "boolean",
+            "title": "Suppressed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "bucket",
+          "value",
+          "suppressed"
+        ],
+        "title": "PointOut"
       },
       "PortalAddressIn": {
         "properties": {
@@ -39095,6 +40730,292 @@
           "due_on"
         ],
         "title": "ReopenIn"
+      },
+      "ReportIn": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "maxLength": 48,
+            "title": "Kind"
+          },
+          "format": {
+            "type": "string",
+            "pattern": "^(pdf|xlsx|csv)$",
+            "title": "Format"
+          },
+          "period": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 24
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Period"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "office": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(rnd|hr)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Office"
+          },
+          "audit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audit"
+          },
+          "entity_type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(rights_request|breach)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Type"
+          },
+          "entity_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entity Uuid"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "format"
+        ],
+        "title": "ReportIn"
+      },
+      "ReportKindInfo": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "formats": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Formats"
+          },
+          "schedulable": {
+            "type": "boolean",
+            "title": "Schedulable"
+          },
+          "recipient_roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recipient Roles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "title",
+          "description",
+          "formats",
+          "schedulable",
+          "recipient_roles"
+        ],
+        "title": "ReportKindInfo"
+      },
+      "ReportOut": {
+        "properties": {
+          "report_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Report Uuid"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "params": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Params"
+          },
+          "office": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Office"
+          },
+          "format": {
+            "type": "string",
+            "title": "Format"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "file_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Sha256"
+          },
+          "file_bytes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Bytes"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "requested_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested By Name"
+          },
+          "requested_role": {
+            "type": "string",
+            "title": "Requested Role"
+          },
+          "schedule_uuid": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule Uuid"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "ready_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ready At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "report_uuid",
+          "kind",
+          "title",
+          "params",
+          "office",
+          "format",
+          "status",
+          "file_sha256",
+          "file_bytes",
+          "error",
+          "requested_by_name",
+          "requested_role",
+          "schedule_uuid",
+          "created_at",
+          "ready_at"
+        ],
+        "title": "ReportOut"
       },
       "RequestDataVaultOut": {
         "properties": {
@@ -41150,7 +43071,8 @@
           "data_subject",
           "breach_holder",
           "legal",
-          "hr_user"
+          "hr_user",
+          "management"
         ],
         "title": "Role",
         "description": "The ten roles. Values match the `user_role` PostgreSQL enum exactly.\n\nTwo of them exist because collection has two shapes:\n\n* **`DCO_ADMIN`** routes a project collected by an external processor. They\n  assign its data sources, and each source's owner picks it up. They hold a\n  DCO's powers across every such project rather than over their own sources.\n* **`RCO`** \u2014 R&D Collection Owner \u2014 is the same accountability where the\n  R&D team collects for itself and no external processor is involved. The\n  role is separate rather than reusing DCO because the two answer to\n  different people, and a permission table that cannot tell them apart\n  cannot express that."
@@ -41192,6 +43114,188 @@
           "role"
         ],
         "title": "RoleChange"
+      },
+      "ScheduleChangeIn": {
+        "properties": {
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "active"
+        ],
+        "title": "ScheduleChangeIn"
+      },
+      "ScheduleIn": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "maxLength": 48,
+            "title": "Kind"
+          },
+          "format": {
+            "type": "string",
+            "pattern": "^(pdf|xlsx|csv)$",
+            "title": "Format"
+          },
+          "cadence": {
+            "type": "string",
+            "pattern": "^(weekly|monthly|quarterly)$",
+            "title": "Cadence"
+          },
+          "recipient_roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Recipient Roles"
+          },
+          "office": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(rnd|hr)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Office"
+          },
+          "audit": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audit"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "format",
+          "cadence",
+          "recipient_roles"
+        ],
+        "title": "ScheduleIn"
+      },
+      "ScheduleOut": {
+        "properties": {
+          "schedule_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Schedule Uuid"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "params": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Params"
+          },
+          "format": {
+            "type": "string",
+            "title": "Format"
+          },
+          "cadence": {
+            "type": "string",
+            "title": "Cadence"
+          },
+          "recipient_roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recipient Roles"
+          },
+          "office": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Office"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "created_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By Name"
+          },
+          "created_role": {
+            "type": "string",
+            "title": "Created Role"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "last_run_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Run At"
+          },
+          "next_run_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Next Run At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "schedule_uuid",
+          "kind",
+          "title",
+          "params",
+          "format",
+          "cadence",
+          "recipient_roles",
+          "office",
+          "active",
+          "created_by_name",
+          "created_role",
+          "created_at",
+          "last_run_at",
+          "next_run_at"
+        ],
+        "title": "ScheduleOut"
       },
       "SendBackIn": {
         "properties": {
@@ -41317,6 +43421,52 @@
         "additionalProperties": false,
         "type": "object",
         "title": "SetProcessors"
+      },
+      "SettingsOut": {
+        "properties": {
+          "small_number_threshold": {
+            "type": "integer",
+            "title": "Small Number Threshold"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By Name"
+          },
+          "targets": {
+            "items": {
+              "$ref": "#/components/schemas/TargetOut"
+            },
+            "type": "array",
+            "title": "Targets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "small_number_threshold",
+          "updated_at",
+          "updated_by_name",
+          "targets"
+        ],
+        "title": "SettingsOut"
       },
       "SiteIn": {
         "properties": {
@@ -42179,6 +44329,149 @@
         "title": "SubjectRequestOut",
         "description": "What she sees of her own request. No verification notes, no holders -\nthe holders are in the response itself, and the notes are ours."
       },
+      "TargetIn": {
+        "properties": {
+          "target": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Target"
+          },
+          "amber": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amber"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "target"
+        ],
+        "title": "TargetIn"
+      },
+      "TargetOut": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "unit": {
+            "type": "string",
+            "title": "Unit"
+          },
+          "section": {
+            "type": "string",
+            "title": "Section"
+          },
+          "group": {
+            "type": "string",
+            "title": "Group"
+          },
+          "higher_is_better": {
+            "type": "boolean",
+            "title": "Higher Is Better"
+          },
+          "default_target": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Target"
+          },
+          "default_amber": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Amber"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target"
+          },
+          "amber": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amber"
+          },
+          "customised": {
+            "type": "boolean",
+            "title": "Customised"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "title",
+          "unit",
+          "section",
+          "group",
+          "higher_is_better",
+          "default_target",
+          "default_amber",
+          "target",
+          "amber",
+          "customised",
+          "updated_at",
+          "updated_by_name"
+        ],
+        "title": "TargetOut"
+      },
       "TemplateDetail": {
         "properties": {
           "template_uuid": {
@@ -43007,6 +45300,22 @@
           "messages"
         ],
         "title": "ThreadOut"
+      },
+      "ThresholdIn": {
+        "properties": {
+          "small_number_threshold": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Small Number Threshold"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "small_number_threshold"
+        ],
+        "title": "ThresholdIn"
       },
       "TicketDataVaultOut": {
         "properties": {

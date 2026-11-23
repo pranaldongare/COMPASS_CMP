@@ -96,6 +96,12 @@ ENTITY_TYPES: Final[frozenset[str]] = frozenset(
         "hr_category",
         # A version of a Legal office template: what Legal approves (0053).
         "template_version",
+        # Analytics (0074, ADR 0045): a generated report and its schedule, a
+        # metric's target, the one row of analytics settings.
+        "report",
+        "report_schedule",
+        "analytics_target",
+        "analytics_setting",
     }
 )
 
@@ -446,6 +452,16 @@ class Event:
     #: Who a message is copied to was changed (0046). Detail: the message and
     #: how many addresses - never an address.
     MESSAGE_COPIES_UPDATED = "message_template.copies_updated"
+    # Analytics and reports (0074, ADR 0045). Never a figure, only that a
+    # report was made, read or deleted, and that a target or setting changed.
+    REPORT_GENERATED = "report.generated"
+    REPORT_DOWNLOADED = "report.downloaded"
+    REPORT_DELETED = "report.deleted"
+    REPORT_SCHEDULE_CREATED = "report.schedule_created"
+    REPORT_SCHEDULE_UPDATED = "report.schedule_updated"
+    REPORT_SCHEDULE_DELETED = "report.schedule_deleted"
+    ANALYTICS_TARGET_CHANGED = "analytics.target_changed"
+    ANALYTICS_SETTING_CHANGED = "analytics.setting_changed"
 
 
 _INSERT = """

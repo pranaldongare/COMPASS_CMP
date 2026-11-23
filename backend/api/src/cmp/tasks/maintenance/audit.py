@@ -80,6 +80,20 @@ def verify_audit_chain() -> dict[str, Any]:
                     await alerts.audit_chain_broken(
                         conn, position=f"entry {brk['log_id']} ({brk['reason']})"
                     )
+                    # On the trail too (ADR 0045): a check that found it broken
+                    # is a fact the health figures count, not only a log line.
+                    await audit.record(
+                        conn,
+                        event=Event.AUDIT_VERIFIED,
+                        entity_type="audit_log",
+                        entity_id=0,
+                        actor_user_id=None,
+                        detail={
+                            "rows_checked": result["rows_checked"],
+                            "intact": False,
+                            "first_break": int(brk["log_id"]),
+                        },
+                    )
                 else:
                     await audit.record(
                         conn,

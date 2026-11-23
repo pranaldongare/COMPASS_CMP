@@ -8,9 +8,12 @@ Navigation returned after sign-in: `consents`, `requests`, `notifications`, `pro
 
 | Resource | Read | Write | Scope | What the scope means |
 |---|---:|---:|---|---|
+| `analytics` | No | No | `none` | Denied |
+| `analytics_setting` | No | No | `none` | Denied |
 | `approval` | No | No | `none` | Denied |
 | `asset` | No | No | `none` | Denied |
 | `audit` | No | No | `none` | Denied |
+| `audit_report` | No | No | `none` | Denied |
 | `breach` | No | No | `none` | Denied |
 | `breach_settings` | No | No | `none` | Denied |
 | `breach_ticket` | No | No | `none` | Denied |
@@ -19,6 +22,7 @@ Navigation returned after sign-in: `consents`, `requests`, `notifications`, `pro
 | `data_source` | No | No | `none` | Denied |
 | `datavault_connection` | No | No | `none` | Denied |
 | `export` | No | No | `none` | Denied |
+| `health_report` | No | No | `none` | Denied |
 | `hr_category` | No | No | `none` | Denied |
 | `import` | No | No | `none` | Denied |
 | `legal_hold` | No | No | `none` | Denied |
@@ -31,6 +35,7 @@ Navigation returned after sign-in: `consents`, `requests`, `notifications`, `pro
 | `processor` | No | No | `none` | Denied |
 | `project` | No | No | `none` | Denied |
 | `purpose` | No | No | `none` | Denied |
+| `report` | No | No | `none` | Denied |
 | `restricted_country` | No | No | `none` | Denied |
 | `rights_request` | No | No | `none` | Denied |
 | `site` | No | No | `none` | Denied |

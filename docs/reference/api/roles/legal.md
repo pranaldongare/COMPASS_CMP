@@ -2,15 +2,18 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `requests`, `breaches`, `breach-settings`, `hr-activities`, `hr-categories`, `templates`, `purposes`, `consents`, `exports`, `processors`, `users`, `audit`, `messages`, `tickets`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `analytics`, `requests`, `breaches`, `breach-settings`, `hr-activities`, `hr-categories`, `templates`, `purposes`, `consents`, `exports`, `processors`, `users`, `audit`, `messages`, `tickets`, `notifications`, `profile`.
 
 ## Resource access
 
 | Resource | Read | Write | Scope | What the scope means |
 |---|---:|---:|---|---|
+| `analytics` | Yes | No | `all` | All rows |
+| `analytics_setting` | Yes | No | `all` | All rows |
 | `approval` | No | No | `none` | Denied |
 | `asset` | No | No | `none` | Denied |
 | `audit` | Yes | No | `all` | All rows |
+| `audit_report` | Yes | No | `all` | All rows |
 | `breach` | Yes | Yes | `all` | All rows |
 | `breach_settings` | Yes | Yes | `all` | All rows |
 | `breach_ticket` | Yes | Yes | `own` | Own or addressed rows |
@@ -19,6 +22,7 @@ Navigation returned after sign-in: `dashboard`, `requests`, `breaches`, `breach-
 | `data_source` | No | No | `none` | Denied |
 | `datavault_connection` | No | No | `none` | Denied |
 | `export` | Yes | Yes | `all` | All rows |
+| `health_report` | No | No | `none` | Denied |
 | `hr_category` | Yes | Yes | `all` | All rows |
 | `import` | No | No | `none` | Denied |
 | `legal_hold` | Yes | Yes | `all` | All rows |
@@ -31,6 +35,7 @@ Navigation returned after sign-in: `dashboard`, `requests`, `breaches`, `breach-
 | `processor` | Yes | No | `all` | All rows |
 | `project` | Yes | No | `all` | All rows |
 | `purpose` | Yes | Yes | `all` | All rows |
+| `report` | Yes | Yes | `all` | All rows |
 | `restricted_country` | No | No | `none` | Denied |
 | `rights_request` | Yes | Yes | `all` | All rows |
 | `site` | Yes | No | `all` | All rows |

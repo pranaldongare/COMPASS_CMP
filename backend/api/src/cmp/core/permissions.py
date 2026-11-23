@@ -61,6 +61,10 @@ class Role(StrEnum):
     #: An HR point of contact: creates the HR track's consent activities in
     #: the categories assigned to them (ADR 0033).
     HR_USER = "hr_user"
+    #: The people the organisation reports to (2026-11-23, ADR 0045): a
+    #: read-only login to the analytics, across both offices, with no office
+    #: of its own. Reads aggregates, never a record.
+    MANAGEMENT = "management"
 
 
 #: What each role is called in a sentence written to a person.
@@ -78,6 +82,7 @@ ROLE_TITLES: Final[dict[str, str]] = {
     Role.BREACH_HOLDER.value: "Temporary ticket holder",
     Role.LEGAL.value: "Legal PoC",
     Role.HR_USER.value: "HR PoC",
+    Role.MANAGEMENT.value: "Management",
 }
 
 #: The roles that work in one office (ADR 0032), whose account names it
@@ -452,6 +457,9 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         # temporary holder may hold a rights ticket too: `reach.place` gives an
         # internal holder with no console login a temporary one for it.
         Role.BREACH_HOLDER: Grant(Scope.OWN, write=True),
+        # Any member of staff may be asked; management answers what it is
+        # asked and nothing else (ADR 0045).
+        Role.MANAGEMENT: Grant(Scope.OWN, write=True),
     },
     # A breach ticket addressed to me (S3-08): the same rows as `ticket`. OWN
     # is "the holder is this account", in the WHERE clause; anything else is
@@ -467,6 +475,56 @@ MATRIX: dict[str, dict[Role, Grant]] = {
         Role.HR_USER: Grant(Scope.OWN, write=True),
         # The temporary role's whole reason to exist (S3-09).
         Role.BREACH_HOLDER: Grant(Scope.OWN, write=True),
+        Role.MANAGEMENT: Grant(Scope.OWN, write=True),
+    },
+    # Analytics (2026-11-23, ADR 0045): figures, never records. Management
+    # reads both offices, combined or one at a time; an officer reads their
+    # own office's (the session's office, as everywhere); the roles that do
+    # the work read what they do - their own projects (OWN), the ones they
+    # collect for or the categories they run (SCOPED). The administrator
+    # reads none of it: theirs are the audit and health reports.
+    "analytics": {
+        Role.MANAGEMENT: Grant(Scope.ALL),
+        Role.DPO: Grant(Scope.ALL),
+        Role.LEGAL: Grant(Scope.ALL),
+        Role.RND_USER: Grant(Scope.OWN),
+        Role.DCO: Grant(Scope.SCOPED),
+        Role.DCO_ADMIN: Grant(Scope.SCOPED),
+        Role.RCO: Grant(Scope.SCOPED),
+        Role.HR_USER: Grant(Scope.SCOPED),
+    },
+    # Ready-made reports over the audit trail: the administrator's, and each
+    # officer's for their own office's rows.
+    "audit_report": {
+        Role.ADMIN: Grant(Scope.ALL),
+        Role.DPO: Grant(Scope.ALL),
+        Role.LEGAL: Grant(Scope.ALL),
+    },
+    # The platform's health: the administrator's alone.
+    "health_report": {
+        Role.ADMIN: Grant(Scope.ALL),
+    },
+    # Targets and the small-number threshold: the administrator sets them;
+    # those who read the scorecard read them.
+    "analytics_setting": {
+        Role.ADMIN: Grant(Scope.ALL, write=True),
+        Role.MANAGEMENT: Grant(Scope.ALL),
+        Role.DPO: Grant(Scope.ALL),
+        Role.LEGAL: Grant(Scope.ALL),
+    },
+    # Generated reports and their schedules. Which kinds a role may make,
+    # read, download and delete is the report catalogue's (`cmp.core.metrics`),
+    # checked by the service; this row only admits the roles that have any.
+    "report": {
+        Role.MANAGEMENT: Grant(Scope.ALL, write=True),
+        Role.ADMIN: Grant(Scope.ALL, write=True),
+        Role.DPO: Grant(Scope.ALL, write=True),
+        Role.LEGAL: Grant(Scope.ALL, write=True),
+        Role.RND_USER: Grant(Scope.OWN, write=True),
+        Role.DCO: Grant(Scope.SCOPED, write=True),
+        Role.DCO_ADMIN: Grant(Scope.SCOPED, write=True),
+        Role.RCO: Grant(Scope.SCOPED, write=True),
+        Role.HR_USER: Grant(Scope.SCOPED, write=True),
     },
 }
 
@@ -506,8 +564,13 @@ def scope_of(resource: str, role: Role | str) -> Scope:
 PERSONAL: tuple[str, ...] = ("tickets", "notifications", "profile")
 
 NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
+    # Management reads the analytics and its own account, nothing else
+    # (ADR 0045). It lands on Analytics, which is first.
+    Role.MANAGEMENT: ("analytics", *PERSONAL),
     Role.DPO: (
         "dashboard",
+        # Figures and reports (ADR 0045).
+        "analytics",
         "projects",
         # Read rights on approvals, sites and collections existed without a
         # way to reach them except through a project. Oversight reaches all.
@@ -540,6 +603,8 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
     ),
     Role.DCO: (
         "dashboard",
+        # Figures and reports (ADR 0045).
+        "analytics",
         "projects",
         "sites",
         # They register the rigs they will run, so they need the registry. What
@@ -559,6 +624,8 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
     # is sites with no source attached, and attaching one is the whole action.
     Role.DCO_ADMIN: (
         "dashboard",
+        # Figures and reports (ADR 0045).
+        "analytics",
         "projects",
         "sites",
         "sources",
@@ -575,6 +642,8 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
     # party's.
     Role.RCO: (
         "dashboard",
+        # Figures and reports (ADR 0045).
+        "analytics",
         "projects",
         "sites",
         "sources",
@@ -592,6 +661,8 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
     # watches its checklist; composing it is the office's.
     Role.RND_USER: (
         "dashboard",
+        # Figures and reports (ADR 0045).
+        "analytics",
         "projects",
         "notices",
         "processors",
@@ -606,6 +677,8 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
     # ones about the DPO, which the DPO must not review.
     Role.ADMIN: (
         "dashboard",
+        # Figures and reports (ADR 0045).
+        "analytics",
         "users",
         # The words of every message the platform sends.
         "messages",
@@ -633,6 +706,8 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
     # increments land.
     Role.LEGAL: (
         "dashboard",
+        # Figures and reports (ADR 0045).
+        "analytics",
         # The Legal office's rights queue and breach register (0055).
         "requests",
         "breaches",
@@ -652,6 +727,8 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
     ),
     Role.HR_USER: (
         "dashboard",
+        # Figures and reports (ADR 0045).
+        "analytics",
         "hr-activities",
         "hr-categories",
         "links",

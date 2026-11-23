@@ -142,6 +142,12 @@ celery_app.conf.update(
             "task": "cmp.datavault.queue_consent_lapses",
             "schedule": crontab(hour="2", minute="15"),
         },
+        # Scheduled reports (ADR 0045): each due one made and mailed. Hourly,
+        # so a report due at 06:00 India time goes out within the hour.
+        "run-report-schedules": {
+            "task": "cmp.reports.run_schedules",
+            "schedule": crontab(minute="7"),
+        },
     },
 )
 
@@ -152,6 +158,7 @@ celery_app.autodiscover_tasks(
         "cmp.tasks.maintenance",
         "cmp.tasks.exchange",
         "cmp.tasks.datavault",
+        "cmp.tasks.reports",
     ],
     force=True,
 )

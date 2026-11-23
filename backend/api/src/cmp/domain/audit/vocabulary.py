@@ -54,6 +54,8 @@ GROUP_LABELS: Final[dict[str, str]] = {
     "datavault": "DataVault",
     "portal_address": "Portal address",
     "message_template": "Messages",
+    "report": "Reports",
+    "analytics": "Analytics",
     "audit": "Audit trail",
 }
 
@@ -83,6 +85,9 @@ EVENT_LABELS: Final[dict[str, str]] = {
     "datavault.erasure_checked": "DataVault asked how far an erasure has got",
     "datavault.consent_change_queued": "Consent change to tell DataVault",
     "datavault.consent_change_delivered": "DataVault told of a consent change",
+    "report.schedule_created": "Report schedule set up",
+    "report.schedule_updated": "Report schedule changed",
+    "report.schedule_deleted": "Report schedule removed",
 }
 
 #: Which pickers the console offers, and the plain name of each.

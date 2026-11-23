@@ -616,6 +616,26 @@ pool reconnects.
   double every scheduled job.
 - Tasks are idempotent; re-running one that half-completed is safe by design.
 
+## A report stays "queued" or says "failed"
+
+Reports are made by the worker on the `reports` queue (ADR 0045).
+
+- **Queued for long:** no worker consumes `reports` (check its `-Q`), or the
+  broker dropped the task after the commit. Ask for the report again; the
+  stale row can be deleted from Analytics, Reports.
+- **Failed:** the row says why. `ValidationFailed: File exceeds … MB` is
+  `MAX_UPLOAD_BYTES`, which bounds every stored file, reports included: narrow
+  the period, or raise the setting. Anything else is in the worker's log as
+  `report.failed`, with the report's uuid and never a figure.
+- **"This report's file does not match what was made":** the file under
+  `UPLOAD_ROOT/reports/` changed after it was made. It is not served; restore
+  it from backup, or make the report again.
+- **A scheduled report did not arrive:** beat runs `run-report-schedules` at
+  minute 7 of every hour; the schedule's *last run* says whether it ran. The
+  mail goes only to active accounts of the roles it names, by the
+  *A scheduled report* message, with the file attached (at most 10 MB of
+  files per email).
+
 ## A migration failed halfway
 
 Every migration is one transaction; a failed one rolled back. Read the
