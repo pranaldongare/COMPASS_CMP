@@ -238,6 +238,8 @@ class Settings(BaseSettings):
         "meera.nair@cmp.local",
         "rahul.desai@cmp.local",
         "ananya.sen@cmp.local",
+        # Management (ADR 0045): read-only analytics across both offices.
+        "sanjay.kapoor@cmp.local",
     )
     #: The key the blind indexes are computed under. Separate from SECRET_KEY on
     #: purpose: rotating the session secret must not change every index, and

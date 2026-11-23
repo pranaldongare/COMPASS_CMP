@@ -111,6 +111,7 @@ const ROLE: Record<Role, { tone: Tone; label: string }> = {
   // track, so it shares the DPO's tone; an HR PoC, an author's.
   legal: { tone: "accent", label: "Legal PoC" },
   hr_user: { tone: "neutral", label: "HR PoC" },
+  management: { tone: "neutral", label: "Management" },
 };
 
 const REGISTRY: Record<string, Record<string, { tone: Tone; label: string }>> = {

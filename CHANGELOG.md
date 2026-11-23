@@ -19,6 +19,11 @@ as a release yet.
   always steps up to a second factor. The administrator reads audit and health
   only; the DPO and the Legal PoC read their own office; the R&D User, DCO, DCO
   Admin, RCO and HR PoC read the figures of their own work.
+  It is in every role list of the console (labels, the staff register, the
+  audit filter, Help), is provisioned with no office (the server refuses one),
+  lands on Analytics, and has a dashboard of its own tickets only; the demo
+  seed's `sanjay.kapoor@cmp.local` is on the sign-in page's development
+  accounts.
 - **Targets** and the **small-number threshold** (1 to start), set by the
   administrator under Analytics, Settings; counts of fewer people are withheld.
 - **Reports** - management scorecard, board pack, analytics summary, your work,

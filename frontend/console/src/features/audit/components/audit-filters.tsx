@@ -58,7 +58,19 @@ export const EMPTY_FILTERS: AuditFilterState = {
 
 export const FILTER_KEYS = Object.keys(EMPTY_FILTERS) as (keyof AuditFilterState)[];
 
-const ROLES = ["dpo", "admin", "legal", "hr_user", "dco", "dco_admin", "rco", "rnd_user", "data_subject", "breach_holder"];
+const ROLES = [
+  "dpo",
+  "admin",
+  "legal",
+  "hr_user",
+  "dco",
+  "dco_admin",
+  "rco",
+  "rnd_user",
+  "data_subject",
+  "breach_holder",
+  "management",
+];
 
 /** The API parameters for a state: dates widened to whole days, display-only
  *  keys dropped, empties dropped. */
@@ -404,14 +416,15 @@ export function describeFilters(
   if (f.entity && f.entity_type) {
     // A breach, a request, a project: the trail reads what belongs to the
     // record too - its tickets, its sites, its notices - and the chip says so.
-    const whole = vocabulary?.entity_types.find((e) => e.value === f.entity_type)?.with_parts;
+    const whole = vocabulary?.entity_types.find(
+      (e) => e.value === f.entity_type,
+    )?.with_parts;
     chips.push({
       label: nounOf(f.entity_type),
       value: `${f.label || f.entity.slice(0, 8)}${whole ? " and everything on it" : ""}`,
       onClear: () => clear(["entity", "entity_type", "label"]),
     });
-  }
-  else if (f.entity_type)
+  } else if (f.entity_type)
     chips.push({
       label: "Record type",
       value: nounOf(f.entity_type),

@@ -16,6 +16,7 @@ export const ROLES: RoleOption[] = [
   { value: "rco", label: "RCO" },
   { value: "legal", label: "Legal PoC" },
   { value: "hr_user", label: "HR PoC" },
+  { value: "management", label: "Management" },
   { value: "breach_holder", label: "Temporary ticket holder" },
 ];
 

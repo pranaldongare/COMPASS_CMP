@@ -36,3 +36,8 @@ each role: management, DPO, Legal PoC, administrator, R&D User, DCO, HR PoC.
 | AN-26 | Management | Pause, resume, remove the schedule | Each on the trail; reports it made are kept |
 | AN-27 | Administrator | Health | Codes sent/entered by flow, failed sign-ins, lockouts, 403s, audit checks and breaks, pipeline failures, queue depth |
 | AN-28 | Data principal | Call `/analytics/catalogue` | Refused (403) |
+| AN-29 | Administrator | Users, Provision account, role *Management*, with an office | Refused: "this role works across both offices; leave the office empty" |
+| AN-30 | Administrator | The same, office left empty | Account created; the register shows the role as *Management*, no office |
+| AN-31 | Management | Sign in (`sanjay.kapoor@cmp.local` on a demo database) | Asked for a second factor; lands on Analytics; the sidebar holds Analytics and Tickets only |
+| AN-32 | Management | Open `/dashboard`, `/users`, `/requests`, `/breaches` directly | Dashboard sends to Analytics; Users and Requests refused; Breaches not found |
+| AN-33 | Administrator | Audit, filter by role *Management* | The management account's sign-ins and report downloads listed |

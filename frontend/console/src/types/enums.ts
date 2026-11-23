@@ -31,7 +31,8 @@ export type Role =
   | "legal"
   /** HR PoC: creates the HR track's consent activities in the categories
    *  assigned to them (ADR 0033). */
-  | "hr_user";
+  | "hr_user"
+  | "management";
 
 /** The roles that can be accountable for a data source.
  *

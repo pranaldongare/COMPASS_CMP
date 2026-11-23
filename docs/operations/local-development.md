@@ -151,7 +151,9 @@ project and the notice are the DPO's to open, not the administrator's.
 `seed.py`, fills the database the way a deployment fills up - through the API,
 each row written by the person whose job it is: fifteen staff (password
 `SeedPassw0rd!2026`, e.g. `kavitha.raman@cmp.local` as a DPO and
-`meera.nair@cmp.local` as the Legal office's PoC), and ten or more
+`meera.nair@cmp.local` as the Legal office's PoC), one management login
+(`sanjay.kapoor@cmp.local`, no office, always asked for a second factor;
+ADR 0045), and ten or more
 processors, sources, purposes, projects with notices, sites, consent links,
 data principals and their consents (a few partial, declined or withdrawn),
 exports, imports and rights requests. It runs once per database and stops
@@ -163,6 +165,14 @@ Re-running the seed never deletes anything, so a database seeded before
 `subject@cmp.local` accounts. **The browser suites sign in as those**; on a
 freshly seeded database, invite them first (same addresses, password
 `SeedPassw0rd!2026`) or the suites' setup step fails.
+
+**Testing as management on a database seeded earlier.** `seed_demo.py` does
+not run twice, so a database it filled before management existed has no such
+login. Provision one as the administrator: **Users → Provision account**, role
+*Management*, office left empty (the server refuses one). It signs in with a
+second factor, lands on **Analytics** - the combined view, an office chooser,
+the scorecard and the reports - and has **Tickets** for anything addressed to
+it, and nothing else.
 
 **Reading a code.** In `local` and `test`, every email and SMS is appended to
 `backend/api/var/outbox.log` instead of being sent. The newest entry is at the
@@ -204,7 +214,7 @@ deployment.
 **The seed accounts, on the sign-in page.** With the same switch on, the
 console's sign-in page has a **Development accounts** panel: the seed's own
 logins - `admin@`, `dpo@`, `dcoadmin@`, `dco@`, `rco@`, `rnd@cmp.local` and
-`seed_demo.py`'s fifteen staff - that are active and still have the seed
+`seed_demo.py`'s fifteen staff and its management login - that are active and still have the seed
 password, with the password and a **Use** button that fills the form. Each is
 checked against the password it has now (`GET /dev/seed-accounts`), so one
 whose password was changed disappears from the list, and an account the seed

@@ -29,7 +29,10 @@ import { useSources } from "@/features/registry";
 import type { Office, User } from "@/types";
 import { useToast } from "@/providers";
 import { roleSchema, userSchema } from "@/features/users/schemas";
-import { ProcessorPicker, type PickedProcessor } from "@/features/users/components/processors";
+import {
+  ProcessorPicker,
+  type PickedProcessor,
+} from "@/features/users/components/processors";
 
 /* ============================================================ create / edit */
 
@@ -235,7 +238,11 @@ export function UserForm({ user, onDone }: { user?: User; onDone: () => void }) 
 
         {/* Creation here; afterwards on the account's page, under Collects for. */}
         {!user && ownsSources && (
-          <ProcessorPicker role={role === "rco" ? "rco" : "dco"} value={processors} onChange={setProcessors} />
+          <ProcessorPicker
+            role={role === "rco" ? "rco" : "dco"}
+            value={processors}
+            onChange={setProcessors}
+          />
         )}
 
         {/* Creation only. Moving a source between people afterwards belongs on
@@ -388,7 +395,7 @@ export function RoleChangeForm({ user, onDone }: { user: User; onDone: () => voi
 
 /**
  * The office an account works in (ADR 0032). Every role but the administrator
- * works in one - which, and the refusal when it is missing or not wanted, are
+ * and management works in one - which, and the refusal when it is missing or not wanted, are
  * the server's; this only offers the offices it lists. `keeping` names the
  * account's office on a role change, which an empty choice leaves as it is.
  */
@@ -408,15 +415,15 @@ function OfficeField({
       label="Office"
       hint={
         keeping
-          ? `Left as it is, they stay in the ${keeping}. An administrator works across both offices.`
-          : "Every role but the administrator works in one office, and sees only its records."
+          ? `Left as it is, they stay in the ${keeping}. The administrator and management work across both offices.`
+          : "Every role but the administrator and management works in one office, and sees only its records."
       }
       error={error}
     >
       {(p) => (
         <Select {...p} {...register}>
           <option value="">
-            {keeping ? `Keep the ${keeping}` : "No office (administrator)"}
+            {keeping ? `Keep the ${keeping}` : "No office (administrator, management)"}
           </option>
           {offices?.map((o) => (
             <option key={o.office_uuid} value={o.office_uuid}>

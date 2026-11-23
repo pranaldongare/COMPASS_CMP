@@ -67,6 +67,7 @@ const NAV: Record<Role, string[]> = {
   breach_holder: ["tickets", "notifications", "profile"],
   legal: ["dashboard", "tickets", "notifications", "profile"],
   hr_user: ["dashboard", "tickets", "notifications", "profile"],
+  management: ["analytics", "tickets", "notifications", "profile"],
 };
 
 export function makeMe(overrides: Partial<Me> = {}): Me {

@@ -129,3 +129,38 @@ async def test_targets_are_the_administrators_and_reports_are_kept_until_deleted
         template="/reports/{report_uuid}",
         session=boss,
     )
+
+
+async def test_management_is_a_read_only_login_of_no_office(
+    http: httpx.AsyncClient, session_for: SessionFactory, committed: object
+) -> None:
+    """Provisioned with no office (the server refuses one), it reaches its
+    analytics, its own tickets and its dashboard of tickets - and none of the
+    registers it reports on."""
+    from tests.http.conftest import fresh, fresh_email, fresh_mobile
+
+    admin = await session_for("admin")
+    offices = (await call(http, "GET", "/offices", session=admin)).json()
+    rnd = next(o["office_uuid"] for o in offices if o["office_code"] == "rnd")
+    body = {
+        "full_name": "Http Manager",
+        "email": fresh_email("mgmt"),
+        "role": "management",
+        "organization_id": fresh("EMP-"),
+        "mobile": fresh_mobile(),
+    }
+    await call(http, "POST", "/users", session=admin, expect=422, json={**body, "office_uuid": rnd})
+    made = (await call(http, "POST", "/users", session=admin, expect=201, json=body)).json()
+    assert made["role"] == "management" and not made.get("office_uuid")
+
+    boss = await session_for("management")
+    me = (await call(http, "GET", "/auth/me", session=boss)).json()
+    assert me["role"] == "management" and me["office"] is None
+    assert "analytics" in me["nav"] and "users" not in me["nav"]
+    board = (await call(http, "GET", "/dashboard", session=boss)).json()
+    assert board["role"] == "management" and "tickets_for_me" in board["counts"]
+    for path in ("/users", "/requests", "/audit"):
+        await call(http, "GET", path, session=boss, expect=403)
+    # The breach register is hidden, not refused: 404, as for any other role
+    # without it. Management reads breaches as figures only.
+    await call(http, "GET", "/breaches", session=boss, expect=404)

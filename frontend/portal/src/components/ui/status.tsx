@@ -109,6 +109,7 @@ const ROLE: Record<Role, { tone: Tone; label: string }> = {
   breach_holder: { tone: "neutral", label: "Temporary ticket holder" },
   legal: { tone: "accent", label: "Legal PoC" },
   hr_user: { tone: "neutral", label: "HR PoC" },
+  management: { tone: "neutral", label: "Management" },
 };
 
 const REGISTRY: Record<string, Record<string, { tone: Tone; label: string }>> = {

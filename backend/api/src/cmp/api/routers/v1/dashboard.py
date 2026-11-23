@@ -466,6 +466,10 @@ async def dashboard(principal: CurrentUser) -> dict[str, Any]:
                 data = await _legal(conn)
             case Role.HR_USER:
                 data = await _hr_user(conn, principal.user_id)
+            case Role.MANAGEMENT:
+                # Management's figures are the Analytics section's (ADR 0045);
+                # here, only the tickets addressed to it, below.
+                data = {"role": "management", "counts": {}, "queues": [], "recent": []}
             case _:
                 raise Forbidden("No dashboard for this role")
         # Every member of staff, whatever their role: a rights request's

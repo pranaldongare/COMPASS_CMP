@@ -100,7 +100,6 @@ export const FORMAT_LABEL: Record<string, string> = {
 /** A role by its title, as the rest of the console names it. */
 export function roleTitle(role: string | null | undefined): string {
   if (!role) return "System";
-  if (role === "management") return "Management";
   if (role === "system") return "System";
   return statusLabel("role", role);
 }
