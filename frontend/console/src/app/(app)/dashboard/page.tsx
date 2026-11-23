@@ -60,14 +60,20 @@ const ROLE_TITLE: Record<string, string> = {
 export default function DashboardPage() {
   const { me } = useAuth();
   const router = useRouter();
-  // An account the server gives no dashboard - a breach-only login (S3-09) -
-  // lands on its tickets instead. Every way home leads here, so this is the
-  // one place to send it on; the server's `nav` decides, not a role list.
-  const elsewhere = Boolean(
-    me && !me.nav.includes("dashboard") && me.nav.includes("tickets"),
-  );
+  // An account the server gives no dashboard lands elsewhere: management on
+  // Analytics (ADR 0045), a breach-only login (S3-09) on its tickets. Every
+  // way home leads here, so this is the one place to send it on; the
+  // server's `nav` decides, not a role list.
+  const elsewhere =
+    me && !me.nav.includes("dashboard")
+      ? me.nav.includes("analytics")
+        ? "/analytics"
+        : me.nav.includes("tickets")
+          ? "/tickets"
+          : null
+      : null;
   React.useEffect(() => {
-    if (elsewhere) router.replace("/tickets");
+    if (elsewhere) router.replace(elsewhere);
   }, [elsewhere, router]);
   const { data, isLoading, error } = useDashboard();
 

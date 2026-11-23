@@ -184,6 +184,22 @@ export const keys = {
   },
 
   /**
+   * Analytics and reports (ADR 0045). Figures hang off one prefix, so a
+   * changed target or threshold invalidates every period and breakdown at
+   * once; reports and schedules are lists of their own.
+   */
+  analytics: {
+    all: ["analytics"] as const,
+    catalogue: ["analytics", "catalogue"] as const,
+    figures: (params?: Params) => ["analytics", "figures", params ?? {}] as const,
+    inventory: (params?: Params) => ["analytics", "inventory", params ?? {}] as const,
+    audit: (key: string, params?: Params) => ["analytics", "audit", key, params ?? {}] as const,
+    settings: ["analytics", "settings"] as const,
+    reports: ["reports"] as const,
+    schedules: ["reports", "schedules"] as const,
+  },
+
+  /**
    * Rights requests. The register is a cross-request list; everything about
    * one request - holders, scope, transitions, trail - hangs off its uuid so
    * one invalidation reaches all of it.

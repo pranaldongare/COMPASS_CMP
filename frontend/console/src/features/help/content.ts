@@ -58,6 +58,11 @@ export const SECTIONS: HelpSection[] = [
               "Creates staff accounts and sets roles, keeps the wording of messages, and reviews grievances about the DPO.",
           },
           {
+            term: "Management",
+            meaning:
+              "Reads the analytics and reports across both offices, and answers any ticket addressed to them.",
+          },
+          {
             term: "R&D User",
             meaning:
               "Registers research projects, brings their notice and approval, and submits them for review.",
@@ -159,6 +164,26 @@ export const SECTIONS: HelpSection[] = [
           "Below it are your work queues; an empty queue is listed as clear rather than hidden.",
           "The DPO also sees [[Projects by stage]] and the [[Consent position]] across the platform.",
           "[[Recent activity]] shows the latest events on your records.",
+        ],
+      },
+    ],
+  },
+  {
+    id: "analytics",
+    title: "Analytics and reports",
+    summary:
+      "Figures for a period against their targets, audit and health reports, and reports kept as files.",
+    blocks: [
+      {
+        kind: "list",
+        items: [
+          "The Dashboard is what needs you today; [[Analytics]] is what happened over a period. Your tabs depend on your role: Management, the DPO and the Legal PoC see [[Management]], [[Analytics]] and [[Record of processing]]; the DPO and the Legal PoC also see [[Audit reports]] and [[Data quality]]; the administrator sees [[Audit reports]], [[Health]], [[Data quality]] and [[Settings]]; everyone else sees [[Your work]]. Every role with analytics sees [[Reports]].",
+          "Choose the period at the top: the last 7 or 30 days, a month, a quarter, a calendar year, a financial year (April to March) or your own dates. Each figure shows the period before beside it, its target, and [[On target]], [[Watch]] or [[Off target]]. Open [[What this counts]] under a figure for its exact definition.",
+          "Management can choose one office or both, and split the figures by office with [[Breakdown]]. The DPO and the Legal PoC always see their own office's figures.",
+          "A figure shown as [[< 5]] counts fewer people than the threshold the administrator set, so it is withheld to protect them.",
+          "[[Audit reports]] lists what the audit trail recorded for the period: privileged actions, access to personal data, configuration and security events, and more. [[Make this a report]] saves it as CSV, Excel or PDF.",
+          "[[Reports]]: [[New report]] makes one as PDF, Excel or CSV; it shows [[Being made]] until it is ready. Reports are kept until somebody deletes them. Every download and deletion is recorded on the audit trail. [[New schedule]] makes a report weekly, monthly or quarterly and emails it to the roles you choose.",
+          "The administrator sets each figure's target and amber line, and the small-number threshold, under [[Settings]].",
         ],
       },
     ],

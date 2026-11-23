@@ -85,6 +85,17 @@ import type {
   SiteListRow,
   User,
 } from "@/types";
+import type {
+  AnalyticsSettings,
+  AuditReport,
+  Catalogue,
+  Figures,
+  Inventory,
+  Report,
+  ReportInput,
+  ReportSchedule,
+  ScheduleInput,
+} from "@/types/analytics";
 
 type Schemas = components["schemas"];
 
@@ -225,6 +236,26 @@ export type _RightsRequestDetailCodeChannel = Covers<
   Pick<RightsRequestDetail, "code_channel">
 >;
 
+
+// Analytics and reports (ADR 0045): the catalogue drives the page, so it
+// is checked as closely as the figures it describes. The two inputs are
+// checked the other way too - what the page sends must be what the API takes.
+export type _Catalogue = Covers<"Catalogue", Schemas["CatalogueOut"], Catalogue>;
+export type _Figures = Covers<"Figures", Schemas["FiguresOut"], Figures>;
+export type _Inventory = Covers<"Inventory", Schemas["InventoryOut"], Inventory>;
+export type _AuditReport = Covers<"AuditReport", Schemas["AuditReportOut"], AuditReport>;
+export type _AnalyticsSettings = Covers<
+  "AnalyticsSettings",
+  Schemas["SettingsOut"],
+  AnalyticsSettings
+>;
+export type _Report = Covers<"Report", Schemas["ReportOut"], Report>;
+export type _ReportSchedule = Covers<"ReportSchedule", Schemas["ScheduleOut"], ReportSchedule>;
+export type _ReportInput = ReportInput extends Schemas["ReportIn"] ? true : "ReportInput has drifted";
+export type _ScheduleInput = ScheduleInput extends Schemas["ScheduleIn"]
+  ? true
+  : "ScheduleInput has drifted";
+
 /**
  * The check itself.
  *
@@ -266,6 +297,15 @@ const _contractHolds: {
   DismissedReport: _DismissedReport;
   RightsPublicReports: _RightsPublicReports;
   RightsRequestDetailCodeChannel: _RightsRequestDetailCodeChannel;
+  Catalogue: _Catalogue;
+  Figures: _Figures;
+  Inventory: _Inventory;
+  AuditReport: _AuditReport;
+  AnalyticsSettings: _AnalyticsSettings;
+  Report: _Report;
+  ReportSchedule: _ReportSchedule;
+  ReportInput: _ReportInput;
+  ScheduleInput: _ScheduleInput;
 } = {
   Me: true,
   MeProfile: true,
@@ -301,6 +341,15 @@ const _contractHolds: {
   DismissedReport: true,
   RightsPublicReports: true,
   RightsRequestDetailCodeChannel: true,
+  Catalogue: true,
+  Figures: true,
+  Inventory: true,
+  AuditReport: true,
+  AnalyticsSettings: true,
+  Report: true,
+  ReportSchedule: true,
+  ReportInput: true,
+  ScheduleInput: true,
 };
 
 void _contractHolds;

@@ -9,6 +9,7 @@
  * name is not rendered anywhere.
  */
 import {
+  ChartColumn,
   Bell,
   Boxes,
   Building2,
@@ -67,6 +68,15 @@ export const SECTIONS: NavSection[] = [
         label: "Dashboard",
         icon: Gauge,
         keywords: "home",
+      },
+      // Figures over a period against their targets, the ready-made reports
+      // and the files made of them (ADR 0045). Management's home.
+      {
+        key: "analytics",
+        href: "/analytics",
+        label: "Analytics",
+        icon: ChartColumn,
+        keywords: "reports scorecard figures kpi metrics health audit report record of processing",
       },
     ],
   },
@@ -298,6 +308,8 @@ const DAILY_WORK: Record<string, string[]> = {
   // The HR track (ADR 0032): their registers join as the increments land.
   legal: ["dashboard", "requests", "breaches", "hr-activities", "hr-categories", "templates", "purposes", "tickets"],
   hr_user: ["dashboard", "hr-activities", "links", "consents", "tickets"],
+  // The scorecard is management's daily work, and all of it (ADR 0045).
+  management: ["analytics", "tickets"],
 };
 
 /** In the account menu and the header's bell, not the sidebar as well. */

@@ -22,6 +22,7 @@ import type { Me, Role } from "@/types";
 /** The navigation keys the server can return. Mirrors `NAV_BY_ROLE`. */
 export type NavKey =
   | "dashboard"
+  | "analytics"
   | "projects"
   | "notices"
   | "purposes"

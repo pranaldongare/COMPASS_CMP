@@ -7088,6 +7088,219 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/analytics/catalogue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What this reader may see */
+        get: operations["get_catalogue_analytics_catalogue_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/analytics/figures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Figures for a period
+         * @description The figures of a section, or the metrics named, for the period, with
+         *     the previous period, the target and its status, a line and a breakdown.
+         */
+        get: operations["get_figures_analytics_figures_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/analytics/inventory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The record of processing */
+        get: operations["get_inventory_analytics_inventory_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/analytics/audit-reports/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One ready-made audit report */
+        get: operations["get_audit_report_analytics_audit_reports__key__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/analytics/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Targets and the threshold */
+        get: operations["get_settings_analytics_settings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/analytics/targets/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set a metric's target */
+        put: operations["put_target_analytics_targets__key__put"];
+        post?: never;
+        /** Back to the default target */
+        delete: operations["delete_target_analytics_targets__key__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/analytics/settings/threshold": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** The small-number threshold */
+        put: operations["put_threshold_analytics_settings_threshold_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The reports this reader may see */
+        get: operations["list_reports_reports_get"];
+        put?: never;
+        /** Ask for a report */
+        post: operations["create_report_reports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/schedules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Report schedules */
+        get: operations["list_schedules_reports_schedules_get"];
+        put?: never;
+        /** Make a report on a cadence and mail it */
+        post: operations["create_schedule_reports_schedules_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/schedules/{schedule_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a schedule */
+        delete: operations["remove_schedule_reports_schedules__schedule_uuid__delete"];
+        options?: never;
+        head?: never;
+        /** Pause or resume a schedule */
+        patch: operations["change_schedule_reports_schedules__schedule_uuid__patch"];
+        trace?: never;
+    };
+    "/reports/{report_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One report */
+        get: operations["get_report_reports__report_uuid__get"];
+        put?: never;
+        post?: never;
+        /** Delete a report */
+        delete: operations["delete_report_reports__report_uuid__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/reports/{report_uuid}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download a report, as it was made */
+        get: operations["download_report_reports__report_uuid__file_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/messages": {
         parameters: {
             query?: never;
@@ -7635,6 +7848,68 @@ export interface components {
             entity_href?: string | null;
             /** Reason */
             reason?: string | null;
+        };
+        /** AuditReportInfo */
+        AuditReportInfo: {
+            /** Key */
+            key: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+        };
+        /** AuditReportOut */
+        AuditReportOut: {
+            /** Key */
+            key: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Events */
+            events: string[];
+            period: components["schemas"]["PeriodOut"];
+            /** Items */
+            items: components["schemas"]["AuditRowOut"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+            /** Total */
+            total: number;
+            /** Summary */
+            summary: {
+                [key: string]: unknown;
+            };
+        };
+        /** AuditRowOut */
+        AuditRowOut: {
+            /**
+             * Log Uuid
+             * Format: uuid
+             */
+            log_uuid: string;
+            /** Event Type */
+            event_type: string;
+            /** Entity Type */
+            entity_type?: string | null;
+            /**
+             * Occurred At
+             * Format: date-time
+             */
+            occurred_at: string;
+            /** Actor Uuid */
+            actor_uuid?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+            /** Actor Role */
+            actor_role?: string | null;
+            /** Subject Uuid */
+            subject_uuid?: string | null;
+            /** Subject Name */
+            subject_name?: string | null;
+            /** Detail */
+            detail?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** AuditSummary */
         AuditSummary: {
@@ -9560,6 +9835,29 @@ export interface components {
             /** Added By Name */
             added_by_name: string | null;
         };
+        /** CatalogueOut */
+        CatalogueOut: {
+            /** Role */
+            role: string;
+            /** Office */
+            office: string | null;
+            /** May Choose Office */
+            may_choose_office: boolean;
+            /** Sections */
+            sections: string[];
+            /** Metrics */
+            metrics: components["schemas"]["MetricInfo"][];
+            /** Dimensions */
+            dimensions: components["schemas"]["Choice"][];
+            /** Periods */
+            periods: components["schemas"]["Choice"][];
+            /** Cadences */
+            cadences: components["schemas"]["Choice"][];
+            /** Reports */
+            reports: components["schemas"]["ReportKindInfo"][];
+            /** Audit Reports */
+            audit_reports: components["schemas"]["AuditReportInfo"][];
+        };
         /** CategoryDetailOut */
         CategoryDetailOut: {
             /**
@@ -9799,6 +10097,13 @@ export interface components {
             approved_language_count: number;
             /** Site Count */
             site_count: number;
+        };
+        /** Choice */
+        Choice: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
         };
         /** ClassifyIn */
         ClassifyIn: {
@@ -10888,6 +11193,62 @@ export interface components {
                 [key: string]: number;
             } | null;
         };
+        /** FigureOut */
+        FigureOut: {
+            /** Key */
+            key: string;
+            /** Title */
+            title: string;
+            /** Definition */
+            definition: string;
+            /** Unit */
+            unit: string;
+            /** Section */
+            section: string;
+            /** Group */
+            group: string;
+            /** Kind */
+            kind: string;
+            /** Dims */
+            dims: string[];
+            /** Value */
+            value: number | null;
+            /** Suppressed */
+            suppressed: boolean;
+            /** Previous */
+            previous: number | null;
+            /** Previous Suppressed */
+            previous_suppressed: boolean;
+            /** Change */
+            change: number | null;
+            /** Target */
+            target: number | null;
+            /** Amber */
+            amber: number | null;
+            /** Higher Is Better */
+            higher_is_better: boolean;
+            /** Status */
+            status: string | null;
+            /** Series */
+            series: components["schemas"]["PointOut"][];
+            /** Breakdown */
+            breakdown: components["schemas"]["PartOut"][];
+        };
+        /** FiguresOut */
+        FiguresOut: {
+            period: components["schemas"]["PeriodOut"];
+            previous: components["schemas"]["PeriodOut"] | null;
+            /** Office */
+            office: string | null;
+            /** Dim */
+            dim: string | null;
+            /** Grain */
+            grain: string | null;
+            /** Threshold */
+            threshold: number;
+            /** Metrics */
+            metrics: components["schemas"]["FigureOut"][];
+        };
         /** GrantOut */
         GrantOut: {
             /**
@@ -11396,6 +11757,21 @@ export interface components {
             /** Roles */
             roles: string[];
         };
+        /** InventoryOut */
+        InventoryOut: {
+            /** Purposes */
+            purposes: {
+                [key: string]: unknown;
+            }[];
+            /** Processors */
+            processors: {
+                [key: string]: unknown;
+            }[];
+            /** Sources */
+            sources: {
+                [key: string]: unknown;
+            }[];
+        };
         /** IssueTicketsIn */
         IssueTicketsIn: {
             /** Instruction */
@@ -11888,6 +12264,27 @@ export interface components {
             portal_url?: string | null;
             /** Writes */
             writes?: string[];
+        };
+        /** MetricInfo */
+        MetricInfo: {
+            /** Key */
+            key: string;
+            /** Title */
+            title: string;
+            /** Definition */
+            definition: string;
+            /** Unit */
+            unit: string;
+            /** Section */
+            section: string;
+            /** Group */
+            group: string;
+            /** Kind */
+            kind: string;
+            /** Dims */
+            dims: string[];
+            /** People */
+            people: boolean;
         };
         /** MfaVerifyRequest */
         MfaVerifyRequest: {
@@ -12682,12 +13079,50 @@ export interface components {
              */
             total?: number | null;
         };
+        /** PartOut */
+        PartOut: {
+            /** Key */
+            key: string | null;
+            /** Label */
+            label: string;
+            /** Value */
+            value: number | null;
+            /** Suppressed */
+            suppressed: boolean;
+        };
         /** PasswordChange */
         PasswordChange: {
             /** Current Password */
             current_password: string;
             /** New Password */
             new_password: string;
+        };
+        /** PeriodOut */
+        PeriodOut: {
+            /** Preset */
+            preset: string;
+            /**
+             * Start
+             * Format: date-time
+             */
+            start: string;
+            /**
+             * End
+             * Format: date-time
+             */
+            end: string;
+            /** Label */
+            label: string;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /**
+             * End Date
+             * Format: date
+             */
+            end_date: string;
         };
         /** PersonTypeChange */
         PersonTypeChange: {
@@ -12735,6 +13170,15 @@ export interface components {
             name: string;
             /** Status */
             status: string;
+        };
+        /** PointOut */
+        PointOut: {
+            /** Bucket */
+            bucket: string | null;
+            /** Value */
+            value: number | null;
+            /** Suppressed */
+            suppressed: boolean;
         };
         /** PortalAddressIn */
         PortalAddressIn: {
@@ -13230,6 +13674,83 @@ export interface components {
              * Format: date
              */
             due_on: string;
+        };
+        /** ReportIn */
+        ReportIn: {
+            /** Kind */
+            kind: string;
+            /** Format */
+            format: string;
+            /** Period */
+            period?: string | null;
+            /** Start */
+            start?: string | null;
+            /** End */
+            end?: string | null;
+            /** Office */
+            office?: string | null;
+            /** Audit */
+            audit?: string | null;
+            /** Entity Type */
+            entity_type?: string | null;
+            /** Entity Uuid */
+            entity_uuid?: string | null;
+        };
+        /** ReportKindInfo */
+        ReportKindInfo: {
+            /** Key */
+            key: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Formats */
+            formats: string[];
+            /** Schedulable */
+            schedulable: boolean;
+            /** Recipient Roles */
+            recipient_roles: string[];
+        };
+        /** ReportOut */
+        ReportOut: {
+            /**
+             * Report Uuid
+             * Format: uuid
+             */
+            report_uuid: string;
+            /** Kind */
+            kind: string;
+            /** Title */
+            title: string;
+            /** Params */
+            params: {
+                [key: string]: unknown;
+            };
+            /** Office */
+            office: string | null;
+            /** Format */
+            format: string;
+            /** Status */
+            status: string;
+            /** File Sha256 */
+            file_sha256: string | null;
+            /** File Bytes */
+            file_bytes: number | null;
+            /** Error */
+            error: string | null;
+            /** Requested By Name */
+            requested_by_name: string | null;
+            /** Requested Role */
+            requested_role: string;
+            /** Schedule Uuid */
+            schedule_uuid: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Ready At */
+            ready_at: string | null;
         };
         /** RequestDataVaultOut */
         RequestDataVaultOut: {
@@ -13774,7 +14295,7 @@ export interface components {
          *       cannot express that.
          * @enum {string}
          */
-        Role: "dpo" | "dco" | "dco_admin" | "rco" | "rnd_user" | "admin" | "data_subject" | "breach_holder" | "legal" | "hr_user";
+        Role: "dpo" | "dco" | "dco_admin" | "rco" | "rnd_user" | "admin" | "data_subject" | "breach_holder" | "legal" | "hr_user" | "management";
         /** RoleChange */
         RoleChange: {
             /** Role */
@@ -13783,6 +14304,68 @@ export interface components {
             reason?: string | null;
             /** Office Uuid */
             office_uuid?: string | null;
+        };
+        /** ScheduleChangeIn */
+        ScheduleChangeIn: {
+            /** Active */
+            active: boolean;
+        };
+        /** ScheduleIn */
+        ScheduleIn: {
+            /** Kind */
+            kind: string;
+            /** Format */
+            format: string;
+            /** Cadence */
+            cadence: string;
+            /** Recipient Roles */
+            recipient_roles: string[];
+            /** Office */
+            office?: string | null;
+            /** Audit */
+            audit?: string | null;
+        };
+        /** ScheduleOut */
+        ScheduleOut: {
+            /**
+             * Schedule Uuid
+             * Format: uuid
+             */
+            schedule_uuid: string;
+            /** Kind */
+            kind: string;
+            /** Title */
+            title: string;
+            /** Params */
+            params: {
+                [key: string]: unknown;
+            };
+            /** Format */
+            format: string;
+            /** Cadence */
+            cadence: string;
+            /** Recipient Roles */
+            recipient_roles: string[];
+            /** Office */
+            office: string | null;
+            /** Active */
+            active: boolean;
+            /** Created By Name */
+            created_by_name: string | null;
+            /** Created Role */
+            created_role: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Last Run At */
+            last_run_at: string | null;
+            /**
+             * Next Run At
+             * Format: date-time
+             */
+            next_run_at: string;
         };
         /** SendBackIn */
         SendBackIn: {
@@ -13834,6 +14417,17 @@ export interface components {
         SetProcessors: {
             /** Processor Uuids */
             processor_uuids?: string[];
+        };
+        /** SettingsOut */
+        SettingsOut: {
+            /** Small Number Threshold */
+            small_number_threshold: number;
+            /** Updated At */
+            updated_at: string | null;
+            /** Updated By Name */
+            updated_by_name: string | null;
+            /** Targets */
+            targets: components["schemas"]["TargetOut"][];
         };
         /**
          * SiteIn
@@ -14111,6 +14705,42 @@ export interface components {
             attachments?: components["schemas"]["AttachmentOut"][];
             /** Also */
             also?: components["schemas"]["SubjectRequestOut"][];
+        };
+        /** TargetIn */
+        TargetIn: {
+            /** Target */
+            target: number;
+            /** Amber */
+            amber?: number | null;
+        };
+        /** TargetOut */
+        TargetOut: {
+            /** Key */
+            key: string;
+            /** Title */
+            title: string;
+            /** Unit */
+            unit: string;
+            /** Section */
+            section: string;
+            /** Group */
+            group: string;
+            /** Higher Is Better */
+            higher_is_better: boolean;
+            /** Default Target */
+            default_target: number | null;
+            /** Default Amber */
+            default_amber: number | null;
+            /** Target */
+            target: number | null;
+            /** Amber */
+            amber: number | null;
+            /** Customised */
+            customised: boolean;
+            /** Updated At */
+            updated_at: string | null;
+            /** Updated By Name */
+            updated_by_name: string | null;
         };
         /** TemplateDetail */
         TemplateDetail: {
@@ -14420,6 +15050,11 @@ export interface components {
             holder: components["schemas"]["HolderOut"];
             /** Messages */
             messages: components["schemas"]["cmp__api__routers__v1__rights__MessageOut"][];
+        };
+        /** ThresholdIn */
+        ThresholdIn: {
+            /** Small Number Threshold */
+            small_number_threshold: number;
         };
         /**
          * TicketDataVaultOut
@@ -28471,6 +29106,526 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AuditEntry"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_catalogue_analytics_catalogue_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogueOut"];
+                };
+            };
+        };
+    };
+    get_figures_analytics_figures_get: {
+        parameters: {
+            query?: {
+                section?: string | null;
+                keys?: string[] | null;
+                /** @description A preset: last_7_days, last_30_days, this_month, last_month, this_quarter, last_quarter, this_year, last_year, this_fy, last_fy, custom */
+                period?: string;
+                /** @description custom: the first or last day, India time */
+                start?: string | null;
+                /** @description custom: the first or last day, India time */
+                end?: string | null;
+                /** @description Management only: one office */
+                office?: string | null;
+                dim?: string | null;
+                compare?: boolean;
+                trend?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FiguresOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_inventory_analytics_inventory_get: {
+        parameters: {
+            query?: {
+                /** @description Management only: one office */
+                office?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_audit_report_analytics_audit_reports__key__get: {
+        parameters: {
+            query?: {
+                /** @description A preset: last_7_days, last_30_days, this_month, last_month, this_quarter, last_quarter, this_year, last_year, this_fy, last_fy, custom */
+                period?: string;
+                /** @description custom: the first or last day, India time */
+                start?: string | null;
+                /** @description custom: the first or last day, India time */
+                end?: string | null;
+                limit?: number | null;
+                cursor?: string | null;
+                sort?: string | null;
+            };
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_settings_analytics_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsOut"];
+                };
+            };
+        };
+    };
+    put_target_analytics_targets__key__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TargetIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_target_analytics_targets__key__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_threshold_analytics_settings_threshold_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ThresholdIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_reports_reports_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportOut"][];
+                };
+            };
+        };
+    };
+    create_report_reports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_schedules_reports_schedules_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleOut"][];
+                };
+            };
+        };
+    };
+    create_schedule_reports_schedules_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_schedule_reports_schedules__schedule_uuid__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                schedule_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Acknowledged"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    change_schedule_reports_schedules__schedule_uuid__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                schedule_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScheduleChangeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScheduleOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_report_reports__report_uuid__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReportOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_report_reports__report_uuid__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Acknowledged"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_report_reports__report_uuid__file_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
