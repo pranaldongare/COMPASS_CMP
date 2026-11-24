@@ -2,7 +2,7 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `analytics`, `users`, `messages`, `processors`, `sources`, `requests`, `breach-settings`, `datavault`, `portal-address`, `audit`, `delegate`, `tickets`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `analytics`, `users`, `messages`, `processors`, `sources`, `requests`, `breach-settings`, `datavault`, `portal-address`, `audit`, `delegate`, `tickets`, `training`, `notifications`, `profile`.
 
 ## Resource access
 

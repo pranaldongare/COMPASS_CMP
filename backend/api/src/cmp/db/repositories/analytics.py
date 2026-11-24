@@ -174,6 +174,10 @@ SOURCES: Final[dict[str, str]] = {
   FROM audit_log l JOIN notice n ON n.notice_id = l.entity_id
  WHERE l.event_type = 'notice.served' AND l.entity_type = 'notice'""",
     "funnel.declined": _CONSENT + f" WHERE NOT c.is_withdrawal AND NOT {_GRANTED.format(c='c')}",
+    "consent.partial": _CONSENT
+    + f" WHERE NOT c.is_withdrawal AND {_GRANTED.format(c='c')}"
+    + " AND EXISTS (SELECT 1 FROM consent_purpose_grant g"
+    + " WHERE g.consent_id = c.consent_id AND NOT g.granted)",
     "hr.consents": _CONSENT
     + f" WHERE NOT c.is_withdrawal AND {_GRANTED.format(c='c')} AND p.category_id IS NOT NULL",
     "hr.withdrawals": _CONSENT + " WHERE c.is_withdrawal AND p.category_id IS NOT NULL",

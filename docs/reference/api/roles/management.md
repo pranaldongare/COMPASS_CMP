@@ -2,7 +2,7 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `analytics`, `tickets`, `notifications`, `profile`.
+Navigation returned after sign-in: `analytics`, `tickets`, `training`, `notifications`, `profile`.
 
 ## Resource access
 

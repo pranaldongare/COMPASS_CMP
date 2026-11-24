@@ -235,7 +235,16 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** End this session */
+        /**
+         * End this session
+         * @description End this session - a full one, or one still waiting for its second factor.
+         *
+         *     A partial session is accepted here on purpose: it is the only way to
+         *     abandon a sign-in half done. Refused, a person whose code went wrong was
+         *     held at the code step - the sign-in page sends a partial session there - and
+         *     could never reach "Forgotten your password?". Ending a session grants
+         *     nothing, so accepting the half-authenticated one widens nothing.
+         */
         post: operations["logout_auth_logout_post"];
         delete?: never;
         options?: never;
@@ -7116,6 +7125,8 @@ export interface paths {
          * Figures for a period
          * @description The figures of a section, or the metrics named, for the period, with
          *     the previous period, the target and its status, a line and a breakdown.
+         *     `grain` draws the line by day, week or month instead of the period's own
+         *     choice; a day line is refused past 92 days.
          */
         get: operations["get_figures_analytics_figures_get"];
         put?: never;
@@ -11211,6 +11222,10 @@ export interface components {
             kind: string;
             /** Dims */
             dims: string[];
+            /** Numerator */
+            numerator?: string | null;
+            /** Denominator */
+            denominator?: string | null;
             /** Value */
             value: number | null;
             /** Suppressed */
@@ -12285,6 +12300,15 @@ export interface components {
             dims: string[];
             /** People */
             people: boolean;
+            /** Numerator */
+            numerator?: string | null;
+            /** Denominator */
+            denominator?: string | null;
+            /**
+             * Higher Is Better
+             * @default true
+             */
+            higher_is_better: boolean;
         };
         /** MfaVerifyRequest */
         MfaVerifyRequest: {
@@ -29155,6 +29179,7 @@ export interface operations {
                 dim?: string | null;
                 compare?: boolean;
                 trend?: boolean;
+                grain?: ("day" | "week" | "month") | null;
             };
             header?: never;
             path?: never;

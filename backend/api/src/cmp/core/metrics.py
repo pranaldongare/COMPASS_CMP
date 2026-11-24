@@ -559,6 +559,18 @@ CATALOGUE: Final[tuple[Metric, ...]] = (
         dims=("office",),
     ),
     _m(
+        key="consent.partial",
+        title="Consents given in part",
+        definition="Decisions in the period that agreed to some purposes and refused others - "
+        "counted in Consents given as well, a withdrawal not counted.",
+        unit="count",
+        section="analytics",
+        group=_CONSENT,
+        audience=OVERSIGHT,
+        people=True,
+        dims=("office", "project"),
+    ),
+    _m(
         key="rights.median_days_to_acknowledge",
         title="Median days to acknowledge",
         definition="For requests acknowledged in the period, the median days from receipt.",

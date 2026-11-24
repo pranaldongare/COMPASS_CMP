@@ -232,6 +232,63 @@ class TestTheFigures:
         if 0 < (shown["value"] or 0) < 5:
             assert hidden["suppressed"] and hidden["value"] is None and hidden["status"] is None
 
+    async def test_a_consent_agreeing_to_everything_is_given_and_not_in_part(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        """2026-11-24: "given in part" counts a decision that agreed to some
+        purposes and refused others. The seeded notice carries one purpose, and
+        a published notice takes no more, so this holds the other side: agreed
+        in full is given, and not in part."""
+        boss = Reader("management", await _user(conn, "management", None), None)
+
+        async def counts() -> tuple[float, float]:
+            out = await _figures(conn, boss, keys=["consent.given", "consent.partial"])
+            return (
+                _fig(out, "consent.given")["value"] or 0,
+                _fig(out, "consent.partial")["value"] or 0,
+            )
+
+        given0, partial0 = await counts()
+        await conn.execute(
+            """INSERT INTO consent_artefact (auth_user_id, notice_id, notice_language_id,
+                                             notice_content_hash, link_id, served_at,
+                                             affirmative_action_at, action_type, is_withdrawal)
+               SELECT %s, %s, %s, %s, %s, now(), now(), 'button_press', false""",
+            (
+                seeded["subject"]["id"],
+                seeded["notice"]["notice_id"],
+                seeded["language"]["notice_language_id"],
+                content_hash(seeded["notice_text"]),
+                seeded["link"]["link_id"],
+            ),
+        )
+        await conn.execute(
+            """INSERT INTO consent_purpose_grant (consent_id, purpose_id, granted)
+               SELECT max(consent_id), %s, true FROM consent_artefact""",
+            (seeded["purpose"]["purpose_id"],),
+        )
+        given, partial = await counts()
+        assert given - given0 == 1
+        assert partial == partial0
+
+    async def test_a_line_may_be_drawn_by_the_grain_asked_for(
+        self, conn: Any, seeded: dict[str, Any]
+    ) -> None:
+        """The drill-down chooses day, week or month; a day line past 92 days
+        says nothing a week does not, and is refused."""
+        boss = Reader("management", await _user(conn, "management", None), None)
+        quarter = periods.resolve("this_quarter")
+        out = await service.figures(
+            conn, boss, keys=["rights.received"], period=quarter, grain="month"
+        )
+        assert out["grain"] == "month"
+        year = periods.resolve("this_fy")
+        if year.days > 92:
+            with pytest.raises(ValidationFailed):
+                await service.figures(
+                    conn, boss, keys=["rights.received"], period=year, grain="day"
+                )
+
 
 class TestReports:
     async def test_a_report_is_made_kept_read_and_deleted_on_the_trail(

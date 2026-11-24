@@ -2,7 +2,7 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `analytics`, `projects`, `notices`, `processors`, `approvals`, `imports`, `collections`, `tickets`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `analytics`, `projects`, `notices`, `processors`, `approvals`, `imports`, `collections`, `tickets`, `training`, `notifications`, `profile`.
 
 ## Resource access
 

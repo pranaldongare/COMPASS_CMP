@@ -2,7 +2,7 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `analytics`, `projects`, `sites`, `sources`, `links`, `consents`, `exports`, `imports`, `collections`, `delegate`, `tickets`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `analytics`, `projects`, `sites`, `sources`, `links`, `consents`, `exports`, `imports`, `collections`, `delegate`, `tickets`, `training`, `notifications`, `profile`.
 
 ## Resource access
 

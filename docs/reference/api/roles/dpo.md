@@ -2,7 +2,7 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `analytics`, `projects`, `approvals`, `notices`, `purposes`, `sites`, `collections`, `processors`, `sources`, `consents`, `links`, `exports`, `imports`, `requests`, `breaches`, `breach-settings`, `audit`, `users`, `messages`, `delegate`, `tickets`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `analytics`, `projects`, `approvals`, `notices`, `purposes`, `sites`, `collections`, `processors`, `sources`, `consents`, `links`, `exports`, `imports`, `requests`, `breaches`, `breach-settings`, `audit`, `users`, `messages`, `delegate`, `tickets`, `training`, `notifications`, `profile`.
 
 ## Resource access
 

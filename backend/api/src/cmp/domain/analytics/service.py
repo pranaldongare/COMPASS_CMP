@@ -216,8 +216,10 @@ async def figures(
     dim: str | None = None,
     compare: bool = True,
     trend: bool = True,
+    grain: str | None = None,
 ) -> dict[str, Any]:
-    """The figures this reader asked for, each complete."""
+    """The figures this reader asked for, each complete. `grain`, when given,
+    draws each line by that bucket rather than the period's own."""
     if section is not None and section not in cat.SECTIONS:
         raise NotFound("Section")
     if section is not None and reader.role not in cat.SECTIONS[section]:
@@ -239,7 +241,12 @@ async def figures(
     threshold = int((await repo.setting(conn))["small_number_threshold"])
     targets = await repo.targets(conn)
     before = previous(period) if compare else None
-    grain = grain_for(period) if trend else None
+    if grain is not None and grain not in ("day", "week", "month"):
+        raise ValidationFailed("Unknown grain", field="grain")
+    if grain == "day" and period.days > 92:
+        # Hundreds of points say nothing a week's bucket does not.
+        raise ValidationFailed("Draw a period this long by week or month", field="grain")
+    grain = (grain or grain_for(period)) if trend else None
 
     def gone(basis: dict[tuple[Any, Any], float | None] | None, k: tuple[Any, Any]) -> bool:
         """Withheld: it counts people, and fewer than the threshold of them."""
@@ -301,6 +308,8 @@ async def figures(
                 "group": m.group,
                 "kind": m.kind,
                 "dims": list(m.dims),
+                "numerator": m.numerator,
+                "denominator": m.denominator,
                 "value": None if suppressed else value,
                 "suppressed": suppressed,
                 "previous": None if prev_suppressed else prev_value,
@@ -355,6 +364,9 @@ def catalogue(reader: Reader) -> dict[str, Any]:
                 "kind": m.kind,
                 "dims": list(m.dims),
                 "people": m.people,
+                "numerator": m.numerator,
+                "denominator": m.denominator,
+                "higher_is_better": m.higher_is_better,
             }
             for m in cat.for_role(reader.role)
         ],

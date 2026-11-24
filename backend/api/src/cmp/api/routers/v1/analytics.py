@@ -16,7 +16,7 @@ audit pages already show it to the same roles.
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Annotated, Any
+from typing import Annotated, Any, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Response, status
@@ -83,6 +83,10 @@ class MetricInfo(Out):
     kind: str
     dims: list[str]
     people: bool
+    #: For a rate: the two counts it divides, both in the catalogue.
+    numerator: str | None = None
+    denominator: str | None = None
+    higher_is_better: bool = True
 
 
 class ReportKindInfo(Out):
@@ -144,6 +148,9 @@ class FigureOut(Out):
     group: str
     kind: str
     dims: list[str]
+    #: For a rate: the two counts it divides, so a page can show "x of y".
+    numerator: str | None = None
+    denominator: str | None = None
     value: float | None
     #: Withheld: a count of fewer people than the threshold.
     suppressed: bool
@@ -322,9 +329,12 @@ async def get_figures(
     dim: Annotated[str | None, Query(max_length=24)] = None,
     compare: bool = True,
     trend: bool = True,
+    grain: Annotated[Literal["day", "week", "month"] | None, Query()] = None,
 ) -> dict[str, Any]:
     """The figures of a section, or the metrics named, for the period, with
-    the previous period, the target and its status, a line and a breakdown."""
+    the previous period, the target and its status, a line and a breakdown.
+    `grain` draws the line by day, week or month instead of the period's own
+    choice; a day line is refused past 92 days."""
     _may_open(
         principal,
         section or (cat.metric(keys[0]).section if keys and keys[0] in cat.METRICS else None),
@@ -340,6 +350,7 @@ async def get_figures(
             dim=dim,
             compare=compare,
             trend=trend,
+            grain=grain,
         )
 
 

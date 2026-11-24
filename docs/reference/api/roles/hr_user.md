@@ -2,7 +2,7 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `analytics`, `hr-activities`, `hr-categories`, `links`, `consents`, `exports`, `tickets`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `analytics`, `hr-activities`, `hr-categories`, `links`, `consents`, `exports`, `tickets`, `training`, `notifications`, `profile`.
 
 ## Resource access
 
