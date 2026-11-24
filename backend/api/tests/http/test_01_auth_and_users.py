@@ -110,7 +110,7 @@ class TestPublicRegistrationAndCodeSignIn:
 
 class TestStaffSignInAndPasswords:
     async def test_a_sign_in_waiting_for_its_code_can_be_abandoned(
-        self, http: httpx.AsyncClient, session_for: SessionFactory, queued: Any
+        self, http: httpx.AsyncClient, session_for: SessionFactory, queued: Any, committed: Any
     ) -> None:
         """2026-11-24: the code step's "Start over" and "Forgotten your
         password?" end the partial session, or the sign-in page sends its holder
@@ -121,6 +121,17 @@ class TestStaffSignInAndPasswords:
         assert first.json()["mfa_required"] is True
         partial = dict(first.cookies)
         csrf = {"X-CSRF-Token": partial["cmp_csrf"]}
+        # The code sent is on the trail, with its flow, for the health
+        # figures' "Codes sent" (2026-11-24); the code itself is not.
+        cur = await committed.execute(
+            """SELECT detail_json FROM audit_log
+                WHERE event_type = 'auth.otp_requested' AND entity_id = %s
+                ORDER BY log_id DESC LIMIT 1""",
+            (dco.user["id"],),
+        )
+        sent = await cur.fetchone()
+        assert sent is not None and sent["detail_json"]["flow"] == "staff_sign_in"
+        assert "code" not in sent["detail_json"]
 
         await call(http, "POST", "/auth/logout", cookies=partial, headers=csrf)
         # The half-finished sign-in is gone: its code step no longer answers.

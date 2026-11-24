@@ -616,8 +616,9 @@ PRINCIPALS: list[dict[str, Any]] = [
         "site": ("face", 1),
         "decision": ["PUR-CONTACT"],
         "request": (
-            "correction",
-            "My surname is spelt Banerjee, not Banerji, in the study letter.",
+            "grievance",
+            "My surname is spelt Banerjee, not Banerji, in the study letter, "
+            "and it was not put right.",
         ),
         "acknowledge": True,
     },
@@ -670,7 +671,9 @@ PRINCIPALS: list[dict[str, Any]] = [
         "dob": "1985-12-09",
         "site": ("wear", 0),
         "decision": ["PUR-CONTACT"],
-        "request": ("correction", "My date of birth on file is wrong."),
+        # A correction is made by the person on the portal, not asked for
+        # (2026-10-08): requests are for access, erasure or a grievance.
+        "request": ("access", "Please send me a copy of the data you hold about me."),
         "acknowledge": True,
     },
     {
@@ -720,7 +723,7 @@ PRINCIPALS: list[dict[str, Any]] = [
         "dob": "1995-05-03",
         "site": ("gait", 0),
         "decision": "all",
-        "request": ("correction", "Please update my email address on the study record."),
+        "request": ("erasure", "Please erase my email address from the study record."),
         "acknowledge": False,
     },
 ]
@@ -732,7 +735,7 @@ NOMINATIONS: list[tuple[int, dict[str, Any]]] = [
         {
             "nominee_name": "Priyanka Sharma",
             "nominee_mobile": "+919003000201",
-            "rights": ["access", "correction", "erasure"],
+            "rights": ["access", "erasure"],
         },
     ),
     (
@@ -1471,9 +1474,8 @@ async def rights(api: Api, staff: dict[str, Actor], people: list[dict[str, Any]]
     dpo = staff["dpo1"]
     for person in people:
         kind, text = person["request"]
+        # About everything held, never one consent (DPO, 2026-10-07).
         body: dict[str, Any] = {"request_type": kind, "request_text": text}
-        if kind in ("correction", "erasure") and person["granted"]:
-            body["consent_uuid"] = person["consent_uuid"]
         r = await api.call(
             "POST", "/me/requests", actor=person["actor"], expect=(200, 201), json=body
         )

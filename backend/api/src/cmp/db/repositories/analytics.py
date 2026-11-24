@@ -229,10 +229,20 @@ SOURCES: Final[dict[str, str]] = {
   FROM rights_request_holder h JOIN rights_request r ON r.request_id = h.request_id
  WHERE h.returned_at IS NOT NULL AND h.responder_user_id = {{user}}""",
     # ---------------------------------------------------------------- health
+    # The codes sent to a known account, and the codes entered, of the same
+    # flows (2026-11-24): a staff second factor's "verified" is its own event,
+    # and a code entered on a flow that is not counted as sent is left out,
+    # so the success rate never reads past 100%.
     "health.otp_requested": _trail(
         "'auth.otp_requested'", dims="l.detail_json ->> 'flow' AS d_flow"
     ),
-    "health.otp_verified": _trail("'auth.otp_verified'", dims="l.detail_json ->> 'flow' AS d_flow"),
+    "health.otp_verified": _trail(
+        "'auth.otp_verified', 'auth.mfa_verified'",
+        dims="""CASE WHEN l.event_type = 'auth.mfa_verified' THEN 'staff_sign_in'
+                     ELSE l.detail_json ->> 'flow' END AS d_flow""",
+    )
+    + """ AND (l.event_type = 'auth.mfa_verified'
+               OR l.detail_json ->> 'flow' IN ('portal_sign_in', 'contact_confirm'))""",
     "health.sign_in_failures": _trail(
         "'auth.login_failed', 'auth.mfa_failed'", dims="l.event_type AS d_event"
     ),

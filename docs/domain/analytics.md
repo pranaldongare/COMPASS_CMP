@@ -98,6 +98,51 @@ roles named - only roles that may read that kind. Beat runs
 `cmp.reports.run_schedules` hourly at minute 7. A schedule may be paused,
 resumed and removed; the reports it made are kept.
 
+## Reading the page (2026-11-24)
+
+Each tab of figures reads in the order the questions come:
+
+1. **Needs attention** - the figures off target (red) or between the amber
+   line and the target, worst first, each a link to its page. When every
+   figure with a target is on target, one line says so.
+2. **At a glance** (health only) - one tile per part of the platform (the
+   audit chain, sign-in codes, breach notice and board mail, DataVault, the
+   queues, reports), judged from the health figures the tab already holds.
+   A chain no nightly check looked at reads *Not checked*, never *Intact*.
+3. **Groups**, with jump links when there are more than two. Each group
+   opens with the charts that explain it, then its figures as tiles.
+
+| Tab · group | Charts |
+|---|---|
+| Management · Rights requests | Closed on time and late, by bucket (stacked columns); what people asked for, by type, channel or office (donut) |
+| Management · Breaches | Each duty's on-time share against the target (meter list) |
+| Management · Consent | From link to consent (funnel); how people answered: given in full, in part, declined, withdrawn (segmented bar) |
+| Management · Projects, Third parties | Projects by status; holder tickets overdue by holder (ranked bars) |
+| Management, both offices | Office by office: the rates and times with something to compare |
+| Analytics · Notice delivery, HR track | Delivery by channel; HR consents by category |
+| Health | Failed sign-ins (columns); codes entered correctly by flow (meters); work waiting per queue |
+| Your work | Your projects: links opened, consents, withdrawals, opened-to-consented |
+
+Every chart has a **Chart / Table** switch with the same numbers, hover and
+arrow-key read-outs, and direct labels or a legend; colours follow the entity
+(`--cat-1…5`, validated, fixed order) and declining is grey. A chart whose
+figures the role may not read is not drawn - the server's refusal decides.
+
+**A tile is a link** to the figure's own page, `/analytics/figure/<key>`,
+carrying the period, office and comparison (and the tab, for *Back*). That
+page has the value against the period before and the target, the two counts
+of a rate ("292 of 316"), the line by day, week or month (`grain`; a day line
+is refused past 92 days) with the target dashed and the amber band shaded,
+the breakdowns one at a time (a rate as meters against the target, furthest
+first), what it counts, and the numbers behind the line as a table - with a
+CSV download, formula-neutralised. Where the reader's role has the register
+the figure counts, *Open …* goes there; management, which has none, is not
+offered one.
+
+Breakdowns moved out of the toolbar onto the figure's page and the charts.
+The funnel never claims more than 100%: notices read on the portal directly
+outnumber links opened, and it says so.
+
 ## The management role
 
 A login for the people the organisation reports to: no office of its own, so

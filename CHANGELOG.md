@@ -8,6 +8,16 @@ as a release yet.
 ## [Unreleased]
 
 ### Added (2026-11-24)
+- **Analytics, redesigned**: *Needs attention* first (the figures off target,
+  worst first); tiles that open each figure's own page (its line by day,
+  week or month against the target and amber band, its breakdowns, "x of y",
+  what it counts, a table and a CSV, and the register it counts where the
+  role has it); charts leading each group - stacked columns, a donut, a
+  funnel, segmented and meter bars, the offices side by side - each with a
+  Table view; *At a glance* tiles on Health; *Your projects* on Your work.
+  New: `consent.partial`, a rate's numerator and denominator on each figure,
+  and `grain` on `/analytics/figures`. Breakdowns moved from the toolbar to
+  the figure's page and the charts.
 - **Training**, under *You* in every staff member's sidebar, once signed in:
   a course per role - getting started and handling personal data for
   everyone, then the role's own work (registering a project, approving it,
@@ -19,6 +29,14 @@ as a release yet.
   server grants the `training` section to every staff role (`PERSONAL`).
 
 ### Fixed (2026-11-24)
+- **Codes sent** (Health) was always nought and **Code success** never had a
+  value: nothing wrote `auth.otp_requested`. The staff second factor, the
+  portal sign-in and confirming a contact now record the code sent (its flow,
+  never the code), and *Codes entered correctly* counts the same flows.
+- `scripts/seed_demo.py` stopped at the rights requests: it sent a consent
+  with each and asked for corrections, which the API has refused since
+  2026-10. Requests are about everything held; corrections became access,
+  erasure and a grievance.
 - **"Forgotten your password?" after a wrong code.** A staff member whose
   second-factor code went wrong was held at the code step: its "Start over" and
   any visit to the sign-in page were sent back there by the half-finished

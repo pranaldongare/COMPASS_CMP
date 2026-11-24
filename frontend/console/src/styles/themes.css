@@ -113,6 +113,16 @@
   --viz-3: #eda100; /* withdrawn   */
   /* Declined is deliberately neutral, not red: refusing is a legitimate choice,
      and colouring it as an error editorialises the data subject's decision. */
+  /* Categorical series for Analytics (2026-11-24): a request's type, a
+     channel, an office. Fixed order, never cycled; the first and third are
+     --viz-2 and --viz-1. Validated with the dataviz palette validator (all
+     checks pass; three sit below 3:1 on the surface, so every chart that
+     uses them labels its parts and has a table view). */
+  --cat-1: #2a78d6;
+  --cat-2: #eb6834;
+  --cat-3: #1baf7a;
+  --cat-4: #eda100;
+  --cat-5: #e87ba4;
   --viz-neutral: oklch(72% 0.008 258);
   --viz-track: oklch(93% 0.006 258);
   --viz-grid: oklch(90% 0.006 258);
@@ -187,6 +197,11 @@
   --viz-1: #199e70;
   --viz-2: #3987e5;
   --viz-3: #c98500;
+  --cat-1: #3987e5;
+  --cat-2: #d95926;
+  --cat-3: #199e70;
+  --cat-4: #c98500;
+  --cat-5: #d55181;
   --viz-neutral: oklch(52% 0.010 258);
   --viz-track: oklch(28% 0.014 262);
   --viz-grid: oklch(30% 0.014 262);

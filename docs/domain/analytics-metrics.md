@@ -98,8 +98,8 @@ Read by: Administrator.
 | Metric | Key | What it counts | Unit | How | Breakdowns | Default target | People |
 |---|---|---|---|---|---|---|---|
 | *Sign-in and codes* | | | | | | | |
-| **Codes sent** | `health.otp_requested` | One-time codes asked for in the period, by flow. | count | count of rows in the period | Code flow | - |  |
-| **Codes entered correctly** | `health.otp_verified` | One-time codes entered correctly in the period, by flow. | count | count of rows in the period | Code flow | - |  |
+| **Codes sent** | `health.otp_requested` | One-time codes sent to an account in the period - the staff second factor, the portal sign-in and confirming a contact - by flow. | count | count of rows in the period | Code flow | - |  |
+| **Codes entered correctly** | `health.otp_verified` | One-time codes entered correctly in the period, of the same flows as Codes sent, by flow. | count | count of rows in the period | Code flow | - |  |
 | **Code success** | `health.otp_success_rate` | Codes entered correctly as a share of codes sent, in the period. | percent | rate of two counts: `health.otp_verified` / `health.otp_requested` | Code flow | at least 80; amber 60 |  |
 | **Failed sign-ins** | `health.sign_in_failures` | Staff sign-ins refused in the period: a wrong password or code. | count | count of rows in the period | Event | - |  |
 | **Accounts paused** | `health.lockouts` | Staff accounts paused after repeated failed sign-ins, in the period. | count | count of rows in the period | - | at most 0; amber 3 |  |

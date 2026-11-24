@@ -88,6 +88,9 @@ function catalogue(
         kind: "ratio",
         dims: ["type", "office"],
         people: true,
+        numerator: "rights.closed_on_time",
+        denominator: "rights.closed",
+        higher_is_better: true,
       },
     ],
     dimensions: [
@@ -115,6 +118,8 @@ function figure(over: Partial<Figure> = {}): Figure {
     group: "Rights requests",
     kind: "ratio",
     dims: ["type", "office"],
+    numerator: null,
+    denominator: null,
     value: 92.5,
     suppressed: false,
     previous: 88,
@@ -244,9 +249,9 @@ describe("Analytics tabs", () => {
         .getAllByRole("option")
         .map((o) => o.textContent),
     ).toEqual(["All offices", "R&D (DPO office)", "HR (Legal office)"]);
-    // Management alone may split by office.
-    const breakdown = screen.getByLabelText("Breakdown");
-    expect(within(breakdown).getByRole("option", { name: "Office" })).toBeInTheDocument();
+    // A breakdown is chosen on a figure's own page and on each chart
+    // (2026-11-24), not in the toolbar.
+    expect(screen.queryByLabelText("Breakdown")).not.toBeInTheDocument();
   });
 
   it("gives the administrator audit, health, quality, reports and settings, and no office", async () => {
@@ -285,10 +290,7 @@ describe("Analytics tabs", () => {
     await screen.findByRole("tablist", { name: "Analytics" });
     expect(tabNames()).toEqual(["Your work", "Reports"]);
     expect(screen.queryByLabelText("Office")).not.toBeInTheDocument();
-    const breakdown = screen.getByLabelText("Breakdown");
-    expect(
-      within(breakdown).queryByRole("option", { name: "Office" }),
-    ).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Breakdown")).not.toBeInTheDocument();
   });
 });
 
@@ -313,10 +315,10 @@ describe("figures", () => {
     ]);
     render(<AnalyticsPage />);
     const tile = (await screen.findByRole("heading", { name: "People erased" })).closest(
-      "article",
+      "a",
     ) as HTMLElement;
     expect(within(tile).getAllByText("< 5").length).toBeGreaterThan(0);
-    expect(within(tile).getByText(/Fewer than 5 people/)).toBeInTheDocument();
+    expect(within(tile).getByText("Too few to show")).toBeInTheDocument();
     expect(within(tile).queryByText("0")).not.toBeInTheDocument();
   });
 
@@ -329,13 +331,44 @@ describe("figures", () => {
     render(<AnalyticsPage />);
     const tile = (
       await screen.findByRole("heading", { name: "Requests answered on time" })
-    ).closest("article") as HTMLElement;
+    ).closest("a") as HTMLElement;
     expect(within(tile).getByText("Watch")).toBeInTheDocument();
     expect(within(tile).getByText("92.5%")).toBeInTheDocument();
     expect(within(tile).getByText("+4.5 points")).toBeInTheDocument();
     expect(within(tile).getByText(/at least 95%/)).toBeInTheDocument();
-    expect(screen.getByText("On target")).toBeInTheDocument();
-    expect(screen.getByText("Off target")).toBeInTheDocument();
+    expect(screen.getAllByText("On target").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Off target").length).toBeGreaterThan(0);
+  });
+
+  it("opens a figure's own page from its tile, with the period it was read under", async () => {
+    window.history.replaceState(null, "", "/analytics?period=this_quarter");
+    serve(MANAGEMENT, [figure()]);
+    render(<AnalyticsPage />);
+    const tile = (
+      await screen.findByRole("heading", { name: "Requests answered on time" })
+    ).closest("a") as HTMLElement;
+    const href = tile.getAttribute("href") ?? "";
+    expect(href.startsWith("/analytics/figure/rights_on_time?")).toBe(true);
+    expect(href).toContain("period=this_quarter");
+    expect(href).toContain("from=management");
+    // Named for what it opens, once: the figure, its value and its status.
+    expect(tile).toHaveAccessibleName(/Requests answered on time, 92\.5%, Watch/);
+  });
+
+  it("puts the figures off target first, worst first, each a link to its page", async () => {
+    serve(MANAGEMENT, [
+      figure({ key: "a", title: "Watched figure", status: "amber" }),
+      figure({ key: "b", title: "Missed figure", status: "red", value: 40 }),
+      figure({ key: "c", title: "Fine figure", status: "green", value: 99 }),
+    ]);
+    render(<AnalyticsPage />);
+    const strip = await screen.findByRole("region", { name: /Needs attention/ });
+    const links = within(strip).getAllByRole("link");
+    expect(links.map((l) => l.textContent)).toEqual([
+      expect.stringContaining("Missed figure"),
+      expect.stringContaining("Watched figure"),
+    ]);
+    expect(links[0].getAttribute("href")).toContain("/analytics/figure/b?");
   });
 
   it("asks for the office management chooses", async () => {

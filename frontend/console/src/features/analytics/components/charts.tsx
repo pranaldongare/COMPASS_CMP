@@ -41,11 +41,16 @@ export function TrendLine({
   points,
   label,
   className,
+  interactive = true,
 }: {
   points: TrendPoint[];
   /** What the line is, for a screen reader: "Requests answered on time, by day". */
   label: string;
   className?: string;
+  /** False inside a link - a tile that opens the figure - where a control
+   *  of its own would be a control inside a control. Drawn only, and hidden
+   *  from a screen reader, which hears the tile's own name. */
+  interactive?: boolean;
 }) {
   const [at, setAt] = React.useState<number | null>(null);
   const w = 240;
@@ -89,13 +94,22 @@ export function TrendLine({
         viewBox={`0 0 ${w} ${h}`}
         preserveAspectRatio="none"
         className="block h-14 w-full touch-none overflow-visible rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-border)]"
-        role="img"
-        aria-label={`${label}: ${points.map((p) => `${p.label} ${p.text}`).join(", ")}`}
-        tabIndex={0}
-        onPointerMove={(e) => pick(e.clientX, e.currentTarget.getBoundingClientRect())}
+        {...(interactive
+          ? {
+              role: "img",
+              "aria-label": `${label}: ${points.map((p) => `${p.label} ${p.text}`).join(", ")}`,
+              tabIndex: 0,
+            }
+          : { "aria-hidden": true })}
+        onPointerMove={
+          interactive
+            ? (e) => pick(e.clientX, e.currentTarget.getBoundingClientRect())
+            : undefined
+        }
         onPointerLeave={() => setAt(null)}
         onBlur={() => setAt(null)}
         onKeyDown={(e) => {
+          if (!interactive) return;
           if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
             e.preventDefault();
             const step = e.key === "ArrowRight" ? 1 : -1;

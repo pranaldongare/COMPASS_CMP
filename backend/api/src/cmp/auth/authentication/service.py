@@ -58,6 +58,25 @@ _GENERIC_FAILURE = "Those credentials are not valid"
 _SIGN_IN, _CODE_SIGN_IN, _RESET, _SIGN_UP = "login", "otp_login", "reset", "sign_up"
 
 
+#: The flows a code is sent for and counted by on the health figures
+#: (2026-11-24): what "Codes sent" and "Code success" read.
+CODE_FLOWS = ("staff_sign_in", "portal_sign_in", "contact_confirm")
+
+
+async def _code_sent(conn: Conn, user_id: int, flow: str) -> None:
+    """A code sent to a known account, on the trail, so the health figures
+    can set the codes entered against the codes sent. The code is not."""
+    await audit.record(
+        conn,
+        event=Event.OTP_REQUESTED,
+        entity_type="auth_user",
+        entity_id=user_id,
+        subject_user_id=user_id,
+        actor_user_id=user_id,
+        detail={"flow": flow},
+    )
+
+
 async def authenticate(
     conn: Conn, *, login: str, password: str, ip_address: str | None, user_agent: str | None
 ) -> dict[str, Any]:
@@ -164,6 +183,7 @@ async def authenticate(
 
     if mfa_needed:
         issued = await otp.issue(otp.Scope.STAFF_MFA, str(user["uuid"]), ttl_s=settings.mfa_ttl_s)
+        await _code_sent(conn, int(user["id"]), "staff_sign_in")
         # Delivery is a side effect and belongs off the request path.
         from cmp.tasks.authentication import send_mfa_code
         from cmp.tasks.dispatch import dispatch_required
@@ -229,6 +249,7 @@ async def verify_mfa(conn: Conn, *, user_uuid: str, code: str, token: str) -> di
             entity_id=user["id"],
             subject_user_id=user["id"],
             actor_user_id=user["id"],
+            detail={"flow": "staff_sign_in"},
         )
         await audit.record(
             conn,
@@ -251,6 +272,9 @@ async def resend_mfa(conn: Conn, *, user_uuid: str, email: str) -> None:
         message="Too many code requests. Wait a few minutes.",
     )
     issued = await otp.issue(otp.Scope.STAFF_MFA, user_uuid, ttl_s=settings.mfa_ttl_s)
+    holder = await user_repo.by_uuid(conn, user_uuid)
+    if holder is not None:
+        await _code_sent(conn, int(holder["id"]), "staff_sign_in")
     from cmp.tasks.authentication import send_mfa_code
     from cmp.tasks.dispatch import dispatch_required
 
@@ -299,6 +323,7 @@ async def request_subject_otp(conn: Conn, *, contact: str) -> None:
         return
 
     issued = await otp.issue(otp.Scope.SUBJECT_LOGIN, login_code_identity(user, contact))
+    await _code_sent(conn, int(user["id"]), "portal_sign_in")
     from cmp.tasks.authentication import send_login_code
     from cmp.tasks.dispatch import dispatch_required
 
@@ -372,6 +397,7 @@ async def verify_subject_otp(
         entity_id=user["id"],
         subject_user_id=user["id"],
         actor_user_id=user["id"],
+        detail={"flow": "portal_sign_in"},
     )
     await audit.record(
         conn,
@@ -784,6 +810,7 @@ async def request_contact_code(conn: Conn, *, user: dict[str, Any], contact: str
         message="Too many code requests for this contact.",
     )
     issued = await otp.issue(otp.Scope.CONTACT_VERIFY, f"{user['uuid']}:{wanted}")
+    await _code_sent(conn, int(user["id"]), "contact_confirm")
     from cmp.tasks.authentication import send_contact_confirmation
     from cmp.tasks.dispatch import dispatch_required
 

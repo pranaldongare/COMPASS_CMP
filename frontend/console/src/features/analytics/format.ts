@@ -118,3 +118,19 @@ export function bucketLabel(bucket: string | null, grain: string | null): string
 export function errorText(err: unknown, fallback: string): string {
   return isApiError(err) ? err.userMessage() : fallback;
 }
+
+/**
+ * A value judged against a figure's target and amber line, as the server
+ * judges the figure itself (`service.status`): for a part of a breakdown, a
+ * point of a line. Null without a target, or without a value.
+ */
+export function statusOf(
+  f: { target: number | null; amber: number | null; higher_is_better: boolean },
+  value: number | null,
+): "green" | "amber" | "red" | null {
+  if (value === null || f.target === null) return null;
+  const line = f.amber ?? f.target;
+  if (f.higher_is_better)
+    return value >= f.target ? "green" : value >= line ? "amber" : "red";
+  return value <= f.target ? "green" : value <= line ? "amber" : "red";
+}

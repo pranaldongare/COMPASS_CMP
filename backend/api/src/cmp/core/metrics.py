@@ -757,7 +757,8 @@ CATALOGUE: Final[tuple[Metric, ...]] = (
     _m(
         key="health.otp_requested",
         title="Codes sent",
-        definition="One-time codes asked for in the period, by flow.",
+        definition="One-time codes sent to an account in the period - the staff second factor, "
+        "the portal sign-in and confirming a contact - by flow.",
         unit="count",
         section="health",
         group=_SIGNIN,
@@ -767,7 +768,8 @@ CATALOGUE: Final[tuple[Metric, ...]] = (
     _m(
         key="health.otp_verified",
         title="Codes entered correctly",
-        definition="One-time codes entered correctly in the period, by flow.",
+        definition="One-time codes entered correctly in the period, of the same flows as "
+        "Codes sent, by flow.",
         unit="count",
         section="health",
         group=_SIGNIN,

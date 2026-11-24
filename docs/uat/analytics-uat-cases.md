@@ -41,3 +41,13 @@ each role: management, DPO, Legal PoC, administrator, R&D User, DCO, HR PoC.
 | AN-31 | Management | Sign in (`sanjay.kapoor@cmp.local` on a demo database) | Asked for a second factor; lands on Analytics; the sidebar holds Analytics and Tickets only |
 | AN-32 | Management | Open `/dashboard`, `/users`, `/requests`, `/breaches` directly | Dashboard sends to Analytics; Users and Requests refused; Breaches not found |
 | AN-33 | Administrator | Audit, filter by role *Management* | The management account's sign-ins and report downloads listed |
+| AN-34 | Management | Analytics, this quarter | *Needs attention* lists the figures off target, red first; each opens its figure |
+| AN-35 | Management | Click a tile | The figure's page: value, status, "x of y", target; the line with the target dashed; *Back to the overview* returns to the same tab and period |
+| AN-36 | Management | On a rate's page, choose *Office* under *Broken down* | Each office's share against the target line; a group too small reads "< 5" |
+| AN-37 | Management | On a figure's page, choose *Day* with *This financial year* | *Day* is not offered; *Week* and *Month* are |
+| AN-38 | Management | Any chart: *Table* | The same numbers as a table; *Chart* returns |
+| AN-39 | Management | A figure's page: *CSV* | A file of the line's numbers, one row per bucket, with the status of each |
+| AN-40 | DPO | A rights figure's page | *Open Rights requests* is offered; as management it is not |
+| AN-41 | Administrator | Analytics, Health | *At a glance* tiles; a period with no nightly check reads *Not checked* |
+| AN-42 | Any | Sign in with the second factor, then Health | *Codes sent* and *Codes entered correctly* both count the sign-in; *Code success* is at most 100% |
+| AN-43 | Management | Analytics on a phone (390 px) | One column; filters wrap; charts readable; nothing scrolls sideways |

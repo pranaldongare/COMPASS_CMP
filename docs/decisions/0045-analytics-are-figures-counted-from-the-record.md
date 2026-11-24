@@ -102,6 +102,17 @@ auditors, and to prove it with reports it keeps. The product owner decided
 - The threshold of 1 withholds nothing. Production should set it (5 is the
   usual choice) before figures of small groups - an HR category - are shared.
 
+## Later (2026-11-24): the page redesigned
+
+The product owner asked for a page more informative to read: charts, and
+tiles that open. Recorded in `docs/domain/analytics.md` (Reading the page).
+What it changed beyond the screens: `consent.partial` (given in part) joined
+the catalogue; a figure and a catalogue entry name a rate's numerator and
+denominator; `/analytics/figures` takes `grain`; and the codes sent for the
+staff second factor, the portal sign-in and confirming a contact are on the
+trail (`auth.otp_requested`, with the flow), which "Codes sent" and "Code
+success" had been counting all along and nothing wrote.
+
 ## Not decided here
 
 - Summary tables, if the record grows past what live counting answers quickly.

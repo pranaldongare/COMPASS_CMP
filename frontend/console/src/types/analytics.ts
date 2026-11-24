@@ -51,6 +51,10 @@ export interface MetricInfo {
   dims: string[];
   /** Counts people, so small numbers are withheld. */
   people: boolean;
+  /** For a rate: the two counts it divides. */
+  numerator: string | null;
+  denominator: string | null;
+  higher_is_better: boolean;
 }
 
 export interface ReportKindInfo {
@@ -116,6 +120,9 @@ export interface Figure {
   group: string;
   kind: string;
   dims: string[];
+  /** For a rate: the two counts it divides, so a page can say "x of y". */
+  numerator: string | null;
+  denominator: string | null;
   /** Null when withheld, or when there is nothing to divide by. */
   value: number | null;
   suppressed: boolean;
@@ -153,6 +160,8 @@ export interface FiguresParams {
   dim?: string;
   compare?: boolean;
   trend?: boolean;
+  /** The line's bucket, instead of the period's own: day, week or month. */
+  grain?: string;
 }
 
 export interface PeriodParams {

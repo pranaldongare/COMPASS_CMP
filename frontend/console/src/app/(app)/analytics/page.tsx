@@ -30,7 +30,6 @@ import { ReportsPanel } from "@/features/analytics/components/reports-panel";
 import { SettingsPanel } from "@/features/analytics/components/settings-panel";
 import {
   AnalyticsToolbar,
-  dimsFor,
   useAnalyticsFilters,
 } from "@/features/analytics/components/toolbar";
 import { MakeReport } from "@/features/analytics/components/make-report";
@@ -140,7 +139,9 @@ function AnalyticsTabs({ catalogue }: { catalogue: Catalogue }) {
   }
 
   const isFigures = FIGURES.has(tab);
-  const dims = isFigures ? dimsFor(catalogue, tab) : [];
+  // A breakdown is chosen on a figure's own page and on each chart now
+  // (2026-11-24), so the toolbar offers none.
+  const dims: string[] = [];
   const office = catalogue.may_choose_office ? filters.office || undefined : undefined;
   const period = periodParams(filters);
   const report = TABS[tab]?.report;
@@ -189,12 +190,7 @@ function AnalyticsTabs({ catalogue }: { catalogue: Catalogue }) {
                       />
                     )}
                   </div>
-                  <FiguresPanel
-                    section={t}
-                    catalogue={catalogue}
-                    filters={filters}
-                    dims={dims}
-                  />
+                  <FiguresPanel section={t} catalogue={catalogue} filters={filters} />
                 </>
               )}
               {t === "audit" && (
