@@ -283,12 +283,22 @@ async def otp_verify(body: OtpVerifyBody, request: Request, response: Response) 
 
 
 @router.post("/logout", response_model=Acknowledged, summary="End this session")
-async def logout(request: Request, response: Response, principal: CurrentUser) -> dict[str, Any]:
+async def logout(request: Request, response: Response, principal: PartialUser) -> dict[str, Any]:
+    """End this session - a full one, or one still waiting for its second factor.
+
+    A partial session is accepted here on purpose: it is the only way to
+    abandon a sign-in half done. Refused, a person whose code went wrong was
+    held at the code step - the sign-in page sends a partial session there - and
+    could never reach "Forgotten your password?". Ending a session grants
+    nothing, so accepting the half-authenticated one widens nothing.
+    """
     token = request.cookies.get(settings.cookie_name)
     if token:
         await sessions.destroy(token)
-    async with transaction() as conn:
-        await auth_service.record_sign_out(conn, user_id=principal.user_id)
+    if not principal.session.partial:
+        # An abandoned sign-in never signed in, so there is no sign-out to record.
+        async with transaction() as conn:
+            await auth_service.record_sign_out(conn, user_id=principal.user_id)
     clear_session_cookies(response)
     return {"ok": True, "message": "Signed out."}
 

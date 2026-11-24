@@ -7,6 +7,18 @@ as a release yet.
 
 ## [Unreleased]
 
+### Fixed (2026-11-24)
+- **"Forgotten your password?" after a wrong code.** A staff member whose
+  second-factor code went wrong was held at the code step: its "Start over" and
+  any visit to the sign-in page were sent back there by the half-finished
+  sign-in, so the reset link was out of reach. The code step now offers
+  "Forgotten your password?" itself, and both ways out end the half-finished
+  sign-in first (`POST /auth/logout` now accepts a session still waiting for its
+  code).
+- `scripts/create_admin.py` wrote the administrator's email in the clear, which
+  the database has refused since migration 0028; it now goes through the user
+  repository (sealed and indexed) and the audit service (the hash chain).
+
 ### Added (2026-11-23, migration 0074, ADR 0045)
 - **Analytics**, a section of the console apart from the Dashboard: a
   management scorecard, analytics, the record of processing, audit reports,

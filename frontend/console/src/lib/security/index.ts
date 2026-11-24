@@ -10,3 +10,4 @@ export * from "@/lib/security/public-routes";
 export * from "@/lib/security/sanitize";
 export * from "@/lib/security/session-timeout";
 export { useHydrated } from "@/lib/security/use-hydrated";
+export { navigateFresh } from "@/lib/security/navigate";

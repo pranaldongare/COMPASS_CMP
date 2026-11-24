@@ -32,6 +32,8 @@ MIN_PASSWORD_LENGTH = 12
 async def create(email: str, full_name: str, password: str) -> int:
     from cmp.core.security import hash_password
     from cmp.db.pool import close_pool, open_pool, transaction
+    from cmp.db.repositories import users as user_repo
+    from cmp.domain.audit import service as audit
 
     await open_pool()
     try:
@@ -46,35 +48,38 @@ async def create(email: str, full_name: str, password: str) -> int:
                 )
                 return 1
 
-            cur = await conn.execute(
-                "SELECT 1 FROM auth_user WHERE lower(email) = lower(%s)", (email,)
-            )
-            if await cur.fetchone():
+            # Through the repository: the email is sealed and indexed on the
+            # way in, as every account's is (0028). Plain SQL here wrote it in
+            # the clear, which the database has refused since.
+            if await user_repo.by_email(conn, email) is not None:
                 sys.stderr.write(f"An account already exists for {email}.\n")
                 return 1
-
-            cur = await conn.execute(
-                """INSERT INTO auth_user
-                     (full_name, email, username, role, person_type, status, password_hash)
-                   VALUES (%s, %s, %s, 'admin', 'employee', 'active', %s)
-                   RETURNING uuid""",
-                (full_name, email, email.split("@")[0], hash_password(password)),
+            row = await user_repo.create(
+                conn,
+                full_name=full_name,
+                email=email,
+                role="admin",
+                username=email.split("@")[0],
+                person_type="employee",
+                status="active",
+                password_hash=hash_password(password),
             )
-            created = await cur.fetchone()
 
-            # Audited like any other provisioning, with a null actor — nobody was
+            # Audited like any other provisioning, with a null actor - nobody was
             # signed in, and recording a fictional actor would be worse than
-            # recording none. The detail says how it happened.
-            await conn.execute(
-                """INSERT INTO audit_log (event_type, entity_type, entity_id, detail_json)
-                   SELECT 'user.created', 'auth_user', id,
-                          jsonb_build_object('role', 'admin', 'via', 'scripts/create_admin.py',
-                                             'bootstrap', true)
-                   FROM auth_user WHERE uuid = %s""",
-                (created["uuid"],),
+            # recording none. The detail says how it happened. Through the
+            # audit service, so the row joins the hash chain.
+            await audit.record(
+                conn,
+                event=audit.Event.USER_CREATED,
+                entity_type="auth_user",
+                entity_id=int(row["id"]),
+                subject_user_id=int(row["id"]),
+                actor_user_id=None,
+                detail={"role": "admin", "via": "scripts/create_admin.py", "bootstrap": True},
             )
 
-        sys.stdout.write(f"Administrator created: {email}  ({created['uuid']})\n")
+        sys.stdout.write(f"Administrator created: {email}  ({row['uuid']})\n")
         return 0
     finally:
         await close_pool()

@@ -18,9 +18,9 @@ import * as React from "react";
 import { AuthLayout } from "@/components/layout/auth-layout";
 import { AuthPageGate } from "@/components/security";
 import { Alert, Button, Field, Input } from "@/components/ui/primitives";
-import { resendMfa, verifyMfa } from "@/features/auth";
+import { resendMfa, signOut, verifyMfa } from "@/features/auth";
 import { ApiError, unexpectedErrorMessage } from "@/lib/errors";
-import { safeRedirectPath, useHydrated } from "@/lib/security";
+import { navigateFresh, safeRedirectPath, useHydrated } from "@/lib/security";
 import { useAuth } from "@/providers";
 
 const CODE_LENGTH = 6;
@@ -80,6 +80,28 @@ function VerifyForm() {
   const [notice, setNotice] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState(false);
   const [resending, setResending] = React.useState(false);
+  const [leaving, setLeaving] = React.useState(false);
+
+  /**
+   * Leave the code step for `href`, ending the half-finished sign-in first.
+   *
+   * A plain link is not enough: while the password-only session lives, the
+   * sign-in page sends its holder straight back here, so "Start over" looped
+   * and "Forgotten your password?" was out of reach for anyone whose code went
+   * wrong. A failure to end it is ignored - the session expires in minutes,
+   * and the person should not be stuck on a page they are trying to leave.
+   * A full load, because this page's own gate reacts to the ended session too
+   * and would otherwise win the race to `/sign-in`.
+   */
+  async function leave(href: string) {
+    setLeaving(true);
+    try {
+      await signOut();
+    } catch {
+      // Already gone, or the network failed: carry on either way.
+    }
+    navigateFresh(href);
+  }
 
   async function verify(event: React.FormEvent) {
     event.preventDefault();
@@ -172,12 +194,24 @@ function VerifyForm() {
         >
           {resending ? "Sending…" : "Send a new code"}
         </button>
-        <a
-          href={signInHref}
-          className="text-text-subtle underline underline-offset-2 hover:text-text-muted"
-        >
-          Start over
-        </a>
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => leave("/sign-in/reset")}
+            disabled={leaving}
+            className="text-text-subtle underline underline-offset-2 hover:text-text-muted disabled:opacity-50"
+          >
+            Forgotten your password?
+          </button>
+          <button
+            type="button"
+            onClick={() => leave(signInHref)}
+            disabled={leaving}
+            className="text-text-subtle underline underline-offset-2 hover:text-text-muted disabled:opacity-50"
+          >
+            Start over
+          </button>
+        </div>
       </div>
     </>
   );

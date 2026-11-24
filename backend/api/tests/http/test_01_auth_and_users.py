@@ -109,6 +109,31 @@ class TestPublicRegistrationAndCodeSignIn:
 
 
 class TestStaffSignInAndPasswords:
+    async def test_a_sign_in_waiting_for_its_code_can_be_abandoned(
+        self, http: httpx.AsyncClient, session_for: SessionFactory, queued: Any
+    ) -> None:
+        """2026-11-24: the code step's "Start over" and "Forgotten your
+        password?" end the partial session, or the sign-in page sends its holder
+        back to the code step and the reset is out of reach."""
+        dco = await session_for("dco")
+        login = plain(dco.user["email"])
+        first = await call(http, "POST", "/auth/login", json={"login": login, "password": PASSWORD})
+        assert first.json()["mfa_required"] is True
+        partial = dict(first.cookies)
+        csrf = {"X-CSRF-Token": partial["cmp_csrf"]}
+
+        await call(http, "POST", "/auth/logout", cookies=partial, headers=csrf)
+        # The half-finished sign-in is gone: its code step no longer answers.
+        await call(
+            http,
+            "POST",
+            "/auth/mfa/verify",
+            cookies=partial,
+            headers=csrf,
+            json={"code": last_code(queued, MFA)},
+            expect=401,
+        )
+
     async def test_login_mfa_and_password_change(
         self, http: httpx.AsyncClient, session_for: SessionFactory, queued: Any
     ) -> None:
