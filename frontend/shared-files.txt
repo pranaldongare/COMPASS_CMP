@@ -87,6 +87,7 @@ src/lib/format/format.test.ts
 src/lib/format/index.ts
 src/lib/query/options.ts
 src/lib/security/index.ts
+src/lib/security/navigate.ts
 src/lib/security/sanitize.ts
 src/lib/security/session-timeout.ts
 src/lib/security/use-hydrated.ts

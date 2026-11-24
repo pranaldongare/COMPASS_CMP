@@ -434,7 +434,7 @@ class TestBreachOnlyLogins:
         eng = await _sign_in(http, queued, engineer, "HttpSuite!Breach1")
         me = await call(http, "GET", "/auth/me", session=eng)
         assert me.json()["role"] == "breach_holder"
-        assert me.json()["nav"] == ["tickets", "notifications", "profile"]
+        assert me.json()["nav"] == ["tickets", "training", "notifications", "profile"]
         [mine] = (await call(http, "GET", "/breach-tickets", session=eng)).json()
         ticket = str(mine["ticket_uuid"])
         await call(http, "GET", f"/breaches/{uuid}", template=B, session=eng, expect=404)

@@ -561,7 +561,9 @@ def scope_of(resource: str, role: Role | str) -> Scope:
 #: Tickets addressed to the signed-in member of staff, then the personal pages.
 #: Every staff role has tickets: a holder that is one of our own teams is
 #: answered by whoever that team names, whatever their role here.
-PERSONAL: tuple[str, ...] = ("tickets", "notifications", "profile")
+#: Training - each role's own modules, step by step - is for every member of
+#: staff and only once signed in; it holds no records, so it grants nothing.
+PERSONAL: tuple[str, ...] = ("tickets", "training", "notifications", "profile")
 
 NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
     # Management reads the analytics and its own account, nothing else

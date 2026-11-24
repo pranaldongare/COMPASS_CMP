@@ -25,6 +25,7 @@ import {
   Inbox,
   Layers,
   Globe,
+  GraduationCap,
   Link2,
   MapPin,
   MessageSquareText,
@@ -267,6 +268,14 @@ export const SECTIONS: NavSection[] = [
         label: "My tasks",
         icon: Inbox,
         keywords: "tickets for you",
+      },
+      // Each role's own modules, step by step (2026-11-24).
+      {
+        key: "training",
+        href: "/training",
+        label: "Training",
+        icon: GraduationCap,
+        keywords: "learn how to course guide",
       },
       { key: "notifications", href: "/notifications", label: "Notifications", icon: Bell },
       {

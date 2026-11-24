@@ -209,6 +209,16 @@ daily destinations in the order the work runs (`DAILY_WORK` in
 | Legal PoC | Dashboard, Rights requests, Breaches, HR activities, HR categories, Notice templates, Purposes, My tasks |
 | HR PoC | Dashboard, HR activities, Consent links, Consents, My tasks |
 
+| Management | Analytics, My tasks |
+
+**Training** (2026-11-24) is under **You** for every member of staff - each
+staff role, the breach-only login included, never a data principal. It is a
+short course of the role's own work, step by step, each module ending with a
+few questions (`features/training/content.ts`, worded as the Help manual is).
+It is reached only once signed in, holds no records and grants nothing; a
+step links to the page it happens on only when the role reaches that page.
+Progress is kept in the person's browser, per account.
+
 Profile and notifications are not in the sidebar: the account menu holds
 **My profile** and sign-out, and the bell opens notifications. Pages are
 named by what they hold: **My tasks** (tickets), **Approval documents**,

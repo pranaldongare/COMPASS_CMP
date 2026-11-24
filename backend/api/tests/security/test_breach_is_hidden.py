@@ -99,7 +99,7 @@ def test_the_breach_only_login_holds_its_tickets_and_nothing_else() -> None:
 
     granted = sorted(r for r, grants in MATRIX.items() if Role.BREACH_HOLDER in grants)
     assert granted == ["breach_ticket", "ticket"]
-    assert list(nav_for(Role.BREACH_HOLDER)) == ["tickets", "notifications", "profile"]
+    assert list(nav_for(Role.BREACH_HOLDER)) == ["tickets", "training", "notifications", "profile"]
 
 
 @pytest.mark.parametrize("write", [False, True])

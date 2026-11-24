@@ -70,6 +70,7 @@ const SECTION_OF: ReadonlyArray<
   ["/delegate", "delegate"],
   ["/messages", "messages"],
   ["/analytics", "analytics"],
+  ["/training", "training"],
 ];
 
 export function RequireSection({ children }: { children: React.ReactNode }) {

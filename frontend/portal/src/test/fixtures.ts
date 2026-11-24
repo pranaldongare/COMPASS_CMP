@@ -64,10 +64,10 @@ const NAV: Record<Role, string[]> = {
     "collections", "imports", "notifications", "profile",
   ],
   data_subject: ["consents", "requests", "notifications", "profile"],
-  breach_holder: ["tickets", "notifications", "profile"],
-  legal: ["dashboard", "tickets", "notifications", "profile"],
-  hr_user: ["dashboard", "tickets", "notifications", "profile"],
-  management: ["analytics", "tickets", "notifications", "profile"],
+  breach_holder: ["tickets", "training", "notifications", "profile"],
+  legal: ["dashboard", "tickets", "training", "notifications", "profile"],
+  hr_user: ["dashboard", "tickets", "training", "notifications", "profile"],
+  management: ["analytics", "tickets", "training", "notifications", "profile"],
 };
 
 export function makeMe(overrides: Partial<Me> = {}): Me {

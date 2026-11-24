@@ -220,7 +220,15 @@ for (const role of ROLES) {
       // Nothing beyond what this role expects: the sidebar is the server's
       // list, and the list here is the role's charter. A link outside it is a
       // section somebody widened without deciding to.
-      const personal = ["/tickets", "/notifications", "/account"];
+      // Every staff role's: its tasks, its training (2026-11-24), its account
+      // - and Analytics (ADR 0045), which each role here reads its part of.
+      const personal = [
+        "/tickets",
+        "/training",
+        "/notifications",
+        "/account",
+        "/analytics",
+      ];
       for (const href of hrefs) {
         expect(
           [...role.expected, ...personal],

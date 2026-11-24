@@ -7,6 +7,17 @@ as a release yet.
 
 ## [Unreleased]
 
+### Added (2026-11-24)
+- **Training**, under *You* in every staff member's sidebar, once signed in:
+  a course per role - getting started and handling personal data for
+  everyone, then the role's own work (registering a project, approving it,
+  rights requests, breaches, sites and links, imports and exports, the HR
+  registry and activities, staff accounts, platform settings, the scorecard
+  and reports, the temporary ticket holder's part) - step by step, with a
+  link to the live page where the role reaches it and a few questions at the
+  end of each module. Progress is kept in the browser, per account. The
+  server grants the `training` section to every staff role (`PERSONAL`).
+
 ### Fixed (2026-11-24)
 - **"Forgotten your password?" after a wrong code.** A staff member whose
   second-factor code went wrong was held at the code step: its "Start over" and

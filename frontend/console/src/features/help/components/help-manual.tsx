@@ -22,7 +22,7 @@ import { cn } from "@/lib/format";
 /* ------------------------------------------------------------ inline text */
 
 /** `[[Label]]` becomes a label chip; everything else is plain text. */
-function Rich({ text }: { text: string }) {
+export function Rich({ text }: { text: string }) {
   const parts = text.split(/\[\[(.+?)\]\]/g);
   return (
     <>

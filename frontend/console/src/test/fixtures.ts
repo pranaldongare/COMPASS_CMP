@@ -43,31 +43,31 @@ const NOW = "2026-02-02T11:05:00+05:30";
 const NAV: Record<Role, string[]> = {
   admin: [
     "dashboard", "users", "processors", "sources", "requests", "audit", "delegate",
-    "tickets", "notifications", "profile",
+    "tickets", "training", "notifications", "profile",
   ],
   dpo: [
     "dashboard", "projects", "notices", "purposes", "processors", "sources",
     "consents", "links", "exports", "imports", "requests", "audit", "users",
-    "delegate", "tickets", "notifications", "profile",
+    "delegate", "tickets", "training", "notifications", "profile",
   ],
-  rnd_user: ["dashboard", "projects", "notices", "consents", "tickets", "notifications", "profile"],
+  rnd_user: ["dashboard", "projects", "notices", "consents", "tickets", "training", "notifications", "profile"],
   dco: [
     "dashboard", "projects", "sites", "sources", "consents", "links",
-    "collections", "imports", "tickets", "notifications", "profile",
+    "collections", "imports", "tickets", "training", "notifications", "profile",
   ],
   dco_admin: [
     "dashboard", "projects", "sites", "sources", "consents", "links",
-    "collections", "imports", "tickets", "notifications", "profile",
+    "collections", "imports", "tickets", "training", "notifications", "profile",
   ],
   rco: [
     "dashboard", "projects", "sites", "sources", "consents", "links",
-    "collections", "imports", "tickets", "notifications", "profile",
+    "collections", "imports", "tickets", "training", "notifications", "profile",
   ],
   data_subject: ["consents", "requests", "notifications", "profile"],
-  breach_holder: ["tickets", "notifications", "profile"],
-  legal: ["dashboard", "tickets", "notifications", "profile"],
-  hr_user: ["dashboard", "tickets", "notifications", "profile"],
-  management: ["analytics", "tickets", "notifications", "profile"],
+  breach_holder: ["tickets", "training", "notifications", "profile"],
+  legal: ["dashboard", "tickets", "training", "notifications", "profile"],
+  hr_user: ["dashboard", "tickets", "training", "notifications", "profile"],
+  management: ["analytics", "tickets", "training", "notifications", "profile"],
 };
 
 export function makeMe(overrides: Partial<Me> = {}): Me {
