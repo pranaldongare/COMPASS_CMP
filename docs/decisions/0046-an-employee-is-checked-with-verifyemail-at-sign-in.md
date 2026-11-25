@@ -98,8 +98,8 @@ DataVault's address is. Their answers to the questions this raised:
 - An address somebody can set is a place the platform can be pointed at: one
   role, an address with nothing hidden in it, no redirect, every change on the
   trail (that the address or the key changed, never either).
-- A development stand-in, `/dev/verify-email`, is mounted in local and test
-  only: `left…` is a leaver, `unknown…` is not known, `down…` does not answer.
+- A development stand-in, `/dev/verify-email`, is mounted only with
+  `DEV_VERIFY_EMAIL` on, which the settings refuse outside local and test: `left…` is a leaver, `unknown…` is not known, `down…` does not answer.
 
 ## Not decided here
 

@@ -151,6 +151,7 @@ class TestProductionStartupGuards:
             # Stated, not left to the developer's .env: a machine running with
             # the code popup on would otherwise fail this for the right reason.
             "dev_show_codes": False,
+            "dev_verify_email": False,
         }
 
     def test_the_code_popup_is_refused_in_production(self) -> None:

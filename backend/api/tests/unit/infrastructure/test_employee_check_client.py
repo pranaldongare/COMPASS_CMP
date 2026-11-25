@@ -60,3 +60,17 @@ async def test_a_redirect_is_not_followed_and_an_error_body_not_kept() -> None:
         )
     assert caught.value.code == "status_302"
     assert ASKED not in str(caught.value)
+
+
+def test_the_stand_in_exists_only_when_asked(monkeypatch: pytest.MonkeyPatch) -> None:
+    """`/dev/verify-email` says anybody is an employee: only on a developer's
+    machine, and only when DEV_VERIFY_EMAIL asks for it."""
+    from cmp.api.routers import _development_routers
+
+    monkeypatch.setattr("cmp.core.config.settings.dev_show_codes", False)
+    monkeypatch.setattr("cmp.core.config.settings.sso_mock", False)
+    monkeypatch.setattr("cmp.core.config.settings.dev_verify_email", False)
+    assert _development_routers() == ()
+    monkeypatch.setattr("cmp.core.config.settings.dev_verify_email", True)
+    paths = [route.path for r in _development_routers() for route in r.routes]  # type: ignore[attr-defined]
+    assert paths == ["/dev/verify-email/VerifyEmail"]

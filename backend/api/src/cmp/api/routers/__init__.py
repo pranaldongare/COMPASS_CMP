@@ -89,7 +89,7 @@ def _development_routers() -> tuple[APIRouter, ...]:
         from cmp.api.routers.public.devsso import router as devsso_router
 
         routers.append(devsso_router)
-    if settings.environment in ("local", "test"):
+    if settings.dev_verify_email and settings.environment in ("local", "test"):
         # A stand-in for VerifyEmail (ADR 0046), so the employee check can be
         # tried end to end before the organisation's address is known.
         from cmp.api.routers.public.devverify import router as devverify_router

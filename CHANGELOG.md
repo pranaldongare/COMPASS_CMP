@@ -19,7 +19,8 @@ as a release yet.
   call is made from inside the network by the API and the worker - nothing
   new crosses the relay. Each answer is on the account and the trail (never
   the address); *Employee checks not answered* is on Health. A stand-in,
-  `/dev/verify-email`, answers on a developer's machine.
+  `/dev/verify-email`, answers on a developer's machine with
+  `DEV_VERIFY_EMAIL=true`.
 - **One list of the organisation's domains**, kept on that page: it replaces
   `BREACH_TICKET_EMAIL_DOMAINS` for breach tickets and a rights holder's
   route, which now only seeds it at migration 0075.

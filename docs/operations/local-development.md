@@ -255,8 +255,9 @@ and the API refuses to start with it outside `local` and `test`.
 ## Trying the employee check
 
 VerifyEmail ([ADR 0046](../decisions/0046-an-employee-is-checked-with-verifyemail-at-sign-in.md))
-is the organisation's; on your machine a stand-in answers instead, mounted in
-`local` and `test` only. As the administrator, open **Employee check**, set
+is the organisation's; on your machine a stand-in answers instead. Switch it on
+with `DEV_VERIFY_EMAIL=true` in `backend/api/.env` (refused outside `local`
+and `test`) and restart the API. As the administrator, open **Employee check**, set
 the address to `http://localhost:8000/dev/verify-email`, tick **Check
 employees at sign-in** and save. The domains start as
 `BREACH_TICKET_EMAIL_DOMAINS` (`cmp.local`). The stand-in answers by the

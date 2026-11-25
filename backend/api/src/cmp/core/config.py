@@ -172,6 +172,11 @@ class Settings(BaseSettings):
     #: name made from it and an employee ID derived from it (`MOCK-…`).
     #: Refused outside local and test: it signs anybody in as anybody.
     sso_mock: bool = False
+    #: Development only: a stand-in for the organisation's VerifyEmail at
+    #: `/dev/verify-email` (ADR 0046), so the employee check can be tried
+    #: before the organisation's address is known. Refused outside local and
+    #: test: it would say anybody is an employee.
+    dev_verify_email: bool = False
 
     # ---------------------------------------------------------------- CORS
     #: Empty: the console's and the portal's addresses.
@@ -591,6 +596,8 @@ class Settings(BaseSettings):
             raise ValueError("DEV_SHOW_CODES is for local development only")
         if self.sso_mock and self.environment not in ("local", "test"):
             raise ValueError("SSO_MOCK is for local development only")
+        if self.dev_verify_email and self.environment not in ("local", "test"):
+            raise ValueError("DEV_VERIFY_EMAIL is for local development only")
         if self.storage_backend == "object":
             # Any environment: `ObjectStorage` is a stub that raises on the
             # first save, so a deployment set this way started, said it was

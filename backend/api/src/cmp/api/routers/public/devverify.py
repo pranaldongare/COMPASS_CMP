@@ -1,7 +1,7 @@
 """A stand-in for the organisation's VerifyEmail, for a developer's machine.
 
-Mounted only in `local` and `test` (`cmp.api.routers._development_routers`),
-never in a deployment. Point the Employee check at it -
+Mounted only when `DEV_VERIFY_EMAIL` is on, which the settings refuse outside
+`local` and `test` (`cmp.api.routers._development_routers`). Point the Employee check at it -
 `http://localhost:8000/dev/verify-email` - and it answers as VerifyEmail does
 (ADR 0046), by the address's local part, so every outcome can be tried:
 

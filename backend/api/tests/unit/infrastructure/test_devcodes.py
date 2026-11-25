@@ -110,6 +110,8 @@ def test_the_setting_is_refused_outside_local_development(environment: str) -> N
 def test_the_route_exists_only_when_asked(monkeypatch: Any) -> None:
     from cmp.api.routers import _development_routers
 
+    # The VerifyEmail stand-in is another development route; off here.
+    monkeypatch.setattr("cmp.core.config.settings.dev_verify_email", False)
     monkeypatch.setattr("cmp.core.config.settings.dev_show_codes", False)
     assert _development_routers() == ()
     monkeypatch.setattr("cmp.core.config.settings.dev_show_codes", True)
