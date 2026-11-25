@@ -588,6 +588,12 @@ export const MODULES: TrainingModule[] = [
         where: "breach-settings",
       },
       {
+        title: "Who may sign in: the employee check",
+        body: "[[Employee check]]: VerifyEmail's address and key, the organisation's email domains, and the switch. Staff on those domains are checked at console sign-in - a former employee is refused, and so is everyone on them while VerifyEmail cannot be reached; you never are. [[Check an address]] tries the connection.",
+        where: "employee-check",
+        tip: "[[Let staff on other domains sign in to the console]] is for testing. Switch it off before production.",
+      },
+      {
         title: "DataVault and the portal address",
         body: "[[DataVault connection]] is where DataVault is reached; [[Portal address]] is what every link to the portal starts with.",
         where: "datavault",
@@ -604,6 +610,16 @@ export const MODULES: TrainingModule[] = [
       },
     ],
     check: [
+      {
+        question: "VerifyEmail cannot be reached. Who can still sign in to the console?",
+        options: [
+          "Nobody",
+          "The administrator, and staff on domains that are not the organisation's while that is allowed",
+          "Everybody - the check is skipped",
+        ],
+        answer: 1,
+        why: "Staff on the organisation's domains are refused without an answer; the administrator is never checked, so the platform can always be put right.",
+      },
       {
         question: "A grievance disputes the DPO's own decision. Who decides it?",
         options: ["The DPO", "The administrator"],

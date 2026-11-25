@@ -356,6 +356,13 @@ _SPECS: dict[str, _Spec] = {
         href=None,
         noun="DataVault connection",
     ),
+    "employee_check_connection": _Spec(
+        sql="""SELECT connection_id::int AS id, NULL::text AS uuid,
+                      'Employee check' AS label
+               FROM employee_check_connection WHERE connection_id = ANY(%s)""",
+        href=None,
+        noun="Employee check",
+    ),
     "restricted_country": _Spec(
         sql="""SELECT country_id AS id, country_uuid::text AS uuid,
                       'Restricted country ' || country_code AS label

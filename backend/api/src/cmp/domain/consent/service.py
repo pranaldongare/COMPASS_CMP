@@ -25,6 +25,7 @@ from cmp.core.errors import (
     BadRequest,
     Conflict,
     ConsentDefective,
+    Forbidden,
     LinkInvalid,
     NotFound,
     RateLimited,
@@ -387,6 +388,25 @@ async def verify_contact_code(conn: Conn, *, token: str, contact: str, code: str
     return {"user": user, "link": link, "complete": complete, "remaining": remaining}
 
 
+#: Said on an employee-only link to somebody VerifyEmail found not employed now.
+NOT_AN_EMPLOYEE = (
+    "This link is for the organisation's current employees, and the organisation does not "
+    "list you as one. Your other consents and your rights are not affected."
+)
+
+
+async def _refuse_former_employee(conn: Conn, link: dict[str, Any], user_id: int | None) -> None:
+    """An employee-only link (`audience_mode = sso`) refuses a person VerifyEmail
+    last said is not an active employee (ADR 0046). Never asked, or no answer:
+    the link is followed as before - the portal fails open."""
+    if user_id is None or link.get("audience_mode") != "sso":
+        return
+    from cmp.domain.employees import check as employees
+
+    if await employees.refuses_employee_link(conn, user_id):
+        raise Forbidden(NOT_AN_EMPLOYEE)
+
+
 async def serve_notice(
     conn: Conn, *, token: str, language_code: str, user_id: int | None
 ) -> dict[str, Any]:
@@ -397,6 +417,7 @@ async def serve_notice(
     the notice was shown at any convenient moment.
     """
     link = await resolve_link(conn, token)
+    await _refuse_former_employee(conn, link, user_id)
     language = await notice_repo.language_row(
         conn, notice_id=link["notice_id"], language_code=language_code
     )
@@ -534,6 +555,7 @@ async def capture(
     through this link, in this language, within `NOTICE_SERVING_TTL`.
     """
     link = await resolve_link(conn, token)
+    await _refuse_former_employee(conn, link, user_id)
     language = await notice_repo.language_row(
         conn, notice_id=link["notice_id"], language_code=language_code
     )

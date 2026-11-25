@@ -58,6 +58,8 @@ ROUTERS: tuple[APIRouter, ...] = (
     v1.datavault_connection_router,
     v1.datavault_request_router,
     v1.datavault_ticket_router,
+    # VerifyEmail and the organisation's domains (ADR 0046).
+    v1.employee_check_router,
     v1.portal_address_router,
     # A team's own tickets on rights requests - the portal channel.
     v1.tickets_router,
@@ -87,6 +89,12 @@ def _development_routers() -> tuple[APIRouter, ...]:
         from cmp.api.routers.public.devsso import router as devsso_router
 
         routers.append(devsso_router)
+    if settings.environment in ("local", "test"):
+        # A stand-in for VerifyEmail (ADR 0046), so the employee check can be
+        # tried end to end before the organisation's address is known.
+        from cmp.api.routers.public.devverify import router as devverify_router
+
+        routers.append(devverify_router)
     return tuple(routers)
 
 

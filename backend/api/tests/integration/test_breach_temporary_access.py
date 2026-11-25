@@ -15,13 +15,12 @@ from typing import Any
 
 import pytest
 
-from cmp.core.config import settings
 from cmp.core.errors import Conflict, ValidationFailed
 from cmp.db.sql import fetch_all, fetch_one
 from cmp.domain.breach import service, tickets
 from cmp.domain.users import service as users
 from cmp.tasks import dispatch as dispatch_mod
-from tests.conftest import hashed
+from tests.conftest import hashed, use_company_domains
 from tests.integration.test_breach_register import tell_org_board
 
 pytestmark = pytest.mark.integration
@@ -29,7 +28,7 @@ pytestmark = pytest.mark.integration
 
 @pytest.fixture(autouse=True)
 def internal(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(settings, "breach_ticket_email_domains", ("test.local",))
+    use_company_domains(monkeypatch, "test.local")
 
 
 @pytest.fixture

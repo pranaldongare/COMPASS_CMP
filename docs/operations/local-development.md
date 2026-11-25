@@ -252,6 +252,27 @@ principal, a member of staff - is refused as a conflict, as it would be
 from a real provider. The setting takes the provider's place while it is on,
 and the API refuses to start with it outside `local` and `test`.
 
+## Trying the employee check
+
+VerifyEmail ([ADR 0046](../decisions/0046-an-employee-is-checked-with-verifyemail-at-sign-in.md))
+is the organisation's; on your machine a stand-in answers instead, mounted in
+`local` and `test` only. As the administrator, open **Employee check**, set
+the address to `http://localhost:8000/dev/verify-email`, tick **Check
+employees at sign-in** and save. The domains start as
+`BREACH_TICKET_EMAIL_DOMAINS` (`cmp.local`). The stand-in answers by the
+address's local part:
+
+| Local part starts with | Answer | Console sign-in | Portal sign-in |
+|---|---|---|---|
+| `left` | known, not employed | refused | signs in; employee links refuse |
+| `unknown` | not known | refused | signs in; employee links refuse |
+| `down` | no answer (503) | refused | signs in |
+| anything else | active employee | signs in | signs in |
+
+**Check an address** on the same page asks without signing in. The
+administrator is never checked; staff on other domains sign in while **Let
+staff on other domains sign in to the console** is ticked.
+
 ## Looking at the database
 
 ```bash

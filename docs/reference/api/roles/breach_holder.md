@@ -21,6 +21,7 @@ Navigation returned after sign-in: `tickets`, `training`, `notifications`, `prof
 | `consent` | No | No | `none` | Denied |
 | `data_source` | No | No | `none` | Denied |
 | `datavault_connection` | No | No | `none` | Denied |
+| `employee_check` | No | No | `none` | Denied |
 | `export` | No | No | `none` | Denied |
 | `health_report` | No | No | `none` | Denied |
 | `hr_category` | No | No | `none` | Denied |

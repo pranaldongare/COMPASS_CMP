@@ -804,3 +804,83 @@ class TestTheRace:
         assert [b["breach_reference"] for b in register.json()].count(
             final.json()["breach_reference"]
         ) == 1
+
+
+class TestEscalationTransferAndTheReporter:
+    """The routes 0073 (ADR 0042) added, and the public notice link
+    (2026-11-20), over HTTP: their behaviour is held by the integration suite;
+    here each is reached through the gate it stands behind."""
+
+    async def test_the_escalation_list_is_kept_by_the_office(
+        self, http: httpx.AsyncClient, world: World
+    ) -> None:
+        added = await call(
+            http,
+            "POST",
+            "/breach-settings/escalation-recipients",
+            session=world.dpo,
+            json={"full_name": "Escalation Desk", "email": "escalation@http-suite.test"},
+        )
+        listed = added.json()["escalation_recipients"]
+        uuid = next(r["recipient_uuid"] for r in listed)
+        left = await call(
+            http,
+            "DELETE",
+            f"/breach-settings/escalation-recipients/{uuid}",
+            template="/breach-settings/escalation-recipients/{recipient_uuid}",
+            session=world.dpo,
+        )
+        assert uuid not in [r["recipient_uuid"] for r in left.json()["escalation_recipients"]]
+
+    async def test_a_breach_goes_to_the_other_office_and_has_no_reporter_to_thank(
+        self, http: httpx.AsyncClient, world: World
+    ) -> None:
+        breach = await _record(http, world)
+        path = f"/breaches/{breach['breach_uuid']}"
+        # Logged by the office, not reported through the link: nobody to thank.
+        await call(
+            http,
+            "POST",
+            f"{path}/reporter/acknowledge",
+            template=f"{B}/reporter/acknowledge",
+            session=world.dpo,
+            expect=409,
+        )
+        moved = await call(
+            http,
+            "POST",
+            f"{path}/transfer",
+            template=f"{B}/transfer",
+            session=world.dpo,
+            json={"office": "hr", "reason": "It concerns an HR system."},
+        )
+        assert moved.status_code == 200
+
+    async def test_a_notice_link_that_is_not_one_opens_nothing(
+        self, http: httpx.AsyncClient
+    ) -> None:
+        # The shape of a real token (64 characters or more), and not one.
+        token = "x" * 64
+        await call(
+            http,
+            "GET",
+            f"/breach-notices/{token}",
+            template="/breach-notices/{token}",
+            expect=(404, 410),
+        )
+        await call(
+            http,
+            "POST",
+            f"/breach-notices/{token}/code",
+            template="/breach-notices/{token}/code",
+            expect=(200, 202, 404, 410, 422),
+            json={"mobile": "+919000000000"},
+        )
+        await call(
+            http,
+            "POST",
+            f"/breach-notices/{token}/open",
+            template="/breach-notices/{token}/open",
+            expect=(404, 410, 422),
+            json={"mobile": "+919000000000", "code": "123456"},
+        )

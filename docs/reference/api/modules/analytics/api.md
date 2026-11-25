@@ -59,7 +59,10 @@ No request body.
       "dims": [
         "…"
       ],
-      "people": true
+      "people": true,
+      "numerator": "…",
+      "denominator": "…",
+      "higher_is_better": true
     }
   ],
   "dimensions": [
@@ -114,6 +117,8 @@ No request body.
 
 The figures of a section, or the metrics named, for the period, with
 the previous period, the target and its status, a line and a breakdown.
+`grain` draws the line by day, week or month instead of the period's own
+choice; a day line is refused past 92 days.
 
 ### Validation
 
@@ -128,6 +133,7 @@ the previous period, the target and its status, a line and a breakdown.
 | `dim` | query | No | `string` or `null` | max length: `24` | — |
 | `compare` | query | No | `boolean` | default: `True` | — |
 | `trend` | query | No | `boolean` | default: `True` | — |
+| `grain` | query | No | enum: `day`, `week`, `month` or `null` | — | — |
 
 ### Payload
 
@@ -176,6 +182,8 @@ No request body.
       "dims": [
         "…"
       ],
+      "numerator": "…",
+      "denominator": "…",
       "value": "…",
       "suppressed": true,
       "previous": "…",
@@ -765,6 +773,9 @@ Request body required: **yes**.
 | `kind` | `string` | Yes | — | — |
 | `dims` | array of `string` | Yes | — | — |
 | `people` | `boolean` | Yes | — | — |
+| `numerator` | `string` or `null` | No | — | — |
+| `denominator` | `string` or `null` | No | — | — |
+| `higher_is_better` | `boolean` | No | default: `True` | — |
 
 <a id="schema-choice"></a>
 #### `Choice`
@@ -808,6 +819,8 @@ Request body required: **yes**.
 | `group` | `string` | Yes | — | — |
 | `kind` | `string` | Yes | — | — |
 | `dims` | array of `string` | Yes | — | — |
+| `numerator` | `string` or `null` | No | — | — |
+| `denominator` | `string` or `null` | No | — | — |
 | `value` | `number` or `null` | Yes | — | — |
 | `suppressed` | `boolean` | Yes | — | — |
 | `previous` | `number` or `null` | Yes | — | — |

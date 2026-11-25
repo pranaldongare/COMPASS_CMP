@@ -412,6 +412,12 @@ MATRIX: dict[str, dict[Role, Grant]] = {
     "datavault_connection": {
         Role.ADMIN: Grant(Scope.ALL, write=True),
     },
+    # Where VerifyEmail is reached, its key, and the organisation's email
+    # domains (0075, ADR 0046). Configuration, and it decides who may sign in
+    # to the console: the administrator's alone.
+    "employee_check": {
+        Role.ADMIN: Grant(Scope.ALL, write=True),
+    },
     # The address every link to the portal starts with (0072). Configuration,
     # like the one above: the administrator's alone. Everybody signed in is
     # told the address in use (`/auth/me`); only the administrator sets it.
@@ -690,6 +696,8 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "breach-settings",
         # Where DataVault is reached (0070): the administrator's alone.
         "datavault",
+        # VerifyEmail and the organisation's domains (0075, ADR 0046).
+        "employee-check",
         # The address links to the portal start with (0072).
         "portal-address",
         "audit",

@@ -247,6 +247,12 @@ SOURCES: Final[dict[str, str]] = {
         "'auth.login_failed', 'auth.mfa_failed'", dims="l.event_type AS d_event"
     ),
     "health.lockouts": _trail("'auth.login_locked_out'"),
+    # VerifyEmail gave no answer at a sign-in (ADR 0046); the administrator's
+    # own test of an address is not counted.
+    "health.employee_check_failures": _trail(
+        "'employee.check_failed'", dims="l.detail_json ->> 'flow' AS d_flow"
+    )
+    + " AND l.detail_json ->> 'flow' <> 'administrator_test'",
     "health.access_denied": _trail("'auth.access_denied'"),
     "health.audit_checks": _trail("'audit.verified'"),
     "health.audit_breaks": _trail("'audit.verified'") + " AND l.detail_json ->> 'intact' = 'false'",

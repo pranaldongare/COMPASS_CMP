@@ -381,3 +381,16 @@ def office_of(role: str) -> str | None:
     if role not in OFFICE_ROLES:
         return None
     return offices.HR if role in (Role.LEGAL, Role.HR_USER) else offices.RND
+
+
+def use_company_domains(monkeypatch: pytest.MonkeyPatch, *domains: str) -> None:
+    """The organisation's own domains for a test (ADR 0046): the administrator's
+    list, read from the database in the app, answered here instead."""
+    from cmp.domain.employees import check
+
+    wanted = frozenset(d.lower() for d in domains)
+
+    async def company_domains(conn: object) -> frozenset[str]:
+        return wanted
+
+    monkeypatch.setattr(check, "company_domains", company_domains)

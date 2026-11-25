@@ -22,7 +22,6 @@ from typing import Any
 
 import pytest
 
-from cmp.core.config import settings
 from cmp.core.pagination import PageRequest
 from cmp.db.repositories import audit as audit_repo
 from cmp.db.repositories import audit_lookup
@@ -31,6 +30,7 @@ from cmp.db.sql import fetch_one
 from cmp.domain.audit import service as audit
 from cmp.domain.audit.service import Event
 from cmp.domain.breach import tickets
+from tests.conftest import use_company_domains
 from tests.integration.test_breach_reports import (
     _board,
     _breach,
@@ -50,7 +50,7 @@ PAGE = PageRequest(limit=200, cursor=None, sort_field="occurred_at", descending=
 
 @pytest.fixture(autouse=True)
 def internal(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(settings, "breach_ticket_email_domains", ("test.local",))
+    use_company_domains(monkeypatch, "test.local")
 
 
 async def _about(conn: Any, entity_type: str, entity_id: int) -> list[dict[str, Any]]:

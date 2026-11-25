@@ -158,6 +158,25 @@ async def authenticate(
         # password route is still not theirs.
         raise Unauthenticated(_GENERIC_FAILURE)
 
+    # A member of staff on the organisation's domains must be an active
+    # employee, asked of VerifyEmail (ADR 0046). After the password, so a
+    # stranger never causes a call; before the code is sent, so a leaver is
+    # not sent one. The administrator is never asked about.
+    from cmp.domain.employees import check as employees
+
+    refused = await employees.console_refusal(conn, user)
+    if refused is not None:
+        await audit.record(
+            conn,
+            event=Event.LOGIN_FAILED,
+            entity_type="auth_user",
+            entity_id=user["id"],
+            subject_user_id=user["id"],
+            actor_user_id=user["id"],
+            detail={"cause": refused},
+        )
+        raise with_evidence(Forbidden(employees.REFUSALS[refused]))
+
     await ratelimit.clear_login_failures(account)
 
     # Opportunistic upgrade when the cost parameters move on.
@@ -408,6 +427,14 @@ async def verify_subject_otp(
         actor_user_id=user["id"],
         detail={"method": "otp", "acting_as": Role.DATA_SUBJECT.value},
     )
+    # Is this an active employee? Asked by the worker, after the commit, and
+    # never in the way: the sign-in has happened (ADR 0046, the portal fails
+    # open). Nothing is asked unless VerifyEmail is on and the account has an
+    # address on one of the organisation's domains.
+    from cmp.tasks.dispatch import dispatch_optional
+    from cmp.tasks.employees import check_account
+
+    dispatch_optional(check_account, str(user["uuid"]))
     return {"token": token, "session": session, "user": user, "max_age": settings.session_ttl_s}
 
 

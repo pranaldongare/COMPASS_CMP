@@ -9,7 +9,8 @@ Decided with the product owner on 2026-10-08:
 | an address on one of the organisation's own domains, with no console login | a temporary login, as a breach ticket's holder (S3-09), then as above | in the console |
 | any other address - a vendor, a third-party processor | an email carrying a link and nothing of the request | on the portal, by the link, after a one-time code to the address on the ticket |
 
-The internal domains are BREACH_TICKET_EMAIL_DOMAINS - one list of what the
+The internal domains are the administrator's list (ADR 0046; it was
+BREACH_TICKET_EMAIL_DOMAINS, which now only seeds it) - one list of what the
 organisation's own addresses are. The choice is made when the ticket is sent
 (`place`), so the office may name and rename a responder freely until then.
 
@@ -88,7 +89,7 @@ async def place(conn: Conn, row: Row, holder: Row, *, actor_id: int) -> Row:
     if not to or "@" not in to:
         # Nobody to send to: the office reaches them itself and records it.
         return holder
-    if access.internal(to):
+    if await access.internal(conn, to):
         name = await unseal_value(
             "rights_request_holder", "responder_name", holder.get("responder_name")
         )

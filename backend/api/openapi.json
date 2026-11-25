@@ -414,6 +414,7 @@
           "auth"
         ],
         "summary": "End this session",
+        "description": "End this session - a full one, or one still waiting for its second factor.\n\nA partial session is accepted here on purpose: it is the only way to\nabandon a sign-in half done. Refused, a person whose code went wrong was\nheld at the code step - the sign-in page sends a partial session there - and\ncould never reach \"Forgotten your password?\". Ending a session grants\nnothing, so accepting the half-authenticated one widens nothing.",
         "operationId": "logout_auth_logout_post",
         "responses": {
           "200": {
@@ -20148,6 +20149,198 @@
         }
       }
     },
+    "/employee-check": {
+      "get": {
+        "tags": [
+          "employee-check"
+        ],
+        "summary": "VerifyEmail and the domains",
+        "operationId": "get_settings_employee_check_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmployeeCheckOut"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "employee-check"
+        ],
+        "summary": "Set VerifyEmail's address, key and switches",
+        "operationId": "put_settings_employee_check_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmployeeCheckIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmployeeCheckOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/employee-check/domains": {
+      "post": {
+        "tags": [
+          "employee-check"
+        ],
+        "summary": "Add a domain",
+        "operationId": "add_domain_employee_check_domains_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DomainIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DomainOut"
+                  },
+                  "type": "array",
+                  "title": "Response Add Domain Employee Check Domains Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/employee-check/domains/{domain}": {
+      "delete": {
+        "tags": [
+          "employee-check"
+        ],
+        "summary": "Remove a domain",
+        "operationId": "remove_domain_employee_check_domains__domain__delete",
+        "parameters": [
+          {
+            "name": "domain",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Domain"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DomainOut"
+                  },
+                  "title": "Response Remove Domain Employee Check Domains  Domain  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/employee-check/test": {
+      "post": {
+        "tags": [
+          "employee-check"
+        ],
+        "summary": "Ask VerifyEmail about one address now",
+        "operationId": "test_address_employee_check_test_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TestOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/portal-address": {
       "get": {
         "tags": [
@@ -21419,7 +21612,7 @@
           "analytics"
         ],
         "summary": "Figures for a period",
-        "description": "The figures of a section, or the metrics named, for the period, with\nthe previous period, the target and its status, a line and a breakdown.",
+        "description": "The figures of a section, or the metrics named, for the period, with\nthe previous period, the target and its status, a line and a breakdown.\n`grain` draws the line by day, week or month instead of the period's own\nchoice; a day line is refused past 92 days.",
         "operationId": "get_figures_analytics_figures_get",
         "parameters": [
           {
@@ -21563,6 +21756,27 @@
               "type": "boolean",
               "default": true,
               "title": "Trend"
+            }
+          },
+          {
+            "name": "grain",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "day",
+                    "week",
+                    "month"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Grain"
             }
           }
         ],
@@ -32720,6 +32934,186 @@
         ],
         "title": "DisputeIn"
       },
+      "DomainIn": {
+        "properties": {
+          "domain": {
+            "type": "string",
+            "maxLength": 253,
+            "minLength": 3,
+            "title": "Domain"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "domain"
+        ],
+        "title": "DomainIn"
+      },
+      "DomainOut": {
+        "properties": {
+          "domain": {
+            "type": "string",
+            "title": "Domain"
+          },
+          "added_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Added At"
+          },
+          "added_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Added By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "domain",
+          "added_at",
+          "added_by_name"
+        ],
+        "title": "DomainOut"
+      },
+      "EmployeeCheckIn": {
+        "properties": {
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          },
+          "clear_api_key": {
+            "type": "boolean",
+            "title": "Clear Api Key",
+            "default": false
+          },
+          "api_key_header": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key Header"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": false
+          },
+          "allow_other_domains": {
+            "type": "boolean",
+            "title": "Allow Other Domains",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "EmployeeCheckIn"
+      },
+      "EmployeeCheckOut": {
+        "properties": {
+          "base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Url"
+          },
+          "api_key_set": {
+            "type": "boolean",
+            "title": "Api Key Set"
+          },
+          "api_key_header": {
+            "type": "string",
+            "title": "Api Key Header"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "allow_other_domains": {
+            "type": "boolean",
+            "title": "Allow Other Domains"
+          },
+          "domains": {
+            "items": {
+              "$ref": "#/components/schemas/DomainOut"
+            },
+            "type": "array",
+            "title": "Domains"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "base_url",
+          "api_key_set",
+          "api_key_header",
+          "enabled",
+          "allow_other_domains",
+          "domains",
+          "updated_at",
+          "updated_by_name"
+        ],
+        "title": "EmployeeCheckOut"
+      },
       "ErasureOut": {
         "properties": {
           "may_erase": {
@@ -33175,6 +33569,28 @@
             },
             "type": "array",
             "title": "Dims"
+          },
+          "numerator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numerator"
+          },
+          "denominator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Denominator"
           },
           "value": {
             "anyOf": [
@@ -36596,6 +37012,33 @@
           "people": {
             "type": "boolean",
             "title": "People"
+          },
+          "numerator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Numerator"
+          },
+          "denominator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Denominator"
+          },
+          "higher_is_better": {
+            "type": "boolean",
+            "title": "Higher Is Better",
+            "default": true
           }
         },
         "type": "object",
@@ -45280,6 +45723,45 @@
         "additionalProperties": false,
         "type": "object",
         "title": "TemplateUpdate"
+      },
+      "TestIn": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 320,
+            "minLength": 3,
+            "title": "Email"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email"
+        ],
+        "title": "TestIn"
+      },
+      "TestOut": {
+        "properties": {
+          "result": {
+            "type": "string",
+            "title": "Result"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "on_company_domain": {
+            "type": "boolean",
+            "title": "On Company Domain"
+          }
+        },
+        "type": "object",
+        "required": [
+          "result",
+          "message",
+          "on_company_domain"
+        ],
+        "title": "TestOut"
       },
       "ThreadOut": {
         "properties": {

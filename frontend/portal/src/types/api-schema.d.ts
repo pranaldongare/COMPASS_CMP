@@ -6816,6 +6816,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/employee-check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** VerifyEmail and the domains */
+        get: operations["get_settings_employee_check_get"];
+        /** Set VerifyEmail's address, key and switches */
+        put: operations["put_settings_employee_check_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/employee-check/domains": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add a domain */
+        post: operations["add_domain_employee_check_domains_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/employee-check/domains/{domain}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove a domain */
+        delete: operations["remove_domain_employee_check_domains__domain__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/employee-check/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask VerifyEmail about one address now */
+        post: operations["test_address_employee_check_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/portal-address": {
         parameters: {
             query?: never;
@@ -11057,6 +11126,66 @@ export interface components {
              */
             about_dpo: boolean;
         };
+        /** DomainIn */
+        DomainIn: {
+            /** Domain */
+            domain: string;
+        };
+        /** DomainOut */
+        DomainOut: {
+            /** Domain */
+            domain: string;
+            /**
+             * Added At
+             * Format: date-time
+             */
+            added_at: string;
+            /** Added By Name */
+            added_by_name: string | null;
+        };
+        /** EmployeeCheckIn */
+        EmployeeCheckIn: {
+            /** Base Url */
+            base_url?: string | null;
+            /** Api Key */
+            api_key?: string | null;
+            /**
+             * Clear Api Key
+             * @default false
+             */
+            clear_api_key: boolean;
+            /** Api Key Header */
+            api_key_header?: string | null;
+            /**
+             * Enabled
+             * @default false
+             */
+            enabled: boolean;
+            /**
+             * Allow Other Domains
+             * @default true
+             */
+            allow_other_domains: boolean;
+        };
+        /** EmployeeCheckOut */
+        EmployeeCheckOut: {
+            /** Base Url */
+            base_url: string | null;
+            /** Api Key Set */
+            api_key_set: boolean;
+            /** Api Key Header */
+            api_key_header: string;
+            /** Enabled */
+            enabled: boolean;
+            /** Allow Other Domains */
+            allow_other_domains: boolean;
+            /** Domains */
+            domains: components["schemas"]["DomainOut"][];
+            /** Updated At */
+            updated_at: string | null;
+            /** Updated By Name */
+            updated_by_name: string | null;
+        };
         /**
          * ErasureOut
          * @description What may be done about erasing in DataVault now, on an erasure request.
@@ -15068,6 +15197,20 @@ export interface components {
             applicable_to?: components["schemas"]["NoticeAudience"] | null;
             /** Note */
             note?: string | null;
+        };
+        /** TestIn */
+        TestIn: {
+            /** Email */
+            email: string;
+        };
+        /** TestOut */
+        TestOut: {
+            /** Result */
+            result: string;
+            /** Message */
+            message: string;
+            /** On Company Domain */
+            on_company_domain: boolean;
         };
         /** ThreadOut */
         ThreadOut: {
@@ -28645,6 +28788,156 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TicketDataVaultOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_settings_employee_check_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeCheckOut"];
+                };
+            };
+        };
+    };
+    put_settings_employee_check_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmployeeCheckIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmployeeCheckOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_domain_employee_check_domains_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DomainIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DomainOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_domain_employee_check_domains__domain__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                domain: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DomainOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_address_employee_check_test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TestOut"];
                 };
             };
             /** @description Validation Error */

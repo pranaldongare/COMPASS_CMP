@@ -9,6 +9,7 @@
  * name is not rendered anywhere.
  */
 import {
+  BadgeCheck,
   ChartColumn,
   Bell,
   Boxes,
@@ -77,7 +78,8 @@ export const SECTIONS: NavSection[] = [
         href: "/analytics",
         label: "Analytics",
         icon: ChartColumn,
-        keywords: "reports scorecard figures kpi metrics health audit report record of processing",
+        keywords:
+          "reports scorecard figures kpi metrics health audit report record of processing",
       },
     ],
   },
@@ -217,6 +219,14 @@ export const SECTIONS: NavSection[] = [
         icon: DatabaseZap,
         keywords: "datavault databank address api key lookup assets",
       },
+      // VerifyEmail and the organisation's domains (ADR 0046): the administrator's.
+      {
+        key: "employee-check",
+        href: "/employee-check",
+        label: "Employee check",
+        icon: BadgeCheck,
+        keywords: "verifyemail employee active domains organisation email sign-in",
+      },
       // The address links to the portal start with (0072): the administrator's.
       {
         key: "portal-address",
@@ -315,7 +325,16 @@ const DAILY_WORK: Record<string, string[]> = {
   admin: ["dashboard", "users", "requests", "messages", "processors", "sources", "audit"],
   breach_holder: ["tickets"],
   // The HR track (ADR 0032): their registers join as the increments land.
-  legal: ["dashboard", "requests", "breaches", "hr-activities", "hr-categories", "templates", "purposes", "tickets"],
+  legal: [
+    "dashboard",
+    "requests",
+    "breaches",
+    "hr-activities",
+    "hr-categories",
+    "templates",
+    "purposes",
+    "tickets",
+  ],
   hr_user: ["dashboard", "hr-activities", "links", "consents", "tickets"],
   // The scorecard is management's daily work, and all of it (ADR 0045).
   management: ["analytics", "tickets"],

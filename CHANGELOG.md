@@ -7,6 +7,23 @@ as a release yet.
 
 ## [Unreleased]
 
+### Added (2026-11-25, migration 0075, ADR 0046)
+- **Employee check (VerifyEmail).** The administrator sets the organisation's
+  VerifyEmail address and key on a new console page, *Employee check*, with
+  the organisation's email domains. Staff on those domains are checked at
+  console sign-in, before the code is sent: a leaver, or no answer, is
+  refused; the administrator never is; staff on other domains sign in while
+  *Let staff on other domains sign in* is ticked (on, for testing). A person
+  signing in to the portal is checked afterwards by the worker and never
+  refused; an employee-only consent link refuses one found not active. The
+  call is made from inside the network by the API and the worker - nothing
+  new crosses the relay. Each answer is on the account and the trail (never
+  the address); *Employee checks not answered* is on Health. A stand-in,
+  `/dev/verify-email`, answers on a developer's machine.
+- **One list of the organisation's domains**, kept on that page: it replaces
+  `BREACH_TICKET_EMAIL_DOMAINS` for breach tickets and a rights holder's
+  route, which now only seeds it at migration 0075.
+
 ### Added (2026-11-24)
 - **Analytics, redesigned**: *Needs attention* first (the figures off target,
   worst first); tiles that open each figure's own page (its line by day,

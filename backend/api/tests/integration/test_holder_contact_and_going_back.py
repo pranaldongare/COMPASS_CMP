@@ -14,12 +14,11 @@ from typing import Any
 
 import pytest
 
-from cmp.core.config import settings
 from cmp.core.errors import Conflict, NotFound, TransitionNotPermitted, ValidationFailed
 from cmp.core.security import unseal_token
 from cmp.db.repositories import rights as repo
 from cmp.domain.rights import holder_link, service
-from tests.conftest import plain
+from tests.conftest import plain, use_company_domains
 from tests.integration.test_holder_reach import _sent_to
 from tests.integration.test_rights_flows import DPO, _portal_request, _started
 
@@ -28,7 +27,7 @@ pytestmark = pytest.mark.integration
 
 @pytest.fixture(autouse=True)
 def _internal(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(settings, "breach_ticket_email_domains", ("test.local",))
+    use_company_domains(monkeypatch, "test.local")
 
 
 async def test_a_holder_is_not_added_without_an_email_address(

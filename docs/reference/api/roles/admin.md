@@ -2,7 +2,7 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `analytics`, `users`, `messages`, `processors`, `sources`, `requests`, `breach-settings`, `datavault`, `portal-address`, `audit`, `delegate`, `tickets`, `training`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `analytics`, `users`, `messages`, `processors`, `sources`, `requests`, `breach-settings`, `datavault`, `employee-check`, `portal-address`, `audit`, `delegate`, `tickets`, `training`, `notifications`, `profile`.
 
 ## Resource access
 
@@ -21,6 +21,7 @@ Navigation returned after sign-in: `dashboard`, `analytics`, `users`, `messages`
 | `consent` | No | No | `none` | Denied |
 | `data_source` | Yes | Yes | `all` | All rows |
 | `datavault_connection` | Yes | Yes | `all` | All rows |
+| `employee_check` | Yes | Yes | `all` | All rows |
 | `export` | No | No | `none` | Denied |
 | `health_report` | Yes | No | `all` | All rows |
 | `hr_category` | Yes | No | `all` | All rows |

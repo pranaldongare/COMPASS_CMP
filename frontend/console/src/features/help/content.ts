@@ -788,6 +788,30 @@ export const SECTIONS: HelpSection[] = [
     ],
   },
   {
+    id: "employee-check",
+    title: "Employee check",
+    summary:
+      "Whether somebody signing in on the organisation's own email domains is an active employee, asked of VerifyEmail.",
+    roles: ["admin"],
+    blocks: [
+      {
+        kind: "list",
+        items: [
+          "[[VerifyEmail address]] is where the organisation's VerifyEmail call is; the platform adds /VerifyEmail to it and sends the email address. Its team gives the address and, if it asks for one, the [[API key]] - stored encrypted and never shown again.",
+          "[[The organisation's email domains]] lists the organisation's own domains, such as company.example; their subdomains count too. It is the one list of who is inside the organisation: who is checked at sign-in, and who may hold a breach or rights ticket as staff.",
+          "Tick [[Check employees at sign-in]] and click [[Save]]. On the console, a member of staff on those domains is checked before their code is sent: an active employee signs in; a former employee is refused, and so is everyone on those domains while VerifyEmail cannot be reached. The administrator is never checked, so the platform can always be put right.",
+          "On the portal a person is checked after signing in and is never refused: a former employee keeps every right over their consents. A link made for employees refuses somebody VerifyEmail found not active.",
+          "[[Let staff on other domains sign in to the console]] is on for testing, with addresses such as cmp.local. Switch it off before production, so that only the organisation's own addresses can sign in.",
+          "[[Check an address]] asks VerifyEmail about one address now, to see that the connection works. Nothing is recorded against any account.",
+        ],
+      },
+      {
+        kind: "note",
+        text: "Every answer and every change made here is on the audit trail; the address asked about, the key and VerifyEmail's own address never are. [[Employee checks not answered]] on Analytics, Health counts the sign-ins VerifyEmail did not answer.",
+      },
+    ],
+  },
+  {
     id: "temporary-holder",
     title: "If you were given a login for a ticket",
     summary:

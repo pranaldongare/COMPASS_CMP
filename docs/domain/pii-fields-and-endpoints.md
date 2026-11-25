@@ -93,12 +93,12 @@ hash and no email is written
 rows from before that change stand as written, because the trail is
 hash-chained and cannot be rewritten.
 
-## 2. API endpoints that carry PII — 302 endpoints in 27 modules
+## 2. API endpoints that carry PII — 322 endpoints in 31 modules
 
 Every GET, POST, PUT, PATCH and DELETE whose request or response includes a
 personal field. *In* is what the caller sends (body, path and query); *out* is
 what a 2xx response returns. The response carries the value **as stored** — a
-sealed column comes back as `SE::…` and the portal decrypts it. 35 of
+sealed column comes back as `SE::…` and the portal decrypts it. 38 of
 these need no session; they are marked **public**.
 
 ### Authentication (`/auth`) — 12 endpoints
@@ -487,6 +487,25 @@ these need no session; they are marked **public**.
 |---|---|---|---|
 | GET | `/dashboard` | — | `reported_to`, `role` |
 
+### Analytics — 6 endpoints
+
+| Method | Endpoint | PII in (request) | PII out (response) |
+|---|---|---|---|
+| GET | `/analytics/audit-reports/{key}` | — | `actor_name`, `actor_role`, `actor_uuid`, `subject_name`, `subject_uuid` |
+| GET | `/analytics/catalogue` | — | `role` |
+| GET | `/analytics/settings` | — | `updated_by_name` |
+| PUT | `/analytics/settings/threshold` | — | `updated_by_name` |
+| PUT | `/analytics/targets/{key}` | — | `updated_by_name` |
+| DELETE | `/analytics/targets/{key}` | — | `updated_by_name` |
+
+### Breach notices — 3 endpoints
+
+| Method | Endpoint | PII in (request) | PII out (response) |
+|---|---|---|---|
+| GET | `/breach-notices/{token}` **public** | `token` | — |
+| POST | `/breach-notices/{token}/code` **public** | `token` | — |
+| POST | `/breach-notices/{token}/open` **public** | `code`, `token` | `consequences`, `contact`, `protective_steps` |
+
 ### Breach_tickets — 1 endpoint
 
 | Method | Endpoint | PII in (request) | PII out (response) |
@@ -504,6 +523,16 @@ these need no session; they are marked **public**.
 | POST | `/requests/{request_uuid}/datavault/erase` | — | `asked_by_name`, `consent_no`, `consent_uuid` |
 | POST | `/requests/{request_uuid}/datavault/erase/status` | — | `asked_by_name`, `consent_no`, `consent_uuid` |
 | GET | `/tickets/{holder_uuid}/datavault` | — | `consent_no`, `consent_uuid` |
+
+### Employee check — 5 endpoints
+
+| Method | Endpoint | PII in (request) | PII out (response) |
+|---|---|---|---|
+| GET | `/employee-check` | — | `added_by_name`, `updated_by_name` |
+| PUT | `/employee-check` | — | `added_by_name`, `updated_by_name` |
+| POST | `/employee-check/domains` | — | `added_by_name` |
+| DELETE | `/employee-check/domains/{domain}` | — | `added_by_name` |
+| POST | `/employee-check/test` | `email` | — |
 
 ### Hr — 7 endpoints
 
@@ -537,4 +566,15 @@ these need no session; they are marked **public**.
 | POST | `/holder-tickets/{token}/sign-out` **public** | `token` | — |
 | GET | `/holder-tickets/{token}/ticket` **public** | `token` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | POST | `/holder-tickets/{token}/verify` **public** | `code`, `token` | — |
+
+### Reports — 6 endpoints
+
+| Method | Endpoint | PII in (request) | PII out (response) |
+|---|---|---|---|
+| GET | `/reports` | — | `requested_by_name` |
+| POST | `/reports` | — | `requested_by_name` |
+| GET | `/reports/schedules` | — | `created_by_name` |
+| POST | `/reports/schedules` | — | `created_by_name` |
+| PATCH | `/reports/schedules/{schedule_uuid}` | — | `created_by_name` |
+| GET | `/reports/{report_uuid}` | — | `requested_by_name` |
 

@@ -52,10 +52,18 @@ async def test_each_role_reaches_its_own_part(
         http,
         "GET",
         "/analytics/audit-reports/privileged",
+        template="/analytics/audit-reports/{key}",
         session=admin,
         params={"period": "last_7_days"},
     )
-    await call(http, "GET", "/analytics/audit-reports/privileged", session=boss, expect=403)
+    await call(
+        http,
+        "GET",
+        "/analytics/audit-reports/privileged",
+        template="/analytics/audit-reports/{key}",
+        session=boss,
+        expect=403,
+    )
 
     await call(http, "GET", FIG, session=rnd, params={"section": "mine"})
     await call(http, "GET", FIG, session=rnd, params={"section": "management"}, expect=403)
@@ -114,6 +122,68 @@ async def test_targets_are_the_administrators_and_reports_are_kept_until_deleted
     assert made["status"] == "queued"
     listed = (await call(http, "GET", "/reports", session=boss)).json()
     assert made["report_uuid"] in {r["report_uuid"] for r in listed}
+    one = await call(
+        http,
+        "GET",
+        f"/reports/{made['report_uuid']}",
+        template="/reports/{report_uuid}",
+        session=boss,
+    )
+    assert one.json()["kind"] == "management_scorecard"
+
+    # A schedule: mailed only to roles that may read the kind; paused, removed.
+    sched = (
+        await call(
+            http,
+            "POST",
+            "/reports/schedules",
+            session=boss,
+            expect=201,
+            json={
+                "kind": "management_scorecard",
+                "format": "pdf",
+                "cadence": "monthly",
+                "recipient_roles": ["management"],
+            },
+        )
+    ).json()
+    assert sched["schedule_uuid"] in {
+        x["schedule_uuid"]
+        for x in (await call(http, "GET", "/reports/schedules", session=boss)).json()
+    }
+    paused = await call(
+        http,
+        "PATCH",
+        f"/reports/schedules/{sched['schedule_uuid']}",
+        template="/reports/schedules/{schedule_uuid}",
+        session=boss,
+        json={"active": False},
+    )
+    assert paused.json()["active"] is False
+    await call(
+        http,
+        "DELETE",
+        f"/reports/schedules/{sched['schedule_uuid']}",
+        template="/reports/schedules/{schedule_uuid}",
+        session=boss,
+    )
+
+    # The small-number threshold is the administrator's.
+    await call(
+        http,
+        "PUT",
+        "/analytics/settings/threshold",
+        session=boss,
+        expect=403,
+        json={"small_number_threshold": 5},
+    )
+    await call(
+        http,
+        "PUT",
+        "/analytics/settings/threshold",
+        session=admin,
+        json={"small_number_threshold": 1},
+    )
     await call(
         http,
         "POST",

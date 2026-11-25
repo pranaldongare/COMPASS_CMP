@@ -43,7 +43,6 @@ from __future__ import annotations
 from typing import Any
 
 from cmp.auth.authentication import service as auth_service
-from cmp.core.config import settings
 from cmp.core.enums import PersonType, UserStatus
 from cmp.core.errors import Conflict, ValidationFailed
 from cmp.core.permissions import Role
@@ -69,10 +68,13 @@ REASSIGNED = "reassigned"
 _STAFF = frozenset(r.value for r in Role) - {Role.DATA_SUBJECT.value, Role.BREACH_HOLDER.value}
 
 
-def internal(email: str | None) -> bool:
-    """BD-12: the address's domain is on BREACH_TICKET_EMAIL_DOMAINS."""
-    domain = str(email).rsplit("@", 1)[-1].lower() if email and "@" in str(email) else ""
-    return domain in {d.lower() for d in settings.breach_ticket_email_domains}
+async def internal(conn: Conn, email: str | None) -> bool:
+    """BD-12: the address is on one of the organisation's own domains - the
+    administrator's list (ADR 0046), which BREACH_TICKET_EMAIL_DOMAINS only
+    seeded."""
+    from cmp.domain.employees import check as employees
+
+    return await employees.is_company_address(conn, email)
 
 
 def refuse_external() -> None:

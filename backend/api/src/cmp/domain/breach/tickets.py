@@ -35,7 +35,6 @@ from collections import defaultdict
 from datetime import UTC, date, datetime
 from typing import Any
 
-from cmp.core.config import settings
 from cmp.core.errors import Conflict, NotFound, ValidationFailed
 from cmp.core.permissions import Role
 from cmp.db.repositories import breach_tickets as repo
@@ -112,14 +111,12 @@ def _today() -> date:
 # ------------------------------------------------------------ who may hold one
 
 
-async def _require_internal(user: Row) -> None:
-    """BD-12: the opened address's domain is on the list. Said without the
-    address: the DPO typed or picked it, and an error that repeats it is an
-    error that may end up in a log."""
+async def _require_internal(conn: Conn, user: Row) -> None:
+    """BD-12: the opened address is on one of the organisation's domains. Said
+    without the address: the DPO typed or picked it, and an error that repeats
+    it is an error that may end up in a log."""
     email = await unseal_value("auth_user", "email", user.get("email"))
-    domain = str(email).rsplit("@", 1)[-1].lower() if email and "@" in str(email) else ""
-    allowed = {d.lower() for d in settings.breach_ticket_email_domains}
-    if domain not in allowed:
+    if not await access.internal(conn, str(email) if email else None):
         raise ValidationFailed(
             "Breach tickets go to internal staff only: this person's email address is not on "
             "one of the organisation's own domains",
@@ -205,7 +202,7 @@ async def assign(
         if not user:
             raise NotFound("Person")
         _require_staff(user)
-        await _require_internal(user)
+        await _require_internal(conn, user)
         made = await _open_ticket(
             conn,
             breach,
@@ -248,7 +245,7 @@ async def _ask_by_email(
     address = (email or "").strip().lower()
     if not address or "@" not in address:
         raise ValidationFailed("Give their email address", field="email")
-    if not access.internal(address):
+    if not await access.internal(conn, address):
         access.refuse_external()
     user, created = await access.resolve(conn, full_name=full_name, email=address, mobile=mobile)
     temporary = access.needs_grant(user)

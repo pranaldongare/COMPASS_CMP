@@ -322,6 +322,10 @@ class Settings(BaseSettings):
     # domains, checked on the server for every assignee and every colleague
     # (BD-12, ADR 0023). `cmp.local` is the seeded accounts' domain; production
     # refuses to start with the list empty or holding only that.
+    #: Since 0075 (ADR 0046) only the first list of the organisation's own
+    #: domains: the migration copies it into `organisation_domain`, which the
+    #: administrator keeps from then on (Employee check). Changing it later
+    #: changes nothing.
     breach_ticket_email_domains: Annotated[tuple[str, ...], NoDecode] = ("cmp.local",)
 
     #: EMAIL_CC_ADDRESSES: up to five addresses, comma-separated, copied on

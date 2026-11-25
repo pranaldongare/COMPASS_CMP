@@ -21,6 +21,7 @@ Navigation returned after sign-in: `dashboard`, `analytics`, `hr-activities`, `h
 | `consent` | Yes | No | `scoped` | Assigned project/organisational rows |
 | `data_source` | No | No | `none` | Denied |
 | `datavault_connection` | No | No | `none` | Denied |
+| `employee_check` | No | No | `none` | Denied |
 | `export` | Yes | Yes | `scoped` | Assigned project/organisational rows |
 | `health_report` | No | No | `none` | Denied |
 | `hr_category` | Yes | No | `scoped` | Assigned project/organisational rows |

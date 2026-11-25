@@ -55,6 +55,8 @@ IDENTITY = {
     "holder_name", "assigned_by_name", "added_by_name", "asked_by_name",
     # Rights tickets (2026-10-08): who accepted a holder's answer.
     "accepted_by_name",
+    # Who asked for a report (ADR 0045).
+    "requested_by_name",
     # Who answers for a processor on an HR category (0052).
     "respondent_name",
     # Who reported an incident through the public link (0058), who dismissed

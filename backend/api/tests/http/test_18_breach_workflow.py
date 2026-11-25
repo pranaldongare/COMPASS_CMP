@@ -21,10 +21,9 @@ import pytest
 
 from cmp.auth.authentication import otp
 from cmp.auth.rate_limit import service as ratelimit
-from cmp.core.config import settings
 from cmp.db.pool import transaction
 from cmp.db.repositories import incident_reports
-from tests.conftest import plain
+from tests.conftest import plain, use_company_domains
 from tests.http.conftest import DOMAIN, SessionFactory, fresh_email
 from tests.http.contract import assert_sealed, call
 from tests.http.test_06_breaches import everyone, on_the_board
@@ -50,7 +49,7 @@ async def world(
 @pytest.fixture(autouse=True)
 def internal(monkeypatch: pytest.MonkeyPatch) -> None:
     """This suite's accounts are on its own reserved domain."""
-    monkeypatch.setattr(settings, "breach_ticket_email_domains", (DOMAIN,))
+    use_company_domains(monkeypatch, DOMAIN)
 
 
 def _body(**over: Any) -> dict[str, Any]:

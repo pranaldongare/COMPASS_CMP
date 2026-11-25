@@ -15,7 +15,6 @@ from typing import Any
 
 import pytest
 
-from cmp.core.config import settings
 from cmp.core.errors import NotFound, Unauthenticated
 from cmp.core.security import unseal_token
 from cmp.db.repositories import rights as repo
@@ -23,7 +22,7 @@ from cmp.db.repositories import users as user_repo
 from cmp.domain.breach import access
 from cmp.domain.rights import holder_link, reach, service
 from cmp.domain.rights import tickets as ticket_view
-from tests.conftest import plain
+from tests.conftest import plain, use_company_domains
 from tests.integration.test_rights_flows import DPO, _portal_request, _started
 
 pytestmark = pytest.mark.integration
@@ -31,7 +30,7 @@ pytestmark = pytest.mark.integration
 
 @pytest.fixture(autouse=True)
 def _internal(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(settings, "breach_ticket_email_domains", ("test.local",))
+    use_company_domains(monkeypatch, "test.local")
 
 
 async def _sent_to(

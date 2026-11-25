@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict tO9fX14Wi1cfbfOBy9jhAOcjZVadWjUZOHlA321laQnJ6AG2kEq9W7ZmfpcWELH
+\restrict rONOtukfAv9FKTdYplsQ31cjGhyHxx27dPA3KrUraks0nmcvNQCkonmPZb2Hc9n
 
 -- Dumped from database version 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)
 -- Dumped by pg_dump version 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)
@@ -1957,7 +1957,10 @@ CREATE TABLE public.auth_user (
     minor_until date,
     full_name_ngrams text[],
     office_id integer,
+    employment_status text,
+    employment_checked_at timestamp with time zone,
     CONSTRAINT auth_user_email_indexed CHECK (((email IS NULL) OR (email_hash IS NOT NULL))),
+    CONSTRAINT auth_user_employment_status CHECK (((employment_status IS NULL) OR (employment_status = ANY (ARRAY['active'::text, 'inactive'::text])))),
     CONSTRAINT auth_user_mobile_indexed CHECK (((mobile IS NULL) OR (mobile_hash IS NOT NULL))),
     CONSTRAINT auth_user_office_by_role CHECK (((office_id IS NOT NULL) = (role = ANY (ARRAY['dpo'::public.user_role, 'legal'::public.user_role, 'rnd_user'::public.user_role, 'dco'::public.user_role, 'rco'::public.user_role, 'dco_admin'::public.user_role, 'hr_user'::public.user_role])))),
     CONSTRAINT auth_user_organization_id_indexed CHECK (((organization_id IS NULL) OR (organization_id_hash IS NOT NULL))),
@@ -2008,6 +2011,13 @@ COMMENT ON COLUMN public.auth_user.minor_until IS 'The date this person stops be
 --
 
 COMMENT ON COLUMN public.auth_user.office_id IS 'The office this account works in; NULL for the administrator, a data principal and a breach-only login';
+
+
+--
+-- Name: COLUMN auth_user.employment_status; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.auth_user.employment_status IS 'What VerifyEmail last said of the account''s company address: active or inactive; NULL - never asked, or the last call failed';
 
 
 --
@@ -4638,6 +4648,52 @@ ALTER SEQUENCE public.delegation_delegation_id_seq OWNED BY public.delegation.de
 
 
 --
+-- Name: employee_check_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.employee_check_connection (
+    connection_id smallint DEFAULT 1 NOT NULL,
+    base_url text,
+    api_key_sealed bytea,
+    api_key_header text DEFAULT 'X-API-Key'::text NOT NULL,
+    enabled boolean DEFAULT false NOT NULL,
+    allow_other_domains boolean DEFAULT true NOT NULL,
+    updated_by integer,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT employee_check_connection_enabled_has_url CHECK (((NOT enabled) OR (base_url IS NOT NULL))),
+    CONSTRAINT employee_check_connection_one_row CHECK ((connection_id = 1))
+);
+
+
+--
+-- Name: TABLE employee_check_connection; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.employee_check_connection IS 'One row: where VerifyEmail is reached and with what key; kept by the administrator';
+
+
+--
+-- Name: COLUMN employee_check_connection.base_url; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.employee_check_connection.base_url IS 'The address /VerifyEmail is appended to; NULL: not set up';
+
+
+--
+-- Name: COLUMN employee_check_connection.api_key_sealed; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.employee_check_connection.api_key_sealed IS 'The key VerifyEmail asks for, encrypted with the application key; never served';
+
+
+--
+-- Name: COLUMN employee_check_connection.allow_other_domains; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.employee_check_connection.allow_other_domains IS 'Staff whose email is on none of the organisation''s domains may sign in to the console unchecked; on for testing, to be switched off before production';
+
+
+--
 -- Name: export_line; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -5657,6 +5713,26 @@ CREATE SEQUENCE public.office_office_id_seq
 --
 
 ALTER SEQUENCE public.office_office_id_seq OWNED BY public.office.office_id;
+
+
+--
+-- Name: organisation_domain; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.organisation_domain (
+    domain text NOT NULL,
+    added_by integer,
+    added_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT organisation_domain_lower CHECK ((domain = lower(domain))),
+    CONSTRAINT organisation_domain_shape CHECK ((domain ~ '^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$'::text))
+);
+
+
+--
+-- Name: TABLE organisation_domain; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.organisation_domain IS 'The organisation''s own email domains: who is checked with VerifyEmail, and who counts as inside the organisation for breach and rights tickets';
 
 
 --
@@ -8406,6 +8482,14 @@ ALTER TABLE ONLY public.delegation
 
 
 --
+-- Name: employee_check_connection employee_check_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.employee_check_connection
+    ADD CONSTRAINT employee_check_connection_pkey PRIMARY KEY (connection_id);
+
+
+--
 -- Name: export_line export_line_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -8739,6 +8823,14 @@ ALTER TABLE ONLY public.office
 
 ALTER TABLE ONLY public.office
     ADD CONSTRAINT office_pkey PRIMARY KEY (office_id);
+
+
+--
+-- Name: organisation_domain organisation_domain_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.organisation_domain
+    ADD CONSTRAINT organisation_domain_pkey PRIMARY KEY (domain);
 
 
 --
@@ -11687,6 +11779,14 @@ ALTER TABLE ONLY public.delegation
 
 
 --
+-- Name: employee_check_connection employee_check_connection_updated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.employee_check_connection
+    ADD CONSTRAINT employee_check_connection_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES public.auth_user(id);
+
+
+--
 -- Name: export_line export_line_auth_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -12124,6 +12224,14 @@ ALTER TABLE ONLY public.notice_template_purpose
 
 ALTER TABLE ONLY public.notice
     ADD CONSTRAINT notice_template_version_id_fkey FOREIGN KEY (template_version_id) REFERENCES public.template_version(version_id);
+
+
+--
+-- Name: organisation_domain organisation_domain_added_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.organisation_domain
+    ADD CONSTRAINT organisation_domain_added_by_fkey FOREIGN KEY (added_by) REFERENCES public.auth_user(id);
 
 
 --
@@ -13798,5 +13906,5 @@ ALTER TABLE public.template_version_purpose ENABLE ROW LEVEL SECURITY;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict tO9fX14Wi1cfbfOBy9jhAOcjZVadWjUZOHlA321laQnJ6AG2kEq9W7ZmfpcWELH
+\unrestrict rONOtukfAv9FKTdYplsQ31cjGhyHxx27dPA3KrUraks0nmcvNQCkonmPZb2Hc9n
 

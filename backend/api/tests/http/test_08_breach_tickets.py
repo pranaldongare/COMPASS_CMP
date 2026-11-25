@@ -15,8 +15,7 @@ from typing import Any
 import httpx
 import pytest
 
-from cmp.core.config import settings
-from tests.conftest import plain
+from tests.conftest import plain, use_company_domains
 from tests.http.conftest import DOMAIN, SessionFactory, fresh_email, last_code
 from tests.http.contract import call
 from tests.http.world import World, build
@@ -44,7 +43,7 @@ async def world(
 @pytest.fixture(autouse=True)
 def internal(monkeypatch: pytest.MonkeyPatch) -> None:
     """This suite's accounts are on its own reserved domain."""
-    monkeypatch.setattr(settings, "breach_ticket_email_domains", (DOMAIN,))
+    use_company_domains(monkeypatch, DOMAIN)
 
 
 def _at(hours_ago: float) -> str:
@@ -347,7 +346,7 @@ class TestTheTicket:
         assert refused.json()["error"]["code"] == "breach_not_recorded"
 
         recorded = await _recorded(http, world)
-        monkeypatch.setattr(settings, "breach_ticket_email_domains", ("organisation.example",))
+        use_company_domains(monkeypatch, "organisation.example")
         outside = await call(
             http,
             "POST",

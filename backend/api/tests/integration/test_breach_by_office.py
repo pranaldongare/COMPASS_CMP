@@ -14,7 +14,6 @@ from typing import Any
 
 import pytest
 
-from cmp.core.config import settings
 from cmp.core.errors import NotFound
 from cmp.db.pool import across_offices
 from cmp.db.repositories import breaches as breach_repo
@@ -23,7 +22,7 @@ from cmp.db.repositories import users as user_repo
 from cmp.domain.breach import intake, reports, service, tickets
 from cmp.domain.rights import holds
 from cmp.tasks import dispatch as dispatch_mod
-from tests.conftest import plain
+from tests.conftest import plain, use_company_domains
 from tests.integration.test_incident_report import _report, _waiting
 from tests.integration.test_rights_by_office import _as_office, _legal_poc
 
@@ -212,7 +211,7 @@ class TestAChangedDateReachesItsOwnOffice:
             return "queued-in-a-test"
 
         monkeypatch.setattr(dispatch_mod, "dispatch_optional", capture)
-        monkeypatch.setattr(settings, "breach_ticket_email_domains", ("test.local",))
+        use_company_domains(monkeypatch, "test.local")
         legal = await _legal_poc(conn)
         holder = seeded["users"]["dco"]
         await _as_office(conn, "hr")

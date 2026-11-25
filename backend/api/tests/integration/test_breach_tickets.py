@@ -15,14 +15,13 @@ import psycopg
 import pytest
 
 from cmp.api.routers.v1 import dashboard
-from cmp.core.config import settings
 from cmp.core.errors import Conflict, NotFound, TransitionNotPermitted, ValidationFailed
 from cmp.db.repositories import audit as audit_repo
 from cmp.db.repositories import breaches as breach_repo
 from cmp.db.sql import fetch_all, fetch_one
 from cmp.domain.breach import service, tickets
 from cmp.tasks import dispatch as dispatch_mod
-from tests.conftest import plain
+from tests.conftest import plain, use_company_domains
 from tests.integration.test_breach_register import tell_org_board
 
 pytestmark = pytest.mark.integration
@@ -47,7 +46,7 @@ HOLDER_KEYS = {
 @pytest.fixture(autouse=True)
 def internal(monkeypatch: pytest.MonkeyPatch) -> None:
     """The seeded staff are on test.local; that is the organisation here."""
-    monkeypatch.setattr(settings, "breach_ticket_email_domains", ("test.local",))
+    use_company_domains(monkeypatch, "test.local")
 
 
 @pytest.fixture
@@ -181,13 +180,13 @@ async def test_only_internal_staff_may_hold_one(
     conn: Any, seeded: dict[str, Any], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     uuid = await _recorded(conn, seeded)
-    monkeypatch.setattr(settings, "breach_ticket_email_domains", ("organisation.example",))
+    use_company_domains(monkeypatch, "organisation.example")
     with pytest.raises(ValidationFailed) as refused:
         await _assign(conn, seeded, uuid)
     assert "internal staff" in refused.value.message
     assert "test.local" not in refused.value.message and "@" not in refused.value.message
 
-    monkeypatch.setattr(settings, "breach_ticket_email_domains", ("test.local",))
+    use_company_domains(monkeypatch, "test.local")
     with pytest.raises(ValidationFailed):
         await tickets.assign(
             conn,

@@ -433,6 +433,14 @@ Request body required: **yes**.
 - **Operation ID:** `logout_auth_logout_post`
 - **Access:** Authentication endpoint; availability depends on the current sign-in or recovery step.
 
+End this session - a full one, or one still waiting for its second factor.
+
+A partial session is accepted here on purpose: it is the only way to
+abandon a sign-in half done. Refused, a person whose code went wrong was
+held at the code step - the sign-in page sends a partial session there - and
+could never reach "Forgotten your password?". Ending a session grants
+nothing, so accepting the half-authenticated one widens nothing.
+
 ### Validation
 
 No path, query, header, or cookie parameters are declared for this operation.

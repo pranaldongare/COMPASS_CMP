@@ -18,12 +18,12 @@ from typing import Any
 import psycopg
 import pytest
 
-from cmp.core.config import settings
 from cmp.db.repositories import breaches as breach_repo
 from cmp.db.sql import fetch_all, fetch_one
 from cmp.domain.breach import service, tickets
 from cmp.domain.breach.clock import Duty, EventKind, State
 from cmp.infrastructure.dkms.fields import ENCRYPTED_FIELDS
+from tests.conftest import use_company_domains
 from tests.integration.test_breach_tickets import _assign, _today
 from tests.integration.test_breach_tickets import _recorded as _ticketed
 
@@ -236,7 +236,7 @@ class TestTheWayDownFrom0061:
         sent: Any,
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        monkeypatch.setattr(settings, "breach_ticket_email_domains", ("test.local",))
+        use_company_domains(monkeypatch, "test.local")
         said: list[str] = []
         monkeypatch.setattr(M0061, "op", SimpleNamespace(execute=said.append))
         M0061.downgrade()

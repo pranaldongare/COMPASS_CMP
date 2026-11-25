@@ -814,6 +814,20 @@ CATALOGUE: Final[tuple[Metric, ...]] = (
         higher_is_better=False,
     ),
     _m(
+        key="health.employee_check_failures",
+        title="Employee checks not answered",
+        definition="Times VerifyEmail gave no answer at a sign-in (ADR 0046), by flow: a "
+        "console sign-in is refused then, a portal one goes ahead.",
+        unit="count",
+        section="health",
+        group=_SIGNIN,
+        audience=HEALTH_READERS,
+        dims=("flow",),
+        target=0,
+        amber=5,
+        higher_is_better=False,
+    ),
+    _m(
         key="health.access_denied",
         title="Requests refused (403)",
         definition="Requests refused in the period because the role may not do what was asked.",

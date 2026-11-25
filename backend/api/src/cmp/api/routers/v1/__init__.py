@@ -23,6 +23,7 @@ from cmp.api.routers.v1.datavault import connection_router as datavault_connecti
 from cmp.api.routers.v1.datavault import request_router as datavault_request_router
 from cmp.api.routers.v1.datavault import ticket_router as datavault_ticket_router
 from cmp.api.routers.v1.delegations import router as delegations_router
+from cmp.api.routers.v1.employee_check import router as employee_check_router
 from cmp.api.routers.v1.exchange import router as exchange_router
 from cmp.api.routers.v1.hr_activities import router as hr_activities_router
 from cmp.api.routers.v1.hr_categories import router as hr_categories_router
@@ -55,6 +56,7 @@ __all__ = [
     "datavault_request_router",
     "datavault_ticket_router",
     "delegations_router",
+    "employee_check_router",
     "exchange_router",
     "hr_activities_router",
     "hr_categories_router",

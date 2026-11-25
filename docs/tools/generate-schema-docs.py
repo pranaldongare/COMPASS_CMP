@@ -99,6 +99,14 @@ MODULES: dict[str, list[str]] = {
         "datavault_connection",
         "datavault_check",
         "datavault_check_asset",
+        # The employee check (0075, ADR 0046).
+        "employee_check_connection",
+        "organisation_domain",
+        # Analytics and reports (0074, ADR 0045).
+        "analytics_target",
+        "analytics_setting",
+        "report",
+        "report_schedule",
     ],
     "breach": [
         "breach",

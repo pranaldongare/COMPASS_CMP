@@ -1,6 +1,6 @@
 {
-  "commit": "9fa1dfe54dd8a770c4caccd760f07cd710241716",
-  "migration_head": "0074",
+  "commit": "c36e1eb5bbf879160da7396ba8271198d1e3a5e2",
+  "migration_head": "0075",
   "migrations": [
     {
       "revision": "0001",
@@ -293,6 +293,10 @@
     {
       "revision": "0074",
       "source": "backend/api/migrations/versions/0074_analytics_and_reports.py"
+    },
+    {
+      "revision": "0075",
+      "source": "backend/api/migrations/versions/0075_employee_check.py"
     }
   ],
   "postgres_version": "16.15",
@@ -543,6 +547,11 @@
       "comment": "One person covering another's row access for a period. Grants, never transfers: ownership stays where it is and the access lapses on its own."
     },
     {
+      "name": "employee_check_connection",
+      "kind": "r",
+      "comment": "One row: where VerifyEmail is reached and with what key; kept by the administrator"
+    },
+    {
       "name": "export_line",
       "kind": "r",
       "comment": null
@@ -636,6 +645,11 @@
       "name": "office",
       "kind": "r",
       "comment": "A governance office: rnd (the DPO office) or hr (the Legal office). Every governance record names one; an officer sees only its own (ADR 0032)"
+    },
+    {
+      "name": "organisation_domain",
+      "kind": "r",
+      "comment": "The organisation's own email domains: who is checked with VerifyEmail, and who counts as inside the organisation for breach and rights tickets"
     },
     {
       "name": "person_type_history",
@@ -1230,6 +1244,24 @@
       "not_null": false,
       "default_value": null,
       "comment": "The office this account works in; NULL for the administrator, a data principal and a breach-only login"
+    },
+    {
+      "table_name": "auth_user",
+      "name": "employment_status",
+      "position": 30,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "What VerifyEmail last said of the account's company address: active or inactive; NULL - never asked, or the last call failed"
+    },
+    {
+      "table_name": "auth_user",
+      "name": "employment_checked_at",
+      "position": 31,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
     },
     {
       "table_name": "breach",
@@ -5201,6 +5233,78 @@
       "comment": null
     },
     {
+      "table_name": "employee_check_connection",
+      "name": "connection_id",
+      "position": 1,
+      "type": "smallint",
+      "not_null": true,
+      "default_value": "1",
+      "comment": null
+    },
+    {
+      "table_name": "employee_check_connection",
+      "name": "base_url",
+      "position": 2,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The address /VerifyEmail is appended to; NULL: not set up"
+    },
+    {
+      "table_name": "employee_check_connection",
+      "name": "api_key_sealed",
+      "position": 3,
+      "type": "bytea",
+      "not_null": false,
+      "default_value": null,
+      "comment": "The key VerifyEmail asks for, encrypted with the application key; never served"
+    },
+    {
+      "table_name": "employee_check_connection",
+      "name": "api_key_header",
+      "position": 4,
+      "type": "text",
+      "not_null": true,
+      "default_value": "'X-API-Key'::text",
+      "comment": null
+    },
+    {
+      "table_name": "employee_check_connection",
+      "name": "enabled",
+      "position": 5,
+      "type": "boolean",
+      "not_null": true,
+      "default_value": "false",
+      "comment": null
+    },
+    {
+      "table_name": "employee_check_connection",
+      "name": "allow_other_domains",
+      "position": 6,
+      "type": "boolean",
+      "not_null": true,
+      "default_value": "true",
+      "comment": "Staff whose email is on none of the organisation's domains may sign in to the console unchecked; on for testing, to be switched off before production"
+    },
+    {
+      "table_name": "employee_check_connection",
+      "name": "updated_by",
+      "position": 7,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "employee_check_connection",
+      "name": "updated_at",
+      "position": 8,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
       "table_name": "export_line",
       "name": "line_id",
       "position": 1,
@@ -7031,6 +7135,33 @@
       "table_name": "office",
       "name": "created_at",
       "position": 7,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "organisation_domain",
+      "name": "domain",
+      "position": 1,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "organisation_domain",
+      "name": "added_by",
+      "position": 2,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "organisation_domain",
+      "name": "added_at",
+      "position": 3,
       "type": "timestamp with time zone",
       "not_null": true,
       "default_value": "now()",
@@ -10389,6 +10520,21 @@
       "columns": [
         "email",
         "email_hash"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "auth_user",
+      "name": "auth_user_employment_status",
+      "kind": "c",
+      "definition": "CHECK (((employment_status IS NULL) OR (employment_status = ANY (ARRAY['active'::text, 'inactive'::text]))))",
+      "columns": [
+        "employment_status"
       ],
       "referenced_table": null,
       "referenced_columns": [],
@@ -15150,6 +15296,69 @@
       "initially_deferred": false
     },
     {
+      "table_name": "employee_check_connection",
+      "name": "employee_check_connection_enabled_has_url",
+      "kind": "c",
+      "definition": "CHECK (((NOT enabled) OR (base_url IS NOT NULL)))",
+      "columns": [
+        "enabled",
+        "base_url"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "employee_check_connection",
+      "name": "employee_check_connection_one_row",
+      "kind": "c",
+      "definition": "CHECK ((connection_id = 1))",
+      "columns": [
+        "connection_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "employee_check_connection",
+      "name": "employee_check_connection_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (connection_id)",
+      "columns": [
+        "connection_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "employee_check_connection",
+      "name": "employee_check_connection_updated_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (updated_by) REFERENCES auth_user(id)",
+      "columns": [
+        "updated_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "export_line",
       "name": "export_line_auth_user_id_fkey",
       "kind": "f",
@@ -17064,6 +17273,68 @@
       "definition": "PRIMARY KEY (office_id)",
       "columns": [
         "office_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "organisation_domain",
+      "name": "organisation_domain_added_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (added_by) REFERENCES auth_user(id)",
+      "columns": [
+        "added_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "organisation_domain",
+      "name": "organisation_domain_lower",
+      "kind": "c",
+      "definition": "CHECK ((domain = lower(domain)))",
+      "columns": [
+        "domain"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "organisation_domain",
+      "name": "organisation_domain_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (domain)",
+      "columns": [
+        "domain"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "organisation_domain",
+      "name": "organisation_domain_shape",
+      "kind": "c",
+      "definition": "CHECK ((domain ~ '^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$'::text))",
+      "columns": [
+        "domain"
       ],
       "referenced_table": null,
       "referenced_columns": [],
@@ -20683,6 +20954,11 @@
       "definition": "CREATE UNIQUE INDEX uq_delegation_live ON public.delegation USING btree (delegator_user_id, delegate_user_id) WHERE ((revoked_at IS NULL) AND (ends_at IS NULL))"
     },
     {
+      "table_name": "employee_check_connection",
+      "name": "employee_check_connection_pkey",
+      "definition": "CREATE UNIQUE INDEX employee_check_connection_pkey ON public.employee_check_connection USING btree (connection_id)"
+    },
+    {
       "table_name": "export_line",
       "name": "export_line_pkey",
       "definition": "CREATE UNIQUE INDEX export_line_pkey ON public.export_line USING btree (line_id)"
@@ -21046,6 +21322,11 @@
       "table_name": "office",
       "name": "office_pkey",
       "definition": "CREATE UNIQUE INDEX office_pkey ON public.office USING btree (office_id)"
+    },
+    {
+      "table_name": "organisation_domain",
+      "name": "organisation_domain_pkey",
+      "definition": "CREATE UNIQUE INDEX organisation_domain_pkey ON public.organisation_domain USING btree (domain)"
     },
     {
       "table_name": "person_type_history",
@@ -22711,13 +22992,13 @@
     }
   ],
   "counts": {
-    "application_tables": 89,
+    "application_tables": 91,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 1028,
-    "foreign_keys": 250,
+    "table_columns": 1041,
+    "foreign_keys": 252,
     "enums": 39,
     "triggers": 84,
-    "checks": 157
+    "checks": 162
   }
 }

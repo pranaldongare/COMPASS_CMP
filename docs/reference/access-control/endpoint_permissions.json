@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 414,
-  "registered_business_and_system_operations": 417,
+  "documented_operations": 439,
+  "registered_business_and_system_operations": 442,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -17302,6 +17302,1058 @@
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/portal_address/__init__.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/portal_address.py",
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/core/permissions.py"
+      ]
+    },
+    {
+      "module": "breach notices",
+      "method": "GET",
+      "path": "/breach-notices/{token}",
+      "summary": "What the link opens, before the code",
+      "function": "open_link",
+      "operation_id": "open_link_breach_notices__token__get",
+      "in_openapi": true,
+      "authentication": "None (link token)",
+      "anonymous": "YES",
+      "gate": "public: the token in the path",
+      "resolved_gate": "public: the token in the path",
+      "route_roles": [],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "NO",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "TOKEN",
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO",
+        "management": "NO"
+      },
+      "conditions": [
+        "A breach notice by its link (2026-11-20): the token in the path is the credential, and the notice opens only with a code sent to the mobile it was sent to."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/public/breach_notices.py#L72"
+      ]
+    },
+    {
+      "module": "breach notices",
+      "method": "POST",
+      "path": "/breach-notices/{token}/code",
+      "summary": "Send a code to the mobile",
+      "function": "send_code",
+      "operation_id": "send_code_breach_notices__token__code_post",
+      "in_openapi": true,
+      "authentication": "None (link token)",
+      "anonymous": "YES",
+      "gate": "public: the token in the path",
+      "resolved_gate": "public: the token in the path",
+      "route_roles": [],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "NO",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "TOKEN",
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO",
+        "management": "NO"
+      },
+      "conditions": [
+        "A breach notice by its link (2026-11-20): the token in the path is the credential, and the notice opens only with a code sent to the mobile it was sent to."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/public/breach_notices.py#L83"
+      ]
+    },
+    {
+      "module": "breach notices",
+      "method": "POST",
+      "path": "/breach-notices/{token}/open",
+      "summary": "Enter the code: the notice",
+      "function": "open_notice",
+      "operation_id": "open_notice_breach_notices__token__open_post",
+      "in_openapi": true,
+      "authentication": "None (link token)",
+      "anonymous": "YES",
+      "gate": "public: the token in the path",
+      "resolved_gate": "public: the token in the path",
+      "route_roles": [],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "NO",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "TOKEN",
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO",
+        "management": "NO"
+      },
+      "conditions": [
+        "A breach notice by its link (2026-11-20): the token in the path is the credential, and the notice opens only with a code sent to the mobile it was sent to."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/public/breach_notices.py#L92"
+      ]
+    },
+    {
+      "module": "employee check",
+      "method": "GET",
+      "path": "/employee-check",
+      "summary": "VerifyEmail and the domains",
+      "function": "get_settings",
+      "operation_id": "get_settings_employee_check_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(employee_check)",
+      "resolved_gate": "RequireResource(employee_check)",
+      "route_roles": [
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "employee_check",
+      "write_gate": false,
+      "access": {
+        "dpo": "NO",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO",
+        "management": "NO"
+      },
+      "conditions": [
+        "Employee check (0075, ADR 0046): the administrator's alone - VerifyEmail's address and key (never served), the organisation's email domains, and asking about one address. Every change and answer is on the trail; the address asked about never is."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/employee_check.py#L81"
+      ]
+    },
+    {
+      "module": "employee check",
+      "method": "PUT",
+      "path": "/employee-check",
+      "summary": "Set VerifyEmail's address, key and switches",
+      "function": "put_settings",
+      "operation_id": "put_settings_employee_check_put",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(employee_check, write)",
+      "resolved_gate": "RequireResource(employee_check, write)",
+      "route_roles": [
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "employee_check",
+      "write_gate": true,
+      "access": {
+        "dpo": "NO",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO",
+        "management": "NO"
+      },
+      "conditions": [
+        "Employee check (0075, ADR 0046): the administrator's alone - VerifyEmail's address and key (never served), the organisation's email domains, and asking about one address. Every change and answer is on the trail; the address asked about never is."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/employee_check.py#L87"
+      ]
+    },
+    {
+      "module": "employee check",
+      "method": "POST",
+      "path": "/employee-check/domains",
+      "summary": "Add a domain",
+      "function": "add_domain",
+      "operation_id": "add_domain_employee_check_domains_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(employee_check, write)",
+      "resolved_gate": "RequireResource(employee_check, write)",
+      "route_roles": [
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "employee_check",
+      "write_gate": true,
+      "access": {
+        "dpo": "NO",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO",
+        "management": "NO"
+      },
+      "conditions": [
+        "Employee check (0075, ADR 0046): the administrator's alone - VerifyEmail's address and key (never served), the organisation's email domains, and asking about one address. Every change and answer is on the trail; the address asked about never is."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/employee_check.py#L104"
+      ]
+    },
+    {
+      "module": "employee check",
+      "method": "DELETE",
+      "path": "/employee-check/domains/{domain}",
+      "summary": "Remove a domain",
+      "function": "remove_domain",
+      "operation_id": "remove_domain_employee_check_domains__domain__delete",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(employee_check, write)",
+      "resolved_gate": "RequireResource(employee_check, write)",
+      "route_roles": [
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "employee_check",
+      "write_gate": true,
+      "access": {
+        "dpo": "NO",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO",
+        "management": "NO"
+      },
+      "conditions": [
+        "Employee check (0075, ADR 0046): the administrator's alone - VerifyEmail's address and key (never served), the organisation's email domains, and asking about one address. Every change and answer is on the trail; the address asked about never is."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/employee_check.py#L110"
+      ]
+    },
+    {
+      "module": "employee check",
+      "method": "POST",
+      "path": "/employee-check/test",
+      "summary": "Ask VerifyEmail about one address now",
+      "function": "test_address",
+      "operation_id": "test_address_employee_check_test_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(employee_check, write)",
+      "resolved_gate": "RequireResource(employee_check, write)",
+      "route_roles": [
+        "admin"
+      ],
+      "inline_role_checks": [],
+      "resource": "employee_check",
+      "write_gate": true,
+      "access": {
+        "dpo": "NO",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "NO",
+        "hr_user": "NO",
+        "management": "NO"
+      },
+      "conditions": [
+        "Employee check (0075, ADR 0046): the administrator's alone - VerifyEmail's address and key (never served), the organisation's email domains, and asking about one address. Every change and answer is on the trail; the address asked about never is."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/employee_check.py#L116"
+      ]
+    },
+    {
+      "module": "analytics",
+      "method": "GET",
+      "path": "/analytics/catalogue",
+      "summary": "What this reader may see",
+      "function": "get_catalogue",
+      "operation_id": "get_catalogue_analytics_catalogue_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(report)",
+      "resolved_gate": "RequireResource(report)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "legal",
+        "hr_user",
+        "management"
+      ],
+      "inline_role_checks": [],
+      "resource": "report",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "SCOPED",
+        "dco_admin": "SCOPED",
+        "rco": "SCOPED",
+        "rnd_user": "OWN",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "SCOPED",
+        "management": "ALL"
+      },
+      "conditions": [
+        "Analytics (ADR 0045): the catalogue's audiences decide, within the matrix, which figures a role reads; an officer reads their own office, management both or one. Counts of people below the threshold are withheld."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/analytics.py#L315"
+      ]
+    },
+    {
+      "module": "analytics",
+      "method": "GET",
+      "path": "/analytics/figures",
+      "summary": "Figures for a period",
+      "function": "get_figures",
+      "operation_id": "get_figures_analytics_figures_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "CurrentUser + service check on `analytics`",
+      "resolved_gate": "CurrentUser + service check on `analytics`",
+      "route_roles": [
+        "dpo",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "legal",
+        "hr_user",
+        "management"
+      ],
+      "inline_role_checks": [],
+      "resource": "analytics",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "SCOPED",
+        "dco_admin": "SCOPED",
+        "rco": "SCOPED",
+        "rnd_user": "OWN",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "SCOPED",
+        "management": "ALL"
+      },
+      "conditions": [
+        "Analytics (ADR 0045): the catalogue's audiences decide, within the matrix, which figures a role reads; an officer reads their own office, management both or one. Counts of people below the threshold are withheld."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/analytics.py#L320"
+      ]
+    },
+    {
+      "module": "analytics",
+      "method": "GET",
+      "path": "/analytics/inventory",
+      "summary": "The record of processing",
+      "function": "get_inventory",
+      "operation_id": "get_inventory_analytics_inventory_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(analytics)",
+      "resolved_gate": "RequireResource(analytics)",
+      "route_roles": [
+        "dpo",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "legal",
+        "hr_user",
+        "management"
+      ],
+      "inline_role_checks": [],
+      "resource": "analytics",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "SCOPED",
+        "dco_admin": "SCOPED",
+        "rco": "SCOPED",
+        "rnd_user": "OWN",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "SCOPED",
+        "management": "ALL"
+      },
+      "conditions": [
+        "Analytics (ADR 0045): the catalogue's audiences decide, within the matrix, which figures a role reads; an officer reads their own office, management both or one. Counts of people below the threshold are withheld."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/analytics.py#L357"
+      ]
+    },
+    {
+      "module": "analytics",
+      "method": "GET",
+      "path": "/analytics/audit-reports/{key}",
+      "summary": "One ready-made audit report",
+      "function": "get_audit_report",
+      "operation_id": "get_audit_report_analytics_audit_reports__key__get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(audit_report)",
+      "resolved_gate": "RequireResource(audit_report)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "audit_report",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO",
+        "management": "NO"
+      },
+      "conditions": [
+        "Analytics (ADR 0045): the catalogue's audiences decide, within the matrix, which figures a role reads; an officer reads their own office, management both or one. Counts of people below the threshold are withheld."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/analytics.py#L363"
+      ]
+    },
+    {
+      "module": "analytics",
+      "method": "GET",
+      "path": "/analytics/settings",
+      "summary": "Targets and the threshold",
+      "function": "get_settings",
+      "operation_id": "get_settings_analytics_settings_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(analytics_setting)",
+      "resolved_gate": "RequireResource(analytics_setting)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "legal",
+        "management"
+      ],
+      "inline_role_checks": [],
+      "resource": "analytics_setting",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO",
+        "management": "ALL"
+      },
+      "conditions": [
+        "Analytics (ADR 0045): the catalogue's audiences decide, within the matrix, which figures a role reads; an officer reads their own office, management both or one. Counts of people below the threshold are withheld."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/analytics.py#L384"
+      ]
+    },
+    {
+      "module": "analytics",
+      "method": "PUT",
+      "path": "/analytics/targets/{key}",
+      "summary": "Set a metric's target",
+      "function": "put_target",
+      "operation_id": "put_target_analytics_targets__key__put",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(analytics_setting, write)",
+      "resolved_gate": "RequireResource(analytics_setting, write)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "legal",
+        "management"
+      ],
+      "inline_role_checks": [],
+      "resource": "analytics_setting",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO",
+        "management": "ALL"
+      },
+      "conditions": [
+        "Analytics (ADR 0045): the catalogue's audiences decide, within the matrix, which figures a role reads; an officer reads their own office, management both or one. Counts of people below the threshold are withheld."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/analytics.py#L390"
+      ]
+    },
+    {
+      "module": "analytics",
+      "method": "DELETE",
+      "path": "/analytics/targets/{key}",
+      "summary": "Back to the default target",
+      "function": "delete_target",
+      "operation_id": "delete_target_analytics_targets__key__delete",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(analytics_setting, write)",
+      "resolved_gate": "RequireResource(analytics_setting, write)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "legal",
+        "management"
+      ],
+      "inline_role_checks": [],
+      "resource": "analytics_setting",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO",
+        "management": "ALL"
+      },
+      "conditions": [
+        "Analytics (ADR 0045): the catalogue's audiences decide, within the matrix, which figures a role reads; an officer reads their own office, management both or one. Counts of people below the threshold are withheld."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/analytics.py#L400"
+      ]
+    },
+    {
+      "module": "analytics",
+      "method": "PUT",
+      "path": "/analytics/settings/threshold",
+      "summary": "The small-number threshold",
+      "function": "put_threshold",
+      "operation_id": "put_threshold_analytics_settings_threshold_put",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(analytics_setting, write)",
+      "resolved_gate": "RequireResource(analytics_setting, write)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "legal",
+        "management"
+      ],
+      "inline_role_checks": [],
+      "resource": "analytics_setting",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO",
+        "management": "ALL"
+      },
+      "conditions": [
+        "Analytics (ADR 0045): the catalogue's audiences decide, within the matrix, which figures a role reads; an officer reads their own office, management both or one. Counts of people below the threshold are withheld."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/analytics.py#L410"
+      ]
+    },
+    {
+      "module": "reports",
+      "method": "GET",
+      "path": "/reports",
+      "summary": "The reports this reader may see",
+      "function": "list_reports",
+      "operation_id": "list_reports_reports_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(report)",
+      "resolved_gate": "RequireResource(report)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "legal",
+        "hr_user",
+        "management"
+      ],
+      "inline_role_checks": [],
+      "resource": "report",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "SCOPED",
+        "dco_admin": "SCOPED",
+        "rco": "SCOPED",
+        "rnd_user": "OWN",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "SCOPED",
+        "management": "ALL"
+      },
+      "conditions": [
+        "Reports (ADR 0045): made by the workers on the `reports` queue; a report is read, downloaded and deleted by the roles that may read its kind - an officer only their own office's, a report of one's own work only its asker. Every download and deletion is on the trail."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/analytics.py#L421"
+      ]
+    },
+    {
+      "module": "reports",
+      "method": "POST",
+      "path": "/reports",
+      "summary": "Ask for a report",
+      "function": "create_report",
+      "operation_id": "create_report_reports_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(report, write)",
+      "resolved_gate": "RequireResource(report, write)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "legal",
+        "hr_user",
+        "management"
+      ],
+      "inline_role_checks": [],
+      "resource": "report",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "SCOPED",
+        "dco_admin": "SCOPED",
+        "rco": "SCOPED",
+        "rnd_user": "OWN",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "SCOPED",
+        "management": "ALL"
+      },
+      "conditions": [
+        "Reports (ADR 0045): made by the workers on the `reports` queue; a report is read, downloaded and deleted by the roles that may read its kind - an officer only their own office's, a report of one's own work only its asker. Every download and deletion is on the trail."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/analytics.py#L427"
+      ]
+    },
+    {
+      "module": "reports",
+      "method": "GET",
+      "path": "/reports/schedules",
+      "summary": "Report schedules",
+      "function": "list_schedules",
+      "operation_id": "list_schedules_reports_schedules_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(report)",
+      "resolved_gate": "RequireResource(report)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "legal",
+        "hr_user",
+        "management"
+      ],
+      "inline_role_checks": [],
+      "resource": "report",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "SCOPED",
+        "dco_admin": "SCOPED",
+        "rco": "SCOPED",
+        "rnd_user": "OWN",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "SCOPED",
+        "management": "ALL"
+      },
+      "conditions": [
+        "Reports (ADR 0045): made by the workers on the `reports` queue; a report is read, downloaded and deleted by the roles that may read its kind - an officer only their own office's, a report of one's own work only its asker. Every download and deletion is on the trail."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/analytics.py#L438"
+      ]
+    },
+    {
+      "module": "reports",
+      "method": "POST",
+      "path": "/reports/schedules",
+      "summary": "Make a report on a cadence and mail it",
+      "function": "create_schedule",
+      "operation_id": "create_schedule_reports_schedules_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(report, write)",
+      "resolved_gate": "RequireResource(report, write)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "legal",
+        "hr_user",
+        "management"
+      ],
+      "inline_role_checks": [],
+      "resource": "report",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "SCOPED",
+        "dco_admin": "SCOPED",
+        "rco": "SCOPED",
+        "rnd_user": "OWN",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "SCOPED",
+        "management": "ALL"
+      },
+      "conditions": [
+        "Reports (ADR 0045): made by the workers on the `reports` queue; a report is read, downloaded and deleted by the roles that may read its kind - an officer only their own office's, a report of one's own work only its asker. Every download and deletion is on the trail."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/analytics.py#L444"
+      ]
+    },
+    {
+      "module": "reports",
+      "method": "PATCH",
+      "path": "/reports/schedules/{schedule_uuid}",
+      "summary": "Pause or resume a schedule",
+      "function": "change_schedule",
+      "operation_id": "change_schedule_reports_schedules__schedule_uuid__patch",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(report, write)",
+      "resolved_gate": "RequireResource(report, write)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "legal",
+        "hr_user",
+        "management"
+      ],
+      "inline_role_checks": [],
+      "resource": "report",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "SCOPED",
+        "dco_admin": "SCOPED",
+        "rco": "SCOPED",
+        "rnd_user": "OWN",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "SCOPED",
+        "management": "ALL"
+      },
+      "conditions": [
+        "Reports (ADR 0045): made by the workers on the `reports` queue; a report is read, downloaded and deleted by the roles that may read its kind - an officer only their own office's, a report of one's own work only its asker. Every download and deletion is on the trail."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/analytics.py#L464"
+      ]
+    },
+    {
+      "module": "reports",
+      "method": "DELETE",
+      "path": "/reports/schedules/{schedule_uuid}",
+      "summary": "Remove a schedule",
+      "function": "remove_schedule",
+      "operation_id": "remove_schedule_reports_schedules__schedule_uuid__delete",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(report, write)",
+      "resolved_gate": "RequireResource(report, write)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "legal",
+        "hr_user",
+        "management"
+      ],
+      "inline_role_checks": [],
+      "resource": "report",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "SCOPED",
+        "dco_admin": "SCOPED",
+        "rco": "SCOPED",
+        "rnd_user": "OWN",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "SCOPED",
+        "management": "ALL"
+      },
+      "conditions": [
+        "Reports (ADR 0045): made by the workers on the `reports` queue; a report is read, downloaded and deleted by the roles that may read its kind - an officer only their own office's, a report of one's own work only its asker. Every download and deletion is on the trail."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/analytics.py#L476"
+      ]
+    },
+    {
+      "module": "reports",
+      "method": "GET",
+      "path": "/reports/{report_uuid}",
+      "summary": "One report",
+      "function": "get_report",
+      "operation_id": "get_report_reports__report_uuid__get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(report)",
+      "resolved_gate": "RequireResource(report)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "legal",
+        "hr_user",
+        "management"
+      ],
+      "inline_role_checks": [],
+      "resource": "report",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "SCOPED",
+        "dco_admin": "SCOPED",
+        "rco": "SCOPED",
+        "rnd_user": "OWN",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "SCOPED",
+        "management": "ALL"
+      },
+      "conditions": [
+        "Reports (ADR 0045): made by the workers on the `reports` queue; a report is read, downloaded and deleted by the roles that may read its kind - an officer only their own office's, a report of one's own work only its asker. Every download and deletion is on the trail."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/analytics.py#L485"
+      ]
+    },
+    {
+      "module": "reports",
+      "method": "GET",
+      "path": "/reports/{report_uuid}/file",
+      "summary": "Download a report, as it was made",
+      "function": "download_report",
+      "operation_id": "download_report_reports__report_uuid__file_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(report)",
+      "resolved_gate": "RequireResource(report)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "legal",
+        "hr_user",
+        "management"
+      ],
+      "inline_role_checks": [],
+      "resource": "report",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "SCOPED",
+        "dco_admin": "SCOPED",
+        "rco": "SCOPED",
+        "rnd_user": "OWN",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "SCOPED",
+        "management": "ALL"
+      },
+      "conditions": [
+        "Reports (ADR 0045): made by the workers on the `reports` queue; a report is read, downloaded and deleted by the roles that may read its kind - an officer only their own office's, a report of one's own work only its asker. Every download and deletion is on the trail."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/analytics.py#L491"
+      ]
+    },
+    {
+      "module": "reports",
+      "method": "DELETE",
+      "path": "/reports/{report_uuid}",
+      "summary": "Delete a report",
+      "function": "delete_report",
+      "operation_id": "delete_report_reports__report_uuid__delete",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(report, write)",
+      "resolved_gate": "RequireResource(report, write)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "legal",
+        "hr_user",
+        "management"
+      ],
+      "inline_role_checks": [],
+      "resource": "report",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "SCOPED",
+        "dco_admin": "SCOPED",
+        "rco": "SCOPED",
+        "rnd_user": "OWN",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "SCOPED",
+        "management": "ALL"
+      },
+      "conditions": [
+        "Reports (ADR 0045): made by the workers on the `reports` queue; a report is read, downloaded and deleted by the roles that may read its kind - an officer only their own office's, a report of one's own work only its asker. Every download and deletion is on the trail."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/analytics.py#L505"
       ]
     }
   ],

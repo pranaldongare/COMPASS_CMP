@@ -98,6 +98,20 @@ export function tilesFor(data: Figures): Tile[] {
       detail: v > 0 ? `${v} not delivered in the period` : "Nothing failed in the period",
     });
   }
+  const unanswered = get("health.employee_check_failures");
+  if (unanswered) {
+    const v = n(unanswered) ?? 0;
+    tiles.push({
+      key: unanswered.key,
+      name: "Employee check",
+      state: v > 0 ? "watch" : "ok",
+      word: v > 0 ? "Not answering" : "Healthy",
+      detail:
+        v > 0
+          ? `${v} ${v === 1 ? "sign-in" : "sign-ins"} VerifyEmail did not answer`
+          : "Every check was answered",
+    });
+  }
   const failing = get("health.datavault_failing");
   const pending = get("health.datavault_pending");
   if (failing || pending) {

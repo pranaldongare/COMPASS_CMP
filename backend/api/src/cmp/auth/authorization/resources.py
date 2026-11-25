@@ -64,6 +64,8 @@ BREACH_SETTINGS: Final = "breach_settings"
 DATAVAULT_CONNECTION: Final = "datavault_connection"
 #: The address links to the portal start with (0072): the administrator's.
 PORTAL_ADDRESS: Final = "portal_address"
+#: VerifyEmail and the organisation's domains (0075): the administrator's.
+EMPLOYEE_CHECK: Final = "employee_check"
 
 #: The words of a message the platform sends, per junction and channel.
 MESSAGE_TEMPLATE: Final = "message_template"
@@ -116,6 +118,7 @@ ALL: Final[frozenset[str]] = frozenset(
         BREACH_SETTINGS,
         DATAVAULT_CONNECTION,
         PORTAL_ADDRESS,
+        EMPLOYEE_CHECK,
         NOTICE_TEMPLATE,
         HR_CATEGORY,
     }

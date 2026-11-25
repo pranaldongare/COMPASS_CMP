@@ -21,6 +21,7 @@ Navigation returned after sign-in: `dashboard`, `analytics`, `projects`, `approv
 | `consent` | Yes | No | `all` | All rows |
 | `data_source` | Yes | Yes | `all` | All rows |
 | `datavault_connection` | No | No | `none` | Denied |
+| `employee_check` | No | No | `none` | Denied |
 | `export` | Yes | Yes | `all` | All rows |
 | `health_report` | No | No | `none` | Denied |
 | `hr_category` | No | No | `none` | Denied |

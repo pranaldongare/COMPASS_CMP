@@ -43,6 +43,7 @@ export type NavKey =
   | "breaches"
   | "breach-settings"
   | "datavault"
+  | "employee-check"
   | "portal-address"
   | "hr-activities"
   | "hr-categories"

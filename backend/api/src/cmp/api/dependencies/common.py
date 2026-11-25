@@ -89,6 +89,9 @@ DataVaultConnectionReader = Annotated[Principal, Depends(RequireResource("datava
 DataVaultConnectionWriter = Annotated[
     Principal, Depends(RequireResource("datavault_connection", write=True))
 ]
+#: VerifyEmail and the organisation's domains (0075): the administrator's.
+EmployeeCheckReader = Annotated[Principal, Depends(RequireResource("employee_check"))]
+EmployeeCheckWriter = Annotated[Principal, Depends(RequireResource("employee_check", write=True))]
 #: The address links to the portal start with (0072): the administrator's.
 PortalAddressReader = Annotated[Principal, Depends(RequireResource("portal_address"))]
 PortalAddressWriter = Annotated[Principal, Depends(RequireResource("portal_address", write=True))]

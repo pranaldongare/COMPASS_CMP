@@ -2109,7 +2109,7 @@ async def _linked(conn: Conn, holder: Row) -> Row:
     if str(holder.get("ticket_status")) not in _OPEN_TICKET:
         return holder
     to = await reach.address(holder)
-    if not to or "@" not in to or access.internal(to):
+    if not to or "@" not in to or await access.internal(conn, to):
         return holder
     await reach.mint_link(conn, int(holder["holder_id"]))
     fresh = await repo.ticket_by_holder_id(conn, int(holder["holder_id"]))
