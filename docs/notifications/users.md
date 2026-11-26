@@ -42,7 +42,7 @@ Key `mfa_code` · channels: email
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_mfa_code` (`backend/api/src/cmp/tasks/authentication/otp.py:43`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/service.py:171`, `backend/api/src/cmp/auth/authentication/service.py:257` |
+| Queued from | `backend/api/src/cmp/auth/authentication/service.py:210`, `backend/api/src/cmp/auth/authentication/service.py:300` |
 | Variables | `code` (The six-digit one-time code.), `minutes` (How many minutes the code is valid for.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{code} is your {organisation} sign-in code`
@@ -71,7 +71,7 @@ Key `login_code` · channels: email, sms
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_login_code` (`backend/api/src/cmp/tasks/authentication/otp.py:48`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/service.py:305` |
+| Queued from | `backend/api/src/cmp/auth/authentication/service.py:349` |
 | Variables | `code` (The six-digit one-time code.), `minutes` (How many minutes the code is valid for.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{code} is your sign-in code`
@@ -110,7 +110,7 @@ Key `registration_code` · channels: email, sms
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_registration_code` (`backend/api/src/cmp/tasks/authentication/otp.py:54`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/service.py:1067` |
+| Queued from | `backend/api/src/cmp/auth/authentication/service.py:1121` |
 | Variables | `code` (The six-digit one-time code.), `minutes` (How many minutes the code is valid for.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{code} confirms this email address`
@@ -149,7 +149,7 @@ Key `consent_code` · channels: email, sms
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_consent_code` (`backend/api/src/cmp/tasks/authentication/otp.py:61`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/sso.py:262`, `backend/api/src/cmp/auth/authentication/sso_mock.py:50`, `backend/api/src/cmp/domain/consent/service.py:329` |
+| Queued from | `backend/api/src/cmp/auth/authentication/sso.py:262`, `backend/api/src/cmp/auth/authentication/sso_mock.py:50`, `backend/api/src/cmp/domain/consent/service.py:330` |
 | Variables | `code` (The six-digit one-time code.), `minutes` (How many minutes the code is valid for.), `project_name` (The project the notice belongs to.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{code} confirms your contact details`
@@ -188,7 +188,7 @@ Key `password_reset` · channels: email
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_password_reset` (`backend/api/src/cmp/tasks/authentication/otp.py:81`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/service.py:484` |
+| Queued from | `backend/api/src/cmp/auth/authentication/service.py:537` |
 | Variables | `code` (The six-digit one-time code.), `minutes` (How many minutes the code is valid for.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Reset your {organisation} password`
@@ -219,7 +219,7 @@ Key `staff_invitation` · channels: email
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_staff_invitation` (`backend/api/src/cmp/tasks/notifications/staff.py:50`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/service.py:600` |
+| Queued from | `backend/api/src/cmp/auth/authentication/service.py:653` |
 | Variables | `full_name` (The new member of staff's name.), `role_title` (The role they have been given.), `code` (The six-digit one-time code.), `hours` (How many hours the code is valid for.), `reset_url` (The console page where they set their password, with their address filled in.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Set your password for the {organisation} console`
@@ -257,7 +257,7 @@ Key `contact_confirmation` · channels: email, sms
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_contact_confirmation` (`backend/api/src/cmp/tasks/authentication/otp.py:74`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/service.py:790` |
+| Queued from | `backend/api/src/cmp/auth/authentication/service.py:844` |
 | Variables | `code` (The six-digit one-time code.), `minutes` (How many minutes the code is valid for.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{code} confirms this email address`
@@ -294,7 +294,7 @@ Key `contact_added_for_you` · channels: email, sms
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_contact_added_for_you` (`backend/api/src/cmp/tasks/notifications/staff.py:88`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/service.py:837` |
+| Queued from | `backend/api/src/cmp/auth/authentication/service.py:891` |
 | Variables | `code` (The six-digit one-time code.), `hours` (How many hours the code is valid for.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{code} confirms this email address`
@@ -331,7 +331,7 @@ Key `office_note` · channels: email, sms
 | CC | Never - it is written to one person about her own data; a copy would disclose it. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_office_note` (`backend/api/src/cmp/tasks/notifications/batch.py:51`) |
-| Queued from | `backend/api/src/cmp/api/routers/v1/dashboard.py:1016` |
+| Queued from | `backend/api/src/cmp/api/routers/v1/dashboard.py:1020` |
 | Variables | `event` (What the notification was about.), `occurred_on` (When it happened.), `console_url` (The staff console (CONSOLE_BASE_URL).), `portal_url` (The data principal's portal (PUBLIC_BASE_URL).), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `A message from the {organisation} Privacy Office`
@@ -363,7 +363,7 @@ Key `staff_role_changed` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_staff_role_changed` (`backend/api/src/cmp/tasks/notifications/alerts.py:216`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:429` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:430` |
 | Variables | `full_name` (The member of staff.), `old_role` (The role they had.), `new_role` (The role they have now.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Your {organisation} console role is now {new_role}`
@@ -388,7 +388,7 @@ Key `staff_access_ended` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_staff_access_ended` (`backend/api/src/cmp/tasks/notifications/alerts.py:227`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:441` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:442` |
 | Variables | `full_name` (The person.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Your {organisation} console access has ended`
@@ -413,7 +413,7 @@ Key `delegation_arranged` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_delegation_arranged` (`backend/api/src/cmp/tasks/notifications/alerts.py:239`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:462` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:463` |
 | Variables | `delegator_name` (The person being covered.), `delegate_name` (The colleague covering.), `role_title` (The role covered.), `starts_on` (When it starts.), `ends_on` (When it ends, or 'until it is ended'.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{delegate_name} covers {delegator_name} as {role_title}`
@@ -438,7 +438,7 @@ Key `password_changed` · channels: email
 | CC | Never - it is written to one person about her own data; a copy would disclose it. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_password_changed` (`backend/api/src/cmp/tasks/notifications/updates.py:35`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:531` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:532` |
 | Variables | `full_name` (The recipient's name.), `how` (How it changed, as a phrase.), `when` (When it happened.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Security notice: your {organisation} password was changed`
@@ -467,7 +467,7 @@ Key `mfa_reset` · channels: email
 | CC | Never - it is written to one person about her own data; a copy would disclose it. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_mfa_reset` (`backend/api/src/cmp/tasks/notifications/updates.py:40`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:538` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:539` |
 | Variables | `full_name` (The recipient's name.), `when` (When it happened.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Security notice: your {organisation} sign-in step was reset`
@@ -494,7 +494,7 @@ Key `account_locked` · channels: email
 | CC | Never - it is written to one person about her own data; a copy would disclose it. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_account_locked` (`backend/api/src/cmp/tasks/notifications/updates.py:47`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:546` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:547` |
 | Variables | `full_name` (The recipient's name.), `failures` (How many attempts failed.), `minutes` (How many minutes sign-in is paused for.), `when` (When it happened.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Security notice: sign-in to your {organisation} account is paused`
@@ -523,7 +523,7 @@ Key `sessions_revoked` · channels: email
 | CC | Never - it is written to one person about her own data; a copy would disclose it. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_sessions_revoked` (`backend/api/src/cmp/tasks/notifications/updates.py:59`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:559` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:560` |
 | Variables | `full_name` (The recipient's name.), `when` (When it happened.), `console_url` (The staff console (CONSOLE_BASE_URL).), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Security notice: you were signed out of {organisation}`
@@ -550,7 +550,7 @@ Key `contact_changed` · channels: email, sms
 | CC | Never - it is written to one person about her own data; a copy would disclose it. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_contact_changed` (`backend/api/src/cmp/tasks/notifications/updates.py:64`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:596` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:597` |
 | Variables | `change` (What changed, as a phrase.), `actor` (Who made the change.), `when` (When it happened.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Security notice: a contact on your {organisation} account changed`
@@ -585,7 +585,7 @@ Key `staff_access_restored` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_staff_access_restored` (`backend/api/src/cmp/tasks/notifications/updates.py:70`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:606` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:607` |
 | Variables | `full_name` (The recipient's name.), `console_url` (The staff console (CONSOLE_BASE_URL).), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Your {organisation} account is active again`
@@ -612,7 +612,7 @@ Key `delegation_ended` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_delegation_ended` (`backend/api/src/cmp/tasks/notifications/updates.py:82`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:622` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:623` |
 | Variables | `delegator_name` (The person who was covered.), `delegate_name` (The colleague who was covering.), `role_title` (The role covered.), `ended_by` (Who ended it.), `when` (When it happened.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Cover ended: {delegate_name} no longer covers {delegator_name}`

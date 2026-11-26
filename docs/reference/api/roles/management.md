@@ -38,6 +38,9 @@ Navigation returned after sign-in: `analytics`, `tickets`, `training`, `notifica
 | `purpose` | No | No | `none` | Denied |
 | `report` | Yes | Yes | `all` | All rows |
 | `restricted_country` | No | No | `none` | Denied |
+| `retention` | No | No | `none` | Denied |
+| `retention_action` | No | No | `none` | Denied |
+| `retention_setting` | No | No | `none` | Denied |
 | `rights_request` | No | No | `none` | Denied |
 | `site` | No | No | `none` | Denied |
 | `ticket` | Yes | Yes | `own` | Own or addressed rows |

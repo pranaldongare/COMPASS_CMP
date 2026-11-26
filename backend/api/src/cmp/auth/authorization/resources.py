@@ -66,6 +66,11 @@ DATAVAULT_CONNECTION: Final = "datavault_connection"
 PORTAL_ADDRESS: Final = "portal_address"
 #: VerifyEmail and the organisation's domains (0075): the administrator's.
 EMPLOYEE_CHECK: Final = "employee_check"
+#: Retention reviews (0076, ADR 0047): the officers' register, the settings,
+#: and each one's own actions.
+RETENTION: Final = "retention"
+RETENTION_SETTING: Final = "retention_setting"
+RETENTION_ACTION: Final = "retention_action"
 
 #: The words of a message the platform sends, per junction and channel.
 MESSAGE_TEMPLATE: Final = "message_template"
@@ -119,6 +124,9 @@ ALL: Final[frozenset[str]] = frozenset(
         DATAVAULT_CONNECTION,
         PORTAL_ADDRESS,
         EMPLOYEE_CHECK,
+        RETENTION,
+        RETENTION_SETTING,
+        RETENTION_ACTION,
         NOTICE_TEMPLATE,
         HR_CATEGORY,
     }

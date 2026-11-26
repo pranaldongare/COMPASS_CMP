@@ -136,6 +136,19 @@ class Message(StrEnum):
     SITE_DEACTIVATED = "site_deactivated"
     RND_WITHDRAWAL_NOTICE = "rnd_withdrawal_notice"
     RETENTION_LAPSED = "retention_lapsed"
+    #: Retention reviews (ADR 0047): the people responsible asked, answered,
+    #: sent back, reminded, chased and escalated; and the person told before
+    #: erasure, or invited to consent again.
+    RETENTION_ACTION_ASKED = "retention_action_asked"
+    RETENTION_ACTION_ANSWERED = "retention_action_answered"
+    RETENTION_ACTION_SENT_BACK = "retention_action_sent_back"
+    RETENTION_REVIEW_REMINDER = "retention_review_reminder"
+    RETENTION_ACTION_OVERDUE = "retention_action_overdue"
+    RETENTION_ACTION_ESCALATED = "retention_action_escalated"
+    RETENTION_ERASURE_NOTICE = "retention_erasure_notice"
+    RETENTION_RECONSENT_INVITE = "retention_reconsent_invite"
+    RETENTION_ACTION_LINK = "retention_action_link"
+    RETENTION_LINK_CODE = "retention_link_code"
     HR_TEMPLATE_VERSION_DECIDED = "hr_template_version_decided"
     HR_RESPONDENT_CHANGED = "hr_respondent_changed"
     BREACH_TICKET_MESSAGE = "breach_ticket_message"
@@ -2641,6 +2654,269 @@ CATALOGUE: Final[tuple[Junction, ...]] = (
         to="Every active officer of the purposes' office, at their primary email.",
     ),
     Junction(
+        key=Message.RETENTION_ACTION_ASKED,
+        title="Asked to act on a retention review",
+        description=(
+            "To each person responsible in a retention review - the project's DCO Admin or "
+            "the activity's HR PoC, and each processor's respondent with a console login: "
+            "what is asked of them, for how many people, and by when."
+        ),
+        group="Consent",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("full_name", "Who is asked.", "Arjun Reddy"),
+            Variable("reference", "The review's reference.", "RET-2027-03-0012-0004"),
+            Variable("project_name", "The project or HR activity.", "Gait study, Pune"),
+            Variable("purpose_name", "The purpose.", "Follow-up contact"),
+            Variable("people", "How many people's data it covers.", "214"),
+            Variable("ask", "What they are asked, in a sentence.", "Erase or anonymise the data."),
+            Variable("due_date", "When the answer is due.", "26 December 2026"),
+            CONSOLE_URL,
+            ORGANISATION,
+        ),
+        email_subject="Retention review {reference}: action needed by {due_date}",
+        email_body=(
+            "Dear {full_name},\n\n"
+            "Retention review {reference} - {project_name}, purpose {purpose_name} - "
+            "covers {people} people.\n\n{ask}\n\n"
+            "Please answer by {due_date} under Retention actions in the console: "
+            "{console_url}" + _SIGN_OFF_EMAIL
+        ),
+        sms_body=None,
+        to="The person responsible, at their primary email.",
+    ),
+    Junction(
+        key=Message.RETENTION_ACTION_ANSWERED,
+        title="A retention action was answered",
+        description="To the office's officers when somebody answers a retention action.",
+        group="Consent",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("reference", "The review's reference.", "RET-2027-03-0012-0004"),
+            Variable("label", "Who answered: a person or a processor.", "Acme Labs"),
+            CONSOLE_URL,
+            ORGANISATION,
+        ),
+        email_subject="Retention review {reference}: {label} answered",
+        email_body=(
+            "{label} has answered its action on retention review {reference}. "
+            "Please review the answer and accept it or send it back: {console_url}"
+        ),
+        sms_body=None,
+        to="Every active officer of the review's office.",
+    ),
+    Junction(
+        key=Message.RETENTION_ACTION_SENT_BACK,
+        title="A retention answer was sent back",
+        description="To the person who answered, when the office sends the answer back.",
+        group="Consent",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("reference", "The review's reference.", "RET-2027-03-0012-0004"),
+            Variable("reason", "What the office says is missing.", "Name the systems erased."),
+            Variable("due_date", "The new date.", "2 January 2027"),
+            CONSOLE_URL,
+            ORGANISATION,
+        ),
+        email_subject="Retention review {reference}: your answer was sent back",
+        email_body=(
+            "Your answer on retention review {reference} was sent back:\n\n{reason}\n\n"
+            "Please answer again by {due_date}: {console_url}" + _SIGN_OFF_EMAIL
+        ),
+        sms_body=None,
+        to="The person who answered, at their primary email.",
+    ),
+    Junction(
+        key=Message.RETENTION_REVIEW_REMINDER,
+        title="A retention review is coming due",
+        description=(
+            "At each reminder the administrator set (90, 30 and 7 days by default): to the "
+            "office's officers, and to the project's owner."
+        ),
+        group="Consent",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("kind", "What is coming: in words.", "Data must be erased"),
+            Variable("reference", "The review's reference.", "RET-2027-03-0012-0004"),
+            Variable("project_name", "The project or HR activity.", "Gait study, Pune"),
+            Variable("purpose_name", "The purpose.", "Follow-up contact"),
+            Variable("people", "How many people.", "214"),
+            Variable("days_left", "Days until the first falls due.", "30"),
+            CONSOLE_URL,
+            ORGANISATION,
+        ),
+        email_subject="{kind} in {days_left} days: {reference}",
+        email_body=(
+            "{kind} for {people} people in {days_left} days - {project_name}, purpose "
+            "{purpose_name} (review {reference}).\n\nSee the review: {console_url}"
+        ),
+        sms_body=None,
+        to="Every active officer of the review's office, and the project's owner.",
+    ),
+    Junction(
+        key=Message.RETENTION_ACTION_OVERDUE,
+        title="A retention action is overdue",
+        description="To the one asked, once, when the date for their answer passes.",
+        group="Consent",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("reference", "The review's reference.", "RET-2027-03-0012-0004"),
+            Variable("due_date", "The date that passed.", "26 December 2026"),
+            CONSOLE_URL,
+            ORGANISATION,
+        ),
+        email_subject="Overdue: retention review {reference}",
+        email_body=(
+            "Your answer on retention review {reference} was due on {due_date}. "
+            "Please answer now: {console_url}" + _SIGN_OFF_EMAIL
+        ),
+        sms_body=None,
+        to="The one asked, at their primary email.",
+    ),
+    Junction(
+        key=Message.RETENTION_ACTION_ESCALATED,
+        title="A retention action is long overdue",
+        description=(
+            "To the office's officers when an action is still unanswered the number of days "
+            "the administrator set after its date (14 by default)."
+        ),
+        group="Consent",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("reference", "The review's reference.", "RET-2027-03-0012-0004"),
+            Variable("label", "Who has not answered.", "Acme Labs"),
+            Variable("due_date", "When it was due.", "26 December 2026"),
+            CONSOLE_URL,
+            ORGANISATION,
+        ),
+        email_subject="Escalated: {label} has not answered {reference}",
+        email_body=(
+            "{label} has not answered its action on retention review {reference}, due "
+            "{due_date}. Data that should have been erased may still be held.\n\n"
+            "See the review: {console_url}"
+        ),
+        sms_body=None,
+        to="Every active officer of the review's office.",
+    ),
+    Junction(
+        key=Message.RETENTION_ERASURE_NOTICE,
+        title="Your data is to be erased",
+        description=(
+            "To a person before the data held under a consent that ended is erased, where "
+            "the purpose asks for it (on by default; set per purpose)."
+        ),
+        group="Consent",
+        channels=BOTH,
+        variables=(
+            Variable("project_name", "The project or activity.", "Gait study, Pune"),
+            Variable("purpose_name", "The purpose.", "Follow-up contact"),
+            Variable("erase_date", "When it falls due.", "28 November 2026"),
+            ORGANISATION,
+        ),
+        email_subject="Your data for {project_name} will be erased",
+        email_body=(
+            "Your consent for {purpose_name} in {project_name} has ended, and the period "
+            "for which your data may be kept runs out on {erase_date}. From then it will be "
+            "erased, or anonymised where it cannot be erased.\n\n"
+            "If you wish to consent again before then, contact us. You can see your consents "
+            "and your rights on your account." + _SIGN_OFF_EMAIL
+        ),
+        sms_body=(
+            "Your data for {purpose_name} in {project_name} will be erased from "
+            "{erase_date}, as your consent has ended. - {organisation}"
+        ),
+        to="The person, at the contact her receipts go to.",
+    ),
+    Junction(
+        key=Message.RETENTION_RECONSENT_INVITE,
+        title="Invitation to consent again",
+        description=(
+            "To a person whose consent for a purpose is running out, on a project still "
+            "running, once its owner confirmed and the office accepted."
+        ),
+        group="Consent",
+        channels=BOTH,
+        variables=(
+            Variable("project_name", "The project or activity.", "Gait study, Pune"),
+            Variable("purpose_name", "The purpose.", "Follow-up contact"),
+            Variable("end_date", "When the consent ends.", "28 December 2026"),
+            Variable(
+                "link_url", "The project's consent link.", "https://portal.example.org/c/9xK2…"
+            ),
+            ORGANISATION,
+        ),
+        email_subject="Your consent for {project_name} ends on {end_date}",
+        email_body=(
+            "Your consent for {purpose_name} in {project_name} ends on {end_date}. "
+            "If you wish to continue, read the notice and decide here:\n{link_url}\n\n"
+            "If you do nothing, it simply ends; you can see your consents on your account."
+            + _SIGN_OFF_EMAIL
+        ),
+        sms_body=(
+            "Your consent for {purpose_name} in {project_name} ends on {end_date}. "
+            "To continue, decide here: {link_url} - {organisation}"
+        ),
+        to="The person, at the contact her receipts go to.",
+    ),
+    Junction(
+        key=Message.RETENTION_ACTION_LINK,
+        title="Asked to act on a retention review (by link)",
+        description=(
+            "To a processor's respondent with no console login: what is asked, and the link "
+            "to answer on. Opening it asks for a code sent to this same address. Sent again "
+            "when the answer is sent back or overdue."
+        ),
+        group="Consent",
+        channels=EMAIL_ONLY,
+        variables=(
+            Variable("label", "The processor asked.", "Acme Labs"),
+            Variable("reference", "The review's reference.", "RET-2027-03-0012-0004"),
+            Variable("project_name", "The project or activity.", "Gait study, Pune"),
+            Variable("purpose_name", "The purpose.", "Follow-up contact"),
+            Variable("people", "How many people's data it covers.", "214"),
+            Variable("due_date", "When the answer is due.", "26 December 2026"),
+            Variable(
+                "note",
+                "Why it is sent again, if it is: sent back, or overdue.",
+                "This was due and has not been answered yet.",
+            ),
+            Variable("link_url", "Where to answer.", "https://portal.example.org/retention/9xK2…"),
+            ORGANISATION,
+        ),
+        email_subject="Retention review {reference}: please confirm erasure by {due_date}",
+        email_body=(
+            "{organisation} asks {label} to act on retention review {reference} - "
+            "{project_name}, purpose {purpose_name}, covering {people} people.\n\n"
+            "The period for which their data may be kept has run out. Please erase it, "
+            "or anonymise it or keep it with the reason, and confirm by {due_date}.\n\n"
+            "{note}"
+            "Answer here (a code will be sent to this address): {link_url}" + _SIGN_OFF_EMAIL
+        ),
+        sms_body=None,
+        to="The processor's respondent, at the contact recorded for them.",
+    ),
+    Junction(
+        key=Message.RETENTION_LINK_CODE,
+        title="Code to open a retention action",
+        description=(
+            "Proves that whoever opened a retention action's link reads the address it was "
+            "sent to, before the action is shown (ADR 0047). Email only."
+        ),
+        group="Consent",
+        channels=EMAIL_ONLY,
+        variables=(CODE, MINUTES, REFERENCE, ORGANISATION),
+        email_subject="{code} is your code for retention review {reference}",
+        email_body=(
+            "Your code is:\n\n    {code}\n\n"
+            "Enter it on the review's page to open it. It expires in {minutes} minutes and "
+            "works once. If you did not open the link, you can ignore this email."
+            + _DO_NOT_SHARE
+            + _SIGN_OFF_EMAIL
+        ),
+        sms_body=None,
+        to="The address the retention action's link was sent to.",
+    ),
+    Junction(
         key=Message.HR_TEMPLATE_VERSION_DECIDED,
         title="A consent template version changed",
         description=(
@@ -2995,6 +3271,10 @@ JUNCTIONS: Final[dict[str, Junction]] = {j.key.value: j for j in CATALOGUE}
 #: a data principal about herself (a copy would be a disclosure of her data).
 COPYABLE: Final[frozenset[Message]] = frozenset(
     {
+        Message.RETENTION_ACTION_ASKED,
+        Message.RETENTION_ACTION_ANSWERED,
+        Message.RETENTION_REVIEW_REMINDER,
+        Message.RETENTION_ACTION_ESCALATED,
         Message.HOLDER_INSTRUCTION,
         Message.TICKET_REMINDER,
         Message.TICKET_MESSAGE,
@@ -3059,6 +3339,8 @@ LEGAL_EDITORS: Final[frozenset[str]] = EDITORS | {"legal"}
 #: kept by the administrator and the DPO.
 LEGAL_REVIEWED: Final[frozenset[Message]] = frozenset(
     {
+        Message.RETENTION_ERASURE_NOTICE,
+        Message.RETENTION_RECONSENT_INVITE,
         Message.CONSENT_RECEIPT,
         Message.WITHDRAWAL_CONFIRMATION,
         Message.HR_RECONSENT_REQUEST,

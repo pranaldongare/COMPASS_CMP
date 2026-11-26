@@ -38,6 +38,9 @@ Navigation returned after sign-in: `consents`, `requests`, `notifications`, `pro
 | `purpose` | No | No | `none` | Denied |
 | `report` | No | No | `none` | Denied |
 | `restricted_country` | No | No | `none` | Denied |
+| `retention` | No | No | `none` | Denied |
+| `retention_action` | No | No | `none` | Denied |
+| `retention_setting` | No | No | `none` | Denied |
 | `rights_request` | No | No | `none` | Denied |
 | `site` | No | No | `none` | Denied |
 | `ticket` | No | No | `none` | Denied |

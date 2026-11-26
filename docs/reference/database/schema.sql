@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict rONOtukfAv9FKTdYplsQ31cjGhyHxx27dPA3KrUraks0nmcvNQCkonmPZb2Hc9n
+\restrict 4WdIPmYWahK0CB6FKkLpLB2XFtJcseIcQa3cGzHv77lQcelmL4f3PzskIuFPQxL
 
 -- Dumped from database version 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)
 -- Dumped by pg_dump version 16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)
@@ -6187,11 +6187,19 @@ CREATE TABLE public.purpose (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     office_id integer NOT NULL,
+    notify_before_erasure boolean DEFAULT true NOT NULL,
     CONSTRAINT categories_not_empty CHECK ((cardinality(data_categories) >= 1)),
     CONSTRAINT s7_clause_required CHECK ((((lawful_basis = 'legitimate_use_s7'::public.lawful_basis) AND (s7_clause IS NOT NULL)) OR ((lawful_basis = 'consent_s6'::public.lawful_basis) AND (s7_clause IS NULL))))
 );
 
 ALTER TABLE ONLY public.purpose FORCE ROW LEVEL SECURITY;
+
+
+--
+-- Name: COLUMN purpose.notify_before_erasure; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.purpose.notify_before_erasure IS 'Tell each person before data held for this purpose is erased (ADR 0047)';
 
 
 --
@@ -6374,6 +6382,241 @@ CREATE SEQUENCE public.restricted_country_country_id_seq
 --
 
 ALTER SEQUENCE public.restricted_country_country_id_seq OWNED BY public.restricted_country.country_id;
+
+
+--
+-- Name: retention_action; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.retention_action (
+    action_id integer NOT NULL,
+    action_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    review_id integer NOT NULL,
+    kind text NOT NULL,
+    processor_id integer,
+    respondent_id integer,
+    user_id integer,
+    channel text NOT NULL,
+    label text NOT NULL,
+    status text DEFAULT 'open'::text NOT NULL,
+    outcome text,
+    reason text,
+    keep_until date,
+    reconsent boolean,
+    evidence_name text,
+    evidence_ref text,
+    evidence_hash text,
+    link_token text,
+    link_token_sealed bytea,
+    link_issued_at timestamp with time zone,
+    due_at timestamp with time zone NOT NULL,
+    answered_at timestamp with time zone,
+    answered_by integer,
+    accepted_at timestamp with time zone,
+    accepted_by integer,
+    sent_back_reason text,
+    last_reminded_at timestamp with time zone,
+    escalated_at timestamp with time zone,
+    office_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT retention_action_channel CHECK ((channel = ANY (ARRAY['console'::text, 'link'::text, 'automatic'::text, 'none'::text]))),
+    CONSTRAINT retention_action_kept_until CHECK (((outcome IS DISTINCT FROM 'kept'::text) OR (keep_until IS NOT NULL))),
+    CONSTRAINT retention_action_kind CHECK ((kind = ANY (ARRAY['owner'::text, 'processor'::text, 'datavault'::text]))),
+    CONSTRAINT retention_action_outcome CHECK (((outcome IS NULL) OR (outcome = ANY (ARRAY['erased'::text, 'anonymised'::text, 'kept'::text, 'not_held'::text, 'reviewed'::text])))),
+    CONSTRAINT retention_action_reasoned CHECK (((outcome IS NULL) OR (outcome <> ALL (ARRAY['anonymised'::text, 'kept'::text])) OR (reason IS NOT NULL))),
+    CONSTRAINT retention_action_status CHECK ((status = ANY (ARRAY['open'::text, 'answered'::text, 'accepted'::text, 'sent_back'::text, 'not_needed'::text])))
+);
+
+ALTER TABLE ONLY public.retention_action FORCE ROW LEVEL SECURITY;
+
+
+--
+-- Name: TABLE retention_action; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.retention_action IS 'What one responsible holder is asked to do in a retention review, and what they answered';
+
+
+--
+-- Name: COLUMN retention_action.reason; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.retention_action.reason IS 'Why data was anonymised rather than erased, or kept; sealed';
+
+
+--
+-- Name: COLUMN retention_action.reconsent; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.retention_action.reconsent IS 'Validity, owner only: the project is active and the people may be asked to consent again';
+
+
+--
+-- Name: retention_action_action_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.retention_action_action_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: retention_action_action_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.retention_action_action_id_seq OWNED BY public.retention_action.action_id;
+
+
+--
+-- Name: retention_review; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.retention_review (
+    review_id integer NOT NULL,
+    review_uuid uuid DEFAULT gen_random_uuid() NOT NULL,
+    reference text NOT NULL,
+    kind text NOT NULL,
+    office_id integer NOT NULL,
+    project_id integer NOT NULL,
+    purpose_id integer NOT NULL,
+    cohort date NOT NULL,
+    status text DEFAULT 'upcoming'::text NOT NULL,
+    reminded_days integer[] DEFAULT ARRAY[]::integer[] NOT NULL,
+    reconsent text,
+    opened_at timestamp with time zone,
+    closed_at timestamp with time zone,
+    closed_by integer,
+    close_note text,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT retention_review_closed_whole CHECK (((status = 'closed'::text) = (closed_at IS NOT NULL))),
+    CONSTRAINT retention_review_kind CHECK ((kind = ANY (ARRAY['validity'::text, 'retention'::text]))),
+    CONSTRAINT retention_review_reconsent CHECK (((reconsent IS NULL) OR (reconsent = ANY (ARRAY['asked'::text, 'confirmed'::text, 'declined'::text, 'sent'::text])))),
+    CONSTRAINT retention_review_status CHECK ((status = ANY (ARRAY['upcoming'::text, 'due'::text, 'in_progress'::text, 'closed'::text])))
+);
+
+ALTER TABLE ONLY public.retention_review FORCE ROW LEVEL SECURITY;
+
+
+--
+-- Name: TABLE retention_review; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.retention_review IS 'A cohort whose consent validity runs out, or whose data must go, for one project and purpose';
+
+
+--
+-- Name: COLUMN retention_review.cohort; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.retention_review.cohort IS 'The first day of the month the cohort falls due in';
+
+
+--
+-- Name: COLUMN retention_review.reconsent; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.retention_review.reconsent IS 'Validity only: whether the people may be asked to consent again - asked of the owner, confirmed or declined by them, and sent';
+
+
+--
+-- Name: retention_review_person; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.retention_review_person (
+    member_id integer NOT NULL,
+    review_id integer NOT NULL,
+    kind text NOT NULL,
+    consent_id integer NOT NULL,
+    purpose_id integer NOT NULL,
+    auth_user_id integer NOT NULL,
+    due_at timestamp with time zone NOT NULL,
+    ended_by text NOT NULL,
+    state text DEFAULT 'in'::text NOT NULL,
+    notified_at timestamp with time zone,
+    invited_at timestamp with time zone,
+    office_id integer NOT NULL,
+    added_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT retention_review_person_ended CHECK ((ended_by = ANY (ARRAY['withdrawal'::text, 'validity'::text]))),
+    CONSTRAINT retention_review_person_state CHECK ((state = ANY (ARRAY['in'::text, 'held'::text, 'renewed'::text])))
+);
+
+ALTER TABLE ONLY public.retention_review_person FORCE ROW LEVEL SECURITY;
+
+
+--
+-- Name: TABLE retention_review_person; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.retention_review_person IS 'A person in a retention review: the consent, when it falls due, and whether a legal hold keeps them out or they consented again';
+
+
+--
+-- Name: retention_review_person_member_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.retention_review_person_member_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: retention_review_person_member_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.retention_review_person_member_id_seq OWNED BY public.retention_review_person.member_id;
+
+
+--
+-- Name: retention_review_review_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.retention_review_review_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: retention_review_review_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.retention_review_review_id_seq OWNED BY public.retention_review.review_id;
+
+
+--
+-- Name: retention_setting; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.retention_setting (
+    setting_id smallint DEFAULT 1 NOT NULL,
+    reminder_days integer[] DEFAULT ARRAY[90, 30, 7] NOT NULL,
+    notice_hours integer DEFAULT 48 NOT NULL,
+    action_days integer DEFAULT 30 NOT NULL,
+    escalate_after_days integer DEFAULT 14 NOT NULL,
+    updated_by integer,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    CONSTRAINT retention_setting_days CHECK ((((action_days >= 1) AND (action_days <= 365)) AND ((escalate_after_days >= 1) AND (escalate_after_days <= 365)))),
+    CONSTRAINT retention_setting_hours CHECK (((notice_hours >= 0) AND (notice_hours <= 720))),
+    CONSTRAINT retention_setting_one_row CHECK ((setting_id = 1))
+);
+
+
+--
+-- Name: TABLE retention_setting; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON TABLE public.retention_setting IS 'One row: reminders, the notice before erasure, and how long holders have to act';
 
 
 --
@@ -7585,6 +7828,27 @@ ALTER TABLE ONLY public.report_schedule ALTER COLUMN schedule_id SET DEFAULT nex
 --
 
 ALTER TABLE ONLY public.restricted_country ALTER COLUMN country_id SET DEFAULT nextval('public.restricted_country_country_id_seq'::regclass);
+
+
+--
+-- Name: retention_action action_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_action ALTER COLUMN action_id SET DEFAULT nextval('public.retention_action_action_id_seq'::regclass);
+
+
+--
+-- Name: retention_review review_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_review ALTER COLUMN review_id SET DEFAULT nextval('public.retention_review_review_id_seq'::regclass);
+
+
+--
+-- Name: retention_review_person member_id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_review_person ALTER COLUMN member_id SET DEFAULT nextval('public.retention_review_person_member_id_seq'::regclass);
 
 
 --
@@ -9042,6 +9306,94 @@ ALTER TABLE ONLY public.restricted_country
 
 
 --
+-- Name: retention_action retention_action_action_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_action
+    ADD CONSTRAINT retention_action_action_uuid_key UNIQUE (action_uuid);
+
+
+--
+-- Name: retention_action retention_action_link_token_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_action
+    ADD CONSTRAINT retention_action_link_token_key UNIQUE (link_token);
+
+
+--
+-- Name: retention_action retention_action_one; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_action
+    ADD CONSTRAINT retention_action_one UNIQUE NULLS NOT DISTINCT (review_id, kind, processor_id);
+
+
+--
+-- Name: retention_action retention_action_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_action
+    ADD CONSTRAINT retention_action_pkey PRIMARY KEY (action_id);
+
+
+--
+-- Name: retention_review retention_review_one; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_review
+    ADD CONSTRAINT retention_review_one UNIQUE (kind, project_id, purpose_id, cohort);
+
+
+--
+-- Name: retention_review_person retention_review_person_once; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_review_person
+    ADD CONSTRAINT retention_review_person_once UNIQUE (kind, consent_id, purpose_id);
+
+
+--
+-- Name: retention_review_person retention_review_person_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_review_person
+    ADD CONSTRAINT retention_review_person_pkey PRIMARY KEY (member_id);
+
+
+--
+-- Name: retention_review retention_review_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_review
+    ADD CONSTRAINT retention_review_pkey PRIMARY KEY (review_id);
+
+
+--
+-- Name: retention_review retention_review_reference_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_review
+    ADD CONSTRAINT retention_review_reference_key UNIQUE (reference);
+
+
+--
+-- Name: retention_review retention_review_review_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_review
+    ADD CONSTRAINT retention_review_review_uuid_key UNIQUE (review_uuid);
+
+
+--
+-- Name: retention_setting retention_setting_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_setting
+    ADD CONSTRAINT retention_setting_pkey PRIMARY KEY (setting_id);
+
+
+--
 -- Name: rights_item_execution rights_item_execution_execution_uuid_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -9938,6 +10290,34 @@ CREATE INDEX idx_report_schedule_due ON public.report_schedule USING btree (next
 --
 
 CREATE INDEX idx_report_schedule_office ON public.report_schedule USING btree (office_id);
+
+
+--
+-- Name: idx_retention_action_review; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_retention_action_review ON public.retention_action USING btree (review_id);
+
+
+--
+-- Name: idx_retention_action_user; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_retention_action_user ON public.retention_action USING btree (user_id, status);
+
+
+--
+-- Name: idx_retention_review_person_review; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_retention_review_person_review ON public.retention_review_person USING btree (review_id, state);
+
+
+--
+-- Name: idx_retention_review_status; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_retention_review_status ON public.retention_review USING btree (status, cohort);
 
 
 --
@@ -12491,6 +12871,142 @@ ALTER TABLE ONLY public.restricted_country
 
 
 --
+-- Name: retention_action retention_action_accepted_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_action
+    ADD CONSTRAINT retention_action_accepted_by_fkey FOREIGN KEY (accepted_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: retention_action retention_action_answered_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_action
+    ADD CONSTRAINT retention_action_answered_by_fkey FOREIGN KEY (answered_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: retention_action retention_action_office_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_action
+    ADD CONSTRAINT retention_action_office_id_fkey FOREIGN KEY (office_id) REFERENCES public.office(office_id);
+
+
+--
+-- Name: retention_action retention_action_processor_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_action
+    ADD CONSTRAINT retention_action_processor_id_fkey FOREIGN KEY (processor_id) REFERENCES public.processor(processor_id);
+
+
+--
+-- Name: retention_action retention_action_respondent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_action
+    ADD CONSTRAINT retention_action_respondent_id_fkey FOREIGN KEY (respondent_id) REFERENCES public.processor_respondent(respondent_id);
+
+
+--
+-- Name: retention_action retention_action_review_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_action
+    ADD CONSTRAINT retention_action_review_id_fkey FOREIGN KEY (review_id) REFERENCES public.retention_review(review_id) ON DELETE CASCADE;
+
+
+--
+-- Name: retention_action retention_action_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_action
+    ADD CONSTRAINT retention_action_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: retention_review retention_review_closed_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_review
+    ADD CONSTRAINT retention_review_closed_by_fkey FOREIGN KEY (closed_by) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: retention_review retention_review_office_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_review
+    ADD CONSTRAINT retention_review_office_id_fkey FOREIGN KEY (office_id) REFERENCES public.office(office_id);
+
+
+--
+-- Name: retention_review_person retention_review_person_auth_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_review_person
+    ADD CONSTRAINT retention_review_person_auth_user_id_fkey FOREIGN KEY (auth_user_id) REFERENCES public.auth_user(id);
+
+
+--
+-- Name: retention_review_person retention_review_person_consent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_review_person
+    ADD CONSTRAINT retention_review_person_consent_id_fkey FOREIGN KEY (consent_id) REFERENCES public.consent_artefact(consent_id);
+
+
+--
+-- Name: retention_review_person retention_review_person_office_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_review_person
+    ADD CONSTRAINT retention_review_person_office_id_fkey FOREIGN KEY (office_id) REFERENCES public.office(office_id);
+
+
+--
+-- Name: retention_review_person retention_review_person_purpose_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_review_person
+    ADD CONSTRAINT retention_review_person_purpose_id_fkey FOREIGN KEY (purpose_id) REFERENCES public.purpose(purpose_id);
+
+
+--
+-- Name: retention_review_person retention_review_person_review_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_review_person
+    ADD CONSTRAINT retention_review_person_review_id_fkey FOREIGN KEY (review_id) REFERENCES public.retention_review(review_id) ON DELETE CASCADE;
+
+
+--
+-- Name: retention_review retention_review_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_review
+    ADD CONSTRAINT retention_review_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.project(project_id);
+
+
+--
+-- Name: retention_review retention_review_purpose_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_review
+    ADD CONSTRAINT retention_review_purpose_id_fkey FOREIGN KEY (purpose_id) REFERENCES public.purpose(purpose_id);
+
+
+--
+-- Name: retention_setting retention_setting_updated_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.retention_setting
+    ADD CONSTRAINT retention_setting_updated_by_fkey FOREIGN KEY (updated_by) REFERENCES public.auth_user(id);
+
+
+--
 -- Name: rights_item_execution rights_item_execution_attempted_by_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -13681,6 +14197,39 @@ CREATE POLICY office_isolation ON public.report_schedule USING (((current_settin
 
 
 --
+-- Name: retention_action office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.retention_action USING (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true)))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true))))));
+
+
+--
+-- Name: retention_review office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.retention_review USING (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true)))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true))))));
+
+
+--
+-- Name: retention_review_person office_isolation; Type: POLICY; Schema: public; Owner: -
+--
+
+CREATE POLICY office_isolation ON public.retention_review_person USING (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true)))))) WITH CHECK (((current_setting('app.office'::text, true) = 'all'::text) OR (office_id = ( SELECT o.office_id
+   FROM public.office o
+  WHERE ((o.office_code)::text = current_setting('app.office'::text, true))))));
+
+
+--
 -- Name: rights_item_execution office_isolation; Type: POLICY; Schema: public; Owner: -
 --
 
@@ -13843,6 +14392,24 @@ ALTER TABLE public.report ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.report_schedule ENABLE ROW LEVEL SECURITY;
 
 --
+-- Name: retention_action; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.retention_action ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: retention_review; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.retention_review ENABLE ROW LEVEL SECURITY;
+
+--
+-- Name: retention_review_person; Type: ROW SECURITY; Schema: public; Owner: -
+--
+
+ALTER TABLE public.retention_review_person ENABLE ROW LEVEL SECURITY;
+
+--
 -- Name: rights_item_execution; Type: ROW SECURITY; Schema: public; Owner: -
 --
 
@@ -13906,5 +14473,5 @@ ALTER TABLE public.template_version_purpose ENABLE ROW LEVEL SECURITY;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict rONOtukfAv9FKTdYplsQ31cjGhyHxx27dPA3KrUraks0nmcvNQCkonmPZb2Hc9n
+\unrestrict 4WdIPmYWahK0CB6FKkLpLB2XFtJcseIcQa3cGzHv77lQcelmL4f3PzskIuFPQxL
 

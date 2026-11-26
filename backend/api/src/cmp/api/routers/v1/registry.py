@@ -82,6 +82,8 @@ class PurposeOut(Out):
     cross_border_permitted: bool
     permitted_for_minors: bool
     lapse_behaviour: str
+    #: Tell each person before their data is erased (ADR 0047).
+    notify_before_erasure: bool = True
     created_at: Any
     updated_at: Any
     #: The office the purpose belongs to (ADR 0032): `rnd` or `hr`.
@@ -105,6 +107,8 @@ class PurposeIn(Schema):
     cross_border_permitted: bool = False
     permitted_for_minors: bool = False
     lapse_behaviour: str = "quarantine"
+    #: Tell each person before their data is erased (ADR 0047). Default yes.
+    notify_before_erasure: bool = True
 
     @field_validator("data_categories")
     @classmethod
@@ -147,6 +151,7 @@ class PurposeUpdate(Schema):
     cross_border_permitted: bool | None = None
     permitted_for_minors: bool | None = None
     lapse_behaviour: str | None = None
+    notify_before_erasure: bool | None = None
 
 
 def _purpose_fields(body: PurposeIn | PurposeUpdate) -> dict[str, Any]:

@@ -122,3 +122,7 @@ src/styles/controls.css
 src/styles/auth.css
 src/components/ui/overlay.tsx
 src/components/data-display/change-date.tsx
+# The retention answer form (ADR 0047): an officer's colleague in the console,
+# an outside processor on the portal.
+src/features/retention/answer-form.tsx
+src/features/retention/types.ts

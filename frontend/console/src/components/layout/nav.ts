@@ -27,6 +27,8 @@ import {
   Layers,
   Globe,
   GraduationCap,
+  Hourglass,
+  ListTodo,
   Link2,
   MapPin,
   MessageSquareText,
@@ -210,6 +212,23 @@ export const SECTIONS: NavSection[] = [
         label: "Breach settings",
         icon: Settings2,
         keywords: "organisation board public link report recipients",
+      },
+      // What runs out: consents whose validity ends, data whose retention
+      // has passed (ADR 0047). The officers' register.
+      {
+        key: "retention",
+        href: "/retention",
+        label: "Retention",
+        icon: Hourglass,
+        keywords: "retention expiry validity erase anonymise reconsent lapse",
+      },
+      // What the Privacy Office asked me to answer about retention.
+      {
+        key: "retention-actions",
+        href: "/retention-actions",
+        label: "Retention actions",
+        icon: ListTodo,
+        keywords: "retention erase erasure answer expiry",
       },
       // Where DataVault is reached (0070): the administrator's.
       {

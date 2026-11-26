@@ -93,12 +93,12 @@ hash and no email is written
 rows from before that change stand as written, because the trail is
 hash-chained and cannot be rewritten.
 
-## 2. API endpoints that carry PII — 322 endpoints in 31 modules
+## 2. API endpoints that carry PII — 339 endpoints in 32 modules
 
 Every GET, POST, PUT, PATCH and DELETE whose request or response includes a
 personal field. *In* is what the caller sends (body, path and query); *out* is
 what a 2xx response returns. The response carries the value **as stored** — a
-sealed column comes back as `SE::…` and the portal decrypts it. 38 of
+sealed column comes back as `SE::…` and the portal decrypts it. 44 of
 these need no session; they are marked **public**.
 
 ### Authentication (`/auth`) — 12 endpoints
@@ -553,7 +553,7 @@ these need no session; they are marked **public**.
 | GET | `/portal-address` | — | `updated_by_name` |
 | PUT | `/portal-address` | — | `updated_by_name` |
 
-### Public_information — 9 endpoints
+### Public_information — 15 endpoints
 
 | Method | Endpoint | PII in (request) | PII out (response) |
 |---|---|---|---|
@@ -566,6 +566,12 @@ these need no session; they are marked **public**.
 | POST | `/holder-tickets/{token}/sign-out` **public** | `token` | — |
 | GET | `/holder-tickets/{token}/ticket` **public** | `token` | `author_name`, `body`, `brief`, `consent_at`, `consent_notice_code`, `consent_notice_version`, `consent_project`, `consent_purposes`, `consent_uuid`, `evidence_hash`, `evidence_name`, `instruction`, `other_subjects`, `return_evidence_hash`, `return_evidence_name`, `return_summary`, `sent_back_reason`, `subject_name` |
 | POST | `/holder-tickets/{token}/verify` **public** | `code`, `token` | — |
+| GET | `/retention-links/{token}` **public** | `token` | — |
+| GET | `/retention-links/{token}/action` **public** | `token` | `accepted_by_name`, `answered_by_name`, `assignee_name`, `reason`, `sent_back_reason` |
+| POST | `/retention-links/{token}/answer` **public** | `reason`, `token` | `accepted_by_name`, `answered_by_name`, `assignee_name`, `reason`, `sent_back_reason` |
+| POST | `/retention-links/{token}/code` **public** | `token` | — |
+| POST | `/retention-links/{token}/sign-out` **public** | `token` | — |
+| POST | `/retention-links/{token}/verify` **public** | `code`, `token` | — |
 
 ### Reports — 6 endpoints
 
@@ -577,4 +583,20 @@ these need no session; they are marked **public**.
 | POST | `/reports/schedules` | — | `created_by_name` |
 | PATCH | `/reports/schedules/{schedule_uuid}` | — | `created_by_name` |
 | GET | `/reports/{report_uuid}` | — | `requested_by_name` |
+
+### Retention — 11 endpoints
+
+| Method | Endpoint | PII in (request) | PII out (response) |
+|---|---|---|---|
+| GET | `/retention-actions` | — | `accepted_by_name`, `answered_by_name`, `assignee_name`, `reason`, `sent_back_reason` |
+| GET | `/retention-actions/{action_uuid}` | — | `accepted_by_name`, `answered_by_name`, `assignee_name`, `reason`, `sent_back_reason` |
+| POST | `/retention-actions/{action_uuid}/answer` | `reason` | `accepted_by_name`, `answered_by_name`, `assignee_name`, `reason`, `sent_back_reason` |
+| GET | `/retention/reviews` | — | `close_note`, `closed_by_name` |
+| GET | `/retention/reviews/{review_uuid}` | — | `accepted_by_name`, `answered_by_name`, `assignee_name`, `close_note`, `closed_by_name`, `consent_no`, `consent_uuid`, `person_no`, `reason`, `sent_back_reason` |
+| POST | `/retention/reviews/{review_uuid}/actions/{action_uuid}/accept` | — | `accepted_by_name`, `answered_by_name`, `assignee_name`, `reason`, `sent_back_reason` |
+| POST | `/retention/reviews/{review_uuid}/actions/{action_uuid}/not-needed` | — | `accepted_by_name`, `answered_by_name`, `assignee_name`, `reason`, `sent_back_reason` |
+| POST | `/retention/reviews/{review_uuid}/actions/{action_uuid}/send-back` | `reason` | `accepted_by_name`, `answered_by_name`, `assignee_name`, `reason`, `sent_back_reason` |
+| POST | `/retention/reviews/{review_uuid}/close` | — | `close_note`, `closed_by_name` |
+| GET | `/retention/settings` | — | `updated_by_name` |
+| PUT | `/retention/settings` | — | `updated_by_name` |
 

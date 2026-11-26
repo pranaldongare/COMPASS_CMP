@@ -1010,6 +1010,111 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/retention-links/{token}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** What the link opens */
+        get: operations["open_link_retention_links__token__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/retention-links/{token}/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a code */
+        post: operations["send_code_retention_links__token__code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/retention-links/{token}/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enter the code */
+        post: operations["verify_retention_links__token__verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/retention-links/{token}/sign-out": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close the review here */
+        post: operations["sign_out_retention_links__token__sign_out_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/retention-links/{token}/action": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The action, after the code */
+        get: operations["read_action_retention_links__token__action_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/retention-links/{token}/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Answer it
+         * @description It waits for the Privacy Office to accept it, or send it back.
+         */
+        post: operations["answer_retention_links__token__answer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/staff": {
         parameters: {
             query?: never;
@@ -6689,6 +6794,202 @@ export interface paths {
         post?: never;
         /** Take an address off the escalation list */
         delete: operations["remove_escalation_recipient_breach_settings_escalation_recipients__recipient_uuid__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/retention/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The retention reviews */
+        get: operations["list_reviews_retention_reviews_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/retention/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Look for what falls due, now
+         * @description What the night does, at once: across both offices, as the night does -
+         *     it decides nothing an officer could not see tomorrow.
+         */
+        post: operations["refresh_retention_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/retention/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Reminders, notice and deadlines */
+        get: operations["get_settings_retention_settings_get"];
+        /** Set reminders, notice and deadlines */
+        put: operations["put_settings_retention_settings_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/retention/reviews/{review_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One review */
+        get: operations["get_review_retention_reviews__review_uuid__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/retention/reviews/{review_uuid}/actions/{action_uuid}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept an answer */
+        post: operations["accept_retention_reviews__review_uuid__actions__action_uuid__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/retention/reviews/{review_uuid}/actions/{action_uuid}/send-back": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send an answer back, saying what is missing */
+        post: operations["send_back_retention_reviews__review_uuid__actions__action_uuid__send_back_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/retention/reviews/{review_uuid}/actions/{action_uuid}/not-needed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Set an action aside: nobody need answer it */
+        post: operations["not_needed_retention_reviews__review_uuid__actions__action_uuid__not_needed_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/retention/reviews/{review_uuid}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Close a review */
+        post: operations["close_retention_reviews__review_uuid__close_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/retention-actions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What I am asked to do
+         * @description Read across both offices: what is asked of a person is theirs, whichever
+         *     office's project it is - the query names them.
+         */
+        get: operations["my_actions_retention_actions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/retention-actions/{action_uuid}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** One of mine */
+        get: operations["my_action_retention_actions__action_uuid__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/retention-actions/{action_uuid}/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Answer it */
+        post: operations["answer_retention_actions__action_uuid__answer_post"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -13635,6 +13936,11 @@ export interface components {
              * @default quarantine
              */
             lapse_behaviour: string;
+            /**
+             * Notify Before Erasure
+             * @default true
+             */
+            notify_before_erasure: boolean;
         };
         /**
          * PurposeOnNotice
@@ -13732,6 +14038,11 @@ export interface components {
             permitted_for_minors: boolean;
             /** Lapse Behaviour */
             lapse_behaviour: string;
+            /**
+             * Notify Before Erasure
+             * @default true
+             */
+            notify_before_erasure: boolean;
             /** Created At */
             created_at: unknown;
             /** Updated At */
@@ -13781,6 +14092,8 @@ export interface components {
             permitted_for_minors?: boolean | null;
             /** Lapse Behaviour */
             lapse_behaviour?: string | null;
+            /** Notify Before Erasure */
+            notify_before_erasure?: boolean | null;
         };
         /** Ready */
         Ready: {
@@ -14423,6 +14736,352 @@ export interface components {
             lifted_at: string | null;
             /** Lifted By Name */
             lifted_by_name: string | null;
+        };
+        /** RetentionActionOut */
+        RetentionActionOut: {
+            /**
+             * Action Uuid
+             * Format: uuid
+             */
+            action_uuid: string;
+            /**
+             * Review Uuid
+             * Format: uuid
+             */
+            review_uuid: string;
+            /** Reference */
+            reference: string;
+            /** Review Kind */
+            review_kind: string;
+            /** Kind */
+            kind: string;
+            /** Label */
+            label: string;
+            /** Channel */
+            channel: string;
+            /** Assignee Name */
+            assignee_name: string | null;
+            /** Status */
+            status: string;
+            /** Outcome */
+            outcome: string | null;
+            /** Reason */
+            reason: string | null;
+            /** Keep Until */
+            keep_until: string | null;
+            /** Reconsent */
+            reconsent: boolean | null;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Answered At */
+            answered_at: string | null;
+            /** Answered By Name */
+            answered_by_name: string | null;
+            /** Accepted At */
+            accepted_at: string | null;
+            /** Accepted By Name */
+            accepted_by_name: string | null;
+            /** Sent Back Reason */
+            sent_back_reason: string | null;
+            /** Overdue */
+            overdue: boolean;
+        };
+        /** RetentionAnswerIn */
+        RetentionAnswerIn: {
+            /** Outcome */
+            outcome?: string | null;
+            /** Reason */
+            reason?: string | null;
+            /** Keep Until */
+            keep_until?: string | null;
+            /** Reconsent */
+            reconsent?: boolean | null;
+        };
+        /** RetentionCloseIn */
+        RetentionCloseIn: {
+            /** Note */
+            note?: string | null;
+        };
+        /** RetentionHolderActionOut */
+        RetentionHolderActionOut: {
+            action: components["schemas"]["RetentionActionOut"];
+            review: components["schemas"]["RetentionHolderReviewOut"];
+        };
+        /** RetentionHolderReviewOut */
+        RetentionHolderReviewOut: {
+            /** Reference */
+            reference: string;
+            /** Kind */
+            kind: string;
+            /** Project Name */
+            project_name: string;
+            /** Is Activity */
+            is_activity: boolean;
+            /** Purpose Code */
+            purpose_code: string;
+            /** Purpose Name */
+            purpose_name: string;
+            /** People */
+            people: number;
+            /** First Due At */
+            first_due_at: string | null;
+            /** Last Due At */
+            last_due_at: string | null;
+            /** Retention Days */
+            retention_days: number | null;
+            /** Validity Days */
+            validity_days: number | null;
+            /** Status */
+            status: string;
+        };
+        /**
+         * RetentionLinkOut
+         * @description What the link alone shows: which review, who is asked, where the code goes.
+         */
+        RetentionLinkOut: {
+            /** Reference */
+            reference: string;
+            /** Holder Label */
+            holder_label: string;
+            /** Kind */
+            kind: string;
+            /** Code Goes To */
+            code_goes_to: string | null;
+            /** Status */
+            status: string;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Signed In */
+            signed_in: boolean;
+        };
+        /** RetentionPersonOut */
+        RetentionPersonOut: {
+            /**
+             * Consent Uuid
+             * Format: uuid
+             */
+            consent_uuid: string;
+            /** Consent No */
+            consent_no: number;
+            /** Person No */
+            person_no: number;
+            /**
+             * Due At
+             * Format: date-time
+             */
+            due_at: string;
+            /** Ended By */
+            ended_by: string;
+            /** State */
+            state: string;
+            /** Notified At */
+            notified_at: string | null;
+            /** Invited At */
+            invited_at: string | null;
+        };
+        /** RetentionReasonIn */
+        RetentionReasonIn: {
+            /** Reason */
+            reason: string;
+        };
+        /** RetentionReviewDetailOut */
+        RetentionReviewDetailOut: {
+            /**
+             * Review Uuid
+             * Format: uuid
+             */
+            review_uuid: string;
+            /** Reference */
+            reference: string;
+            /** Kind */
+            kind: string;
+            /** Status */
+            status: string;
+            /** Office */
+            office: string;
+            /**
+             * Cohort
+             * Format: date
+             */
+            cohort: string;
+            /**
+             * Project Uuid
+             * Format: uuid
+             */
+            project_uuid: string;
+            /** Project Name */
+            project_name: string;
+            /** Project Status */
+            project_status: string;
+            /** Is Activity */
+            is_activity: boolean;
+            /** Purpose Code */
+            purpose_code: string;
+            /** Purpose Name */
+            purpose_name: string;
+            /** Retention Days */
+            retention_days: number | null;
+            /** Validity Days */
+            validity_days: number | null;
+            /** Lapse Behaviour */
+            lapse_behaviour: string;
+            /** Notify Before Erasure */
+            notify_before_erasure: boolean;
+            /** People */
+            people: number;
+            /** Held */
+            held: number;
+            /** Renewed */
+            renewed: number;
+            /** First Due At */
+            first_due_at: string | null;
+            /** Last Due At */
+            last_due_at: string | null;
+            /** Actions */
+            actions: number;
+            /** Actions Open */
+            actions_open: number;
+            /** Actions To Review */
+            actions_to_review: number;
+            /** Reconsent */
+            reconsent: string | null;
+            /** Opened At */
+            opened_at: string | null;
+            /** Closed At */
+            closed_at: string | null;
+            /** Closed By Name */
+            closed_by_name: string | null;
+            /** Close Note */
+            close_note: string | null;
+            /** People List */
+            people_list: components["schemas"]["RetentionPersonOut"][];
+            /** Actions List */
+            actions_list: components["schemas"]["RetentionActionOut"][];
+        };
+        /** RetentionReviewOut */
+        RetentionReviewOut: {
+            /**
+             * Review Uuid
+             * Format: uuid
+             */
+            review_uuid: string;
+            /** Reference */
+            reference: string;
+            /** Kind */
+            kind: string;
+            /** Status */
+            status: string;
+            /** Office */
+            office: string;
+            /**
+             * Cohort
+             * Format: date
+             */
+            cohort: string;
+            /**
+             * Project Uuid
+             * Format: uuid
+             */
+            project_uuid: string;
+            /** Project Name */
+            project_name: string;
+            /** Project Status */
+            project_status: string;
+            /** Is Activity */
+            is_activity: boolean;
+            /** Purpose Code */
+            purpose_code: string;
+            /** Purpose Name */
+            purpose_name: string;
+            /** Retention Days */
+            retention_days: number | null;
+            /** Validity Days */
+            validity_days: number | null;
+            /** Lapse Behaviour */
+            lapse_behaviour: string;
+            /** Notify Before Erasure */
+            notify_before_erasure: boolean;
+            /** People */
+            people: number;
+            /** Held */
+            held: number;
+            /** Renewed */
+            renewed: number;
+            /** First Due At */
+            first_due_at: string | null;
+            /** Last Due At */
+            last_due_at: string | null;
+            /** Actions */
+            actions: number;
+            /** Actions Open */
+            actions_open: number;
+            /** Actions To Review */
+            actions_to_review: number;
+            /** Reconsent */
+            reconsent: string | null;
+            /** Opened At */
+            opened_at: string | null;
+            /** Closed At */
+            closed_at: string | null;
+            /** Closed By Name */
+            closed_by_name: string | null;
+            /** Close Note */
+            close_note: string | null;
+        };
+        /** RetentionSettingsIn */
+        RetentionSettingsIn: {
+            /** Reminder Days */
+            reminder_days: number[];
+            /** Notice Hours */
+            notice_hours: number;
+            /** Action Days */
+            action_days: number;
+            /** Escalate After Days */
+            escalate_after_days: number;
+        };
+        /** RetentionSettingsOut */
+        RetentionSettingsOut: {
+            /** Reminder Days */
+            reminder_days: number[];
+            /** Notice Hours */
+            notice_hours: number;
+            /** Action Days */
+            action_days: number;
+            /** Escalate After Days */
+            escalate_after_days: number;
+            /** Updated At */
+            updated_at: string | null;
+            /** Updated By Name */
+            updated_by_name: string | null;
+        };
+        /** RetentionSweepOut */
+        RetentionSweepOut: {
+            /** Reviews Made */
+            reviews_made: number;
+            /** People Added */
+            people_added: number;
+            /** Holds Changed */
+            holds_changed: number;
+            /** Renewed */
+            renewed: number;
+            /** Fell Due */
+            fell_due: number;
+            /** Actions Opened */
+            actions_opened: number;
+            /** Reminders */
+            reminders: number;
+            /** Chased */
+            chased: number;
+            /** Escalated */
+            escalated: number;
+            /** People Told */
+            people_told: number;
         };
         /** ReviewerIn */
         ReviewerIn: {
@@ -17736,6 +18395,198 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IncidentReportReceivedOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    open_link_retention_links__token__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetentionLinkOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_code_retention_links__token__code_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Acknowledged"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_retention_links__token__verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Acknowledged"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sign_out_retention_links__token__sign_out_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    read_action_retention_links__token__action_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetentionHolderActionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    answer_retention_links__token__answer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetentionAnswerIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetentionHolderActionOut"];
                 };
             };
             /** @description Validation Error */
@@ -28580,6 +29431,363 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BreachSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_reviews_retention_reviews_get: {
+        parameters: {
+            query?: {
+                kind?: string | null;
+                status?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetentionReviewOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_retention_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetentionSweepOut"];
+                };
+            };
+        };
+    };
+    get_settings_retention_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetentionSettingsOut"];
+                };
+            };
+        };
+    };
+    put_settings_retention_settings_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetentionSettingsIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetentionSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_review_retention_reviews__review_uuid__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                review_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetentionReviewDetailOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_retention_reviews__review_uuid__actions__action_uuid__accept_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                review_uuid: string;
+                action_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetentionActionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_back_retention_reviews__review_uuid__actions__action_uuid__send_back_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                review_uuid: string;
+                action_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetentionReasonIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetentionActionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    not_needed_retention_reviews__review_uuid__actions__action_uuid__not_needed_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                review_uuid: string;
+                action_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetentionActionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    close_retention_reviews__review_uuid__close_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                review_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetentionCloseIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetentionReviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_actions_retention_actions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetentionActionOut"][];
+                };
+            };
+        };
+    };
+    my_action_retention_actions__action_uuid__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                action_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetentionHolderActionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    answer_retention_actions__action_uuid__answer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                action_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RetentionAnswerIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetentionActionOut"];
                 };
             };
             /** @description Validation Error */

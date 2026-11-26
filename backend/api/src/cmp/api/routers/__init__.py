@@ -28,6 +28,8 @@ ROUTERS: tuple[APIRouter, ...] = (
     public.breach_notices_router,
     # Reporting an incident with no account (0058).
     public.incident_reports_router,
+    # An outside processor's retention action, by its link (ADR 0047).
+    public.retention_links_router,
     # Identity and the reference registry.
     v1.users_router,
     v1.offices_router,
@@ -55,6 +57,9 @@ ROUTERS: tuple[APIRouter, ...] = (
     v1.breaches_router,
     v1.breach_tickets_router,
     v1.breach_settings_router,
+    # Retention reviews: what to do when a consent or its data runs out (ADR 0047).
+    v1.retention_router,
+    v1.retention_actions_router,
     v1.datavault_connection_router,
     v1.datavault_request_router,
     v1.datavault_ticket_router,

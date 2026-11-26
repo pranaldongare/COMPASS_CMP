@@ -45,6 +45,7 @@ const schema = z
     cross_border_permitted: z.boolean(),
     permitted_for_minors: z.boolean(),
     lapse_behaviour: z.string().min(1),
+    notify_before_erasure: z.boolean(),
   })
   .refine((v) => v.lawful_basis !== "legitimate_use_s7" || Boolean(v.s7_clause), {
     message: "An s.7 purpose must name the clause it relies on",
@@ -86,6 +87,7 @@ export function PurposeForm({
     cross_border_permitted: purpose?.cross_border_permitted ?? false,
     permitted_for_minors: purpose?.permitted_for_minors ?? false,
     lapse_behaviour: purpose?.lapse_behaviour ?? "quarantine",
+    notify_before_erasure: purpose?.notify_before_erasure ?? true,
   } as FormValues);
 
   const basis = form.watch("lawful_basis");
@@ -301,6 +303,21 @@ export function PurposeForm({
           <p className="text-xs text-text-subtle">
             Both carry additional obligations under the Act. Leave them off unless
             the DPIA covers them.
+          </p>
+        </div>
+
+        <div className="space-y-2 rounded-md border border-border p-3">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="size-4 accent-[var(--accent)]"
+              {...form.register("notify_before_erasure")}
+            />
+            Tell each person before their data is erased
+          </label>
+          <p className="text-xs text-text-subtle">
+            When the retention period has passed and the data is due to go. The notice
+            goes by email and SMS, at the time set in Retention settings.
           </p>
         </div>
       </div>

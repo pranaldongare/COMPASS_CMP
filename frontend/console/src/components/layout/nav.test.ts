@@ -13,7 +13,7 @@ import { labelFor, sidebarFor } from "@/components/layout/nav";
 import type { Me } from "@/types";
 
 const NAV: Record<string, string[]> = {
-  dpo: ["dashboard", "projects", "approvals", "notices", "purposes", "sites", "collections", "processors", "sources", "consents", "links", "exports", "imports", "requests", "breaches", "breach-settings", "audit", "users", "messages", "delegate", "tickets", "notifications", "profile"],
+  dpo: ["dashboard", "projects", "approvals", "notices", "purposes", "sites", "collections", "processors", "sources", "consents", "links", "exports", "imports", "requests", "breaches", "breach-settings", "retention", "retention-actions", "audit", "users", "messages", "delegate", "tickets", "notifications", "profile"],
   rnd_user: ["dashboard", "projects", "notices", "processors", "approvals", "imports", "collections", "tickets", "notifications", "profile"],
   dco_admin: ["dashboard", "projects", "sites", "sources", "links", "consents", "exports", "imports", "collections", "delegate", "tickets", "notifications", "profile"],
   dco: ["dashboard", "projects", "sites", "sources", "links", "consents", "exports", "imports", "collections", "delegate", "tickets", "notifications", "profile"],

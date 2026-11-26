@@ -38,6 +38,11 @@ OWN = {
     # 0074 (ADR 0045): a report and its schedule, of one office or of both;
     # one of both is read only by a session of no office.
     "report",
+    # 0076 (ADR 0047): a retention review, its people and its actions are
+    # their project's office's.
+    "retention_review",
+    "retention_review_person",
+    "retention_action",
     "report_schedule",
 }
 

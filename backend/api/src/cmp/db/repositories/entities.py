@@ -356,6 +356,18 @@ _SPECS: dict[str, _Spec] = {
         href=None,
         noun="DataVault connection",
     ),
+    "retention_review": _Spec(
+        sql="""SELECT review_id AS id, review_uuid::text AS uuid, reference AS label
+               FROM retention_review WHERE review_id = ANY(%s)""",
+        href="/retention/{uuid}",
+        noun="Retention review",
+    ),
+    "retention_setting": _Spec(
+        sql="""SELECT setting_id::int AS id, NULL::text AS uuid, 'Retention settings' AS label
+               FROM retention_setting WHERE setting_id = ANY(%s)""",
+        href=None,
+        noun="Retention settings",
+    ),
     "employee_check_connection": _Spec(
         sql="""SELECT connection_id::int AS id, NULL::text AS uuid,
                       'Employee check' AS label

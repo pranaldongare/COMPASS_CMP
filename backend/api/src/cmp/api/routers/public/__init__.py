@@ -22,6 +22,7 @@ from cmp.api.routers.public.breach_notices import router as breach_notices_route
 from cmp.api.routers.public.consent import router as consent_router
 from cmp.api.routers.public.holder_tickets import router as holder_tickets_router
 from cmp.api.routers.public.incident_reports import router as incident_reports_router
+from cmp.api.routers.public.retention_links import router as retention_links_router
 from cmp.api.routers.public.rights import router as rights_router
 
 __all__ = [
@@ -29,5 +30,6 @@ __all__ = [
     "consent_router",
     "holder_tickets_router",
     "incident_reports_router",
+    "retention_links_router",
     "rights_router",
 ]

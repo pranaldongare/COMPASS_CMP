@@ -412,6 +412,32 @@ MATRIX: dict[str, dict[Role, Grant]] = {
     "datavault_connection": {
         Role.ADMIN: Grant(Scope.ALL, write=True),
     },
+    # Retention reviews (0076, ADR 0047): the office's officer keeps the
+    # register of their own office - a review is an office's, as its project
+    # is. Their settings are the officers' and the administrator's.
+    "retention": {
+        Role.DPO: Grant(Scope.ALL, write=True),
+        Role.LEGAL: Grant(Scope.ALL, write=True),
+    },
+    "retention_setting": {
+        Role.ADMIN: Grant(Scope.ALL, write=True),
+        Role.DPO: Grant(Scope.ALL, write=True),
+        Role.LEGAL: Grant(Scope.ALL, write=True),
+    },
+    # A retention action is answered by the one it was asked of, whatever
+    # their role: a DCO Admin, an HR PoC, any member of staff a processor
+    # names as its respondent. Their own, and nothing else. Not management,
+    # which reads aggregates and is never asked to act on a record.
+    "retention_action": {
+        Role.DPO: Grant(Scope.OWN, write=True),
+        Role.LEGAL: Grant(Scope.OWN, write=True),
+        Role.DCO: Grant(Scope.OWN, write=True),
+        Role.DCO_ADMIN: Grant(Scope.OWN, write=True),
+        Role.RCO: Grant(Scope.OWN, write=True),
+        Role.RND_USER: Grant(Scope.OWN, write=True),
+        Role.HR_USER: Grant(Scope.OWN, write=True),
+        Role.ADMIN: Grant(Scope.OWN, write=True),
+    },
     # Where VerifyEmail is reached, its key, and the organisation's email
     # domains (0075, ADR 0046). Configuration, and it decides who may sign in
     # to the console: the administrator's alone.
@@ -570,6 +596,9 @@ def scope_of(resource: str, role: Role | str) -> Scope:
 #: Training - each role's own modules, step by step - is for every member of
 #: staff and only once signed in; it holds no records, so it grants nothing.
 PERSONAL: tuple[str, ...] = ("tickets", "training", "notifications", "profile")
+#: Retention actions (ADR 0047) are every member of staff's who may be asked
+#: one - not the breach-only login's - in their own list, apart from tickets.
+_RETENTION_ACTIONS: tuple[str, ...] = ("retention-actions",)
 
 NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
     # Management reads the analytics and its own account, nothing else
@@ -598,6 +627,8 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         # Personal data breaches: the register, and every duty's clock.
         "breaches",
         "breach-settings",
+        # Retention reviews (ADR 0047): the office's register.
+        "retention",
         "audit",
         "users",
         # The words of every message the platform sends.
@@ -607,6 +638,7 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         # somebody else can stand in for - so it is absent there, deliberately,
         # rather than forgotten.
         "delegate",
+        *_RETENTION_ACTIONS,
         *PERSONAL,
     ),
     Role.DCO: (
@@ -625,6 +657,7 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "imports",
         "collections",
         "delegate",
+        *_RETENTION_ACTIONS,
         *PERSONAL,
     ),
     # A DCO Admin does a DCO's job across every third-party project, and one
@@ -643,6 +676,7 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "imports",
         "collections",
         "delegate",
+        *_RETENTION_ACTIONS,
         *PERSONAL,
     ),
     # An RCO is a DCO for collection the R&D team does itself - same nav, and
@@ -661,6 +695,7 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "imports",
         "collections",
         "delegate",
+        *_RETENTION_ACTIONS,
         *PERSONAL,
     ),
     # `notices` and `processors` because the R&D User brings the notice and names
@@ -677,6 +712,7 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "approvals",
         "imports",
         "collections",
+        *_RETENTION_ACTIONS,
         *PERSONAL,
     ),
     # An administrator does not delegate their own work - they have no assigned
@@ -702,6 +738,7 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "portal-address",
         "audit",
         "delegate",
+        *_RETENTION_ACTIONS,
         *PERSONAL,
     ),
     # Her own requests and her nomination, on her own pages.
@@ -722,6 +759,8 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "requests",
         "breaches",
         "breach-settings",
+        # Retention reviews (ADR 0047): the office's register.
+        "retention",
         "hr-activities",
         "hr-categories",
         "templates",
@@ -733,6 +772,7 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "audit",
         # The words of the messages with legal weight (2026-11-20).
         "messages",
+        *_RETENTION_ACTIONS,
         *PERSONAL,
     ),
     Role.HR_USER: (
@@ -744,6 +784,7 @@ NAV_BY_ROLE: dict[Role, tuple[str, ...]] = {
         "links",
         "consents",
         "exports",
+        *_RETENTION_ACTIONS,
         *PERSONAL,
     ),
 }

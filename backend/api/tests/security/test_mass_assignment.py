@@ -166,8 +166,21 @@ class TestNoSurrogateKeyReachesTheWire:
 #: The three numbers shown as IDs, and the only response models that carry them.
 _SHOWN_NUMBERS = {
     # `HeldAssetOut` (0070): the consent and project DataVault named, as ours.
-    "consent_no": {"ConsentRow", "ConsentListRow", "ConsentArtefactOut", "HeldAssetOut"},
-    "person_no": {"ConsentRow", "ConsentListRow", "ConsentArtefactOut", "UserOut"},
+    # `RetentionPersonOut` (0076): who is in a retention review, as numbers.
+    "consent_no": {
+        "ConsentRow",
+        "ConsentListRow",
+        "ConsentArtefactOut",
+        "HeldAssetOut",
+        "RetentionPersonOut",
+    },
+    "person_no": {
+        "ConsentRow",
+        "ConsentListRow",
+        "ConsentArtefactOut",
+        "UserOut",
+        "RetentionPersonOut",
+    },
     "project_no": {
         "ConsentRow",
         "ConsentListRow",

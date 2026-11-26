@@ -2316,6 +2316,290 @@
         }
       }
     },
+    "/retention-links/{token}": {
+      "get": {
+        "tags": [
+          "retention links"
+        ],
+        "summary": "What the link opens",
+        "operationId": "open_link_retention_links__token__get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 20,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionLinkOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/retention-links/{token}/code": {
+      "post": {
+        "tags": [
+          "retention links"
+        ],
+        "summary": "Send a code",
+        "operationId": "send_code_retention_links__token__code_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 20,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Acknowledged"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/retention-links/{token}/verify": {
+      "post": {
+        "tags": [
+          "retention links"
+        ],
+        "summary": "Enter the code",
+        "operationId": "verify_retention_links__token__verify_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 20,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CodeIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Acknowledged"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/retention-links/{token}/sign-out": {
+      "post": {
+        "tags": [
+          "retention links"
+        ],
+        "summary": "Close the review here",
+        "operationId": "sign_out_retention_links__token__sign_out_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 20,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/retention-links/{token}/action": {
+      "get": {
+        "tags": [
+          "retention links"
+        ],
+        "summary": "The action, after the code",
+        "operationId": "read_action_retention_links__token__action_get",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 20,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionHolderActionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/retention-links/{token}/answer": {
+      "post": {
+        "tags": [
+          "retention links"
+        ],
+        "summary": "Answer it",
+        "description": "It waits for the Privacy Office to accept it, or send it back.",
+        "operationId": "answer_retention_links__token__answer_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 20,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetentionAnswerIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionHolderActionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users/staff": {
       "get": {
         "tags": [
@@ -19853,6 +20137,546 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/BreachSettingsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/retention/reviews": {
+      "get": {
+        "tags": [
+          "retention"
+        ],
+        "summary": "The retention reviews",
+        "operationId": "list_reviews_retention_reviews_get",
+        "parameters": [
+          {
+            "name": "kind",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 12
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 12
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RetentionReviewOut"
+                  },
+                  "title": "Response List Reviews Retention Reviews Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/retention/refresh": {
+      "post": {
+        "tags": [
+          "retention"
+        ],
+        "summary": "Look for what falls due, now",
+        "description": "What the night does, at once: across both offices, as the night does -\nit decides nothing an officer could not see tomorrow.",
+        "operationId": "refresh_retention_refresh_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionSweepOut"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/retention/settings": {
+      "get": {
+        "tags": [
+          "retention"
+        ],
+        "summary": "Reminders, notice and deadlines",
+        "operationId": "get_settings_retention_settings_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionSettingsOut"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "retention"
+        ],
+        "summary": "Set reminders, notice and deadlines",
+        "operationId": "put_settings_retention_settings_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetentionSettingsIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionSettingsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/retention/reviews/{review_uuid}": {
+      "get": {
+        "tags": [
+          "retention"
+        ],
+        "summary": "One review",
+        "operationId": "get_review_retention_reviews__review_uuid__get",
+        "parameters": [
+          {
+            "name": "review_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Review Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionReviewDetailOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/retention/reviews/{review_uuid}/actions/{action_uuid}/accept": {
+      "post": {
+        "tags": [
+          "retention"
+        ],
+        "summary": "Accept an answer",
+        "operationId": "accept_retention_reviews__review_uuid__actions__action_uuid__accept_post",
+        "parameters": [
+          {
+            "name": "review_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Review Uuid"
+            }
+          },
+          {
+            "name": "action_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Action Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionActionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/retention/reviews/{review_uuid}/actions/{action_uuid}/send-back": {
+      "post": {
+        "tags": [
+          "retention"
+        ],
+        "summary": "Send an answer back, saying what is missing",
+        "operationId": "send_back_retention_reviews__review_uuid__actions__action_uuid__send_back_post",
+        "parameters": [
+          {
+            "name": "review_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Review Uuid"
+            }
+          },
+          {
+            "name": "action_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Action Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetentionReasonIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionActionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/retention/reviews/{review_uuid}/actions/{action_uuid}/not-needed": {
+      "post": {
+        "tags": [
+          "retention"
+        ],
+        "summary": "Set an action aside: nobody need answer it",
+        "operationId": "not_needed_retention_reviews__review_uuid__actions__action_uuid__not_needed_post",
+        "parameters": [
+          {
+            "name": "review_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Review Uuid"
+            }
+          },
+          {
+            "name": "action_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Action Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionActionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/retention/reviews/{review_uuid}/close": {
+      "post": {
+        "tags": [
+          "retention"
+        ],
+        "summary": "Close a review",
+        "operationId": "close_retention_reviews__review_uuid__close_post",
+        "parameters": [
+          {
+            "name": "review_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Review Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetentionCloseIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionReviewOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/retention-actions": {
+      "get": {
+        "tags": [
+          "retention"
+        ],
+        "summary": "What I am asked to do",
+        "description": "Read across both offices: what is asked of a person is theirs, whichever\noffice's project it is - the query names them.",
+        "operationId": "my_actions_retention_actions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RetentionActionOut"
+                  },
+                  "type": "array",
+                  "title": "Response My Actions Retention Actions Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/retention-actions/{action_uuid}": {
+      "get": {
+        "tags": [
+          "retention"
+        ],
+        "summary": "One of mine",
+        "operationId": "my_action_retention_actions__action_uuid__get",
+        "parameters": [
+          {
+            "name": "action_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Action Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionHolderActionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/retention-actions/{action_uuid}/answer": {
+      "post": {
+        "tags": [
+          "retention"
+        ],
+        "summary": "Answer it",
+        "operationId": "answer_retention_actions__action_uuid__answer_post",
+        "parameters": [
+          {
+            "name": "action_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Action Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetentionAnswerIn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionActionOut"
                 }
               }
             }
@@ -40527,6 +41351,11 @@
             "type": "string",
             "title": "Lapse Behaviour",
             "default": "quarantine"
+          },
+          "notify_before_erasure": {
+            "type": "boolean",
+            "title": "Notify Before Erasure",
+            "default": true
           }
         },
         "additionalProperties": false,
@@ -40761,6 +41590,11 @@
             "type": "string",
             "title": "Lapse Behaviour"
           },
+          "notify_before_erasure": {
+            "type": "boolean",
+            "title": "Notify Before Erasure",
+            "default": true
+          },
           "created_at": {
             "title": "Created At"
           },
@@ -40993,6 +41827,17 @@
               }
             ],
             "title": "Lapse Behaviour"
+          },
+          "notify_before_erasure": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notify Before Erasure"
           }
         },
         "additionalProperties": false,
@@ -43486,6 +44331,1127 @@
           "lifted_by_name"
         ],
         "title": "RestrictionOut"
+      },
+      "RetentionActionOut": {
+        "properties": {
+          "action_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Action Uuid"
+          },
+          "review_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Review Uuid"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "review_kind": {
+            "type": "string",
+            "title": "Review Kind"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "channel": {
+            "type": "string",
+            "title": "Channel"
+          },
+          "assignee_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignee Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "keep_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keep Until"
+          },
+          "reconsent": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reconsent"
+          },
+          "due_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Due At"
+          },
+          "answered_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answered At"
+          },
+          "answered_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answered By Name"
+          },
+          "accepted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted At"
+          },
+          "accepted_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Accepted By Name"
+          },
+          "sent_back_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sent Back Reason"
+          },
+          "overdue": {
+            "type": "boolean",
+            "title": "Overdue"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action_uuid",
+          "review_uuid",
+          "reference",
+          "review_kind",
+          "kind",
+          "label",
+          "channel",
+          "assignee_name",
+          "status",
+          "outcome",
+          "reason",
+          "keep_until",
+          "reconsent",
+          "due_at",
+          "answered_at",
+          "answered_by_name",
+          "accepted_at",
+          "accepted_by_name",
+          "sent_back_reason",
+          "overdue"
+        ],
+        "title": "RetentionActionOut"
+      },
+      "RetentionAnswerIn": {
+        "properties": {
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 16
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "keep_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Keep Until"
+          },
+          "reconsent": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reconsent"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "RetentionAnswerIn"
+      },
+      "RetentionCloseIn": {
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "RetentionCloseIn"
+      },
+      "RetentionHolderActionOut": {
+        "properties": {
+          "action": {
+            "$ref": "#/components/schemas/RetentionActionOut"
+          },
+          "review": {
+            "$ref": "#/components/schemas/RetentionHolderReviewOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action",
+          "review"
+        ],
+        "title": "RetentionHolderActionOut"
+      },
+      "RetentionHolderReviewOut": {
+        "properties": {
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "project_name": {
+            "type": "string",
+            "title": "Project Name"
+          },
+          "is_activity": {
+            "type": "boolean",
+            "title": "Is Activity"
+          },
+          "purpose_code": {
+            "type": "string",
+            "title": "Purpose Code"
+          },
+          "purpose_name": {
+            "type": "string",
+            "title": "Purpose Name"
+          },
+          "people": {
+            "type": "integer",
+            "title": "People"
+          },
+          "first_due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Due At"
+          },
+          "last_due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Due At"
+          },
+          "retention_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retention Days"
+          },
+          "validity_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validity Days"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reference",
+          "kind",
+          "project_name",
+          "is_activity",
+          "purpose_code",
+          "purpose_name",
+          "people",
+          "first_due_at",
+          "last_due_at",
+          "retention_days",
+          "validity_days",
+          "status"
+        ],
+        "title": "RetentionHolderReviewOut"
+      },
+      "RetentionLinkOut": {
+        "properties": {
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "holder_label": {
+            "type": "string",
+            "title": "Holder Label"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "code_goes_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code Goes To"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "due_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Due At"
+          },
+          "signed_in": {
+            "type": "boolean",
+            "title": "Signed In"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reference",
+          "holder_label",
+          "kind",
+          "code_goes_to",
+          "status",
+          "due_at",
+          "signed_in"
+        ],
+        "title": "RetentionLinkOut",
+        "description": "What the link alone shows: which review, who is asked, where the code goes."
+      },
+      "RetentionPersonOut": {
+        "properties": {
+          "consent_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Consent Uuid"
+          },
+          "consent_no": {
+            "type": "integer",
+            "title": "Consent No"
+          },
+          "person_no": {
+            "type": "integer",
+            "title": "Person No"
+          },
+          "due_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Due At"
+          },
+          "ended_by": {
+            "type": "string",
+            "title": "Ended By"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "notified_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notified At"
+          },
+          "invited_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invited At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "consent_uuid",
+          "consent_no",
+          "person_no",
+          "due_at",
+          "ended_by",
+          "state",
+          "notified_at",
+          "invited_at"
+        ],
+        "title": "RetentionPersonOut"
+      },
+      "RetentionReasonIn": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "RetentionReasonIn"
+      },
+      "RetentionReviewDetailOut": {
+        "properties": {
+          "review_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Review Uuid"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "office": {
+            "type": "string",
+            "title": "Office"
+          },
+          "cohort": {
+            "type": "string",
+            "format": "date",
+            "title": "Cohort"
+          },
+          "project_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Uuid"
+          },
+          "project_name": {
+            "type": "string",
+            "title": "Project Name"
+          },
+          "project_status": {
+            "type": "string",
+            "title": "Project Status"
+          },
+          "is_activity": {
+            "type": "boolean",
+            "title": "Is Activity"
+          },
+          "purpose_code": {
+            "type": "string",
+            "title": "Purpose Code"
+          },
+          "purpose_name": {
+            "type": "string",
+            "title": "Purpose Name"
+          },
+          "retention_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retention Days"
+          },
+          "validity_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validity Days"
+          },
+          "lapse_behaviour": {
+            "type": "string",
+            "title": "Lapse Behaviour"
+          },
+          "notify_before_erasure": {
+            "type": "boolean",
+            "title": "Notify Before Erasure"
+          },
+          "people": {
+            "type": "integer",
+            "title": "People"
+          },
+          "held": {
+            "type": "integer",
+            "title": "Held"
+          },
+          "renewed": {
+            "type": "integer",
+            "title": "Renewed"
+          },
+          "first_due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Due At"
+          },
+          "last_due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Due At"
+          },
+          "actions": {
+            "type": "integer",
+            "title": "Actions"
+          },
+          "actions_open": {
+            "type": "integer",
+            "title": "Actions Open"
+          },
+          "actions_to_review": {
+            "type": "integer",
+            "title": "Actions To Review"
+          },
+          "reconsent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reconsent"
+          },
+          "opened_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opened At"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
+          "closed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed By Name"
+          },
+          "close_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Close Note"
+          },
+          "people_list": {
+            "items": {
+              "$ref": "#/components/schemas/RetentionPersonOut"
+            },
+            "type": "array",
+            "title": "People List"
+          },
+          "actions_list": {
+            "items": {
+              "$ref": "#/components/schemas/RetentionActionOut"
+            },
+            "type": "array",
+            "title": "Actions List"
+          }
+        },
+        "type": "object",
+        "required": [
+          "review_uuid",
+          "reference",
+          "kind",
+          "status",
+          "office",
+          "cohort",
+          "project_uuid",
+          "project_name",
+          "project_status",
+          "is_activity",
+          "purpose_code",
+          "purpose_name",
+          "retention_days",
+          "validity_days",
+          "lapse_behaviour",
+          "notify_before_erasure",
+          "people",
+          "held",
+          "renewed",
+          "first_due_at",
+          "last_due_at",
+          "actions",
+          "actions_open",
+          "actions_to_review",
+          "reconsent",
+          "opened_at",
+          "closed_at",
+          "closed_by_name",
+          "close_note",
+          "people_list",
+          "actions_list"
+        ],
+        "title": "RetentionReviewDetailOut"
+      },
+      "RetentionReviewOut": {
+        "properties": {
+          "review_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Review Uuid"
+          },
+          "reference": {
+            "type": "string",
+            "title": "Reference"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "office": {
+            "type": "string",
+            "title": "Office"
+          },
+          "cohort": {
+            "type": "string",
+            "format": "date",
+            "title": "Cohort"
+          },
+          "project_uuid": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Uuid"
+          },
+          "project_name": {
+            "type": "string",
+            "title": "Project Name"
+          },
+          "project_status": {
+            "type": "string",
+            "title": "Project Status"
+          },
+          "is_activity": {
+            "type": "boolean",
+            "title": "Is Activity"
+          },
+          "purpose_code": {
+            "type": "string",
+            "title": "Purpose Code"
+          },
+          "purpose_name": {
+            "type": "string",
+            "title": "Purpose Name"
+          },
+          "retention_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retention Days"
+          },
+          "validity_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validity Days"
+          },
+          "lapse_behaviour": {
+            "type": "string",
+            "title": "Lapse Behaviour"
+          },
+          "notify_before_erasure": {
+            "type": "boolean",
+            "title": "Notify Before Erasure"
+          },
+          "people": {
+            "type": "integer",
+            "title": "People"
+          },
+          "held": {
+            "type": "integer",
+            "title": "Held"
+          },
+          "renewed": {
+            "type": "integer",
+            "title": "Renewed"
+          },
+          "first_due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Due At"
+          },
+          "last_due_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Due At"
+          },
+          "actions": {
+            "type": "integer",
+            "title": "Actions"
+          },
+          "actions_open": {
+            "type": "integer",
+            "title": "Actions Open"
+          },
+          "actions_to_review": {
+            "type": "integer",
+            "title": "Actions To Review"
+          },
+          "reconsent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reconsent"
+          },
+          "opened_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opened At"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
+          "closed_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed By Name"
+          },
+          "close_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Close Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "review_uuid",
+          "reference",
+          "kind",
+          "status",
+          "office",
+          "cohort",
+          "project_uuid",
+          "project_name",
+          "project_status",
+          "is_activity",
+          "purpose_code",
+          "purpose_name",
+          "retention_days",
+          "validity_days",
+          "lapse_behaviour",
+          "notify_before_erasure",
+          "people",
+          "held",
+          "renewed",
+          "first_due_at",
+          "last_due_at",
+          "actions",
+          "actions_open",
+          "actions_to_review",
+          "reconsent",
+          "opened_at",
+          "closed_at",
+          "closed_by_name",
+          "close_note"
+        ],
+        "title": "RetentionReviewOut"
+      },
+      "RetentionSettingsIn": {
+        "properties": {
+          "reminder_days": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "minItems": 1,
+            "title": "Reminder Days"
+          },
+          "notice_hours": {
+            "type": "integer",
+            "maximum": 720.0,
+            "minimum": 0.0,
+            "title": "Notice Hours"
+          },
+          "action_days": {
+            "type": "integer",
+            "maximum": 365.0,
+            "minimum": 1.0,
+            "title": "Action Days"
+          },
+          "escalate_after_days": {
+            "type": "integer",
+            "maximum": 365.0,
+            "minimum": 1.0,
+            "title": "Escalate After Days"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reminder_days",
+          "notice_hours",
+          "action_days",
+          "escalate_after_days"
+        ],
+        "title": "RetentionSettingsIn"
+      },
+      "RetentionSettingsOut": {
+        "properties": {
+          "reminder_days": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Reminder Days"
+          },
+          "notice_hours": {
+            "type": "integer",
+            "title": "Notice Hours"
+          },
+          "action_days": {
+            "type": "integer",
+            "title": "Action Days"
+          },
+          "escalate_after_days": {
+            "type": "integer",
+            "title": "Escalate After Days"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reminder_days",
+          "notice_hours",
+          "action_days",
+          "escalate_after_days",
+          "updated_at",
+          "updated_by_name"
+        ],
+        "title": "RetentionSettingsOut"
+      },
+      "RetentionSweepOut": {
+        "properties": {
+          "reviews_made": {
+            "type": "integer",
+            "title": "Reviews Made"
+          },
+          "people_added": {
+            "type": "integer",
+            "title": "People Added"
+          },
+          "holds_changed": {
+            "type": "integer",
+            "title": "Holds Changed"
+          },
+          "renewed": {
+            "type": "integer",
+            "title": "Renewed"
+          },
+          "fell_due": {
+            "type": "integer",
+            "title": "Fell Due"
+          },
+          "actions_opened": {
+            "type": "integer",
+            "title": "Actions Opened"
+          },
+          "reminders": {
+            "type": "integer",
+            "title": "Reminders"
+          },
+          "chased": {
+            "type": "integer",
+            "title": "Chased"
+          },
+          "escalated": {
+            "type": "integer",
+            "title": "Escalated"
+          },
+          "people_told": {
+            "type": "integer",
+            "title": "People Told"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reviews_made",
+          "people_added",
+          "holds_changed",
+          "renewed",
+          "fell_due",
+          "actions_opened",
+          "reminders",
+          "chased",
+          "escalated",
+          "people_told"
+        ],
+        "title": "RetentionSweepOut"
       },
       "ReviewerIn": {
         "properties": {

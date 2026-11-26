@@ -2,7 +2,7 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `analytics`, `hr-activities`, `hr-categories`, `links`, `consents`, `exports`, `tickets`, `training`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `analytics`, `hr-activities`, `hr-categories`, `links`, `consents`, `exports`, `retention-actions`, `tickets`, `training`, `notifications`, `profile`.
 
 ## Resource access
 
@@ -38,6 +38,9 @@ Navigation returned after sign-in: `dashboard`, `analytics`, `hr-activities`, `h
 | `purpose` | No | No | `none` | Denied |
 | `report` | Yes | Yes | `scoped` | Assigned project/organisational rows |
 | `restricted_country` | No | No | `none` | Denied |
+| `retention` | No | No | `none` | Denied |
+| `retention_action` | Yes | Yes | `own` | Own or addressed rows |
+| `retention_setting` | No | No | `none` | Denied |
 | `rights_request` | No | No | `none` | Denied |
 | `site` | Yes | No | `scoped` | Assigned project/organisational rows |
 | `ticket` | Yes | Yes | `own` | Own or addressed rows |

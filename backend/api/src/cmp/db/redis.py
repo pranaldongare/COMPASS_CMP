@@ -50,6 +50,8 @@ K_NOTICE_SERVED: Final = "nsrv"
 #: An outside holder's hour on its ticket after the code (0049): the cookie's
 #: fingerprint -> the holder and the link it came through.
 K_HOLDER_TICKET: Final = "hts"
+#: An outside holder's hour on a retention action after the code (ADR 0047).
+K_RETENTION_LINK: Final = "rtl"
 
 
 async def open_redis() -> Redis:

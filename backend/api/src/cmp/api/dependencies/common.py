@@ -92,6 +92,16 @@ DataVaultConnectionWriter = Annotated[
 #: VerifyEmail and the organisation's domains (0075): the administrator's.
 EmployeeCheckReader = Annotated[Principal, Depends(RequireResource("employee_check"))]
 EmployeeCheckWriter = Annotated[Principal, Depends(RequireResource("employee_check", write=True))]
+#: Retention reviews (0076, ADR 0047).
+RetentionReader = Annotated[Principal, Depends(RequireResource("retention"))]
+RetentionWriter = Annotated[Principal, Depends(RequireResource("retention", write=True))]
+RetentionSettingReader = Annotated[Principal, Depends(RequireResource("retention_setting"))]
+RetentionSettingWriter = Annotated[
+    Principal, Depends(RequireResource("retention_setting", write=True))
+]
+RetentionActionWriter = Annotated[
+    Principal, Depends(RequireResource("retention_action", write=True))
+]
 #: The address links to the portal start with (0072): the administrator's.
 PortalAddressReader = Annotated[Principal, Depends(RequireResource("portal_address"))]
 PortalAddressWriter = Annotated[Principal, Depends(RequireResource("portal_address", write=True))]

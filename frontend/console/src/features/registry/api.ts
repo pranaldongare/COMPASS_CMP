@@ -118,6 +118,7 @@ export interface PurposeInput {
   cross_border_permitted: boolean;
   permitted_for_minors: boolean;
   lapse_behaviour: string;
+  notify_before_erasure?: boolean;
 }
 
 export interface ProcessorInput {

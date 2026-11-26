@@ -145,6 +145,13 @@ PUBLIC_ROUTES: tuple[tuple[str, str], ...] = (
     # The date the answer is due, moved with the reason (2026-11-12)
     ("POST", "/holder-tickets/{token}/answer-by"),
     ("POST", "/holder-tickets/{token}/sign-out"),
+    # A processor's retention action, by its link (ADR 0047)
+    ("GET", "/retention-links/{token}"),
+    ("POST", "/retention-links/{token}/code"),
+    ("POST", "/retention-links/{token}/verify"),
+    ("GET", "/retention-links/{token}/action"),
+    ("POST", "/retention-links/{token}/answer"),
+    ("POST", "/retention-links/{token}/sign-out"),
     # Reference data and the notifications page
     ("GET", "/meta/enums"),
     ("GET", "/meta/data-categories"),

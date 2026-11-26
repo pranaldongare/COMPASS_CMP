@@ -54,7 +54,7 @@ Key `audit_chain_broken` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_audit_chain_broken` (`backend/api/src/cmp/tasks/notifications/updates.py:393`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:1075` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:1076` |
 | Variables | `position` (Where the chain first breaks.), `when` (When it happened.), `console_url` (The staff console (CONSOLE_BASE_URL).), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Urgent: the {organisation} audit trail failed its integrity check`
@@ -81,7 +81,7 @@ Key `datavault_problem` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_datavault_problem` (`backend/api/src/cmp/tasks/notifications/updates.py:398`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:1090` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:1091` |
 | Variables | `what` (What did not go through.), `failure` (What DataVault said.), `when` (When it happened.), `console_url` (The staff console (CONSOLE_BASE_URL).), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `DataVault did not complete an instruction`
@@ -108,7 +108,7 @@ Key `settings_changed` · channels: email
 | CC | Never - it is written to one person about her own data; a copy would disclose it. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_settings_changed` (`backend/api/src/cmp/tasks/notifications/updates.py:403`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:1102` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:1103` |
 | Variables | `setting` (What changed.), `actor` (Who changed it.), `when` (When it happened.), `console_url` (The staff console (CONSOLE_BASE_URL).), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{organisation}: {setting} was changed`

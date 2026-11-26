@@ -64,6 +64,8 @@ IDENTITY = {
     "reporter_name", "dismissed_by_name", "finalised_by_name", "filed_by_name",
     # Who last made an entry on the board's list mandatory or optional (0064).
     "mandatory_changed_by_name", "acknowledged_by_name", "transferred_by_name",
+    # Retention reviews (ADR 0047): who is asked, who answered, who closed it.
+    "assignee_name", "answered_by_name", "closed_by_name",
     "username",
 }
 CONTACT = {
@@ -135,6 +137,8 @@ FREE_TEXT = {
     "third_parties",
     # Why a report from the public link was not taken up (0058).
     "dismissal_reason",
+    # Why a retention review was closed (ADR 0047).
+    "close_note",
 }
 FILE = {
     "file_name", "file_uuid", "files", "response_files", "evidence_name",

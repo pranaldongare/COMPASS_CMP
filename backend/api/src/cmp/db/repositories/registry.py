@@ -437,7 +437,7 @@ PURPOSE_COLUMNS = """
   p.uses, p.lawful_basis, p.s7_clause, p.data_categories,
   p.retention_period, p.retention_basis, p.erasure_trigger,
   p.consent_validity_period, p.cross_border_permitted, p.permitted_for_minors,
-  p.lapse_behaviour, p.created_at, p.updated_at,
+  p.lapse_behaviour, p.notify_before_erasure, p.created_at, p.updated_at,
   (SELECT o.office_code FROM office o WHERE o.office_id = p.office_id) AS office_code
 """
 
@@ -474,21 +474,22 @@ async def create_purpose(conn: Conn, *, created_by: int, office: str, **f: Any) 
         INSERT INTO purpose (purpose_code, name, description, uses, lawful_basis, s7_clause,
                              data_categories, retention_period, retention_basis,
                              erasure_trigger, consent_validity_period, cross_border_permitted,
-                             permitted_for_minors, lapse_behaviour, created_by, office_id)
+                             permitted_for_minors, lapse_behaviour, notify_before_erasure,
+                             created_by, office_id)
         VALUES ({code}, %(name)s, %(description)s, %(uses)s,
                 %(lawful_basis)s::lawful_basis, %(s7_clause)s::s7_clause,
                 %(data_categories)s, %(retention_period)s::interval,
                 %(retention_basis)s::retention_basis, %(erasure_trigger)s::erasure_trigger,
                 %(consent_validity_period)s::interval, %(cross_border_permitted)s,
-                %(permitted_for_minors)s, %(lapse_behaviour)s::lapse_behaviour, %(created_by)s,
-                {OFFICE_ID_NAMED})
+                %(permitted_for_minors)s, %(lapse_behaviour)s::lapse_behaviour,
+                %(notify_before_erasure)s, %(created_by)s, {OFFICE_ID_NAMED})
         RETURNING purpose_id, purpose_uuid, purpose_code, version, status, name, description,
                   uses, lawful_basis, s7_clause, data_categories, retention_period,
                   retention_basis, erasure_trigger, consent_validity_period,
                   cross_border_permitted, permitted_for_minors, lapse_behaviour,
-                  created_at, updated_at, %(office)s AS office_code
+                  notify_before_erasure, created_at, updated_at, %(office)s AS office_code
         """,
-        {**f, "created_by": created_by, "office": office},
+        {"notify_before_erasure": True, **f, "created_by": created_by, "office": office},
     )
     assert row is not None
     return row
@@ -511,15 +512,16 @@ async def update_purpose(conn: Conn, purpose_id: int, **f: Any) -> Row:
           consent_validity_period = %(consent_validity_period)s::interval,
           cross_border_permitted  = COALESCE(%(cross_border_permitted)s, cross_border_permitted),
           permitted_for_minors    = COALESCE(%(permitted_for_minors)s, permitted_for_minors),
-          lapse_behaviour         = COALESCE(%(lapse_behaviour)s::lapse_behaviour, lapse_behaviour)
+          lapse_behaviour         = COALESCE(%(lapse_behaviour)s::lapse_behaviour, lapse_behaviour),
+          notify_before_erasure   = COALESCE(%(notify_before_erasure)s, notify_before_erasure)
         WHERE purpose_id = %(purpose_id)s
         RETURNING purpose_id, purpose_uuid, purpose_code, version, status, name, description,
                   uses, lawful_basis, s7_clause, data_categories, retention_period,
                   retention_basis, erasure_trigger, consent_validity_period,
                   cross_border_permitted, permitted_for_minors, lapse_behaviour,
-                  created_at, updated_at
+                  notify_before_erasure, created_at, updated_at
         """,
-        {**f, "purpose_id": purpose_id},
+        {"notify_before_erasure": None, **f, "purpose_id": purpose_id},
     )
     assert row is not None
     return row

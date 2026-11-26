@@ -86,6 +86,7 @@ celery_app.conf.update(
         "cmp.notifications.send_registration_code": {"queue": "high_priority"},
         "cmp.notifications.send_nomination_code": {"queue": "high_priority"},
         "cmp.notifications.send_holder_ticket_code": {"queue": "high_priority"},
+        "cmp.notifications.send_retention_link_code": {"queue": "high_priority"},
         "cmp.notifications.*": {"queue": "notifications"},
         "cmp.exports.*": {"queue": "documents"},
         "cmp.imports.*": {"queue": "documents"},
@@ -103,6 +104,12 @@ celery_app.conf.update(
         "apply-retention-lapse": {
             "task": "cmp.maintenance.apply_retention_lapse",
             "schedule": crontab(hour="2", minute="0"),
+        },
+        # Retention reviews (ADR 0047): the cohorts falling due, the ones
+        # responsible asked, reminded and chased, people told before erasure.
+        "retention-reviews": {
+            "task": "cmp.maintenance.retention_reviews",
+            "schedule": crontab(hour="2", minute="45"),
         },
         "verify-audit-chain": {
             "task": "cmp.maintenance.verify_audit_chain",

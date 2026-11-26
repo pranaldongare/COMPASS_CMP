@@ -1,6 +1,6 @@
 {
-  "commit": "c36e1eb5bbf879160da7396ba8271198d1e3a5e2",
-  "migration_head": "0075",
+  "commit": "90761e538feb61b87504fa3e401415942d027d9c",
+  "migration_head": "0076",
   "migrations": [
     {
       "revision": "0001",
@@ -297,6 +297,10 @@
     {
       "revision": "0075",
       "source": "backend/api/migrations/versions/0075_employee_check.py"
+    },
+    {
+      "revision": "0076",
+      "source": "backend/api/migrations/versions/0076_retention_reviews.py"
     }
   ],
   "postgres_version": "16.15",
@@ -715,6 +719,26 @@
       "name": "restricted_country",
       "kind": "r",
       "comment": "Countries the Government has notified under s.16 - data, maintained by the Privacy Office"
+    },
+    {
+      "name": "retention_action",
+      "kind": "r",
+      "comment": "What one responsible holder is asked to do in a retention review, and what they answered"
+    },
+    {
+      "name": "retention_review",
+      "kind": "r",
+      "comment": "A cohort whose consent validity runs out, or whose data must go, for one project and purpose"
+    },
+    {
+      "name": "retention_review_person",
+      "kind": "r",
+      "comment": "A person in a retention review: the consent, when it falls due, and whether a legal hold keeps them out or they consented again"
+    },
+    {
+      "name": "retention_setting",
+      "kind": "r",
+      "comment": "One row: reminders, the notice before erasure, and how long holders have to act"
     },
     {
       "name": "rights_item_execution",
@@ -1248,7 +1272,7 @@
     {
       "table_name": "auth_user",
       "name": "employment_status",
-      "position": 30,
+      "position": 28,
       "type": "text",
       "not_null": false,
       "default_value": null,
@@ -1257,7 +1281,7 @@
     {
       "table_name": "auth_user",
       "name": "employment_checked_at",
-      "position": 31,
+      "position": 29,
       "type": "timestamp with time zone",
       "not_null": false,
       "default_value": null,
@@ -8131,6 +8155,15 @@
       "comment": null
     },
     {
+      "table_name": "purpose",
+      "name": "notify_before_erasure",
+      "position": 23,
+      "type": "boolean",
+      "not_null": true,
+      "default_value": "true",
+      "comment": "Tell each person before data held for this purpose is erased (ADR 0047)"
+    },
+    {
       "table_name": "report",
       "name": "report_id",
       "position": 1,
@@ -8488,6 +8521,600 @@
       "type": "timestamp with time zone",
       "not_null": false,
       "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "action_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('retention_action_action_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "action_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "review_id",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "kind",
+      "position": 4,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "processor_id",
+      "position": 5,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "respondent_id",
+      "position": 6,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "user_id",
+      "position": 7,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "channel",
+      "position": 8,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "label",
+      "position": 9,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "status",
+      "position": 10,
+      "type": "text",
+      "not_null": true,
+      "default_value": "'open'::text",
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "outcome",
+      "position": 11,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "reason",
+      "position": 12,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Why data was anonymised rather than erased, or kept; sealed"
+    },
+    {
+      "table_name": "retention_action",
+      "name": "keep_until",
+      "position": 13,
+      "type": "date",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "reconsent",
+      "position": 14,
+      "type": "boolean",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Validity, owner only: the project is active and the people may be asked to consent again"
+    },
+    {
+      "table_name": "retention_action",
+      "name": "evidence_name",
+      "position": 15,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "evidence_ref",
+      "position": 16,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "evidence_hash",
+      "position": 17,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "link_token",
+      "position": 18,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "link_token_sealed",
+      "position": 19,
+      "type": "bytea",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "link_issued_at",
+      "position": 20,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "due_at",
+      "position": 21,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "answered_at",
+      "position": 22,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "answered_by",
+      "position": 23,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "accepted_at",
+      "position": 24,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "accepted_by",
+      "position": 25,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "sent_back_reason",
+      "position": 26,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "last_reminded_at",
+      "position": 27,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "escalated_at",
+      "position": 28,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "office_id",
+      "position": 29,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_action",
+      "name": "created_at",
+      "position": 30,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "retention_review",
+      "name": "review_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('retention_review_review_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "retention_review",
+      "name": "review_uuid",
+      "position": 2,
+      "type": "uuid",
+      "not_null": true,
+      "default_value": "gen_random_uuid()",
+      "comment": null
+    },
+    {
+      "table_name": "retention_review",
+      "name": "reference",
+      "position": 3,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_review",
+      "name": "kind",
+      "position": 4,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_review",
+      "name": "office_id",
+      "position": 5,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_review",
+      "name": "project_id",
+      "position": 6,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_review",
+      "name": "purpose_id",
+      "position": 7,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_review",
+      "name": "cohort",
+      "position": 8,
+      "type": "date",
+      "not_null": true,
+      "default_value": null,
+      "comment": "The first day of the month the cohort falls due in"
+    },
+    {
+      "table_name": "retention_review",
+      "name": "status",
+      "position": 9,
+      "type": "text",
+      "not_null": true,
+      "default_value": "'upcoming'::text",
+      "comment": null
+    },
+    {
+      "table_name": "retention_review",
+      "name": "reminded_days",
+      "position": 10,
+      "type": "integer[]",
+      "not_null": true,
+      "default_value": "ARRAY[]::integer[]",
+      "comment": null
+    },
+    {
+      "table_name": "retention_review",
+      "name": "reconsent",
+      "position": 11,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": "Validity only: whether the people may be asked to consent again - asked of the owner, confirmed or declined by them, and sent"
+    },
+    {
+      "table_name": "retention_review",
+      "name": "opened_at",
+      "position": 12,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_review",
+      "name": "closed_at",
+      "position": 13,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_review",
+      "name": "closed_by",
+      "position": 14,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_review",
+      "name": "close_note",
+      "position": 15,
+      "type": "text",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_review",
+      "name": "created_at",
+      "position": 16,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "member_id",
+      "position": 1,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "nextval('retention_review_person_member_id_seq'::regclass)",
+      "comment": null
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "review_id",
+      "position": 2,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "kind",
+      "position": 3,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "consent_id",
+      "position": 4,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "purpose_id",
+      "position": 5,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "auth_user_id",
+      "position": 6,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "due_at",
+      "position": 7,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "ended_by",
+      "position": 8,
+      "type": "text",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "state",
+      "position": 9,
+      "type": "text",
+      "not_null": true,
+      "default_value": "'in'::text",
+      "comment": null
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "notified_at",
+      "position": 10,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "invited_at",
+      "position": 11,
+      "type": "timestamp with time zone",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "office_id",
+      "position": 12,
+      "type": "integer",
+      "not_null": true,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "added_at",
+      "position": 13,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
+      "comment": null
+    },
+    {
+      "table_name": "retention_setting",
+      "name": "setting_id",
+      "position": 1,
+      "type": "smallint",
+      "not_null": true,
+      "default_value": "1",
+      "comment": null
+    },
+    {
+      "table_name": "retention_setting",
+      "name": "reminder_days",
+      "position": 2,
+      "type": "integer[]",
+      "not_null": true,
+      "default_value": "ARRAY[90, 30, 7]",
+      "comment": null
+    },
+    {
+      "table_name": "retention_setting",
+      "name": "notice_hours",
+      "position": 3,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "48",
+      "comment": null
+    },
+    {
+      "table_name": "retention_setting",
+      "name": "action_days",
+      "position": 4,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "30",
+      "comment": null
+    },
+    {
+      "table_name": "retention_setting",
+      "name": "escalate_after_days",
+      "position": 5,
+      "type": "integer",
+      "not_null": true,
+      "default_value": "14",
+      "comment": null
+    },
+    {
+      "table_name": "retention_setting",
+      "name": "updated_by",
+      "position": 6,
+      "type": "integer",
+      "not_null": false,
+      "default_value": null,
+      "comment": null
+    },
+    {
+      "table_name": "retention_setting",
+      "name": "updated_at",
+      "position": 7,
+      "type": "timestamp with time zone",
+      "not_null": true,
+      "default_value": "now()",
       "comment": null
     },
     {
@@ -18562,6 +19189,696 @@
       "initially_deferred": false
     },
     {
+      "table_name": "retention_action",
+      "name": "retention_action_accepted_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (accepted_by) REFERENCES auth_user(id)",
+      "columns": [
+        "accepted_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_action",
+      "name": "retention_action_action_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (action_uuid)",
+      "columns": [
+        "action_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_action",
+      "name": "retention_action_answered_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (answered_by) REFERENCES auth_user(id)",
+      "columns": [
+        "answered_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_action",
+      "name": "retention_action_channel",
+      "kind": "c",
+      "definition": "CHECK ((channel = ANY (ARRAY['console'::text, 'link'::text, 'automatic'::text, 'none'::text])))",
+      "columns": [
+        "channel"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_action",
+      "name": "retention_action_kept_until",
+      "kind": "c",
+      "definition": "CHECK (((outcome IS DISTINCT FROM 'kept'::text) OR (keep_until IS NOT NULL)))",
+      "columns": [
+        "outcome",
+        "keep_until"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_action",
+      "name": "retention_action_kind",
+      "kind": "c",
+      "definition": "CHECK ((kind = ANY (ARRAY['owner'::text, 'processor'::text, 'datavault'::text])))",
+      "columns": [
+        "kind"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_action",
+      "name": "retention_action_link_token_key",
+      "kind": "u",
+      "definition": "UNIQUE (link_token)",
+      "columns": [
+        "link_token"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_action",
+      "name": "retention_action_office_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (office_id) REFERENCES office(office_id)",
+      "columns": [
+        "office_id"
+      ],
+      "referenced_table": "office",
+      "referenced_columns": [
+        "office_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_action",
+      "name": "retention_action_one",
+      "kind": "u",
+      "definition": "UNIQUE NULLS NOT DISTINCT (review_id, kind, processor_id)",
+      "columns": [
+        "review_id",
+        "kind",
+        "processor_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_action",
+      "name": "retention_action_outcome",
+      "kind": "c",
+      "definition": "CHECK (((outcome IS NULL) OR (outcome = ANY (ARRAY['erased'::text, 'anonymised'::text, 'kept'::text, 'not_held'::text, 'reviewed'::text]))))",
+      "columns": [
+        "outcome"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_action",
+      "name": "retention_action_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (action_id)",
+      "columns": [
+        "action_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_action",
+      "name": "retention_action_processor_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (processor_id) REFERENCES processor(processor_id)",
+      "columns": [
+        "processor_id"
+      ],
+      "referenced_table": "processor",
+      "referenced_columns": [
+        "processor_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_action",
+      "name": "retention_action_reasoned",
+      "kind": "c",
+      "definition": "CHECK (((outcome IS NULL) OR (outcome <> ALL (ARRAY['anonymised'::text, 'kept'::text])) OR (reason IS NOT NULL)))",
+      "columns": [
+        "outcome",
+        "reason"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_action",
+      "name": "retention_action_respondent_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (respondent_id) REFERENCES processor_respondent(respondent_id)",
+      "columns": [
+        "respondent_id"
+      ],
+      "referenced_table": "processor_respondent",
+      "referenced_columns": [
+        "respondent_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_action",
+      "name": "retention_action_review_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (review_id) REFERENCES retention_review(review_id) ON DELETE CASCADE",
+      "columns": [
+        "review_id"
+      ],
+      "referenced_table": "retention_review",
+      "referenced_columns": [
+        "review_id"
+      ],
+      "delete_action": "c",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_action",
+      "name": "retention_action_status",
+      "kind": "c",
+      "definition": "CHECK ((status = ANY (ARRAY['open'::text, 'answered'::text, 'accepted'::text, 'sent_back'::text, 'not_needed'::text])))",
+      "columns": [
+        "status"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_action",
+      "name": "retention_action_user_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES auth_user(id)",
+      "columns": [
+        "user_id"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_review",
+      "name": "retention_review_closed_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (closed_by) REFERENCES auth_user(id)",
+      "columns": [
+        "closed_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_review",
+      "name": "retention_review_closed_whole",
+      "kind": "c",
+      "definition": "CHECK (((status = 'closed'::text) = (closed_at IS NOT NULL)))",
+      "columns": [
+        "status",
+        "closed_at"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_review",
+      "name": "retention_review_kind",
+      "kind": "c",
+      "definition": "CHECK ((kind = ANY (ARRAY['validity'::text, 'retention'::text])))",
+      "columns": [
+        "kind"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_review",
+      "name": "retention_review_office_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (office_id) REFERENCES office(office_id)",
+      "columns": [
+        "office_id"
+      ],
+      "referenced_table": "office",
+      "referenced_columns": [
+        "office_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_review",
+      "name": "retention_review_one",
+      "kind": "u",
+      "definition": "UNIQUE (kind, project_id, purpose_id, cohort)",
+      "columns": [
+        "kind",
+        "project_id",
+        "purpose_id",
+        "cohort"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_review",
+      "name": "retention_review_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (review_id)",
+      "columns": [
+        "review_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_review",
+      "name": "retention_review_project_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (project_id) REFERENCES project(project_id)",
+      "columns": [
+        "project_id"
+      ],
+      "referenced_table": "project",
+      "referenced_columns": [
+        "project_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_review",
+      "name": "retention_review_purpose_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (purpose_id) REFERENCES purpose(purpose_id)",
+      "columns": [
+        "purpose_id"
+      ],
+      "referenced_table": "purpose",
+      "referenced_columns": [
+        "purpose_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_review",
+      "name": "retention_review_reconsent",
+      "kind": "c",
+      "definition": "CHECK (((reconsent IS NULL) OR (reconsent = ANY (ARRAY['asked'::text, 'confirmed'::text, 'declined'::text, 'sent'::text]))))",
+      "columns": [
+        "reconsent"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_review",
+      "name": "retention_review_reference_key",
+      "kind": "u",
+      "definition": "UNIQUE (reference)",
+      "columns": [
+        "reference"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_review",
+      "name": "retention_review_review_uuid_key",
+      "kind": "u",
+      "definition": "UNIQUE (review_uuid)",
+      "columns": [
+        "review_uuid"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_review",
+      "name": "retention_review_status",
+      "kind": "c",
+      "definition": "CHECK ((status = ANY (ARRAY['upcoming'::text, 'due'::text, 'in_progress'::text, 'closed'::text])))",
+      "columns": [
+        "status"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "retention_review_person_auth_user_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (auth_user_id) REFERENCES auth_user(id)",
+      "columns": [
+        "auth_user_id"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "retention_review_person_consent_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (consent_id) REFERENCES consent_artefact(consent_id)",
+      "columns": [
+        "consent_id"
+      ],
+      "referenced_table": "consent_artefact",
+      "referenced_columns": [
+        "consent_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "retention_review_person_ended",
+      "kind": "c",
+      "definition": "CHECK ((ended_by = ANY (ARRAY['withdrawal'::text, 'validity'::text])))",
+      "columns": [
+        "ended_by"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "retention_review_person_office_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (office_id) REFERENCES office(office_id)",
+      "columns": [
+        "office_id"
+      ],
+      "referenced_table": "office",
+      "referenced_columns": [
+        "office_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "retention_review_person_once",
+      "kind": "u",
+      "definition": "UNIQUE (kind, consent_id, purpose_id)",
+      "columns": [
+        "kind",
+        "consent_id",
+        "purpose_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "retention_review_person_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (member_id)",
+      "columns": [
+        "member_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "retention_review_person_purpose_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (purpose_id) REFERENCES purpose(purpose_id)",
+      "columns": [
+        "purpose_id"
+      ],
+      "referenced_table": "purpose",
+      "referenced_columns": [
+        "purpose_id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "retention_review_person_review_id_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (review_id) REFERENCES retention_review(review_id) ON DELETE CASCADE",
+      "columns": [
+        "review_id"
+      ],
+      "referenced_table": "retention_review",
+      "referenced_columns": [
+        "review_id"
+      ],
+      "delete_action": "c",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "retention_review_person_state",
+      "kind": "c",
+      "definition": "CHECK ((state = ANY (ARRAY['in'::text, 'held'::text, 'renewed'::text])))",
+      "columns": [
+        "state"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_setting",
+      "name": "retention_setting_days",
+      "kind": "c",
+      "definition": "CHECK ((((action_days >= 1) AND (action_days <= 365)) AND ((escalate_after_days >= 1) AND (escalate_after_days <= 365))))",
+      "columns": [
+        "action_days",
+        "escalate_after_days"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_setting",
+      "name": "retention_setting_hours",
+      "kind": "c",
+      "definition": "CHECK (((notice_hours >= 0) AND (notice_hours <= 720)))",
+      "columns": [
+        "notice_hours"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_setting",
+      "name": "retention_setting_one_row",
+      "kind": "c",
+      "definition": "CHECK ((setting_id = 1))",
+      "columns": [
+        "setting_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_setting",
+      "name": "retention_setting_pkey",
+      "kind": "p",
+      "definition": "PRIMARY KEY (setting_id)",
+      "columns": [
+        "setting_id"
+      ],
+      "referenced_table": null,
+      "referenced_columns": [],
+      "delete_action": " ",
+      "update_action": " ",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
+      "table_name": "retention_setting",
+      "name": "retention_setting_updated_by_fkey",
+      "kind": "f",
+      "definition": "FOREIGN KEY (updated_by) REFERENCES auth_user(id)",
+      "columns": [
+        "updated_by"
+      ],
+      "referenced_table": "auth_user",
+      "referenced_columns": [
+        "id"
+      ],
+      "delete_action": "a",
+      "update_action": "a",
+      "deferrable": false,
+      "initially_deferred": false
+    },
+    {
       "table_name": "rights_item_execution",
       "name": "item_execution_status",
       "kind": "c",
@@ -21579,6 +22896,81 @@
       "definition": "CREATE UNIQUE INDEX uq_restricted_country_active ON public.restricted_country USING btree (country_code) WHERE (lifted_at IS NULL)"
     },
     {
+      "table_name": "retention_action",
+      "name": "idx_retention_action_review",
+      "definition": "CREATE INDEX idx_retention_action_review ON public.retention_action USING btree (review_id)"
+    },
+    {
+      "table_name": "retention_action",
+      "name": "idx_retention_action_user",
+      "definition": "CREATE INDEX idx_retention_action_user ON public.retention_action USING btree (user_id, status)"
+    },
+    {
+      "table_name": "retention_action",
+      "name": "retention_action_action_uuid_key",
+      "definition": "CREATE UNIQUE INDEX retention_action_action_uuid_key ON public.retention_action USING btree (action_uuid)"
+    },
+    {
+      "table_name": "retention_action",
+      "name": "retention_action_link_token_key",
+      "definition": "CREATE UNIQUE INDEX retention_action_link_token_key ON public.retention_action USING btree (link_token)"
+    },
+    {
+      "table_name": "retention_action",
+      "name": "retention_action_one",
+      "definition": "CREATE UNIQUE INDEX retention_action_one ON public.retention_action USING btree (review_id, kind, processor_id) NULLS NOT DISTINCT"
+    },
+    {
+      "table_name": "retention_action",
+      "name": "retention_action_pkey",
+      "definition": "CREATE UNIQUE INDEX retention_action_pkey ON public.retention_action USING btree (action_id)"
+    },
+    {
+      "table_name": "retention_review",
+      "name": "idx_retention_review_status",
+      "definition": "CREATE INDEX idx_retention_review_status ON public.retention_review USING btree (status, cohort)"
+    },
+    {
+      "table_name": "retention_review",
+      "name": "retention_review_one",
+      "definition": "CREATE UNIQUE INDEX retention_review_one ON public.retention_review USING btree (kind, project_id, purpose_id, cohort)"
+    },
+    {
+      "table_name": "retention_review",
+      "name": "retention_review_pkey",
+      "definition": "CREATE UNIQUE INDEX retention_review_pkey ON public.retention_review USING btree (review_id)"
+    },
+    {
+      "table_name": "retention_review",
+      "name": "retention_review_reference_key",
+      "definition": "CREATE UNIQUE INDEX retention_review_reference_key ON public.retention_review USING btree (reference)"
+    },
+    {
+      "table_name": "retention_review",
+      "name": "retention_review_review_uuid_key",
+      "definition": "CREATE UNIQUE INDEX retention_review_review_uuid_key ON public.retention_review USING btree (review_uuid)"
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "idx_retention_review_person_review",
+      "definition": "CREATE INDEX idx_retention_review_person_review ON public.retention_review_person USING btree (review_id, state)"
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "retention_review_person_once",
+      "definition": "CREATE UNIQUE INDEX retention_review_person_once ON public.retention_review_person USING btree (kind, consent_id, purpose_id)"
+    },
+    {
+      "table_name": "retention_review_person",
+      "name": "retention_review_person_pkey",
+      "definition": "CREATE UNIQUE INDEX retention_review_person_pkey ON public.retention_review_person USING btree (member_id)"
+    },
+    {
+      "table_name": "retention_setting",
+      "name": "retention_setting_pkey",
+      "definition": "CREATE UNIQUE INDEX retention_setting_pkey ON public.retention_setting USING btree (setting_id)"
+    },
+    {
       "table_name": "rights_item_execution",
       "name": "idx_item_execution_item",
       "definition": "CREATE INDEX idx_item_execution_item ON public.rights_item_execution USING btree (item_id, store, execution_id)"
@@ -22818,6 +24210,15 @@
       "name": "restricted_country_country_id_seq"
     },
     {
+      "name": "retention_action_action_id_seq"
+    },
+    {
+      "name": "retention_review_person_member_id_seq"
+    },
+    {
+      "name": "retention_review_review_id_seq"
+    },
+    {
       "name": "rights_item_execution_execution_id_seq"
     },
     {
@@ -22992,13 +24393,13 @@
     }
   ],
   "counts": {
-    "application_tables": 91,
+    "application_tables": 95,
     "metadata_tables": 1,
     "views": 1,
-    "table_columns": 1041,
-    "foreign_keys": 252,
+    "table_columns": 1108,
+    "foreign_keys": 269,
     "enums": 39,
     "triggers": 84,
-    "checks": 162
+    "checks": 177
   }
 }

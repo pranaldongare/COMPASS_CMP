@@ -137,7 +137,7 @@ Key `breach_ticket_waiting` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_breach_ticket_waiting` (`backend/api/src/cmp/tasks/notifications/breach_tickets.py:26`) |
-| Queued from | `backend/api/src/cmp/domain/breach/tickets.py:154` |
+| Queued from | `backend/api/src/cmp/domain/breach/tickets.py:151` |
 | Variables | `full_name` (The person the ticket is addressed to.), `console_url` (Their tickets in the console (CONSOLE_BASE_URL).), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `A ticket from the {organisation} Privacy Office is waiting for you`
@@ -166,7 +166,7 @@ Key `breach_ticket_access` · channels: email
 | CC | Never - it carries a code or a link, and a copy would hand it to somebody else. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_breach_ticket_access` (`backend/api/src/cmp/tasks/notifications/staff.py:68`) |
-| Queued from | `backend/api/src/cmp/auth/authentication/service.py:642` |
+| Queued from | `backend/api/src/cmp/auth/authentication/service.py:695` |
 | Variables | `full_name` (The person given access.), `code` (The six-digit one-time code.), `hours` (How many hours the code is valid for.), `reset_url` (The console page where they set their password, with their address filled in.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `The {organisation} Privacy Office has asked for your help`
@@ -200,7 +200,7 @@ Key `breach_duty_due` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_breach_duty_due` (`backend/api/src/cmp/tasks/notifications/alerts.py:164`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:287` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:288` |
 | Variables | `breach_reference` (The breach's reference.), `duty` (The duty.), `due_at` (When it is due, in UTC.), `state` (Due soon or overdue, in words.), `breach_url` (The breach in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{breach_reference}: {duty} is {state}`
@@ -225,7 +225,7 @@ Key `breach_ticket_returned` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_breach_ticket_returned` (`backend/api/src/cmp/tasks/notifications/alerts.py:179`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:307` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:308` |
 | Variables | `breach_reference` (The breach's reference.), `holder_name` (Who answered.), `outcome` (Completed, partially done, or not applicable.), `breach_url` (The breach's tickets in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{breach_reference}: {holder_name} answered their ticket`
@@ -250,7 +250,7 @@ Key `breach_ticket_date_changed` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_breach_ticket_date_changed` (`backend/api/src/cmp/tasks/notifications/breach_tickets.py:38`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:320`, `backend/api/src/cmp/domain/breach/tickets.py:692` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:321`, `backend/api/src/cmp/domain/breach/tickets.py:689` |
 | Variables | `console_url` (The ticket's place in the console (CONSOLE_BASE_URL).), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `A ticket's resolve-by date has changed`
@@ -349,7 +349,7 @@ Key `breach_board_list_changed` · channels: email
 | CC | Never - it is the officers' check on who the board's reports go to, and it names an address on that list; a copy would hand the address to somebody who keeps neither the list nor a breach. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_breach_board_list_changed` (`backend/api/src/cmp/tasks/notifications/alerts.py:199`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:409` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:410` |
 | Variables | `actor_name` (Who made the change.), `actor_role` (Their role.), `change` (What they did, in words.), `recipient_name` (The name given with the address, or 'No name given'.), `recipient_email` (The address.), `changed_at` (When, in UTC.), `console_url` (Breach settings in the console (CONSOLE_BASE_URL).), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{organisation}: the organisation's board list has changed`
@@ -411,7 +411,7 @@ Key `incident_report_received` · channels: email
 | CC | Never - it is written to one person about her own data; a copy would disclose it. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_incident_report_received` (`backend/api/src/cmp/tasks/notifications/incident_reports.py:30`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:345` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:346` |
 | Variables | `full_name` (The person who reported it.), `incident_reference` (The reference it was given.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{organisation}: we have your report {incident_reference}`
@@ -438,7 +438,7 @@ Key `incident_reported` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_incident_reported` (`backend/api/src/cmp/tasks/notifications/incident_reports.py:40`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:339` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:340` |
 | Variables | `incident_reference` (The reference it was given.), `received_at` (When it arrived, in UTC.), `breaches_url` (The list of incidents in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Incident reported: {incident_reference}`
@@ -468,7 +468,7 @@ Key `incident_report_escalated` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_incident_report_escalated` (`backend/api/src/cmp/tasks/notifications/incident_reports.py:54`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:378` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:379` |
 | Variables | `incident_reference` (The reference it was given.), `received_at` (When it arrived, in UTC.), `waited` (How long it has waited.), `breaches_url` (The list of incidents in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Escalation: incident {incident_reference} has not been taken up`
@@ -525,7 +525,7 @@ Key `breach_transfer_received` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_breach_transfer_received` (`backend/api/src/cmp/tasks/notifications/incident_reports.py:80`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:360` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:361` |
 | Variables | `breach_reference` (Its reference.), `from_office` (The office that reassigned it.), `reason` (Why, in the reassigning officer's words.), `breach_url` (It, in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{breach_reference} was reassigned to your office`
@@ -556,7 +556,7 @@ Key `breach_ticket_message` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_breach_ticket_message` (`backend/api/src/cmp/tasks/notifications/updates.py:310`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:976` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:977` |
 | Variables | `holder_name` (The ticket's holder.), `tickets_url` (The holder's tickets in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `A new message from the {organisation} Privacy Office on your ticket`
@@ -582,7 +582,7 @@ Key `breach_ticket_holder_replied` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_breach_ticket_holder_replied` (`backend/api/src/cmp/tasks/notifications/updates.py:322`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:987` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:988` |
 | Variables | `breach_reference` (The breach's reference.), `holder_name` (Who wrote.), `breach_url` (The breach in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{breach_reference}: {holder_name} wrote on their ticket`
@@ -607,7 +607,7 @@ Key `breach_recorded` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_breach_recorded` (`backend/api/src/cmp/tasks/notifications/updates.py:335`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:1006` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:1007` |
 | Variables | `breach_reference` (The breach's reference.), `what` (What happened, as a phrase.), `actor` (Who did it.), `breach_url` (The breach in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{breach_reference} {what}`
@@ -632,7 +632,7 @@ Key `breach_duty_changed` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_breach_duty_changed` (`backend/api/src/cmp/tasks/notifications/updates.py:349`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:1023` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:1024` |
 | Variables | `breach_reference` (The breach's reference.), `change` (What changed.), `actor` (Who changed it.), `breach_url` (The breach in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{breach_reference}: {change}`
@@ -657,7 +657,7 @@ Key `breach_report_undelivered` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_breach_report_undelivered` (`backend/api/src/cmp/tasks/notifications/updates.py:363`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:1039` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:1040` |
 | Variables | `breach_reference` (The breach's reference.), `report_title` (The report.), `error` (What the mail server said, or '-'.), `breach_url` (The breach in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Not delivered: {report_title} for {breach_reference}`
@@ -684,7 +684,7 @@ Key `breach_notices_undelivered` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_breach_notices_undelivered` (`backend/api/src/cmp/tasks/notifications/updates.py:377`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:1057` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:1058` |
 | Variables | `breach_reference` (The breach's reference.), `breach_url` (The breach in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Some breach notices for {breach_reference} were not delivered`
@@ -709,7 +709,7 @@ Key `temporary_access_ended` · channels: email
 | CC | Never - it is written to one person about her own data; a copy would disclose it. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_temporary_access_ended` (`backend/api/src/cmp/tasks/notifications/updates.py:387`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:637` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:638` |
 | Variables | `full_name` (The recipient's name.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Your temporary {organisation} access has ended`

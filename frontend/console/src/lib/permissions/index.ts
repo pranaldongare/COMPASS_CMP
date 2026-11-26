@@ -42,6 +42,8 @@ export type NavKey =
   | "requests"
   | "breaches"
   | "breach-settings"
+  | "retention"
+  | "retention-actions"
   | "datavault"
   | "employee-check"
   | "portal-address"

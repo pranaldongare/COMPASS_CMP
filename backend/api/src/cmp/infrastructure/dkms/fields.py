@@ -129,6 +129,17 @@ ENCRYPTED_FIELDS: dict[str, dict[str, DataType]] = {
         "return_summary": DataType.FREE_TEXT,
         "sent_back_reason": DataType.FREE_TEXT,
     },
+    # Retention reviews (0076, ADR 0047): what a holder wrote about why data
+    # was anonymised or kept, a send-back's reason, the officer's closing note,
+    # and the evidence's file name.
+    "retention_action": {
+        "reason": DataType.FREE_TEXT,
+        "sent_back_reason": DataType.FREE_TEXT,
+        "evidence_name": DataType.FILE_NAME,
+    },
+    "retention_review": {
+        "close_note": DataType.FREE_TEXT,
+    },
     "rights_ticket_message": {
         "body": DataType.FREE_TEXT,
         "evidence_name": DataType.FILE_NAME,

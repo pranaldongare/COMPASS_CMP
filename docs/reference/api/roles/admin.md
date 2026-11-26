@@ -2,7 +2,7 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `analytics`, `users`, `messages`, `processors`, `sources`, `requests`, `breach-settings`, `datavault`, `employee-check`, `portal-address`, `audit`, `delegate`, `tickets`, `training`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `analytics`, `users`, `messages`, `processors`, `sources`, `requests`, `breach-settings`, `datavault`, `employee-check`, `portal-address`, `audit`, `delegate`, `retention-actions`, `tickets`, `training`, `notifications`, `profile`.
 
 ## Resource access
 
@@ -38,6 +38,9 @@ Navigation returned after sign-in: `dashboard`, `analytics`, `users`, `messages`
 | `purpose` | Yes | No | `all` | All rows |
 | `report` | Yes | Yes | `all` | All rows |
 | `restricted_country` | Yes | No | `all` | All rows |
+| `retention` | No | No | `none` | Denied |
+| `retention_action` | Yes | Yes | `own` | Own or addressed rows |
+| `retention_setting` | Yes | Yes | `all` | All rows |
 | `rights_request` | Yes | Yes | `scoped` | Assigned project/organisational rows |
 | `site` | No | No | `none` | Denied |
 | `ticket` | Yes | Yes | `own` | Own or addressed rows |

@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 439,
-  "registered_business_and_system_operations": 442,
+  "documented_operations": 457,
+  "registered_business_and_system_operations": 460,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -18355,6 +18355,772 @@
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/c36e1eb5bbf879160da7396ba8271198d1e3a5e2/backend/api/src/cmp/api/routers/v1/analytics.py#L505"
       ]
+    },
+    {
+      "module": "retention",
+      "method": "GET",
+      "path": "/retention/reviews",
+      "summary": "The retention reviews",
+      "function": "list_reviews",
+      "operation_id": "list_reviews_retention_reviews_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(retention)",
+      "resolved_gate": "RequireResource(retention)",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "retention",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO",
+        "management": "NO"
+      },
+      "conditions": [
+        "Retention reviews (0076, ADR 0047): the officer's register of their own office - consents whose validity runs out, and data whose retention has passed since the consent ended. Reviews, people and actions are their project's office's (office_isolation). Every move is on the trail."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/retention.py"
+      ]
+    },
+    {
+      "module": "retention",
+      "method": "POST",
+      "path": "/retention/refresh",
+      "summary": "Look for what falls due, now",
+      "function": "refresh",
+      "operation_id": "refresh_retention_refresh_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(retention, write)",
+      "resolved_gate": "RequireResource(retention, write)",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "retention",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO",
+        "management": "NO"
+      },
+      "conditions": [
+        "Retention reviews (0076, ADR 0047): the officer's register of their own office - consents whose validity runs out, and data whose retention has passed since the consent ended. Reviews, people and actions are their project's office's (office_isolation). Every move is on the trail. Refresh does the night's work at once, across both offices; it decides nothing an officer could not see the next morning."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/retention.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/retention/service.py"
+      ]
+    },
+    {
+      "module": "retention",
+      "method": "GET",
+      "path": "/retention/reviews/{review_uuid}",
+      "summary": "One review",
+      "function": "get_review",
+      "operation_id": "get_review_retention_reviews__review_uuid__get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(retention)",
+      "resolved_gate": "RequireResource(retention)",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "retention",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO",
+        "management": "NO"
+      },
+      "conditions": [
+        "Retention reviews (0076, ADR 0047): the officer's register of their own office - consents whose validity runs out, and data whose retention has passed since the consent ended. Reviews, people and actions are their project's office's (office_isolation). Every move is on the trail. People are served by number, never by name."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/retention.py"
+      ]
+    },
+    {
+      "module": "retention",
+      "method": "POST",
+      "path": "/retention/reviews/{review_uuid}/actions/{action_uuid}/accept",
+      "summary": "Accept an answer",
+      "function": "accept",
+      "operation_id": "accept_retention_reviews__review_uuid__actions__action_uuid__accept_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(retention, write)",
+      "resolved_gate": "RequireResource(retention, write)",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "retention",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO",
+        "management": "NO"
+      },
+      "conditions": [
+        "Retention reviews (0076, ADR 0047): the officer's register of their own office - consents whose validity runs out, and data whose retention has passed since the consent ended. Reviews, people and actions are their project's office's (office_isolation). Every move is on the trail. Accepting a validity owner's yes sends each person the project's live consent link."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/retention.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/retention/actions.py"
+      ]
+    },
+    {
+      "module": "retention",
+      "method": "POST",
+      "path": "/retention/reviews/{review_uuid}/actions/{action_uuid}/send-back",
+      "summary": "Send an answer back, saying what is missing",
+      "function": "send_back",
+      "operation_id": "send_back_retention_reviews__review_uuid__actions__action_uuid__send_back_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(retention, write)",
+      "resolved_gate": "RequireResource(retention, write)",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "retention",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO",
+        "management": "NO"
+      },
+      "conditions": [
+        "Retention reviews (0076, ADR 0047): the officer's register of their own office - consents whose validity runs out, and data whose retention has passed since the consent ended. Reviews, people and actions are their project's office's (office_isolation). Every move is on the trail."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/retention.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/retention/actions.py"
+      ]
+    },
+    {
+      "module": "retention",
+      "method": "POST",
+      "path": "/retention/reviews/{review_uuid}/actions/{action_uuid}/not-needed",
+      "summary": "Set an action aside: nobody need answer it",
+      "function": "not_needed",
+      "operation_id": "not_needed_retention_reviews__review_uuid__actions__action_uuid__not_needed_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(retention, write)",
+      "resolved_gate": "RequireResource(retention, write)",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "retention",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO",
+        "management": "NO"
+      },
+      "conditions": [
+        "Retention reviews (0076, ADR 0047): the officer's register of their own office - consents whose validity runs out, and data whose retention has passed since the consent ended. Reviews, people and actions are their project's office's (office_isolation). Every move is on the trail."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/retention.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/retention/actions.py"
+      ]
+    },
+    {
+      "module": "retention",
+      "method": "POST",
+      "path": "/retention/reviews/{review_uuid}/close",
+      "summary": "Close a review",
+      "function": "close",
+      "operation_id": "close_retention_reviews__review_uuid__close_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(retention, write)",
+      "resolved_gate": "RequireResource(retention, write)",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "retention",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO",
+        "management": "NO"
+      },
+      "conditions": [
+        "Retention reviews (0076, ADR 0047): the officer's register of their own office - consents whose validity runs out, and data whose retention has passed since the consent ended. Reviews, people and actions are their project's office's (office_isolation). Every move is on the trail. Closes only when every action is accepted or set aside."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/retention.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/retention/actions.py"
+      ]
+    },
+    {
+      "module": "retention",
+      "method": "GET",
+      "path": "/retention/settings",
+      "summary": "Reminders, notice and deadlines",
+      "function": "get_settings",
+      "operation_id": "get_settings_retention_settings_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(retention_setting)",
+      "resolved_gate": "RequireResource(retention_setting)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "retention_setting",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO",
+        "management": "NO"
+      },
+      "conditions": [
+        "Retention settings (0076, ADR 0047): reminder days, the notice before erasure, the days to answer and to escalate. One row for both offices; every change is on the trail."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/retention.py"
+      ]
+    },
+    {
+      "module": "retention",
+      "method": "PUT",
+      "path": "/retention/settings",
+      "summary": "Set reminders, notice and deadlines",
+      "function": "put_settings",
+      "operation_id": "put_settings_retention_settings_put",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(retention_setting, write)",
+      "resolved_gate": "RequireResource(retention_setting, write)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "retention_setting",
+      "write_gate": true,
+      "access": {
+        "dpo": "ALL",
+        "admin": "ALL",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO",
+        "management": "NO"
+      },
+      "conditions": [
+        "Retention settings (0076, ADR 0047): reminder days, the notice before erasure, the days to answer and to escalate. One row for both offices; every change is on the trail."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/retention.py"
+      ]
+    },
+    {
+      "module": "retention",
+      "method": "GET",
+      "path": "/retention-actions",
+      "summary": "What I am asked to do",
+      "function": "my_actions",
+      "operation_id": "my_actions_retention_actions_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(retention_action)",
+      "resolved_gate": "RequireResource(retention_action)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "legal",
+        "hr_user"
+      ],
+      "inline_role_checks": [],
+      "resource": "retention_action",
+      "write_gate": false,
+      "access": {
+        "dpo": "OWN",
+        "admin": "OWN",
+        "dco": "OWN",
+        "dco_admin": "OWN",
+        "rco": "OWN",
+        "rnd_user": "OWN",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "OWN",
+        "hr_user": "OWN",
+        "management": "NO"
+      },
+      "conditions": [
+        "Retention actions (0076, ADR 0047): the one asked answers their own action - a DCO Admin, an HR PoC, a respondent with a console login - whatever their office; another's answers 404. Not management, which never acts on a record."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/retention.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/retention/actions.py"
+      ]
+    },
+    {
+      "module": "retention",
+      "method": "GET",
+      "path": "/retention-actions/{action_uuid}",
+      "summary": "One of mine",
+      "function": "my_action",
+      "operation_id": "my_action_retention_actions__action_uuid__get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(retention_action)",
+      "resolved_gate": "RequireResource(retention_action)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "legal",
+        "hr_user"
+      ],
+      "inline_role_checks": [],
+      "resource": "retention_action",
+      "write_gate": false,
+      "access": {
+        "dpo": "OWN",
+        "admin": "OWN",
+        "dco": "OWN",
+        "dco_admin": "OWN",
+        "rco": "OWN",
+        "rnd_user": "OWN",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "OWN",
+        "hr_user": "OWN",
+        "management": "NO"
+      },
+      "conditions": [
+        "Retention actions (0076, ADR 0047): the one asked answers their own action - a DCO Admin, an HR PoC, a respondent with a console login - whatever their office; another's answers 404. Not management, which never acts on a record."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/retention.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/retention/actions.py"
+      ]
+    },
+    {
+      "module": "retention",
+      "method": "POST",
+      "path": "/retention-actions/{action_uuid}/answer",
+      "summary": "Answer it",
+      "function": "answer",
+      "operation_id": "answer_retention_actions__action_uuid__answer_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(retention_action, write)",
+      "resolved_gate": "RequireResource(retention_action, write)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "legal",
+        "hr_user"
+      ],
+      "inline_role_checks": [],
+      "resource": "retention_action",
+      "write_gate": true,
+      "access": {
+        "dpo": "OWN",
+        "admin": "OWN",
+        "dco": "OWN",
+        "dco_admin": "OWN",
+        "rco": "OWN",
+        "rnd_user": "OWN",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "OWN",
+        "hr_user": "OWN",
+        "management": "NO"
+      },
+      "conditions": [
+        "Retention actions (0076, ADR 0047): the one asked answers their own action - a DCO Admin, an HR PoC, a respondent with a console login - whatever their office; another's answers 404. Not management, which never acts on a record. Anonymised and kept need a reason; kept needs a date after today; a validity answer needs a live consent link to invite again."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/retention.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/retention/actions.py"
+      ]
+    },
+    {
+      "module": "public_information",
+      "method": "GET",
+      "path": "/retention-links/{token}",
+      "summary": "What the link opens",
+      "function": "open_link",
+      "operation_id": "open_link_retention_links__token__get",
+      "in_openapi": true,
+      "authentication": "No session required",
+      "anonymous": "COND",
+      "gate": "Public; no session dependency",
+      "resolved_gate": "Public; no session dependency",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "data_subject",
+        "breach_holder"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "PUBLIC",
+        "admin": "PUBLIC",
+        "dco": "PUBLIC",
+        "dco_admin": "PUBLIC",
+        "rco": "PUBLIC",
+        "rnd_user": "PUBLIC",
+        "data_subject": "PUBLIC",
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "A valid retention link: the token's keyed fingerprint names an action asked of a processor by link. Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. The code goes to the respondent's address the link was sent to, never one typed; it opens an hour on that one action in the holder-ticket cookie, under its own Redis key. Rate-limited per action (`retention_link_code`) and per address (`retention_link_ip`, `retention_link_act_ip`). (ADR 0047)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/retention_links.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/retention/links.py"
+      ]
+    },
+    {
+      "module": "public_information",
+      "method": "POST",
+      "path": "/retention-links/{token}/code",
+      "summary": "Send a code",
+      "function": "send_code",
+      "operation_id": "send_code_retention_links__token__code_post",
+      "in_openapi": true,
+      "authentication": "No session required",
+      "anonymous": "COND",
+      "gate": "Public; no session dependency",
+      "resolved_gate": "Public; no session dependency",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "data_subject",
+        "breach_holder"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "PUBLIC",
+        "admin": "PUBLIC",
+        "dco": "PUBLIC",
+        "dco_admin": "PUBLIC",
+        "rco": "PUBLIC",
+        "rnd_user": "PUBLIC",
+        "data_subject": "PUBLIC",
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "A valid retention link: the token's keyed fingerprint names an action asked of a processor by link. Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. The code goes to the respondent's address the link was sent to, never one typed; it opens an hour on that one action in the holder-ticket cookie, under its own Redis key. Rate-limited per action (`retention_link_code`) and per address (`retention_link_ip`, `retention_link_act_ip`). (ADR 0047)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/retention_links.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/retention/links.py"
+      ]
+    },
+    {
+      "module": "public_information",
+      "method": "POST",
+      "path": "/retention-links/{token}/verify",
+      "summary": "Enter the code",
+      "function": "verify",
+      "operation_id": "verify_retention_links__token__verify_post",
+      "in_openapi": true,
+      "authentication": "No session required",
+      "anonymous": "COND",
+      "gate": "Public; no session dependency",
+      "resolved_gate": "Public; no session dependency",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "data_subject",
+        "breach_holder"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "PUBLIC",
+        "admin": "PUBLIC",
+        "dco": "PUBLIC",
+        "dco_admin": "PUBLIC",
+        "rco": "PUBLIC",
+        "rnd_user": "PUBLIC",
+        "data_subject": "PUBLIC",
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "A valid retention link: the token's keyed fingerprint names an action asked of a processor by link. Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. The code goes to the respondent's address the link was sent to, never one typed; it opens an hour on that one action in the holder-ticket cookie, under its own Redis key. Rate-limited per action (`retention_link_code`) and per address (`retention_link_ip`, `retention_link_act_ip`). (ADR 0047)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/retention_links.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/retention/links.py"
+      ]
+    },
+    {
+      "module": "public_information",
+      "method": "GET",
+      "path": "/retention-links/{token}/action",
+      "summary": "The action, after the code",
+      "function": "read_action",
+      "operation_id": "read_action_retention_links__token__action_get",
+      "in_openapi": true,
+      "authentication": "No session required",
+      "anonymous": "COND",
+      "gate": "Public; no session dependency",
+      "resolved_gate": "Public; no session dependency",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "data_subject",
+        "breach_holder"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "PUBLIC",
+        "admin": "PUBLIC",
+        "dco": "PUBLIC",
+        "dco_admin": "PUBLIC",
+        "rco": "PUBLIC",
+        "rnd_user": "PUBLIC",
+        "data_subject": "PUBLIC",
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "A valid retention link: the token's keyed fingerprint names an action asked of a processor by link. Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. The code goes to the respondent's address the link was sent to, never one typed; it opens an hour on that one action in the holder-ticket cookie, under its own Redis key. Rate-limited per action (`retention_link_code`) and per address (`retention_link_ip`, `retention_link_act_ip`). (ADR 0047)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/retention_links.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/retention/links.py"
+      ]
+    },
+    {
+      "module": "public_information",
+      "method": "POST",
+      "path": "/retention-links/{token}/answer",
+      "summary": "Answer it",
+      "function": "answer",
+      "operation_id": "answer_retention_links__token__answer_post",
+      "in_openapi": true,
+      "authentication": "No session required",
+      "anonymous": "COND",
+      "gate": "Public; no session dependency",
+      "resolved_gate": "Public; no session dependency",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "data_subject",
+        "breach_holder"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "PUBLIC",
+        "admin": "PUBLIC",
+        "dco": "PUBLIC",
+        "dco_admin": "PUBLIC",
+        "rco": "PUBLIC",
+        "rnd_user": "PUBLIC",
+        "data_subject": "PUBLIC",
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "A valid retention link: the token's keyed fingerprint names an action asked of a processor by link. Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. The code goes to the respondent's address the link was sent to, never one typed; it opens an hour on that one action in the holder-ticket cookie, under its own Redis key. Rate-limited per action (`retention_link_code`) and per address (`retention_link_ip`, `retention_link_act_ip`). (ADR 0047)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/retention_links.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/retention/links.py"
+      ]
+    },
+    {
+      "module": "public_information",
+      "method": "POST",
+      "path": "/retention-links/{token}/sign-out",
+      "summary": "Close the review here",
+      "function": "sign_out",
+      "operation_id": "sign_out_retention_links__token__sign_out_post",
+      "in_openapi": true,
+      "authentication": "No session required",
+      "anonymous": "COND",
+      "gate": "Public; no session dependency",
+      "resolved_gate": "Public; no session dependency",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "data_subject",
+        "breach_holder"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "PUBLIC",
+        "admin": "PUBLIC",
+        "dco": "PUBLIC",
+        "dco_admin": "PUBLIC",
+        "rco": "PUBLIC",
+        "rnd_user": "PUBLIC",
+        "data_subject": "PUBLIC",
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "A valid retention link: the token's keyed fingerprint names an action asked of a processor by link. Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. The code goes to the respondent's address the link was sent to, never one typed; it opens an hour on that one action in the holder-ticket cookie, under its own Redis key. Rate-limited per action (`retention_link_code`) and per address (`retention_link_ip`, `retention_link_act_ip`). (ADR 0047)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/retention_links.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/retention/links.py"
+      ]
     }
   ],
   "amended": [
@@ -18572,6 +19338,11 @@
       "on": "2026-11-16",
       "commit": "Portal address (0072) and sign-in for an unregistered contact (ADR 0040), uncommitted",
       "note": "Two operations added, a new module portal_address: GET and PUT /portal-address (resource portal_address, admin only). GET /auth/me gains portal_url, the address in use, for every session. POST /auth/otp/request and POST /c/{token}/otp answer 404 account_not_found for a contact no account carries (ADR 0040); their guards are unchanged (public). No existing guard changed. Evidence links point at HEAD."
+    },
+    {
+      "on": "2026-11-26",
+      "commit": "Retention reviews (0076, ADR 0047), uncommitted",
+      "note": "18 operations added, a new module retention: the officers' register (resource retention: dpo, legal), its settings (retention_setting: admin, dpo, legal), the one asked's own actions (retention_action, OWN, every staff role but management), and a processor's link (/retention-links/{token}, public, as a holder ticket's). Purposes gain notify_before_erasure on create, update and read. No existing guard changed. Evidence links point at HEAD."
     }
   ]
 }

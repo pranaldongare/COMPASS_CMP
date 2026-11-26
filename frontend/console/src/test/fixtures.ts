@@ -139,6 +139,7 @@ export function makePurpose(overrides: Partial<Purpose> = {}): Purpose {
     cross_border_permitted: false,
     permitted_for_minors: false,
     lapse_behaviour: "stop_processing",
+    notify_before_erasure: true,
     created_at: NOW,
     updated_at: NOW,
     ...overrides,

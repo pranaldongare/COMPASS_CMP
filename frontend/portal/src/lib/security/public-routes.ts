@@ -16,6 +16,7 @@
 /** `/ticket/` is an outside holder's ticket, opened by its link and a code (0049). */
 /** `/report-incident` is the public link for reporting an incident (ADR 0037). */
 /** `/breach-notice/` is a breach notice by its link, opened by a code sent by text (2026-11-20). */
+/** `/retention/` is a processor's retention review by its link and a code (ADR 0047). */
 /** `/sso-mock` is the development stand-in for an organisation's sign-in (`SSO_MOCK`). */
 export const PUBLIC_PREFIXES = [
   "/sign-in",
@@ -25,6 +26,7 @@ export const PUBLIC_PREFIXES = [
   "/c/",
   "/ticket/",
   "/breach-notice/",
+  "/retention/",
   "/help",
   "/sso-mock",
 ] as const;

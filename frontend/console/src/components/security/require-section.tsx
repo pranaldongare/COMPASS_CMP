@@ -58,6 +58,8 @@ const SECTION_OF: ReadonlyArray<
   ["/requests", "requests"],
   ["/breaches", "breaches"],
   ["/breach-settings", "breach-settings"],
+  ["/retention-actions", "retention-actions"],
+  ["/retention", "retention"],
   ["/datavault", "datavault"],
   ["/employee-check", "employee-check"],
   ["/links", "links"],

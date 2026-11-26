@@ -68,6 +68,8 @@ PRIMARY_KEY = {
     "breach_contact": "contact_id",
     "breach_report_section": "section_id",
     "breach_upload": "upload_id",
+    "retention_review": "review_id",
+    "retention_action": "action_id",
     "incident_report": "report_id",
     "message_copy": "copy_id",
     "office": "office_id",

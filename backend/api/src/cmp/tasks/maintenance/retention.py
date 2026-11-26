@@ -129,3 +129,30 @@ def apply_retention_lapse() -> dict[str, Any]:
             return {"quarantined": quarantined, "erase_due": erase_due}
 
     return _run(work)
+
+
+@shared_task(name="cmp.maintenance.retention_reviews", acks_late=True)
+def retention_reviews() -> dict[str, Any]:
+    """The retention reviews' night (ADR 0047), after the quarantine above.
+
+    Finds the cohorts whose validity or retention is about to run out and
+    reviews them, asks the ones responsible once a review falls due, reminds,
+    chases and escalates, and tells people before their data is erased. It
+    erases nothing itself: an erasure is a holder's answer, accepted by an
+    officer.
+    """
+
+    async def work() -> dict[str, Any]:
+        async with ratelimit.lock("retention_reviews", ttl_s=1800) as acquired:
+            if not acquired:
+                log.info("maintenance.skipped", task="retention_reviews")
+                return {"skipped": True}
+            from cmp.db.pool import across_offices
+            from cmp.domain.retention import service
+
+            async with transaction() as conn, across_offices(conn):
+                counts = await service.daily(conn)
+            log.info("maintenance.retention_reviews", **counts)
+            return counts
+
+    return _run(work)

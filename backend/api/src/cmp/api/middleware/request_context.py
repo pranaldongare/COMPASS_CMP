@@ -32,12 +32,13 @@ Next = Callable[[Request], Awaitable[Response]]
 #: token is a capability: anything that can read the access log could otherwise
 #: impersonate the link. A nomination acceptance link is one too: it opens the
 #: page on which a nominee proves a contact, and the log must not hand it out.
-#: So is an outside holder's ticket link (0049).
+#: So is an outside holder's ticket link (0049), and a retention link (ADR 0047).
 SENSITIVE_PATH_PREFIXES = (
     "/c/",
     "/rights/nominations/",
     "/holder-tickets/",
     "/breach-notices/",
+    "/retention-links/",
 )
 
 

@@ -517,7 +517,7 @@ Key `rights_request_received` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_rights_request_received` (`backend/api/src/cmp/tasks/notifications/alerts.py:103`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:158` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:159` |
 | Variables | `reference` (The rights request reference.), `request_type` (Access, erasure or a grievance.), `channel` (Where it came from.), `due_date` (When the response is due.), `request_url` (The request in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `New rights request {reference}: {request_type}`
@@ -542,7 +542,7 @@ Key `rights_due_digest` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_rights_due_digest` (`backend/api/src/cmp/tasks/notifications/alerts.py:141`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:234` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:235` |
 | Variables | `count` (How many requests are on the list.), `items` (One line per request: reference, kind, due date and state.), `requests_url` (Rights requests in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{count} rights requests need attention`
@@ -567,7 +567,7 @@ Key `rights_transfer_received` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_rights_transfer_received` (`backend/api/src/cmp/tasks/notifications/alerts.py:126`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:176` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:177` |
 | Variables | `reference` (The rights request reference.), `request_type` (Access, erasure or a grievance.), `received_at` (When it arrived: the clock still runs from here.), `due_date` (When the response is due.), `from_office` (The office that transferred it.), `reason` (Why, in the transferring officer's words.), `request_url` (The request in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Rights request {reference} transferred to your office`
@@ -598,7 +598,7 @@ Key `rights_grievance_about_dpo` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_rights_grievance_about_dpo` (`backend/api/src/cmp/tasks/notifications/alerts.py:152`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:194` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:195` |
 | Variables | `reference` (The rights request reference.), `request_url` (The request in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Grievance {reference} is about the DPO and needs a reviewer`
@@ -623,7 +623,7 @@ Key `nominee_request_made` · channels: email, sms
 | CC | Never - it is written to one person about her own data; a copy would disclose it. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_nominee_request_made` (`backend/api/src/cmp/tasks/notifications/updates.py:106`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:666` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:667` |
 | Variables | `full_name` (The recipient's name.), `nominee_name` (The nominee.), `request_kind` (The kind of request, in words.), `reference` (The rights request reference.), `grounds` (What the nominee told us, as a phrase.), `portal_url` (The data principal's portal (PUBLIC_BASE_URL).), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Your nominee has made a request on your behalf ({reference})`
@@ -658,7 +658,7 @@ Key `nomination_declined` · channels: email, sms
 | CC | Never - it is written to one person about her own data; a copy would disclose it. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_nomination_declined` (`backend/api/src/cmp/tasks/notifications/updates.py:119`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:682` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:683` |
 | Variables | `full_name` (The recipient's name.), `nominee_name` (The person nominated.), `portal_url` (The data principal's portal (PUBLIC_BASE_URL).), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{nominee_name} has declined your nomination`
@@ -693,7 +693,7 @@ Key `nomination_revoked` · channels: email, sms
 | CC | Never - it is written to one person about her own data; a copy would disclose it. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_nomination_revoked` (`backend/api/src/cmp/tasks/notifications/updates.py:126`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:698` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:699` |
 | Variables | `principal_name` (The person who nominated them.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{principal_name} has withdrawn your nomination`
@@ -726,7 +726,7 @@ Key `rights_in_progress` · channels: email, sms
 | CC | Never - it is written to one person about her own data; a copy would disclose it. |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_rights_in_progress` (`backend/api/src/cmp/tasks/notifications/updates.py:133`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:706` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:707` |
 | Variables | `reference` (The rights request reference.), `request_kind` (The kind of request, in words.), `due_on` (The date we will respond by.), `portal_url` (The data principal's portal (PUBLIC_BASE_URL).), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Your {request_kind} ({reference}) is in progress`
@@ -759,7 +759,7 @@ Key `rights_reviewer_assigned` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_rights_reviewer_assigned` (`backend/api/src/cmp/tasks/notifications/updates.py:146`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:719` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:720` |
 | Variables | `full_name` (The recipient's name.), `reference` (The rights request reference.), `request_url` (The request in the console.), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `You are the reviewer of grievance {reference}`
@@ -787,7 +787,7 @@ Key `rights_overdue_escalation` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_rights_overdue_escalation` (`backend/api/src/cmp/tasks/notifications/updates.py:157`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:743` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:744` |
 | Variables | `count` (How many requests are overdue.), `requests` (One line per overdue request: reference, office and how late.), `console_url` (The staff console (CONSOLE_BASE_URL).), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `Escalation: {count} rights requests are overdue`
@@ -816,7 +816,7 @@ Key `rights_retention_floor_passed` · channels: email
 | CC | None by default. The Privacy Office may add up to 5 addresses in **Message templates → Copy to** (a team mailbox, an approvals inbox). |
 | Attachment | None. |
 | Sent by | `cmp.notifications.send_rights_retention_floor_passed` (`backend/api/src/cmp/tasks/notifications/updates.py:162`) |
-| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:764` |
+| Queued from | `backend/api/src/cmp/domain/alerts/__init__.py:765` |
 | Variables | `count` (How many items reached the end of their period.), `requests` (One line per request: reference and how many items.), `console_url` (The staff console (CONSOLE_BASE_URL).), `organisation` (The organisation's name (ORGANISATION_NAME).) |
 
 **Subject:** `{count} retained items may now be erased`

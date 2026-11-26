@@ -90,6 +90,9 @@ ENTITY_TYPES: Final[frozenset[str]] = frozenset(
         "datavault_connection",
         # Where VerifyEmail is reached, and the organisation's domains (0075).
         "employee_check_connection",
+        # Retention reviews and their settings (0076, ADR 0047).
+        "retention_review",
+        "retention_setting",
         "portal_address",
         # The office's replacement words for a message junction.
         "message_template",
@@ -424,6 +427,16 @@ class Event:
     #: account - against the account, the flow and the result, never the
     #: address asked about.
     EMPLOYEE_CHECK_CHANGED = "employee_check.connection_changed"
+    #: Retention reviews (0076, ADR 0047): against the review, never a person.
+    RETENTION_SETTINGS_CHANGED = "retention.settings_changed"
+    RETENTION_ACTIONS_OPENED = "retention.actions_opened"
+    RETENTION_ACTION_ANSWERED = "retention.action_answered"
+    RETENTION_ACTION_ACCEPTED = "retention.action_accepted"
+    RETENTION_ACTION_SENT_BACK = "retention.action_sent_back"
+    RETENTION_ACTION_NOT_NEEDED = "retention.action_not_needed"
+    RETENTION_RECONSENT_SENT = "retention.reconsent_sent"
+    RETENTION_REVIEW_CLOSED = "retention.review_closed"
+    RETENTION_LINK_OPENED = "retention.link_opened"
     ORGANISATION_DOMAIN_ADDED = "employee_check.domain_added"
     ORGANISATION_DOMAIN_REMOVED = "employee_check.domain_removed"
     EMPLOYEE_CHECKED = "employee.checked"
@@ -493,6 +506,7 @@ RETURNING log_id, log_uuid, occurred_at
 #: and its rows are read by both officers.
 _OFFICE_ID_OF: Final[dict[str, str]] = {
     "project": "SELECT office_id FROM project WHERE project_id = %(id)s",
+    "retention_review": "SELECT office_id FROM retention_review WHERE review_id = %(id)s",
     "purpose": "SELECT office_id FROM purpose WHERE purpose_id = %(id)s",
     "notice_template": "SELECT office_id FROM notice_template WHERE template_id = %(id)s",
     "hr_category": "SELECT office_id FROM hr_category WHERE category_id = %(id)s",

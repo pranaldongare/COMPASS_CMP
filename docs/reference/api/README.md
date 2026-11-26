@@ -1,6 +1,6 @@
 # API documentation
 
-Reference for **439 operations over 382 paths**, grouped by OpenAPI module/tag.
+Reference for **457 operations over 399 paths**, grouped by OpenAPI module/tag.
 
 ## How to read an endpoint
 
@@ -46,6 +46,8 @@ Generated values are structural examples, not production credentials or semantic
 | Public Information | 10 | [`modules/public_information/api.md`](modules/public_information/api.md) |
 | Registry | 29 | [`modules/registry/api.md`](modules/registry/api.md) |
 | Reports | 9 | [`modules/reports/api.md`](modules/reports/api.md) |
+| Retention | 12 | [`modules/retention/api.md`](modules/retention/api.md) |
+| Retention Links | 6 | [`modules/retention_links/api.md`](modules/retention_links/api.md) |
 | Rights | 54 | [`modules/rights/api.md`](modules/rights/api.md) |
 | System | 5 | [`modules/system/api.md`](modules/system/api.md) |
 | Tickets | 6 | [`modules/tickets/api.md`](modules/tickets/api.md) |

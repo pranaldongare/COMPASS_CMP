@@ -428,3 +428,172 @@ def send_report_ready(
         report_title=report_title,
         period=period,
     )
+
+
+# ------------------------------------------------- retention reviews (ADR 0047)
+@shared_task(name="cmp.notifications.send_retention_action_asked", **RETRY_KW)
+def send_retention_action_asked(
+    to: str,
+    full_name: str,
+    reference: str,
+    project_name: str,
+    purpose_name: str,
+    people: int,
+    ask: str,
+    due_date: str,
+    path: str,
+) -> dict[str, Any]:
+    return deliver(
+        Message.RETENTION_ACTION_ASKED,
+        to=to,
+        full_name=full_name,
+        reference=reference,
+        project_name=project_name,
+        purpose_name=purpose_name,
+        people=people,
+        ask=ask,
+        due_date=due_date,
+        console_url=console(path),
+    )
+
+
+@shared_task(name="cmp.notifications.send_retention_action_answered", **RETRY_KW)
+def send_retention_action_answered(
+    to: str, reference: str, label: str, path: str
+) -> dict[str, Any]:
+    return deliver(
+        Message.RETENTION_ACTION_ANSWERED,
+        to=to,
+        reference=reference,
+        label=label,
+        console_url=console(path),
+    )
+
+
+@shared_task(name="cmp.notifications.send_retention_action_sent_back", **RETRY_KW)
+def send_retention_action_sent_back(
+    to: str, reference: str, reason: str, due_date: str, path: str
+) -> dict[str, Any]:
+    return deliver(
+        Message.RETENTION_ACTION_SENT_BACK,
+        to=to,
+        reference=reference,
+        reason=reason,
+        due_date=due_date,
+        console_url=console(path),
+    )
+
+
+@shared_task(name="cmp.notifications.send_retention_review_reminder", **RETRY_KW)
+def send_retention_review_reminder(
+    to: str,
+    kind: str,
+    reference: str,
+    project_name: str,
+    purpose_name: str,
+    people: int,
+    days_left: int,
+    path: str,
+) -> dict[str, Any]:
+    return deliver(
+        Message.RETENTION_REVIEW_REMINDER,
+        to=to,
+        kind=kind,
+        reference=reference,
+        project_name=project_name,
+        purpose_name=purpose_name,
+        people=people,
+        days_left=days_left,
+        console_url=console(path),
+    )
+
+
+@shared_task(name="cmp.notifications.send_retention_action_overdue", **RETRY_KW)
+def send_retention_action_overdue(
+    to: str, reference: str, due_date: str, path: str
+) -> dict[str, Any]:
+    return deliver(
+        Message.RETENTION_ACTION_OVERDUE,
+        to=to,
+        reference=reference,
+        due_date=due_date,
+        console_url=console(path),
+    )
+
+
+@shared_task(name="cmp.notifications.send_retention_action_escalated", **RETRY_KW)
+def send_retention_action_escalated(
+    to: str, reference: str, label: str, due_date: str, path: str
+) -> dict[str, Any]:
+    return deliver(
+        Message.RETENTION_ACTION_ESCALATED,
+        to=to,
+        reference=reference,
+        label=label,
+        due_date=due_date,
+        console_url=console(path),
+    )
+
+
+@shared_task(name="cmp.notifications.send_retention_erasure_notice", **RETRY_KW)
+def send_retention_erasure_notice(
+    contact: str, project_name: str, purpose_name: str, erase_date: str
+) -> dict[str, Any]:
+    return deliver(
+        Message.RETENTION_ERASURE_NOTICE,
+        to=contact,
+        project_name=project_name,
+        purpose_name=purpose_name,
+        erase_date=erase_date,
+    )
+
+
+@shared_task(name="cmp.notifications.send_retention_reconsent_invite", **RETRY_KW)
+def send_retention_reconsent_invite(
+    contact: str, project_name: str, purpose_name: str, end_date: str, link_url: str
+) -> dict[str, Any]:
+    return deliver(
+        Message.RETENTION_RECONSENT_INVITE,
+        to=contact,
+        project_name=project_name,
+        purpose_name=purpose_name,
+        end_date=end_date,
+        link_url=link_url,
+    )
+
+
+@shared_task(name="cmp.notifications.send_retention_action_link", **RETRY_KW)
+def send_retention_action_link(
+    to: str,
+    label: str,
+    reference: str,
+    project_name: str,
+    purpose_name: str,
+    people: int,
+    due_date: str,
+    note: str,
+    link_url: str,
+) -> dict[str, Any]:
+    return deliver(
+        Message.RETENTION_ACTION_LINK,
+        to=to,
+        label=label,
+        reference=reference,
+        project_name=project_name,
+        purpose_name=purpose_name,
+        people=people,
+        due_date=due_date,
+        note=note,
+        link_url=link_url,
+    )
+
+
+@shared_task(name="cmp.notifications.send_retention_link_code", **RETRY_KW)
+def send_retention_link_code(contact: str, code: str, reference: str) -> dict[str, Any]:
+    return deliver(
+        Message.RETENTION_LINK_CODE,
+        to=contact,
+        code=code,
+        minutes=settings.otp_ttl_s // 60,
+        reference=reference,
+    )

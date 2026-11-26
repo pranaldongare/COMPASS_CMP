@@ -2,7 +2,7 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `analytics`, `requests`, `breaches`, `breach-settings`, `hr-activities`, `hr-categories`, `templates`, `purposes`, `consents`, `exports`, `processors`, `users`, `audit`, `messages`, `tickets`, `training`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `analytics`, `requests`, `breaches`, `breach-settings`, `retention`, `hr-activities`, `hr-categories`, `templates`, `purposes`, `consents`, `exports`, `processors`, `users`, `audit`, `messages`, `retention-actions`, `tickets`, `training`, `notifications`, `profile`.
 
 ## Resource access
 
@@ -38,6 +38,9 @@ Navigation returned after sign-in: `dashboard`, `analytics`, `requests`, `breach
 | `purpose` | Yes | Yes | `all` | All rows |
 | `report` | Yes | Yes | `all` | All rows |
 | `restricted_country` | No | No | `none` | Denied |
+| `retention` | Yes | Yes | `all` | All rows |
+| `retention_action` | Yes | Yes | `own` | Own or addressed rows |
+| `retention_setting` | Yes | Yes | `all` | All rows |
 | `rights_request` | Yes | Yes | `all` | All rows |
 | `site` | Yes | No | `all` | All rows |
 | `ticket` | Yes | Yes | `own` | Own or addressed rows |

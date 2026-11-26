@@ -23,6 +23,7 @@ from cmp.db.redis import key as rkey
 from cmp.db.repositories import alerts as repo
 from cmp.db.repositories import users as user_repo
 from cmp.db.sql import Conn
+from cmp.infrastructure.dkms import unseal_value
 
 log = get_logger("cmp.alerts")
 
@@ -1100,3 +1101,207 @@ async def setting_changed(conn: Conn, *, setting: str, actor_id: int | None) -> 
     when = _now()
     for email in await _oversight(conn):
         _queue(tasks.send_settings_changed, email, setting, actor, when)
+
+
+# ------------------------------------------------- retention reviews (ADR 0047)
+_KIND_WORDS = {
+    "validity": "Consent validity runs out",
+    "retention": "Data must be erased or anonymised",
+}
+
+
+def _review_path(review: Row) -> str:
+    return f"/retention/{review['review_uuid']}"
+
+
+async def _review_officers(conn: Conn, review: Row) -> list[str]:
+    return await _officers(conn, review.get("office"))
+
+
+async def retention_action_asked(conn: Conn, *, action: Row, review: Row) -> None:
+    """The one asked, in the console. A link is sent by `retention_link_sent`;
+    an action with nobody to ask tells the office instead."""
+    from cmp.tasks.notifications import updates as tasks
+
+    if action["channel"] == "link":
+        from cmp.domain.retention import links
+
+        await links.send(conn, action=action, review=review)
+        return
+    if action["channel"] != "console":
+        return
+    person = await _person(conn, action.get("user_id"))
+    if person is None:
+        return
+    if review["kind"] == "validity":
+        ask = (
+            "Their consent's validity is running out and the project is still active. "
+            "Say whether they should be invited to consent again."
+        )
+    elif action["kind"] == "owner":
+        ask = (
+            "The period their data may be kept has run out. Confirm it is erased - or "
+            "anonymised, or kept, with the reason - from the project's own systems and sites."
+        )
+    else:
+        ask = (
+            f"The period their data may be kept has run out. Confirm {action['label']} has "
+            "erased it - or anonymised or kept it, with the reason."
+        )
+    _queue(
+        tasks.send_retention_action_asked,
+        person["email"],
+        person["full_name"],
+        review["reference"],
+        review["project_name"],
+        review["purpose_name"],
+        int(review["people"]),
+        ask,
+        day(action["due_at"]),
+        f"/retention-actions/{action['action_uuid']}",
+    )
+
+
+async def retention_action_answered(conn: Conn, *, review: Row, label: str) -> None:
+    from cmp.tasks.notifications import updates as tasks
+
+    for email in await _review_officers(conn, review):
+        _queue(
+            tasks.send_retention_action_answered,
+            email,
+            review["reference"],
+            label,
+            _review_path(review),
+        )
+
+
+async def retention_action_sent_back(conn: Conn, *, action: Row, review: Row) -> None:
+    from cmp.tasks.notifications import updates as tasks
+
+    reason = await unseal_value(
+        "retention_action", "sent_back_reason", action.get("sent_back_reason")
+    )
+    if action["channel"] == "link":
+        from cmp.domain.retention import links
+
+        await links.send(conn, action=action, review=review, again=str(reason or ""))
+        return
+    person = await _person(conn, action.get("user_id"))
+    if person is not None:
+        _queue(
+            tasks.send_retention_action_sent_back,
+            person["email"],
+            review["reference"],
+            str(reason or ""),
+            day(action["due_at"]),
+            f"/retention-actions/{action['action_uuid']}",
+        )
+
+
+async def retention_review_reminder(conn: Conn, *, review: Row, days_left: int) -> None:
+    """The officers, and the project's owner."""
+    from cmp.db.repositories import retention as retention_repo
+    from cmp.tasks.notifications import updates as tasks
+
+    to = set(await _review_officers(conn, review))
+    owner = await retention_repo.owner_of(conn, review)
+    person = await _person(conn, owner["id"]) if owner else None
+    if person is not None:
+        to.add(str(person["email"]))
+    for email in sorted(to):
+        _queue(
+            tasks.send_retention_review_reminder,
+            email,
+            _KIND_WORDS[review["kind"]],
+            review["reference"],
+            review["project_name"],
+            review["purpose_name"],
+            int(review["people"]),
+            days_left,
+            _review_path(review),
+        )
+
+
+async def retention_action_overdue_holder(conn: Conn, *, action: Row, review: Row) -> None:
+    from cmp.tasks.notifications import updates as tasks
+
+    if action["channel"] == "link":
+        from cmp.domain.retention import links
+
+        await links.send(conn, action=action, review=review, overdue=True)
+        return
+    person = await _person(conn, action.get("user_id"))
+    if person is not None:
+        _queue(
+            tasks.send_retention_action_overdue,
+            person["email"],
+            review["reference"],
+            day(action["due_at"]),
+            f"/retention-actions/{action['action_uuid']}",
+        )
+
+
+async def retention_action_escalated(conn: Conn, *, action: Row, review: Row) -> None:
+    from cmp.tasks.notifications import updates as tasks
+
+    for email in await _review_officers(conn, review):
+        _queue(
+            tasks.send_retention_action_escalated,
+            email,
+            review["reference"],
+            str(action["label"]),
+            day(action["due_at"]),
+            _review_path(review),
+        )
+
+
+async def retention_erasure_notices(conn: Conn, *, people: list[Row]) -> int:
+    """Each person, before their data is erased, at the contact her receipts
+    go to. Marked told whether or not a contact was found: there is nobody to
+    tell again."""
+    from cmp.db.repositories import retention as retention_repo
+    from cmp.domain.consent.service import receipt_contact
+    from cmp.tasks.notifications import updates as tasks
+
+    told: list[int] = []
+    for p in people:
+        person = await user_repo.by_id(conn, int(p["auth_user_id"]))
+        contact = receipt_contact(person) if person else None
+        if contact:
+            _queue(
+                tasks.send_retention_erasure_notice,
+                contact,
+                str(p["project_name"]),
+                str(p["purpose_name"]),
+                day(p["due_at"]),
+            )
+        told.append(int(p["member_id"]))
+    await retention_repo.mark_people(conn, told, "notified_at")
+    return len(told)
+
+
+async def retention_reconsent_invitations(conn: Conn, *, review: Row, link: str) -> int:
+    """Everybody still in the review, invited to consent again, at the contact
+    her receipts go to."""
+    from cmp.db.repositories import retention as retention_repo
+    from cmp.domain.consent.service import receipt_contact
+    from cmp.tasks.notifications import updates as tasks
+
+    invited: list[int] = []
+    for p in await retention_repo.people_of(conn, int(review["review_id"])):
+        if p["invited_at"] is not None:
+            continue
+        person = await user_repo.by_id(conn, int(p["auth_user_id"]))
+        contact = receipt_contact(person) if person else None
+        if contact:
+            _queue(
+                tasks.send_retention_reconsent_invite,
+                contact,
+                str(review["project_name"]),
+                str(review["purpose_name"]),
+                day(p["due_at"]),
+                link,
+            )
+        invited.append(int(p["member_id"]))
+    await retention_repo.mark_people(conn, invited, "invited_at")
+    return len(invited)

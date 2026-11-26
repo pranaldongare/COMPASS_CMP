@@ -26,6 +26,8 @@ export interface Purpose {
   cross_border_permitted: boolean;
   permitted_for_minors: boolean;
   lapse_behaviour: string;
+  /** Tell each person before their data is erased (ADR 0047). */
+  notify_before_erasure: boolean;
   created_at: Timestamp;
   updated_at: Timestamp;
   /** The office whose catalogue it is (ADR 0032). Absent on a notice's

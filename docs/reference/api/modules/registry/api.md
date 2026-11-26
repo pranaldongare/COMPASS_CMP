@@ -91,6 +91,7 @@ No request body.
       "cross_border_permitted": true,
       "permitted_for_minors": true,
       "lapse_behaviour": "string",
+      "notify_before_erasure": true,
       "created_at": "string",
       "updated_at": "string",
       "office_code": "…"
@@ -158,7 +159,8 @@ Request body required: **yes**.
   "consent_validity_days": 1.0,
   "cross_border_permitted": false,
   "permitted_for_minors": false,
-  "lapse_behaviour": "quarantine"
+  "lapse_behaviour": "quarantine",
+  "notify_before_erasure": true
 }
 ```
 
@@ -192,6 +194,7 @@ Request body required: **yes**.
   "cross_border_permitted": true,
   "permitted_for_minors": true,
   "lapse_behaviour": "string",
+  "notify_before_erasure": true,
   "created_at": "string",
   "updated_at": "string",
   "office_code": "string"
@@ -264,6 +267,7 @@ No request body.
   "cross_border_permitted": true,
   "permitted_for_minors": true,
   "lapse_behaviour": "string",
+  "notify_before_erasure": true,
   "created_at": "string",
   "updated_at": "string",
   "office_code": "string"
@@ -325,7 +329,8 @@ Request body required: **yes**.
   "consent_validity_days": 1.0,
   "cross_border_permitted": true,
   "permitted_for_minors": true,
-  "lapse_behaviour": "string"
+  "lapse_behaviour": "string",
+  "notify_before_erasure": true
 }
 ```
 
@@ -359,6 +364,7 @@ Request body required: **yes**.
   "cross_border_permitted": true,
   "permitted_for_minors": true,
   "lapse_behaviour": "string",
+  "notify_before_erasure": true,
   "created_at": "string",
   "updated_at": "string",
   "office_code": "string"
@@ -538,6 +544,7 @@ No request body.
     "cross_border_permitted": true,
     "permitted_for_minors": true,
     "lapse_behaviour": "string",
+    "notify_before_erasure": true,
     "created_at": "string",
     "updated_at": "string",
     "office_code": "string"
@@ -2181,6 +2188,7 @@ For state changes whose only interesting output is that they happened.
 | `cross_border_permitted` | `boolean` | No | default: `False` | — |
 | `permitted_for_minors` | `boolean` | No | default: `False` | — |
 | `lapse_behaviour` | `string` | No | default: `quarantine` | — |
+| `notify_before_erasure` | `boolean` | No | default: `True` | — |
 
 <a id="schema-purposeout"></a>
 #### `PurposeOut`
@@ -2204,6 +2212,7 @@ For state changes whose only interesting output is that they happened.
 | `cross_border_permitted` | `boolean` | Yes | — | — |
 | `permitted_for_minors` | `boolean` | Yes | — | — |
 | `lapse_behaviour` | `string` | Yes | — | — |
+| `notify_before_erasure` | `boolean` | No | default: `True` | — |
 | `created_at` | `object` | Yes | — | — |
 | `updated_at` | `object` | Yes | — | — |
 | `office_code` | `string` or `null` | No | — | — |
@@ -2226,6 +2235,7 @@ For state changes whose only interesting output is that they happened.
 | `cross_border_permitted` | `boolean` or `null` | No | — | — |
 | `permitted_for_minors` | `boolean` or `null` | No | — | — |
 | `lapse_behaviour` | `string` or `null` | No | — | — |
+| `notify_before_erasure` | `boolean` or `null` | No | — | — |
 
 <a id="schema-respondentin"></a>
 #### `RespondentIn`

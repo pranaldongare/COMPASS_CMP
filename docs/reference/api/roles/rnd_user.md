@@ -2,7 +2,7 @@
 
 ## What this role can do
 
-Navigation returned after sign-in: `dashboard`, `analytics`, `projects`, `notices`, `processors`, `approvals`, `imports`, `collections`, `tickets`, `training`, `notifications`, `profile`.
+Navigation returned after sign-in: `dashboard`, `analytics`, `projects`, `notices`, `processors`, `approvals`, `imports`, `collections`, `retention-actions`, `tickets`, `training`, `notifications`, `profile`.
 
 ## Resource access
 
@@ -38,6 +38,9 @@ Navigation returned after sign-in: `dashboard`, `analytics`, `projects`, `notice
 | `purpose` | Yes | No | `all` | All rows |
 | `report` | Yes | Yes | `own` | Own or addressed rows |
 | `restricted_country` | No | No | `none` | Denied |
+| `retention` | No | No | `none` | Denied |
+| `retention_action` | Yes | Yes | `own` | Own or addressed rows |
+| `retention_setting` | No | No | `none` | Denied |
 | `rights_request` | No | No | `none` | Denied |
 | `site` | Yes | No | `own` | Own or addressed rows |
 | `ticket` | Yes | Yes | `own` | Own or addressed rows |

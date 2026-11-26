@@ -39,6 +39,8 @@ HELPERS: dict[tuple[str, str], str] = {
     ("features/holder-ticket/api.ts", "base(token)"): "/holder-tickets/{token}",
     # A breach notice by its link, for somebody with no account (2026-11-20).
     ("features/breach-notices/link-api.ts", "base(token)"): "/breach-notices/{token}",
+    # A processor's retention review by its link (ADR 0047).
+    ("features/retention/link-api.ts", "base(token)"): "/retention-links/{token}",
 }
 
 #: Calls that only pass on a path written by their caller, which is scanned.
