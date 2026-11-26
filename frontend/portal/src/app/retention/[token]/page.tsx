@@ -38,6 +38,7 @@ import {
   getRetentionLink,
   sendRetentionCode,
   signOutRetention,
+  uploadRetentionEvidence,
   verifyRetentionCode,
   type RetentionLink,
   type RetentionLinkAction,
@@ -154,10 +155,11 @@ function Opened({
   const { action, review } = detail;
   const open = action.status === "open" || action.status === "sent_back";
 
-  async function answer(body: RetentionAnswer) {
+  async function answer(body: RetentionAnswer, proof: File | null) {
     setPending(true);
     setProblem(null);
     try {
+      if (proof) await uploadRetentionEvidence(token, proof);
       onChange(await answerRetention(token, body));
     } catch (err) {
       setProblem(

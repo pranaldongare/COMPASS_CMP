@@ -581,3 +581,66 @@ async def test_a_closed_review_has_a_certificate_and_its_download_is_on_the_trai
         )
     ).fetchone()
     assert trail["n"] >= 2
+
+
+async def test_proof_is_attached_before_answering_and_kept_on_the_certificate(
+    conn: Any, seeded: dict[str, Any], sent: list[Any]
+) -> None:
+    from cmp.core.security import file_hash
+    from cmp.domain.retention import certificate
+    from cmp.infrastructure.storage.service import storage
+
+    await _purpose(conn, validity=None, retention="-1 day")
+    consent = await _consent(conn, seeded)
+    await _withdraw(conn, seeded, consent)
+    await service.daily(conn)
+    review = await _ours(conn, seeded, "retention")
+    (owner,) = (await service.detail(conn, str(review["review_uuid"])))["actions_list"]
+    uuid = str(owner["action_uuid"])
+    admin, dpo = _uid(seeded, "dco_admin"), _uid(seeded, "dpo")
+
+    payload = b"deleted 42 frames from rig-07\n"
+    ref = storage().save(payload, subdir="retention", suggested_name="deletion-log.txt")
+    with pytest.raises(NotFound):
+        await actions.attach(
+            conn, uuid, user_id=_uid(seeded, "dco"), ref=ref, digest="x", name="log.txt"
+        )
+    shown = await actions.attach(
+        conn, uuid, user_id=admin, ref=ref, digest=file_hash(payload), name="deletion-log.txt"
+    )
+    assert shown["evidence_hash"] == file_hash(payload)
+    assert str(shown["evidence_name"]).startswith("SE::"), "the name is served sealed"
+
+    await actions.answer(
+        conn, uuid, user_id=admin, outcome="erased", reason=None, keep_until=None, reconsent=None
+    )
+    with pytest.raises(Conflict):
+        await actions.attach(
+            conn, uuid, user_id=admin, ref=ref, digest=file_hash(payload), name="late.txt"
+        )
+
+    got, name, digest = await actions.evidence(
+        conn, uuid, actor_id=dpo, review_uuid=str(review["review_uuid"])
+    )
+    assert got == payload and name == "deletion-log.txt" and digest == file_hash(payload)
+    with pytest.raises(NotFound):
+        await actions.evidence(conn, uuid, actor_id=dpo, owner_id=_uid(seeded, "dco"))
+
+    await actions.accept(conn, str(review["review_uuid"]), uuid, actor_id=dpo)
+    await actions.close(conn, str(review["review_uuid"]), note=None, actor_id=dpo)
+    csv_bytes, _, _ = await certificate.download(
+        conn, str(review["review_uuid"]), "csv", actor_id=dpo
+    )
+    text = csv_bytes.decode("utf-8-sig")
+    assert "deletion-log.txt" in text and file_hash(payload) in text
+    trail = await (
+        await conn.execute(
+            "SELECT event_type FROM audit_log WHERE event_type LIKE 'retention.evidence_%%'"
+            " AND entity_id = %s",
+            (int((await repo.review_by_uuid(conn, str(review["review_uuid"])))["review_id"]),),
+        )
+    ).fetchall()
+    assert {r["event_type"] for r in trail} == {
+        "retention.evidence_added",
+        "retention.evidence_downloaded",
+    }

@@ -14,11 +14,15 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Request, Response, status
+from fastapi import APIRouter, File, Request, Response, UploadFile, status
 from pydantic import Field
 
 from cmp.api.routers.public.holder_tickets import CodeIn, _guard, _per_address
-from cmp.api.routers.v1.retention import RetentionAnswerIn, RetentionHolderActionOut
+from cmp.api.routers.v1.retention import (
+    RetentionAnswerIn,
+    RetentionHolderActionOut,
+    store_proof,
+)
 from cmp.core.config import settings
 from cmp.db.pool import across_offices, transaction
 from cmp.domain.retention import actions, links
@@ -131,6 +135,32 @@ async def answer(
             reason=body.reason,
             keep_until=body.keep_until,
             reconsent=body.reconsent,
+            by_link=True,
+        )
+        return await actions.detail_for_holder(conn, str(action["action_uuid"]), user_id=None)
+
+
+@router.post("/{token}/evidence", response_model=RetentionHolderActionOut, summary="Attach proof")
+async def add_evidence(
+    token: TokenPath,
+    request: Request,
+    response: Response,
+    evidence: Annotated[UploadFile, File(description="The proof, max 25 MB")],
+) -> dict[str, Any]:
+    """One file, replaced by the next, while the answer is still to give."""
+    _guard(response)
+    async with transaction() as conn, across_offices(conn):
+        await links.holder_in(conn, token, _cookie(request))
+    ref, digest, name = await store_proof(evidence)
+    async with transaction() as conn, across_offices(conn):
+        action, _ = await links.holder_in(conn, token, _cookie(request))
+        await actions.attach(
+            conn,
+            str(action["action_uuid"]),
+            user_id=None,
+            ref=ref,
+            digest=digest,
+            name=name,
             by_link=True,
         )
         return await actions.detail_for_holder(conn, str(action["action_uuid"]), user_id=None)

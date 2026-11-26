@@ -32,6 +32,9 @@ as a release yet.
 - **A certificate** of each closed review, PDF or CSV: the consents by number,
   every answer with its reason, who accepted it and who closed the review.
   Every download is on the trail. Analytics gains a *Retention* group.
+- **Proof on an answer.** The one asked may attach a file - a deletion log, a
+  screenshot, a letter - in the console or by the link. The officers download
+  it from the answer, with its SHA-256; the certificate lists each proof.
 - The automatic quarantine of lapsed consents stays as it was.
 
 ### Added (2026-11-25, migration 0075, ADR 0046)

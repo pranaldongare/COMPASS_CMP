@@ -13,7 +13,7 @@ from datetime import date, datetime
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Query, Response
+from fastapi import APIRouter, File, Query, Response, UploadFile
 from pydantic import Field
 
 from cmp.api.dependencies import (
@@ -61,6 +61,9 @@ class RetentionActionOut(Out):
     #: Sealed.
     accepted_by_name: str | None
     sent_back_reason: str | None
+    #: The proof attached, if any: its file name (sealed) and SHA-256.
+    evidence_name: str | None = None
+    evidence_hash: str | None = None
     overdue: bool
 
 
@@ -186,6 +189,29 @@ class RetentionSweepOut(Out):
     chased: int
     escalated: int
     people_told: int
+
+
+async def store_proof(evidence: UploadFile) -> tuple[str, str, str | None]:
+    """Keep a file attached to a retention answer: its reference, its SHA-256,
+    and the name it came with. Checked as every evidence file is."""
+    from cmp.api.routers.v1.rights import _safe_name
+    from cmp.core.security import file_hash
+    from cmp.infrastructure.storage.service import storage
+    from cmp.validation.files import EVIDENCE, check_upload
+
+    payload = await evidence.read()
+    check_upload(payload, evidence.content_type, EVIDENCE)
+    name = _safe_name(evidence.filename)
+    ref = storage().save(payload, subdir="retention", suggested_name=name or "proof")
+    return ref, file_hash(payload), name
+
+
+def proof_response(payload: bytes, filename: str, recorded: str) -> Response:
+    from cmp.api.routers.v1.rights import _attachment_response
+
+    out = _attachment_response(payload, filename, recorded)
+    out.headers["Cache-Control"] = "no-store"
+    return out
 
 
 # ----------------------------------------------------------------- register
@@ -328,6 +354,24 @@ async def get_certificate(
     )
 
 
+@router.get(
+    "/reviews/{review_uuid}/actions/{action_uuid}/evidence",
+    summary="The proof attached to an answer",
+    response_class=Response,
+)
+async def get_evidence(
+    review_uuid: UUID, action_uuid: UUID, principal: RetentionReader
+) -> Response:
+    """Every download on the trail; the recorded and the served SHA-256 in the
+    headers, so a changed file shows."""
+    async with transaction() as conn:
+        await service.review(conn, str(review_uuid))
+        payload, name, digest = await actions.evidence(
+            conn, str(action_uuid), actor_id=principal.user_id, review_uuid=str(review_uuid)
+        )
+    return proof_response(payload, name, digest)
+
+
 # ------------------------------------------------------------- one's own
 @actions_router.get("", response_model=list[RetentionActionOut], summary="What I am asked to do")
 async def my_actions(principal: RetentionActionWriter) -> list[dict[str, Any]]:
@@ -361,3 +405,37 @@ async def answer(
             keep_until=body.keep_until,
             reconsent=body.reconsent,
         )
+
+
+@actions_router.post(
+    "/{action_uuid}/evidence",
+    response_model=RetentionActionOut,
+    summary="Attach proof before answering",
+)
+async def add_evidence(
+    action_uuid: UUID,
+    principal: RetentionActionWriter,
+    evidence: Annotated[UploadFile, File(description="The proof, max 25 MB")],
+) -> dict[str, Any]:
+    """A deletion log, a screenshot, a letter: one file, replaced by the next,
+    while the answer is still to give."""
+    async with connection() as conn, across_offices(conn):
+        await actions.detail_for_holder(conn, str(action_uuid), user_id=principal.user_id)
+    ref, digest, name = await store_proof(evidence)
+    async with transaction() as conn, across_offices(conn):
+        return await actions.attach(
+            conn, str(action_uuid), user_id=principal.user_id, ref=ref, digest=digest, name=name
+        )
+
+
+@actions_router.get(
+    "/{action_uuid}/evidence",
+    summary="The proof I attached",
+    response_class=Response,
+)
+async def my_evidence(action_uuid: UUID, principal: RetentionActionWriter) -> Response:
+    async with transaction() as conn, across_offices(conn):
+        payload, name, digest = await actions.evidence(
+            conn, str(action_uuid), actor_id=principal.user_id, owner_id=principal.user_id
+        )
+    return proof_response(payload, name, digest)

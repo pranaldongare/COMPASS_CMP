@@ -86,12 +86,18 @@ describe("a processor's retention review", () => {
     expect(screen.getByText("42")).toBeInTheDocument();
   });
 
-  it("asks why before data is anonymised, then sends the answer", async () => {
+  it("asks why before data is anonymised, then sends the proof and the answer", async () => {
     let sent: unknown = null;
+    const order: string[] = [];
     server.use(
       http.get(`${API}/retention-links/${TOKEN}`, () => HttpResponse.json(link(true))),
       http.get(`${API}/retention-links/${TOKEN}/action`, () => HttpResponse.json(detail())),
+      http.post(`${API}/retention-links/${TOKEN}/evidence`, () => {
+        order.push("evidence");
+        return HttpResponse.json(detail());
+      }),
       http.post(`${API}/retention-links/${TOKEN}/answer`, async ({ request }) => {
+        order.push("answer");
         sent = await request.json();
         return HttpResponse.json(detail("answered", "anonymised"));
       }),
@@ -104,8 +110,13 @@ describe("a processor's retention review", () => {
     expect(sent).toBeNull();
 
     await user.type(screen.getByLabelText(/^Reason/), "Faces blurred.");
+    await user.upload(
+      screen.getByLabelText(/^Proof/),
+      new File(["blurred 42 frames"], "log.txt", { type: "text/plain" }),
+    );
     await user.click(screen.getByRole("button", { name: "Send the answer" }));
     expect(await screen.findByText(/you answered: anonymised/i)).toBeInTheDocument();
     expect(sent).toMatchObject({ outcome: "anonymised", reason: "Faces blurred." });
+    expect(order).toEqual(["evidence", "answer"]);
   });
 });

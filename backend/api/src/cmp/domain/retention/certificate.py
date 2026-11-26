@@ -76,6 +76,7 @@ async def build(conn: Conn, review_uuid: str) -> tuple[Content, Any]:
     action_rows: list[list[Any]] = []
     for a in acts:
         reason = await unseal_value("retention_action", "reason", a.get("reason"))
+        proof = await unseal_value("retention_action", "evidence_name", a.get("evidence_name"))
         if row["kind"] == "validity" and a["reconsent"] is not None:
             answer = "Invite them again" if a["reconsent"] else "Do not invite them"
         else:
@@ -91,6 +92,8 @@ async def build(conn: Conn, review_uuid: str) -> tuple[Content, Any]:
                 _day(a["answered_at"]),
                 await _name(a.get("accepted_by_name")),
                 _day(a["accepted_at"]),
+                str(proof or ""),
+                str(a.get("evidence_hash") or ""),
             ]
         )
     people_rows = [
@@ -142,9 +145,11 @@ async def build(conn: Conn, review_uuid: str) -> tuple[Content, Any]:
                     "Answered",
                     "Accepted by",
                     "Accepted",
+                    "Proof",
+                    "Proof SHA-256",
                 ],
                 rows=action_rows,
-                widths=[3, 2, 2, 2, 5, 2, 2, 3, 2],
+                widths=[3, 2, 2, 2, 5, 2, 2, 3, 2, 3, 4],
             ),
             Section(
                 heading="The consents in the review",

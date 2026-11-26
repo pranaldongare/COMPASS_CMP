@@ -28,13 +28,15 @@ import {
   OUTCOME_LABEL,
   actionTone,
   answerAction,
+  downloadMyEvidence,
   myAction,
   myActions,
   retentionKeys,
   said,
   type RetentionAnswer,
+  uploadEvidence,
 } from "@/features/retention/api";
-import { cn, formatDate } from "@/lib/format";
+import { cn, formatDate, saveBlob } from "@/lib/format";
 import { useToast } from "@/providers";
 
 function Opened({ uuid }: { uuid: string }) {
@@ -46,10 +48,14 @@ function Opened({ uuid }: { uuid: string }) {
     queryFn: () => myAction(uuid),
   });
   const answer = useMutation({
-    mutationFn: (body: RetentionAnswer) => answerAction(uuid, body),
+    mutationFn: async ({ body, proof }: { body: RetentionAnswer; proof: File | null }) => {
+      if (proof) await uploadEvidence(uuid, proof);
+      return answerAction(uuid, body);
+    },
     onSuccess: () => {
       setProblem(null);
       void client.invalidateQueries({ queryKey: retentionKeys.mine });
+      void client.invalidateQueries({ queryKey: retentionKeys.action(uuid) });
       toast.success("Answer sent", "The Privacy Office will accept it or send it back.");
     },
     onError: (err) => setProblem(said(err, "Not sent. Try again in a moment.")),
@@ -94,21 +100,38 @@ function Opened({ uuid }: { uuid: string }) {
             kind={review.kind}
             pending={answer.isPending}
             problem={problem}
-            onAnswer={(body) => answer.mutate(body)}
+            onAnswer={(body, proof) => answer.mutate({ body, proof })}
           />
         ) : (
-          <Alert tone={action.status === "accepted" ? "success" : "info"}>
-            {ACTION_LABEL[action.status]}
-            {action.outcome && review.kind === "retention"
-              ? `: ${OUTCOME_LABEL[action.outcome]}`
-              : ""}
-            {review.kind === "validity" && action.reconsent != null
-              ? action.reconsent
-                ? ": invite them again"
-                : ": do not invite them"
-              : ""}
-            .
-          </Alert>
+          <>
+            {action.evidence_hash && (
+              <p className="text-sm">
+                Proof attached:{" "}
+                <button
+                  type="button"
+                  className="text-accent-text underline underline-offset-2"
+                  onClick={async () => {
+                    const got = await downloadMyEvidence(uuid);
+                    saveBlob(got.blob, got.filename);
+                  }}
+                >
+                  {action.evidence_name ?? "download"}
+                </button>
+              </p>
+            )}
+            <Alert tone={action.status === "accepted" ? "success" : "info"}>
+              {ACTION_LABEL[action.status]}
+              {action.outcome && review.kind === "retention"
+                ? `: ${OUTCOME_LABEL[action.outcome]}`
+                : ""}
+              {review.kind === "validity" && action.reconsent != null
+                ? action.reconsent
+                  ? ": invite them again"
+                  : ": do not invite them"
+                : ""}
+              .
+            </Alert>
+          </>
         )}
       </CardBody>
     </Card>

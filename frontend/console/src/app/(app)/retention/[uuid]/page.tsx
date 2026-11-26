@@ -45,6 +45,7 @@ import {
   actionNotNeeded,
   actionTone,
   closeReview,
+  downloadEvidence,
   downloadCertificate,
   getReview,
   retentionKeys,
@@ -155,6 +156,30 @@ function ActionCard({
           </DescriptionItem>
         )}
         {action.reason && <DescriptionItem term="Reason">{action.reason}</DescriptionItem>}
+        {action.evidence_hash && (
+          <DescriptionItem term="Proof">
+            <button
+              type="button"
+              className="text-accent-text underline underline-offset-2"
+              onClick={async () => {
+                try {
+                  const got = await downloadEvidence(
+                    review.review_uuid,
+                    action.action_uuid,
+                  );
+                  saveBlob(got.blob, got.filename);
+                } catch (err) {
+                  setProblem(said(err, "The proof could not be downloaded."));
+                }
+              }}
+            >
+              {action.evidence_name ?? "Download"}
+            </button>
+            <span className="block font-mono text-xs text-text-muted">
+              SHA-256 {action.evidence_hash.slice(0, 16)}…
+            </span>
+          </DescriptionItem>
+        )}
         {action.sent_back_reason && (
           <DescriptionItem term="Sent back because">
             {action.sent_back_reason}

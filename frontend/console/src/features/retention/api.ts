@@ -39,6 +39,9 @@ export interface RetentionAction {
   accepted_at: Timestamp | null;
   accepted_by_name: string | null;
   sent_back_reason: string | null;
+  /** The proof attached, if any: its name and SHA-256. */
+  evidence_name?: string | null;
+  evidence_hash?: string | null;
   overdue: boolean;
 }
 
@@ -214,6 +217,21 @@ export function myActions(): Promise<RetentionAction[]> {
 
 export function myAction(uuid: string): Promise<HolderAction> {
   return apiGet<HolderAction>(`/retention-actions/${uuid}`);
+}
+
+/** Proof for an answer: one file, replaced by the next, before answering. */
+export function uploadEvidence(uuid: string, file: File): Promise<RetentionAction> {
+  const form = new FormData();
+  form.set("evidence", file);
+  return apiPost<RetentionAction>(`/retention-actions/${uuid}/evidence`, form);
+}
+
+export function downloadMyEvidence(uuid: string) {
+  return apiDownload(`/retention-actions/${uuid}/evidence`);
+}
+
+export function downloadEvidence(review: string, action: string) {
+  return apiDownload(`/retention/reviews/${review}/actions/${action}/evidence`);
 }
 
 export function answerAction(

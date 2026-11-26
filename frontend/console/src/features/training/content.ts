@@ -900,7 +900,7 @@ export const MODULES: TrainingModule[] = [
         title: "Data that must go",
         body: "A [[Data retention]] review asks what was done with the data wherever you hold it: [[Erased]], [[Anonymised]], [[Kept]] or [[Not held]]. Anonymising and keeping each need a reason; keeping needs a date to look again.",
         where: "retention-actions",
-        tip: "If your answer is sent back, the reason is shown above the form. Answer again.",
+        tip: "Attach proof in [[Proof (optional)]] if you have it - a deletion log, a screenshot, a letter. If your answer is sent back, the reason is shown above the form: answer again.",
       },
     ],
     check: [

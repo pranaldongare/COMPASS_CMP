@@ -1,6 +1,6 @@
 # Retention API
 
-Generated from `backend/api/openapi.json`. **13 operations.**
+Generated from `backend/api/openapi.json`. **16 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -16,9 +16,12 @@ For each operation the information is deliberately ordered as **API → Validati
 8. [`POST /retention/reviews/{review_uuid}/actions/{action_uuid}/not-needed`](#8_post_retention_reviews_review_uuid_actions_action_uuid_not_needed)
 9. [`POST /retention/reviews/{review_uuid}/close`](#9_post_retention_reviews_review_uuid_close)
 10. [`GET /retention/reviews/{review_uuid}/certificate`](#10_get_retention_reviews_review_uuid_certificate)
-11. [`GET /retention-actions`](#11_get_retention_actions)
-12. [`GET /retention-actions/{action_uuid}`](#12_get_retention_actions_action_uuid)
-13. [`POST /retention-actions/{action_uuid}/answer`](#13_post_retention_actions_action_uuid_answer)
+11. [`GET /retention/reviews/{review_uuid}/actions/{action_uuid}/evidence`](#11_get_retention_reviews_review_uuid_actions_action_uuid_evidence)
+12. [`GET /retention-actions`](#12_get_retention_actions)
+13. [`GET /retention-actions/{action_uuid}`](#13_get_retention_actions_action_uuid)
+14. [`POST /retention-actions/{action_uuid}/answer`](#14_post_retention_actions_action_uuid_answer)
+15. [`GET /retention-actions/{action_uuid}/evidence`](#15_get_retention_actions_action_uuid_evidence)
+16. [`POST /retention-actions/{action_uuid}/evidence`](#16_post_retention_actions_action_uuid_evidence)
 
 <a id="1_get_retention_reviews"></a>
 ## 1. `GET /retention/reviews` — The retention reviews
@@ -342,6 +345,8 @@ No request body.
       "accepted_at": "…",
       "accepted_by_name": "…",
       "sent_back_reason": "…",
+      "evidence_name": "…",
+      "evidence_hash": "…",
       "overdue": true
     }
   ]
@@ -415,6 +420,8 @@ No request body.
   "accepted_at": "2026-09-17T12:00:00Z",
   "accepted_by_name": "string",
   "sent_back_reason": "string",
+  "evidence_name": "string",
+  "evidence_hash": "string",
   "overdue": true
 }
 ```
@@ -495,6 +502,8 @@ Request body required: **yes**.
   "accepted_at": "2026-09-17T12:00:00Z",
   "accepted_by_name": "string",
   "sent_back_reason": "string",
+  "evidence_name": "string",
+  "evidence_hash": "string",
   "overdue": true
 }
 ```
@@ -566,6 +575,8 @@ No request body.
   "accepted_at": "2026-09-17T12:00:00Z",
   "accepted_by_name": "string",
   "sent_back_reason": "string",
+  "evidence_name": "string",
+  "evidence_hash": "string",
   "overdue": true
 }
 ```
@@ -737,8 +748,55 @@ No request body.
 }
 ```
 
-<a id="11_get_retention_actions"></a>
-## 11. `GET /retention-actions` — What I am asked to do
+<a id="11_get_retention_reviews_review_uuid_actions_action_uuid_evidence"></a>
+## 11. `GET /retention/reviews/{review_uuid}/actions/{action_uuid}/evidence` — The proof attached to an answer
+
+### API
+
+- **Operation ID:** `get_evidence_retention_reviews__review_uuid__actions__action_uuid__evidence_get`
+- **Access:** Role-controlled `retention` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+Every download on the trail; the recorded and the served SHA-256 in the
+headers, so a changed file shows.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `review_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `action_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | — | — |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="12_get_retention_actions"></a>
+## 12. `GET /retention-actions` — What I am asked to do
 
 ### API
 
@@ -786,13 +844,15 @@ No request body.
     "accepted_at": "2026-09-17T12:00:00Z",
     "accepted_by_name": "string",
     "sent_back_reason": "string",
+    "evidence_name": "string",
+    "evidence_hash": "string",
     "overdue": true
   }
 ]
 ```
 
-<a id="12_get_retention_actions_action_uuid"></a>
-## 12. `GET /retention-actions/{action_uuid}` — One of mine
+<a id="13_get_retention_actions_action_uuid"></a>
+## 13. `GET /retention-actions/{action_uuid}` — One of mine
 
 ### API
 
@@ -840,6 +900,8 @@ No request body.
     "accepted_at": "2026-09-17T12:00:00Z",
     "accepted_by_name": "string",
     "sent_back_reason": "string",
+    "evidence_name": "string",
+    "evidence_hash": "string",
     "overdue": true
   },
   "review": {
@@ -877,8 +939,8 @@ No request body.
 }
 ```
 
-<a id="13_post_retention_actions_action_uuid_answer"></a>
-## 13. `POST /retention-actions/{action_uuid}/answer` — Answer it
+<a id="14_post_retention_actions_action_uuid_answer"></a>
+## 14. `POST /retention-actions/{action_uuid}/answer` — Answer it
 
 ### API
 
@@ -937,6 +999,135 @@ Request body required: **yes**.
   "accepted_at": "2026-09-17T12:00:00Z",
   "accepted_by_name": "string",
   "sent_back_reason": "string",
+  "evidence_name": "string",
+  "evidence_hash": "string",
+  "overdue": true
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="15_get_retention_actions_action_uuid_evidence"></a>
+## 15. `GET /retention-actions/{action_uuid}/evidence` — The proof I attached
+
+### API
+
+- **Operation ID:** `my_evidence_retention_actions__action_uuid__evidence_get`
+- **Access:** Role-controlled `retention` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `action_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | — | — |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="16_post_retention_actions_action_uuid_evidence"></a>
+## 16. `POST /retention-actions/{action_uuid}/evidence` — Attach proof before answering
+
+### API
+
+- **Operation ID:** `add_evidence_retention_actions__action_uuid__evidence_post`
+- **Access:** Role-controlled `retention` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+A deletion log, a screenshot, a letter: one file, replaced by the next,
+while the answer is still to give.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `action_uuid` | path | Yes | `string` | format: `uuid` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `multipart/form-data`  
+**Schema:** [`Body_add_evidence_retention_actions__action_uuid__evidence_post`](#schema-body_add_evidence_retention_actions_action_uuid_evidence_post)
+
+```json
+{
+  "evidence": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`RetentionActionOut`](#schema-retentionactionout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "action_uuid": "00000000-0000-4000-8000-000000000000",
+  "review_uuid": "00000000-0000-4000-8000-000000000000",
+  "reference": "string",
+  "review_kind": "string",
+  "kind": "string",
+  "label": "string",
+  "channel": "string",
+  "assignee_name": "string",
+  "status": "string",
+  "outcome": "string",
+  "reason": "string",
+  "keep_until": "2026-09-17",
+  "reconsent": true,
+  "due_at": "2026-09-17T12:00:00Z",
+  "answered_at": "2026-09-17T12:00:00Z",
+  "answered_by_name": "string",
+  "accepted_at": "2026-09-17T12:00:00Z",
+  "accepted_by_name": "string",
+  "sent_back_reason": "string",
+  "evidence_name": "string",
+  "evidence_hash": "string",
   "overdue": true
 }
 ```
@@ -960,6 +1151,13 @@ Request body required: **yes**.
 ```
 
 # Referenced schemas
+
+<a id="schema-body_add_evidence_retention_actions_action_uuid_evidence_post"></a>
+#### `Body_add_evidence_retention_actions__action_uuid__evidence_post`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `evidence` | `string` | Yes | — | The proof, max 25 MB |
 
 <a id="schema-httpvalidationerror"></a>
 #### `HTTPValidationError`
@@ -992,6 +1190,8 @@ Request body required: **yes**.
 | `accepted_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `accepted_by_name` | `string` or `null` | Yes | — | — |
 | `sent_back_reason` | `string` or `null` | Yes | — | — |
+| `evidence_name` | `string` or `null` | No | — | — |
+| `evidence_hash` | `string` or `null` | No | — | — |
 | `overdue` | `boolean` | Yes | — | — |
 
 <a id="schema-retentionanswerin"></a>

@@ -361,6 +361,7 @@ export const SECTIONS: HelpSection[] = [
         items: [
           "Choose what was done with the data, everywhere you hold it: [[Erased]], [[Anonymised]], [[Kept]] or [[Not held]].",
           "Anonymising instead of erasing needs the reason it could not be erased. Keeping needs the reason - a law, or a claim - and the date it will be looked at again.",
+          "If you can, attach proof in [[Proof (optional)]] - a deletion log, a screenshot or a letter: PDF, PNG, JPG, CSV or text, up to 25 MB.",
           "Click [[Send the answer]]. We accept it, or send it back saying what is missing; you are emailed either way.",
         ],
       },

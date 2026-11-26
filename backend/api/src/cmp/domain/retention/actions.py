@@ -66,6 +66,9 @@ async def action_view(a: Row) -> Row:
         "accepted_at": a["accepted_at"],
         "accepted_by_name": a.get("accepted_by_name"),
         "sent_back_reason": a["sent_back_reason"],
+        #: Proof the one asked attached (sealed name; its SHA-256).
+        "evidence_name": a.get("evidence_name"),
+        "evidence_hash": a.get("evidence_hash"),
         "overdue": a["status"] in _OPEN and a["due_at"] < datetime.now(UTC),
     }
 
@@ -420,3 +423,69 @@ async def close(conn: Conn, review_uuid: str, *, note: str | None, actor_id: int
 def may_answer(action: Row, user_id: int) -> None:
     if action["user_id"] != user_id:
         raise Forbidden("This action is not yours to answer")
+
+
+# ------------------------------------------------------------- the proof
+async def attach(
+    conn: Conn,
+    action_uuid: str,
+    *,
+    user_id: int | None,
+    ref: str,
+    digest: str,
+    name: str | None,
+    by_link: bool = False,
+) -> Row:
+    """The one asked attaches proof - a deletion log, a screenshot, a letter -
+    before they answer, or with a new answer after a send-back. One file per
+    action: a new one replaces the last. Never once the answer is in."""
+    action, review = await _loaded(conn, action_uuid)
+    if not by_link and action["user_id"] != user_id:
+        raise NotFound("Retention action")
+    if action["status"] not in _OPEN or review["status"] == "closed":
+        raise Conflict("Proof is added before the answer is sent.", code="answered")
+    await repo.set_action(
+        conn,
+        int(action["action_id"]),
+        evidence_ref=ref,
+        evidence_hash=digest,
+        evidence_name=name or "proof",
+    )
+    await _record(
+        conn,
+        Event.RETENTION_EVIDENCE_ADDED,
+        action,
+        review,
+        None if by_link else user_id,
+        channel="link" if by_link else "console",
+        sha256=digest,
+    )
+    fresh = await repo.action_by_uuid(conn, action_uuid)
+    assert fresh is not None
+    return await action_view(fresh)
+
+
+async def evidence(
+    conn: Conn,
+    action_uuid: str,
+    *,
+    actor_id: int,
+    review_uuid: str | None = None,
+    owner_id: int | None = None,
+) -> tuple[bytes, str, str]:
+    """The proof on an action: for the review's officer (`review_uuid`), or the
+    one who was asked (`owner_id`). Every read on the trail."""
+    from cmp.infrastructure.dkms import unseal_value
+    from cmp.infrastructure.storage.service import storage
+
+    action, review = await _loaded(conn, action_uuid)
+    if review_uuid is not None and str(review["review_uuid"]) != review_uuid:
+        raise NotFound("Retention action")
+    if owner_id is not None and action["user_id"] != owner_id:
+        raise NotFound("Retention action")
+    if not action.get("evidence_ref"):
+        raise NotFound("Proof")
+    payload = storage().read(str(action["evidence_ref"]))
+    await _record(conn, Event.RETENTION_EVIDENCE_DOWNLOADED, action, review, actor_id)
+    name = await unseal_value("retention_action", "evidence_name", action.get("evidence_name"))
+    return payload, str(name or f"{review['reference']}-proof"), str(action["evidence_hash"] or "")

@@ -32,3 +32,7 @@ catcher.
 | RT-21 | DPO | *Settings*: reminder days `0` | Refused; `60, 14` saves and is on the trail |
 | RT-22 | Management | Analytics | *Retention*: reviews opened, closed, on time, answers overdue, data kept past retention |
 | RT-23 | Auditor | Audit trail | Each step against the review: asked, answered, accepted, sent back, set aside, invited, closed, certificate downloaded; never a person |
+| RT-24 | DCO Admin | Before answering, attach a `.txt` deletion log in *Proof (optional)*, send *Erased* | Answered; the DPO sees *Proof* on the answer with its SHA-256, downloads the same file; the trail shows it added and downloaded |
+| RT-25 | DCO Admin | Attach a `.sh` or a file over 25 MB | Refused, saying which files are allowed |
+| RT-26 | Processor (link) | Attach a PDF with the answer | The DPO downloads it from the review |
+| RT-27 | DPO | Close the review, *CSV* certificate | Each answer's proof by name and SHA-256 |

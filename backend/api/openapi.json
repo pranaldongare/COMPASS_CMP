@@ -2600,6 +2600,62 @@
         }
       }
     },
+    "/retention-links/{token}/evidence": {
+      "post": {
+        "tags": [
+          "retention links"
+        ],
+        "summary": "Attach proof",
+        "description": "One file, replaced by the next, while the answer is still to give.",
+        "operationId": "add_evidence_retention_links__token__evidence_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 20,
+              "maxLength": 64,
+              "pattern": "^[A-Za-z0-9_-]+$",
+              "title": "Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_add_evidence_retention_links__token__evidence_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionHolderActionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users/staff": {
       "get": {
         "tags": [
@@ -20624,6 +20680,53 @@
         }
       }
     },
+    "/retention/reviews/{review_uuid}/actions/{action_uuid}/evidence": {
+      "get": {
+        "tags": [
+          "retention"
+        ],
+        "summary": "The proof attached to an answer",
+        "description": "Every download on the trail; the recorded and the served SHA-256 in the\nheaders, so a changed file shows.",
+        "operationId": "get_evidence_retention_reviews__review_uuid__actions__action_uuid__evidence_get",
+        "parameters": [
+          {
+            "name": "review_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Review Uuid"
+            }
+          },
+          {
+            "name": "action_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Action Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/retention-actions": {
       "get": {
         "tags": [
@@ -20732,6 +20835,94 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/retention-actions/{action_uuid}/evidence": {
+      "post": {
+        "tags": [
+          "retention"
+        ],
+        "summary": "Attach proof before answering",
+        "description": "A deletion log, a screenshot, a letter: one file, replaced by the next,\nwhile the answer is still to give.",
+        "operationId": "add_evidence_retention_actions__action_uuid__evidence_post",
+        "parameters": [
+          {
+            "name": "action_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Action Uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_add_evidence_retention_actions__action_uuid__evidence_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RetentionActionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "retention"
+        ],
+        "summary": "The proof I attached",
+        "operationId": "my_evidence_retention_actions__action_uuid__evidence_get",
+        "parameters": [
+          {
+            "name": "action_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Action Uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -25172,6 +25363,36 @@
           "file"
         ],
         "title": "Body_add_attachment_breaches__breach_uuid__attachments_post"
+      },
+      "Body_add_evidence_retention_actions__action_uuid__evidence_post": {
+        "properties": {
+          "evidence": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Evidence",
+            "description": "The proof, max 25 MB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "evidence"
+        ],
+        "title": "Body_add_evidence_retention_actions__action_uuid__evidence_post"
+      },
+      "Body_add_evidence_retention_links__token__evidence_post": {
+        "properties": {
+          "evidence": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "Evidence",
+            "description": "The proof, max 25 MB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "evidence"
+        ],
+        "title": "Body_add_evidence_retention_links__token__evidence_post"
       },
       "Body_add_report_proof_breaches__breach_uuid__reports__report_uuid__evidence_post": {
         "properties": {
@@ -44537,6 +44758,28 @@
               }
             ],
             "title": "Sent Back Reason"
+          },
+          "evidence_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Name"
+          },
+          "evidence_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence Hash"
           },
           "overdue": {
             "type": "boolean",

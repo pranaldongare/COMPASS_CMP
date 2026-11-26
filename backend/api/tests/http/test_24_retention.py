@@ -172,6 +172,33 @@ async def test_the_register_the_settings_and_both_ways_of_answering(
         json={"reason": "Say where it was erased from."},
     )
     assert back.json()["status"] == "sent_back"
+    proof = b"rig-07: 42 frames deleted 2026-11-26\n"
+    attached = await call(
+        http,
+        "POST",
+        f"{path}/evidence",
+        session=owner,
+        template="/retention-actions/{action_uuid}/evidence",
+        files={"evidence": ("deletion-log.txt", proof, "text/plain")},
+    )
+    assert attached.json()["evidence_hash"]
+    await call(
+        http,
+        "POST",
+        f"{path}/evidence",
+        session=owner,
+        template="/retention-actions/{action_uuid}/evidence",
+        files={"evidence": ("run.sh", b"#!/bin/sh\n", "application/x-sh")},
+        expect=422,
+    )
+    mine_proof = await call(
+        http,
+        "GET",
+        f"{path}/evidence",
+        session=owner,
+        template="/retention-actions/{action_uuid}/evidence",
+    )
+    assert mine_proof.content == proof
     await call(
         http,
         "POST",
@@ -215,6 +242,14 @@ async def test_the_register_the_settings_and_both_ways_of_answering(
         http, "GET", f"/retention-links/{token}/action", template=LINK + "/action", cookies=cookie
     )
     assert read.json()["review"]["reference"] == review["reference"]
+    await call(
+        http,
+        "POST",
+        f"/retention-links/{token}/evidence",
+        template=LINK + "/evidence",
+        cookies=cookie,
+        files={"evidence": ("letter.pdf", b"%PDF-1.4\n%%EOF\n", "application/pdf")},
+    )
     answered = await call(
         http,
         "POST",
@@ -249,6 +284,15 @@ async def test_the_register_the_settings_and_both_ways_of_answering(
         json={"note": "Done."},
     )
     assert closed.json()["status"] == "closed"
+    officer_proof = await call(
+        http,
+        "GET",
+        f"{base}/{actions['owner']['action_uuid']}/evidence",
+        session=dpo,
+        template=ACTION + "/evidence",
+    )
+    assert officer_proof.content == proof
+    assert officer_proof.headers["x-recorded-sha256"] == officer_proof.headers["x-content-sha256"]
     cert = REVIEW + "/certificate"
     got = await call(
         http,

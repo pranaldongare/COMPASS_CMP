@@ -85,9 +85,9 @@ tickets". Their answers to the questions this raised:
    the bridge, SQS and the collector and are on the relay's allow-list
    (ADR 0035). Every failure is the same 404; the token is scrubbed from
    the access log.
-9. **Proof.** A closed review has a certificate, PDF or CSV: the consents by
-   number, why each ended and when, every answer with its reason, who
-   accepted it, who closed the review. Every download is on the trail
+9. **The certificate.** A closed review has a certificate, PDF or CSV: the consents by
+   number, why each ended and when, every answer with its reason and its
+   proof, who accepted it, who closed the review. Every download is on the trail
    (`retention.certificate_downloaded`), as is every step before it, against
    the review - never a person. Analytics counts reviews opened, closed and
    closed on time, answers overdue, and data kept past retention
@@ -95,8 +95,17 @@ tickets". Their answers to the questions this raised:
 10. **Nothing is erased by the review itself.** Erasure is the holder's act,
     answered and accepted. The quarantine still runs by itself; DataVault is
     still told of consent changes (0071). Asking DataVault to erase a
-    review's assets by itself (the `datavault` action kind exists for it) and
-    evidence files on an answer are left for later.
+    review's assets by itself (the `datavault` action kind exists for it) is
+    left for later.
+11. **Proof on an answer** (added the same day, at the product owner's
+    request). The one asked may attach one file - a deletion log, a
+    screenshot, a letter; PDF, PNG, JPG, CSV or text, 25 MB at most, checked
+    as every evidence file is - in the console or by the link, while the
+    answer is still to give; a new one replaces the last. Its name is sealed,
+    its SHA-256 kept. The officers and the one who attached it can download
+    it, every read on the trail (`retention.evidence_added`,
+    `retention.evidence_downloaded`) with the recorded and the served SHA-256
+    side by side. The certificate names each proof and its SHA-256.
 
 ## Consequences
 

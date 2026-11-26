@@ -151,6 +151,7 @@ PUBLIC_ROUTES: tuple[tuple[str, str], ...] = (
     ("POST", "/retention-links/{token}/verify"),
     ("GET", "/retention-links/{token}/action"),
     ("POST", "/retention-links/{token}/answer"),
+    ("POST", "/retention-links/{token}/evidence"),
     ("POST", "/retention-links/{token}/sign-out"),
     # Reference data and the notifications page
     ("GET", "/meta/enums"),

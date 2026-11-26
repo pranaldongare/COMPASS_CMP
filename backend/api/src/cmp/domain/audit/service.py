@@ -438,6 +438,8 @@ class Event:
     RETENTION_REVIEW_CLOSED = "retention.review_closed"
     RETENTION_LINK_OPENED = "retention.link_opened"
     RETENTION_CERTIFICATE_DOWNLOADED = "retention.certificate_downloaded"
+    RETENTION_EVIDENCE_ADDED = "retention.evidence_added"
+    RETENTION_EVIDENCE_DOWNLOADED = "retention.evidence_downloaded"
     ORGANISATION_DOMAIN_ADDED = "employee_check.domain_added"
     ORGANISATION_DOMAIN_REMOVED = "employee_check.domain_removed"
     EMPLOYEE_CHECKED = "employee.checked"

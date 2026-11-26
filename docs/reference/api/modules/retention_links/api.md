@@ -1,6 +1,6 @@
 # Retention Links API
 
-Generated from `backend/api/openapi.json`. **6 operations.**
+Generated from `backend/api/openapi.json`. **7 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -12,6 +12,7 @@ For each operation the information is deliberately ordered as **API → Validati
 4. [`POST /retention-links/{token}/sign-out`](#4_post_retention_links_token_sign_out)
 5. [`GET /retention-links/{token}/action`](#5_get_retention_links_token_action)
 6. [`POST /retention-links/{token}/answer`](#6_post_retention_links_token_answer)
+7. [`POST /retention-links/{token}/evidence`](#7_post_retention_links_token_evidence)
 
 <a id="1_get_retention_links_token"></a>
 ## 1. `GET /retention-links/{token}` — What the link opens
@@ -275,6 +276,8 @@ No request body.
     "accepted_at": "2026-09-17T12:00:00Z",
     "accepted_by_name": "string",
     "sent_back_reason": "string",
+    "evidence_name": "string",
+    "evidence_hash": "string",
     "overdue": true
   },
   "review": {
@@ -375,6 +378,107 @@ Request body required: **yes**.
     "accepted_at": "2026-09-17T12:00:00Z",
     "accepted_by_name": "string",
     "sent_back_reason": "string",
+    "evidence_name": "string",
+    "evidence_hash": "string",
+    "overdue": true
+  },
+  "review": {
+    "reference": "string",
+    "kind": "string",
+    "project_name": "string",
+    "is_activity": true,
+    "purpose_code": "string",
+    "purpose_name": "string",
+    "people": 1,
+    "first_due_at": "2026-09-17T12:00:00Z",
+    "last_due_at": "2026-09-17T12:00:00Z",
+    "retention_days": 1,
+    "validity_days": 1,
+    "status": "string"
+  }
+}
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="7_post_retention_links_token_evidence"></a>
+## 7. `POST /retention-links/{token}/evidence` — Attach proof
+
+### API
+
+- **Operation ID:** `add_evidence_retention_links__token__evidence_post`
+- **Access:** Role-controlled `retention links` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+One file, replaced by the next, while the answer is still to give.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `token` | path | Yes | `string` | min length: `20`; max length: `64`; pattern: `^[A-Za-z0-9_-]+$` | — |
+
+### Payload
+
+Request body required: **yes**.
+
+**Content type:** `multipart/form-data`  
+**Schema:** [`Body_add_evidence_retention_links__token__evidence_post`](#schema-body_add_evidence_retention_links_token_evidence_post)
+
+```json
+{
+  "evidence": "string"
+}
+```
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/json` | [`RetentionHolderActionOut`](#schema-retentionholderactionout) |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/json` response:**
+
+```json
+{
+  "action": {
+    "action_uuid": "00000000-0000-4000-8000-000000000000",
+    "review_uuid": "00000000-0000-4000-8000-000000000000",
+    "reference": "string",
+    "review_kind": "string",
+    "kind": "string",
+    "label": "string",
+    "channel": "string",
+    "assignee_name": "string",
+    "status": "string",
+    "outcome": "string",
+    "reason": "string",
+    "keep_until": "2026-09-17",
+    "reconsent": true,
+    "due_at": "2026-09-17T12:00:00Z",
+    "answered_at": "2026-09-17T12:00:00Z",
+    "answered_by_name": "string",
+    "accepted_at": "2026-09-17T12:00:00Z",
+    "accepted_by_name": "string",
+    "sent_back_reason": "string",
+    "evidence_name": "string",
+    "evidence_hash": "string",
     "overdue": true
   },
   "review": {
@@ -423,6 +527,13 @@ For state changes whose only interesting output is that they happened.
 |---|---|---:|---|---|
 | `ok` | `boolean` | No | default: `True` | — |
 | `message` | `string` or `null` | No | — | — |
+
+<a id="schema-body_add_evidence_retention_links_token_evidence_post"></a>
+#### `Body_add_evidence_retention_links__token__evidence_post`
+
+| Field | Type | Required | Validation | Description |
+|---|---|---:|---|---|
+| `evidence` | `string` | Yes | — | The proof, max 25 MB |
 
 <a id="schema-codein"></a>
 #### `CodeIn`
@@ -506,6 +617,8 @@ What the link alone shows: which review, who is asked, where the code goes.
 | `accepted_at` | `string` or `null` | Yes | format: `date-time` | — |
 | `accepted_by_name` | `string` or `null` | Yes | — | — |
 | `sent_back_reason` | `string` or `null` | Yes | — | — |
+| `evidence_name` | `string` or `null` | No | — | — |
+| `evidence_hash` | `string` or `null` | No | — | — |
 | `overdue` | `boolean` | Yes | — | — |
 
 <a id="schema-retentionholderreviewout"></a>

@@ -7,6 +7,9 @@
  * done with the data: erased, anonymised (with the reason it could not be
  * erased), kept (with the reason and the date it will be looked at again),
  * or not held at all.
+ *
+ * A file may go with it - a deletion log, a screenshot, a letter - as proof;
+ * the page sends the file first, then the answer.
  */
 "use client";
 
@@ -44,12 +47,13 @@ export function AnswerForm({
   kind: ReviewKind;
   pending: boolean;
   problem: string | null;
-  onAnswer: (body: RetentionAnswer) => void;
+  onAnswer: (body: RetentionAnswer, proof: File | null) => void;
 }) {
   const [outcome, setOutcome] = React.useState<Outcome | null>(null);
   const [reconsent, setReconsent] = React.useState<boolean | null>(null);
   const [reason, setReason] = React.useState("");
   const [until, setUntil] = React.useState("");
+  const [proof, setProof] = React.useState<File | null>(null);
   const [local, setLocal] = React.useState<string | null>(null);
 
   function submit(event: React.FormEvent) {
@@ -60,7 +64,7 @@ export function AnswerForm({
         setLocal("Choose whether to invite these people to consent again.");
         return;
       }
-      onAnswer({ reconsent, reason: reason.trim() || null });
+      onAnswer({ reconsent, reason: reason.trim() || null }, proof);
       return;
     }
     if (!outcome) {
@@ -75,11 +79,14 @@ export function AnswerForm({
       setLocal("Give the date it will be looked at again.");
       return;
     }
-    onAnswer({
-      outcome,
-      reason: reason.trim() || null,
-      keep_until: outcome === "kept" ? until : null,
-    });
+    onAnswer(
+      {
+        outcome,
+        reason: reason.trim() || null,
+        keep_until: outcome === "kept" ? until : null,
+      },
+      proof,
+    );
   }
 
   const needsReason = outcome === "anonymised" || outcome === "kept";
@@ -180,6 +187,21 @@ export function AnswerForm({
               type="date"
               value={until}
               onChange={(e) => setUntil(e.target.value)}
+            />
+          )}
+        </Field>
+      )}
+      {kind === "retention" && (
+        <Field
+          label="Proof (optional)"
+          hint="A deletion log, a screenshot or a letter: PDF, PNG, JPG, CSV or text, up to 25 MB."
+        >
+          {(props) => (
+            <Input
+              {...props}
+              type="file"
+              accept=".pdf,.png,.jpg,.jpeg,.csv,.txt"
+              onChange={(e) => setProof(e.target.files?.[0] ?? null)}
             />
           )}
         </Field>

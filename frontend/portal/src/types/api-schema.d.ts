@@ -1115,6 +1115,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/retention-links/{token}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Attach proof
+         * @description One file, replaced by the next, while the answer is still to give.
+         */
+        post: operations["add_evidence_retention_links__token__evidence_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/users/staff": {
         parameters: {
             query?: never;
@@ -6962,6 +6982,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/retention/reviews/{review_uuid}/actions/{action_uuid}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The proof attached to an answer
+         * @description Every download on the trail; the recorded and the served SHA-256 in the
+         *     headers, so a changed file shows.
+         */
+        get: operations["get_evidence_retention_reviews__review_uuid__actions__action_uuid__evidence_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/retention-actions": {
         parameters: {
             query?: never;
@@ -7011,6 +7052,28 @@ export interface paths {
         put?: never;
         /** Answer it */
         post: operations["answer_retention_actions__action_uuid__answer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/retention-actions/{action_uuid}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** The proof I attached */
+        get: operations["my_evidence_retention_actions__action_uuid__evidence_get"];
+        put?: never;
+        /**
+         * Attach proof before answering
+         * @description A deletion log, a screenshot, a letter: one file, replaced by the next,
+         *     while the answer is still to give.
+         */
+        post: operations["add_evidence_retention_actions__action_uuid__evidence_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8402,6 +8465,22 @@ export interface components {
             kind: string;
             /** Note */
             note?: string | null;
+        };
+        /** Body_add_evidence_retention_actions__action_uuid__evidence_post */
+        Body_add_evidence_retention_actions__action_uuid__evidence_post: {
+            /**
+             * Evidence
+             * @description The proof, max 25 MB
+             */
+            evidence: string;
+        };
+        /** Body_add_evidence_retention_links__token__evidence_post */
+        Body_add_evidence_retention_links__token__evidence_post: {
+            /**
+             * Evidence
+             * @description The proof, max 25 MB
+             */
+            evidence: string;
         };
         /** Body_add_report_proof_breaches__breach_uuid__reports__report_uuid__evidence_post */
         Body_add_report_proof_breaches__breach_uuid__reports__report_uuid__evidence_post: {
@@ -14808,6 +14887,10 @@ export interface components {
             accepted_by_name: string | null;
             /** Sent Back Reason */
             sent_back_reason: string | null;
+            /** Evidence Name */
+            evidence_name?: string | null;
+            /** Evidence Hash */
+            evidence_hash?: string | null;
             /** Overdue */
             overdue: boolean;
         };
@@ -18599,6 +18682,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["RetentionAnswerIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetentionHolderActionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_evidence_retention_links__token__evidence_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_add_evidence_retention_links__token__evidence_post"];
             };
         };
         responses: {
@@ -29771,6 +29889,36 @@ export interface operations {
             };
         };
     };
+    get_evidence_retention_reviews__review_uuid__actions__action_uuid__evidence_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                review_uuid: string;
+                action_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     my_actions_retention_actions_get: {
         parameters: {
             query?: never;
@@ -29834,6 +29982,70 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["RetentionAnswerIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RetentionActionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    my_evidence_retention_actions__action_uuid__evidence_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                action_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_evidence_retention_actions__action_uuid__evidence_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                action_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_add_evidence_retention_actions__action_uuid__evidence_post"];
             };
         };
         responses: {

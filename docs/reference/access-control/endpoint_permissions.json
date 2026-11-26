@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 458,
-  "registered_business_and_system_operations": 461,
+  "documented_operations": 462,
+  "registered_business_and_system_operations": 465,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -18477,6 +18477,45 @@
     {
       "module": "retention",
       "method": "GET",
+      "path": "/retention/reviews/{review_uuid}/actions/{action_uuid}/evidence",
+      "summary": "The proof attached to an answer",
+      "function": "get_evidence",
+      "operation_id": "get_evidence_retention_reviews__review_uuid__actions__action_uuid__evidence_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(retention)",
+      "resolved_gate": "RequireResource(retention)",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "retention",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO",
+        "management": "NO"
+      },
+      "conditions": [
+        "Retention reviews (0076, ADR 0047): the officer's register of their own office - consents whose validity runs out, and data whose retention has passed since the consent ended. Reviews, people and actions are their project's office's (office_isolation). Every move is on the trail. People are served by number, never by name. Proof (0076, ADR 0047): one file per action - PDF, PNG, JPG, CSV or text, 25 MB at most, checked as every evidence file - added while the answer is still to give and replaced by the next; its name is sealed and its SHA-256 kept; every read is on the trail (retention.evidence_downloaded) with the recorded and served SHA-256 in the headers."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/retention.py"
+      ]
+    },
+    {
+      "module": "retention",
+      "method": "GET",
       "path": "/retention/reviews/{review_uuid}/certificate",
       "summary": "The certificate of a closed review, as PDF or CSV",
       "function": "get_certificate",
@@ -18848,6 +18887,52 @@
     },
     {
       "module": "retention",
+      "method": "GET",
+      "path": "/retention-actions/{action_uuid}/evidence",
+      "summary": "The proof I attached",
+      "function": "my_evidence",
+      "operation_id": "my_evidence_retention_actions__action_uuid__evidence_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(retention_action)",
+      "resolved_gate": "RequireResource(retention_action)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "legal",
+        "hr_user"
+      ],
+      "inline_role_checks": [],
+      "resource": "retention_action",
+      "write_gate": false,
+      "access": {
+        "dpo": "OWN",
+        "admin": "OWN",
+        "dco": "OWN",
+        "dco_admin": "OWN",
+        "rco": "OWN",
+        "rnd_user": "OWN",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "OWN",
+        "hr_user": "OWN",
+        "management": "NO"
+      },
+      "conditions": [
+        "Retention actions (0076, ADR 0047): the one asked answers their own action - a DCO Admin, an HR PoC, a respondent with a console login - whatever their office; another's answers 404. Not management, which never acts on a record. Proof (0076, ADR 0047): one file per action - PDF, PNG, JPG, CSV or text, 25 MB at most, checked as every evidence file - added while the answer is still to give and replaced by the next; its name is sealed and its SHA-256 kept; every read is on the trail (retention.evidence_downloaded) with the recorded and served SHA-256 in the headers."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/retention.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/retention/actions.py"
+      ]
+    },
+    {
+      "module": "retention",
       "method": "POST",
       "path": "/retention-actions/{action_uuid}/answer",
       "summary": "Answer it",
@@ -18886,6 +18971,52 @@
       },
       "conditions": [
         "Retention actions (0076, ADR 0047): the one asked answers their own action - a DCO Admin, an HR PoC, a respondent with a console login - whatever their office; another's answers 404. Not management, which never acts on a record. Anonymised and kept need a reason; kept needs a date after today; a validity answer needs a live consent link to invite again."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/retention.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/retention/actions.py"
+      ]
+    },
+    {
+      "module": "retention",
+      "method": "POST",
+      "path": "/retention-actions/{action_uuid}/evidence",
+      "summary": "Attach proof before answering",
+      "function": "add_evidence",
+      "operation_id": "add_evidence_retention_actions__action_uuid__evidence_post",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(retention_action, write)",
+      "resolved_gate": "RequireResource(retention_action, write)",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "legal",
+        "hr_user"
+      ],
+      "inline_role_checks": [],
+      "resource": "retention_action",
+      "write_gate": true,
+      "access": {
+        "dpo": "OWN",
+        "admin": "OWN",
+        "dco": "OWN",
+        "dco_admin": "OWN",
+        "rco": "OWN",
+        "rnd_user": "OWN",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "OWN",
+        "hr_user": "OWN",
+        "management": "NO"
+      },
+      "conditions": [
+        "Retention actions (0076, ADR 0047): the one asked answers their own action - a DCO Admin, an HR PoC, a respondent with a console login - whatever their office; another's answers 404. Not management, which never acts on a record. Anonymised and kept need a reason; kept needs a date after today; a validity answer needs a live consent link to invite again. Proof (0076, ADR 0047): one file per action - PDF, PNG, JPG, CSV or text, 25 MB at most, checked as every evidence file - added while the answer is still to give and replaced by the next; its name is sealed and its SHA-256 kept; every read is on the trail (retention.evidence_downloaded) with the recorded and served SHA-256 in the headers."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/retention.py",
@@ -19111,6 +19242,51 @@
       },
       "conditions": [
         "A valid retention link: the token's keyed fingerprint names an action asked of a processor by link. Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. The code goes to the respondent's address the link was sent to, never one typed; it opens an hour on that one action in the holder-ticket cookie, under its own Redis key. Rate-limited per action (`retention_link_code`) and per address (`retention_link_ip`, `retention_link_act_ip`). (ADR 0047)"
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/retention_links.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/retention/links.py"
+      ]
+    },
+    {
+      "module": "public_information",
+      "method": "POST",
+      "path": "/retention-links/{token}/evidence",
+      "summary": "Attach proof",
+      "function": "add_evidence",
+      "operation_id": "add_evidence_retention_links__token__evidence_post",
+      "in_openapi": true,
+      "authentication": "No session required",
+      "anonymous": "COND",
+      "gate": "Public; no session dependency",
+      "resolved_gate": "Public; no session dependency",
+      "route_roles": [
+        "dpo",
+        "admin",
+        "dco",
+        "dco_admin",
+        "rco",
+        "rnd_user",
+        "data_subject",
+        "breach_holder"
+      ],
+      "inline_role_checks": [],
+      "resource": "",
+      "write_gate": false,
+      "access": {
+        "dpo": "PUBLIC",
+        "admin": "PUBLIC",
+        "dco": "PUBLIC",
+        "dco_admin": "PUBLIC",
+        "rco": "PUBLIC",
+        "rnd_user": "PUBLIC",
+        "data_subject": "PUBLIC",
+        "breach_holder": "PUBLIC",
+        "legal": "NO",
+        "hr_user": "NO"
+      },
+      "conditions": [
+        "A valid retention link: the token's keyed fingerprint names an action asked of a processor by link. Every failure is the same 404. Referrer-Policy no-referrer; the token is scrubbed from access logs. The code goes to the respondent's address the link was sent to, never one typed; it opens an hour on that one action in the holder-ticket cookie, under its own Redis key. Rate-limited per action (`retention_link_code`) and per address (`retention_link_ip`, `retention_link_act_ip`). (ADR 0047) Proof (0076, ADR 0047): one file per action - PDF, PNG, JPG, CSV or text, 25 MB at most, checked as every evidence file - added while the answer is still to give and replaced by the next; its name is sealed and its SHA-256 kept; every read is on the trail (retention.evidence_downloaded) with the recorded and served SHA-256 in the headers."
       ],
       "evidence": [
         "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/public/retention_links.py",
@@ -19383,6 +19559,11 @@
       "on": "2026-11-26",
       "commit": "Retention reviews (0076, ADR 0047), uncommitted",
       "note": "19 operations added, a new module retention: the officers' register (resource retention: dpo, legal), its settings (retention_setting: admin, dpo, legal), the certificate of a closed review (GET /retention/reviews/{review_uuid}/certificate, as the register), the one asked's own actions (retention_action, OWN, every staff role but management), and a processor's link (/retention-links/{token}, public, as a holder ticket's). Purposes gain notify_before_erasure on create, update and read. No existing guard changed. Evidence links point at HEAD."
+    },
+    {
+      "on": "2026-11-26",
+      "commit": "Proof on a retention answer (ADR 0047), uncommitted",
+      "note": "4 operations added, module retention: POST /retention-actions/{action_uuid}/evidence and GET of it (retention_action, OWN), POST /retention-links/{token}/evidence (public, by the link's hour), GET /retention/reviews/{review_uuid}/actions/{action_uuid}/evidence (retention, the officers). No existing guard changed. Evidence links point at HEAD."
     }
   ]
 }

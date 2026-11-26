@@ -31,6 +31,8 @@ export interface RetentionLinkAction {
     due_at: string;
     answered_at: string | null;
     sent_back_reason: string | null;
+    evidence_name?: string | null;
+    evidence_hash?: string | null;
   };
   review: {
     reference: string;
@@ -63,3 +65,10 @@ export const getRetentionAction = (token: string) =>
 
 export const answerRetention = (token: string, body: RetentionAnswer) =>
   apiPost<RetentionLinkAction>(`${base(token)}/answer`, body);
+
+/** Proof for the answer: one file, replaced by the next, before answering. */
+export function uploadRetentionEvidence(token: string, file: File) {
+  const form = new FormData();
+  form.set("evidence", file);
+  return apiPost<RetentionLinkAction>(`${base(token)}/evidence`, form);
+}
