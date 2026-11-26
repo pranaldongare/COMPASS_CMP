@@ -249,6 +249,25 @@ async def test_the_register_the_settings_and_both_ways_of_answering(
         json={"note": "Done."},
     )
     assert closed.json()["status"] == "closed"
+    cert = REVIEW + "/certificate"
+    got = await call(
+        http,
+        "GET",
+        f"/retention/reviews/{review['review_uuid']}/certificate",
+        session=dpo,
+        template=cert,
+        params={"format": "pdf"},
+    )
+    assert got.content.startswith(b"%PDF")
+    assert "certificate.pdf" in got.headers["content-disposition"]
+    await call(
+        http,
+        "GET",
+        f"/retention/reviews/{review['review_uuid']}/certificate",
+        session=world.dco_admin,
+        template=cert,
+        expect=403,
+    )
 
     # The validity review of the same people: its owner action set aside, then closed.
     validity = await call(

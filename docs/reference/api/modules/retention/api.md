@@ -1,6 +1,6 @@
 # Retention API
 
-Generated from `backend/api/openapi.json`. **12 operations.**
+Generated from `backend/api/openapi.json`. **13 operations.**
 
 For each operation the information is deliberately ordered as **API → Validation → Payload → Response**.
 
@@ -15,9 +15,10 @@ For each operation the information is deliberately ordered as **API → Validati
 7. [`POST /retention/reviews/{review_uuid}/actions/{action_uuid}/send-back`](#7_post_retention_reviews_review_uuid_actions_action_uuid_send_back)
 8. [`POST /retention/reviews/{review_uuid}/actions/{action_uuid}/not-needed`](#8_post_retention_reviews_review_uuid_actions_action_uuid_not_needed)
 9. [`POST /retention/reviews/{review_uuid}/close`](#9_post_retention_reviews_review_uuid_close)
-10. [`GET /retention-actions`](#10_get_retention_actions)
-11. [`GET /retention-actions/{action_uuid}`](#11_get_retention_actions_action_uuid)
-12. [`POST /retention-actions/{action_uuid}/answer`](#12_post_retention_actions_action_uuid_answer)
+10. [`GET /retention/reviews/{review_uuid}/certificate`](#10_get_retention_reviews_review_uuid_certificate)
+11. [`GET /retention-actions`](#11_get_retention_actions)
+12. [`GET /retention-actions/{action_uuid}`](#12_get_retention_actions_action_uuid)
+13. [`POST /retention-actions/{action_uuid}/answer`](#13_post_retention_actions_action_uuid_answer)
 
 <a id="1_get_retention_reviews"></a>
 ## 1. `GET /retention/reviews` — The retention reviews
@@ -675,8 +676,69 @@ Request body required: **yes**.
 }
 ```
 
-<a id="10_get_retention_actions"></a>
-## 10. `GET /retention-actions` — What I am asked to do
+<a id="10_get_retention_reviews_review_uuid_certificate"></a>
+## 10. `GET /retention/reviews/{review_uuid}/certificate` — The certificate of a closed review, as PDF or CSV
+
+### API
+
+- **Operation ID:** `get_certificate_retention_reviews__review_uuid__certificate_get`
+- **Access:** Role-controlled `retention` operation. See [`../../roles/README.md`](../../roles/README.md).
+
+Which consents, why each ended, who was asked and what each answered,
+who accepted it and who closed the review. Consents by number; every
+download on the trail.
+
+### Validation
+
+| Parameter | Location | Required | Type | Constraints | Description |
+|---|---|---:|---|---|---|
+| `review_uuid` | path | Yes | `string` | format: `uuid` | — |
+| `format` | query | No | `string` | pattern: `^(pdf|csv)$`; default: `pdf` | — |
+
+### Payload
+
+No request body.
+
+### Response
+
+| Status | Description | Content type | Schema |
+|---:|---|---|---|
+| `200` | Successful Response | `application/pdf` | `object` |
+| `200` | ↳ | `text/csv` | `object` |
+| `422` | Validation Error | `application/json` | [`HTTPValidationError`](#schema-httpvalidationerror) |
+
+**Example `200` `application/pdf` response:**
+
+```json
+"string"
+```
+
+**Example `200` `text/csv` response:**
+
+```json
+"string"
+```
+
+**Example `422` `application/json` response:**
+
+```json
+{
+  "detail": [
+    {
+      "loc": [
+        "…"
+      ],
+      "msg": "string",
+      "type": "string",
+      "input": "string",
+      "ctx": {}
+    }
+  ]
+}
+```
+
+<a id="11_get_retention_actions"></a>
+## 11. `GET /retention-actions` — What I am asked to do
 
 ### API
 
@@ -729,8 +791,8 @@ No request body.
 ]
 ```
 
-<a id="11_get_retention_actions_action_uuid"></a>
-## 11. `GET /retention-actions/{action_uuid}` — One of mine
+<a id="12_get_retention_actions_action_uuid"></a>
+## 12. `GET /retention-actions/{action_uuid}` — One of mine
 
 ### API
 
@@ -815,8 +877,8 @@ No request body.
 }
 ```
 
-<a id="12_post_retention_actions_action_uuid_answer"></a>
-## 12. `POST /retention-actions/{action_uuid}/answer` — Answer it
+<a id="13_post_retention_actions_action_uuid_answer"></a>
+## 13. `POST /retention-actions/{action_uuid}/answer` — Answer it
 
 ### API
 

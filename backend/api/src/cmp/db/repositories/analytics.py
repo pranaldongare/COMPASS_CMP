@@ -86,6 +86,9 @@ _ERASURE = f"""SELECT {{at}} AS at, {_office("r")} AS office, 1 AS v
 _HOLDER = f"""SELECT {{at}} AS at, {_office("r")} AS office, h.label AS d_holder, {{v}} AS v
   FROM rights_request_holder h JOIN rights_request r ON r.request_id = h.request_id"""
 
+_REVIEW = f"""SELECT {{at}} AS at, {_office("rv")} AS office, rv.kind AS d_kind, 1 AS v
+  FROM retention_review rv"""
+
 _NOTICE_DELIVERY = f"""SELECT d.recorded_at AS at, {_office("b")} AS office, d.channel AS d_channel,
        1 AS v
   FROM breach_notice_delivery d
@@ -205,6 +208,21 @@ SOURCES: Final[dict[str, str]] = {
     "holders.overdue": _HOLDER.format(at="now()", v="1")
     + " WHERE h.issued_at IS NOT NULL AND h.returned_at IS NULL AND h.due_at < now()"
     " AND r.status <> 'closed'",
+    # ------------------------------------------------------------- retention
+    "retention.reviews_opened": _REVIEW.format(at="rv.opened_at")
+    + " WHERE rv.opened_at IS NOT NULL",
+    "retention.reviews_closed": _REVIEW.format(at="rv.closed_at")
+    + " WHERE rv.closed_at IS NOT NULL",
+    "retention.closed_on_time": _REVIEW.format(at="rv.closed_at")
+    + """ WHERE rv.closed_at IS NOT NULL
+      AND rv.closed_at <= (SELECT coalesce(max(a.due_at), rv.closed_at)
+                             FROM retention_action a WHERE a.review_id = rv.review_id)""",
+    "retention.actions_overdue": f"""SELECT now() AS at, {_office("a")} AS office,
+       rv.kind AS d_kind, 1 AS v
+  FROM retention_action a JOIN retention_review rv ON rv.review_id = a.review_id
+ WHERE a.status IN ('open', 'sent_back') AND a.due_at < now() AND rv.status <> 'closed'""",
+    "retention.kept_with_reason": f"""SELECT a.accepted_at AS at, {_office("a")} AS office, 1 AS v
+  FROM retention_action a WHERE a.outcome = 'kept' AND a.accepted_at IS NOT NULL""",
     # -------------------------------------------------------------- delivery
     "delivery.notices_delivered": _NOTICE_DELIVERY + " AND d.status = 'delivered'",
     "delivery.notices_attempted": _NOTICE_DELIVERY + " AND d.status IN ('delivered', 'failed')",

@@ -9,7 +9,7 @@
  * it back, and closes the review when every one is settled. The night finds
  * the cohorts; `refresh` does the night's work now.
  */
-import { apiGet, apiPost, apiPut } from "@/lib/api";
+import { apiDownload, apiGet, apiPost, apiPut } from "@/lib/api";
 import type { Timestamp } from "@/types";
 
 import type { Outcome, RetentionAnswer, ReviewKind } from "@/features/retention/types";
@@ -191,6 +191,11 @@ export function actionNotNeeded(review: string, action: string): Promise<Retenti
 
 export function closeReview(review: string, note: string | null): Promise<RetentionReview> {
   return apiPost<RetentionReview>(`/retention/reviews/${review}/close`, { note });
+}
+
+/** The certificate of a closed review (PDF to file, CSV to work with). */
+export function downloadCertificate(review: string, format: "pdf" | "csv") {
+  return apiDownload(`/retention/reviews/${review}/certificate?format=${format}`);
 }
 
 export function getRetentionSettings(): Promise<RetentionSettings> {

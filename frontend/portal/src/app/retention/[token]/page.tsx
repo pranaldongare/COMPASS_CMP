@@ -13,6 +13,7 @@
 "use client";
 
 import { LogOut } from "lucide-react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import * as React from "react";
 
@@ -289,6 +290,11 @@ function CodeStep({
             {sent}
           </p>
         )}
+        <p className="text-xs text-text-subtle">
+          <Link href="/help#retention-link" className="underline underline-offset-2">
+            How answering a retention review works
+          </Link>
+        </p>
         {sent && (
           <form method="post" noValidate onSubmit={verify} className="space-y-3">
             <Field label="Six-digit code" required>

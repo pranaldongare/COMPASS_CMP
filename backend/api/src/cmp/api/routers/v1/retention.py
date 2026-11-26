@@ -13,7 +13,7 @@ from datetime import date, datetime
 from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Response
 from pydantic import Field
 
 from cmp.api.dependencies import (
@@ -24,7 +24,7 @@ from cmp.api.dependencies import (
     RetentionWriter,
 )
 from cmp.db.pool import across_offices, connection, transaction
-from cmp.domain.retention import actions, service
+from cmp.domain.retention import actions, certificate, service
 from cmp.schemas.common import Out, Schema
 
 router = APIRouter(prefix="/retention", tags=["retention"])
@@ -298,6 +298,34 @@ async def close(
             conn, str(review_uuid), note=body.note, actor_id=principal.user_id
         )
         return service.review_view(row)
+
+
+@router.get(
+    "/reviews/{review_uuid}/certificate",
+    summary="The certificate of a closed review, as PDF or CSV",
+    response_class=Response,
+    responses={200: {"content": {"application/pdf": {}, "text/csv": {}}}},
+)
+async def get_certificate(
+    review_uuid: UUID,
+    principal: RetentionReader,
+    format: Annotated[str, Query(pattern="^(pdf|csv)$")] = "pdf",
+) -> Response:
+    """Which consents, why each ended, who was asked and what each answered,
+    who accepted it and who closed the review. Consents by number; every
+    download on the trail."""
+    async with transaction() as conn:
+        payload, filename, mime = await certificate.download(
+            conn, str(review_uuid), format, actor_id=principal.user_id
+        )
+    return Response(
+        content=payload,
+        media_type=mime,
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-store",
+        },
+    )
 
 
 # ------------------------------------------------------------- one's own

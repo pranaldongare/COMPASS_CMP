@@ -803,6 +803,115 @@ export const MODULES: TrainingModule[] = [
       },
     ],
   },
+  /* ========================================================== retention */
+  {
+    id: "retention-reviews",
+    title: "Retention reviews",
+    summary:
+      "Consents that run out and data that must go: asking the ones responsible, accepting their answers, and the certificate.",
+    roles: ["dpo", "legal"],
+    minutes: 8,
+    steps: [
+      {
+        title: "Read the register",
+        body: "[[Retention]] holds two kinds of review: [[Consent validity]] - consents about to run out - and [[Data retention]] - data whose time to be kept has passed since the consent ended. One review per project, purpose and month, with its people counted. The tiles filter the list.",
+        where: "retention",
+        tip: "A review is not a rights request or a breach: it has its own register and its own answers.",
+      },
+      {
+        title: "Who is asked",
+        body: "Once a review falls due, its owner (the DCO Admin, or the HR PoC for an HR activity) and every processor holding the data are asked. A processor with no console login gets an emailed link that opens with a code.",
+        where: "retention",
+      },
+      {
+        title: "Accept, or send back",
+        body: "Open the review. For each answer, [[Accept]] it or [[Send back]] saying what is missing. Anonymising instead of erasing, and keeping, each come with a reason; keeping comes with a date to look again.",
+        actions: [
+          "Read the answer and its reason.",
+          "[[Accept]] it, or [[Send back]] with what is missing.",
+          "[[Not needed]] sets aside an action nobody need answer.",
+        ],
+        where: "retention",
+        tip: "Accepting a validity owner's yes sends every person in the review the project's consent link at once.",
+      },
+      {
+        title: "Close it, and keep the certificate",
+        body: "[[Close the review]] once every answer is accepted or set aside. The [[Certificate]] - PDF or CSV - shows the consents by number, every answer with its reason, who accepted it and who closed it.",
+        where: "retention",
+      },
+      {
+        title: "The settings",
+        body: "Under [[Settings]] on the same page: when owners are reminded, how many hours before an erasure people are told, how long the ones asked have to answer, and when a late answer reaches you.",
+        where: "retention",
+      },
+    ],
+    check: [
+      {
+        question: "When does the time to keep data start?",
+        options: [
+          "When the consent was given",
+          "When the consent ended: withdrawn, or run out",
+          "When the project closed",
+        ],
+        answer: 1,
+        why: "Retention is counted from the consent's end, whether it was withdrawn or ran out.",
+      },
+      {
+        question: "A processor answers that it kept the data. What must the answer carry?",
+        options: [
+          "Nothing more",
+          "A reason, and a date it will be looked at again",
+          "The names of the people",
+        ],
+        answer: 1,
+        why: "Keeping data past its retention needs a reason and a date; people are never named.",
+      },
+      {
+        question: "When can a review be closed?",
+        options: [
+          "Any time",
+          "When every answer is accepted or set aside",
+          "Only after the night has run",
+        ],
+        answer: 1,
+        why: "A review closes only when nothing is left waiting.",
+      },
+    ],
+  },
+  {
+    id: "retention-answering",
+    title: "Answering a retention review",
+    summary:
+      "What to do when the Privacy Office asks about data whose consent or retention has run out.",
+    roles: ["dco_admin", "hr_user", "rnd_user", "dco", "rco"],
+    minutes: 4,
+    steps: [
+      {
+        title: "Find what you are asked",
+        body: "[[Retention actions]] lists each review you are asked about, with the date to answer by. An email tells you when one arrives.",
+        where: "retention-actions",
+      },
+      {
+        title: "Consents running out",
+        body: "A [[Consent validity]] review asks whether the people should be asked to consent again. Choose [[Yes, invite them]] only if the project still needs their data, and [[Send the answer]].",
+        where: "retention-actions",
+      },
+      {
+        title: "Data that must go",
+        body: "A [[Data retention]] review asks what was done with the data wherever you hold it: [[Erased]], [[Anonymised]], [[Kept]] or [[Not held]]. Anonymising and keeping each need a reason; keeping needs a date to look again.",
+        where: "retention-actions",
+        tip: "If your answer is sent back, the reason is shown above the form. Answer again.",
+      },
+    ],
+    check: [
+      {
+        question: "You anonymised the data instead of erasing it. What else must you give?",
+        options: ["Nothing", "The reason it was not erased", "The people's names"],
+        answer: 1,
+        why: "Anonymising instead of erasing needs its reason on the record.",
+      },
+    ],
+  },
 ];
 
 /** The modules a role takes, everyone's first. */

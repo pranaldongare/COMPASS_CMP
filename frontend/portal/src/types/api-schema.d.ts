@@ -6940,6 +6940,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/retention/reviews/{review_uuid}/certificate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The certificate of a closed review, as PDF or CSV
+         * @description Which consents, why each ended, who was asked and what each answered,
+         *     who accepted it and who closed the review. Consents by number; every
+         *     download on the trail.
+         */
+        get: operations["get_certificate_retention_reviews__review_uuid__certificate_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/retention-actions": {
         parameters: {
             query?: never;
@@ -29702,6 +29724,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RetentionReviewOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_certificate_retention_reviews__review_uuid__certificate_get: {
+        parameters: {
+            query?: {
+                format?: string;
+            };
+            header?: never;
+            path: {
+                review_uuid: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/pdf": unknown;
+                    "text/csv": unknown;
                 };
             };
             /** @description Validation Error */

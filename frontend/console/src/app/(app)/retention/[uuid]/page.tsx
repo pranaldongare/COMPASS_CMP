@@ -10,7 +10,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import * as React from "react";
@@ -45,6 +45,7 @@ import {
   actionNotNeeded,
   actionTone,
   closeReview,
+  downloadCertificate,
   getReview,
   retentionKeys,
   said,
@@ -52,7 +53,7 @@ import {
   type RetentionAction,
   type RetentionReviewDetail,
 } from "@/features/retention/api";
-import { formatDate, formatDateTime } from "@/lib/format";
+import { formatDate, formatDateTime, saveBlob } from "@/lib/format";
 import { useToast } from "@/providers";
 
 const CHANNEL: Record<RetentionAction["channel"], string> = {
@@ -289,6 +290,50 @@ function Close({ review }: { review: RetentionReviewDetail }) {
   );
 }
 
+function Certificate({ review }: { review: RetentionReviewDetail }) {
+  const toast = useToast();
+  const [busy, setBusy] = React.useState<"pdf" | "csv" | null>(null);
+  async function get(format: "pdf" | "csv") {
+    setBusy(format);
+    try {
+      const got = await downloadCertificate(review.review_uuid, format);
+      saveBlob(got.blob, got.filename);
+    } catch (err) {
+      toast.error("Not downloaded", said(err, "Try again in a moment."));
+    } finally {
+      setBusy(null);
+    }
+  }
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Certificate</CardTitle>
+      </CardHeader>
+      <CardBody className="space-y-3">
+        <p className="text-sm text-text-muted">
+          Which consents, what each one asked answered, who accepted it and who closed the
+          review. Consents by number; each download is on the audit trail.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" onClick={() => get("pdf")} disabled={busy !== null}>
+            <Download className="size-4" aria-hidden="true" />
+            {busy === "pdf" ? "Making…" : "PDF"}
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => get("csv")}
+            disabled={busy !== null}
+          >
+            <Download className="size-4" aria-hidden="true" />
+            {busy === "csv" ? "Making…" : "CSV"}
+          </Button>
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
+
 export default function RetentionReviewPage() {
   const { uuid } = useParams<{ uuid: string }>();
   const found = useQuery({
@@ -442,7 +487,7 @@ export default function RetentionReviewPage() {
                 </DescriptionList>
               </CardBody>
             </Card>
-            {r.status !== "closed" && <Close review={r} />}
+            {r.status !== "closed" ? <Close review={r} /> : <Certificate review={r} />}
           </div>
         </div>
       )}

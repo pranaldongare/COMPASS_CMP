@@ -20572,6 +20572,58 @@
         }
       }
     },
+    "/retention/reviews/{review_uuid}/certificate": {
+      "get": {
+        "tags": [
+          "retention"
+        ],
+        "summary": "The certificate of a closed review, as PDF or CSV",
+        "description": "Which consents, why each ended, who was asked and what each answered,\nwho accepted it and who closed the review. Consents by number; every\ndownload on the trail.",
+        "operationId": "get_certificate_retention_reviews__review_uuid__certificate_get",
+        "parameters": [
+          {
+            "name": "review_uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Review Uuid"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(pdf|csv)$",
+              "default": "pdf",
+              "title": "Format"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/pdf": {},
+              "text/csv": {}
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/retention-actions": {
       "get": {
         "tags": [

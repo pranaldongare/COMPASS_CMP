@@ -7,6 +7,33 @@ as a release yet.
 
 ## [Unreleased]
 
+### Added (2026-11-26, migration 0076, ADR 0047)
+- **Retention reviews.** When consents for a purpose are about to run out, or
+  their data must go - counted from the consent's end, withdrawal or expiry -
+  the night makes a review per project or HR activity, purpose and month, on
+  a new console page, *Retention*, for the DPO and Legal. It is its own
+  register, never a rights request or a breach. A legal hold keeps a person
+  out of it; consenting again takes them out.
+- **The ones responsible are asked**, in *Retention actions*: the project's
+  DCO Admin (an HR activity's HR PoC; the R&D User when collected in-house)
+  and every processor holding the data. A validity review asks the owner at
+  once, while the project is active, whether to invite the people to consent
+  again - sent when the officer accepts. A retention review asks what was
+  done: erased, anonymised (with a reason), kept (with a reason and a date),
+  or not held. The officer accepts or sends back each answer and closes the
+  review; reminders at 90, 30 and 7 days, a chase when an answer is late, and
+  escalation after 14 days, all set under *Settings*.
+- **A processor without a login answers by a link** on the portal
+  (`/retention/{token}`), opened by a code sent to the address the link went
+  to, through the relay like a holder ticket's.
+- **People are told before their data is erased**, 48 hours ahead by email
+  and text, where the purpose says so: *Tell each person before their data is
+  erased* on the purpose form, on by default.
+- **A certificate** of each closed review, PDF or CSV: the consents by number,
+  every answer with its reason, who accepted it and who closed the review.
+  Every download is on the trail. Analytics gains a *Retention* group.
+- The automatic quarantine of lapsed consents stays as it was.
+
 ### Added (2026-11-25, migration 0075, ADR 0046)
 - **Employee check (VerifyEmail).** The administrator sets the organisation's
   VerifyEmail address and key on a new console page, *Employee check*, with

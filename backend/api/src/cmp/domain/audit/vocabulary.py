@@ -97,6 +97,7 @@ EVENT_LABELS: Final[dict[str, str]] = {
     "retention.reconsent_sent": "Invitations to consent again sent",
     "retention.review_closed": "Retention review closed",
     "retention.link_opened": "Retention link opened",
+    "retention.certificate_downloaded": "Retention certificate downloaded",
     "portal_address.changed": "Portal address changed",
     "datavault.erasure_sent": "DataVault told to erase",
     "datavault.erasure_checked": "DataVault asked how far an erasure has got",

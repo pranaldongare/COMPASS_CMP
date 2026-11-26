@@ -745,6 +745,49 @@ export const SECTIONS: HelpSection[] = [
     ],
   },
   {
+    id: "retention",
+    title: "Retention reviews",
+    summary:
+      "What to do when consents run out and when their data must go: one review per project, purpose and month, and an answer from each one responsible.",
+    roles: ["dpo", "legal"],
+    blocks: [
+      {
+        kind: "list",
+        items: [
+          "[[Retention]] lists two kinds of review, apart from rights requests and breaches. [[Consent validity]]: consents for a purpose are about to run out. [[Data retention]]: consents ended - withdrawn, or run out - and the time their data may be kept, counted from the end, has passed.",
+          "The night finds them. [[Look again now]] does the night's work at once. A review counts its people; a legal hold keeps a person out, and a person who consents again leaves it.",
+          "Each one responsible is asked once, in [[Retention actions]]: the project's DCO Admin (the HR PoC for an HR activity, or the R&D User when the project collects in-house) and every processor holding the data - in the console when it has a login, otherwise by an emailed link with a code.",
+          "On a validity review the owner says whether to invite the people to consent again - asked only while the project is active. [[Accept]] their yes and each person is sent the project's consent link.",
+          "On a retention review each says what was done: [[Erased]], [[Anonymised]] with the reason it could not be erased, [[Kept]] with the reason and a date to look again, or [[Not held]]. [[Accept]] an answer, or [[Send back]] saying what is missing; [[Not needed]] sets an action aside.",
+          "[[Close the review]] once every answer is accepted or set aside. A closed review has its [[Certificate]] - a PDF to file, or a CSV - with the consents by number, every answer and its reason, who accepted it and who closed it.",
+          "[[Settings]]: the days before a review falls due that its owner is reminded (90, 30 and 7), the hours before an erasure that each person is told (48), the days the ones asked have to answer (30), and when a late answer is escalated to you (14).",
+        ],
+      },
+      {
+        kind: "note",
+        text: "Each purpose says whether its people are told before their data is erased ([[Tell each person before their data is erased]], on unless switched off). The quarantine of data whose consent lapsed still happens by itself; a review is how erasure is asked for, answered and proved.",
+      },
+    ],
+  },
+  {
+    id: "retention-actions",
+    title: "Answering a retention review",
+    summary:
+      "When the Privacy Office asks what to do with data whose consent or retention has run out.",
+    roles: ["dpo", "legal", "admin", "rnd_user", "dco_admin", "dco", "rco", "hr_user"],
+    blocks: [
+      {
+        kind: "list",
+        items: [
+          "[[Retention actions]] lists what you are asked, with the date to answer by. You are told by email when one arrives, reminded when the date passes, and the Privacy Office is told when it is long overdue.",
+          "A [[Consent validity]] review asks whether the people should be asked to consent again. Say [[Yes, invite them]] only if the project still needs the data: each person is sent the project's consent link once the Privacy Office accepts.",
+          "A [[Data retention]] review asks what was done with the data, everywhere you hold it: [[Erased]], [[Anonymised]] (say why it was not erased), [[Kept]] (say which law or claim needs it, and when it will be looked at again) or [[Not held]].",
+          "Click [[Send the answer]]. If it is sent back, the reason is shown above the form: answer again.",
+        ],
+      },
+    ],
+  },
+  {
     id: "portal-address",
     title: "Portal address",
     summary:

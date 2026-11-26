@@ -437,6 +437,7 @@ class Event:
     RETENTION_RECONSENT_SENT = "retention.reconsent_sent"
     RETENTION_REVIEW_CLOSED = "retention.review_closed"
     RETENTION_LINK_OPENED = "retention.link_opened"
+    RETENTION_CERTIFICATE_DOWNLOADED = "retention.certificate_downloaded"
     ORGANISATION_DOMAIN_ADDED = "employee_check.domain_added"
     ORGANISATION_DOMAIN_REMOVED = "employee_check.domain_removed"
     EMPLOYEE_CHECKED = "employee.checked"

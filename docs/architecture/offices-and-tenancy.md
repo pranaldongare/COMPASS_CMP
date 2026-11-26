@@ -88,6 +88,13 @@ offices see that list. The request and who erased it are on the request's own
 trail, in its office: `incident_report.reporter_erased` carries the request's
 office, not the report's, so the other office's trail never shows it (2026-11-08).
 
+`retention_review`, `retention_review_person` and `retention_action` are
+policed by office since migration 0076 (ADR 0047): each carries its project's
+`office_id`. The night's sweep, *Look again now*, a person's own actions and a
+processor's link read across both offices on purpose (`across_offices`): the
+sweep finds both offices' cohorts, and what is asked of a person or a
+processor is theirs whichever office's project it is - the query names them.
+
 `legal_hold` is policed by office since migration 0055: it carries
 `office_id` (the asset's project's office, or the placing officer's for a hold
 on a person), with row level security forced, and `list_holds()` and

@@ -39,6 +39,8 @@ Row = dict[str, Any]
 
 OUTCOMES = ("erased", "anonymised", "kept", "not_held")
 _OPEN = ("open", "sent_back")
+#: The fewest days anybody is given to answer.
+_LEAST_DAYS = 7
 
 
 async def action_view(a: Row) -> Row:
@@ -111,7 +113,12 @@ async def open_actions(conn: Conn, review: Row) -> int:
                 user_id=owner["id"],
                 channel="console",
                 label=str(owner["full_name"]),
-                due_at=min(due, review["first_due_at"] or due),
+                # Before the consents run out where there is time; a week at
+                # least where they ran out lately, so nobody is overdue on asking.
+                due_at=max(
+                    min(due, review["first_due_at"] or due),
+                    datetime.now(UTC) + timedelta(days=_LEAST_DAYS),
+                ),
                 office_id=office_id,
             )
             if row:

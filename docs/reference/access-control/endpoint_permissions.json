@@ -1,7 +1,7 @@
 {
   "commit": "1757d5069ba723f260c88c45419c1286261a127f",
-  "documented_operations": 457,
-  "registered_business_and_system_operations": 460,
+  "documented_operations": 458,
+  "registered_business_and_system_operations": 461,
   "verification": "Static source review, not a live authorization penetration test. Network-level and deployment policy are outside this snapshot.",
   "endpoints": [
     {
@@ -18476,6 +18476,46 @@
     },
     {
       "module": "retention",
+      "method": "GET",
+      "path": "/retention/reviews/{review_uuid}/certificate",
+      "summary": "The certificate of a closed review, as PDF or CSV",
+      "function": "get_certificate",
+      "operation_id": "get_certificate_retention_reviews__review_uuid__certificate_get",
+      "in_openapi": true,
+      "authentication": "Full session",
+      "anonymous": "NO",
+      "gate": "RequireResource(retention)",
+      "resolved_gate": "RequireResource(retention)",
+      "route_roles": [
+        "dpo",
+        "legal"
+      ],
+      "inline_role_checks": [],
+      "resource": "retention",
+      "write_gate": false,
+      "access": {
+        "dpo": "ALL",
+        "admin": "NO",
+        "dco": "NO",
+        "dco_admin": "NO",
+        "rco": "NO",
+        "rnd_user": "NO",
+        "data_subject": "NO",
+        "breach_holder": "NO",
+        "legal": "ALL",
+        "hr_user": "NO",
+        "management": "NO"
+      },
+      "conditions": [
+        "Retention reviews (0076, ADR 0047): the officer's register of their own office - consents whose validity runs out, and data whose retention has passed since the consent ended. Reviews, people and actions are their project's office's (office_isolation). Every move is on the trail. The certificate is made only once the review is closed (409 before): consents by number, each answer with its reason, who accepted it and who closed it. Every download is on the trail (retention.certificate_downloaded)."
+      ],
+      "evidence": [
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/api/routers/v1/retention.py",
+        "https://github.com/pranaldongare/COMPASS_CMP/blob/HEAD/backend/api/src/cmp/domain/retention/certificate.py"
+      ]
+    },
+    {
+      "module": "retention",
       "method": "POST",
       "path": "/retention/reviews/{review_uuid}/actions/{action_uuid}/accept",
       "summary": "Accept an answer",
@@ -19342,7 +19382,7 @@
     {
       "on": "2026-11-26",
       "commit": "Retention reviews (0076, ADR 0047), uncommitted",
-      "note": "18 operations added, a new module retention: the officers' register (resource retention: dpo, legal), its settings (retention_setting: admin, dpo, legal), the one asked's own actions (retention_action, OWN, every staff role but management), and a processor's link (/retention-links/{token}, public, as a holder ticket's). Purposes gain notify_before_erasure on create, update and read. No existing guard changed. Evidence links point at HEAD."
+      "note": "19 operations added, a new module retention: the officers' register (resource retention: dpo, legal), its settings (retention_setting: admin, dpo, legal), the certificate of a closed review (GET /retention/reviews/{review_uuid}/certificate, as the register), the one asked's own actions (retention_action, OWN, every staff role but management), and a processor's link (/retention-links/{token}, public, as a holder ticket's). Purposes gain notify_before_erasure on create, update and read. No existing guard changed. Evidence links point at HEAD."
     }
   ]
 }

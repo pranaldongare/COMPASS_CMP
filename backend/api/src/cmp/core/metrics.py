@@ -89,6 +89,7 @@ DIMENSIONS: Final[dict[str, str]] = {
     "flow": "Code flow",
     "queue": "Queue",
     "event": "Event",
+    "kind": "Review kind",
 }
 
 
@@ -133,6 +134,7 @@ _CONSENT = "Consent"
 _PROJECTS = "Projects"
 _ERASURE = "Erasure in DataVault"
 _HOLDERS = "Third parties"
+_RETENTION = "Retention"
 _DELIVERY = "Notice delivery"
 _HR = "HR track"
 _SIGNIN = "Sign-in and codes"
@@ -524,6 +526,80 @@ CATALOGUE: Final[tuple[Metric, ...]] = (
         target=0,
         amber=3,
         higher_is_better=False,
+    ),
+    # Retention reviews (ADR 0047): consents running out and data that must go.
+    _m(
+        key="retention.reviews_opened",
+        title="Retention reviews opened",
+        definition="Reviews whose people were first asked in the period: consents whose "
+        "validity runs out, and data whose retention has passed.",
+        unit="count",
+        section="management",
+        group=_RETENTION,
+        audience=OVERSIGHT,
+        dims=("office", "kind"),
+    ),
+    _m(
+        key="retention.reviews_closed",
+        title="Retention reviews closed",
+        definition="Reviews closed in the period, every answer accepted or set aside.",
+        unit="count",
+        section="management",
+        group=_RETENTION,
+        audience=OVERSIGHT,
+        dims=("office", "kind"),
+    ),
+    _m(
+        key="retention.closed_on_time",
+        title="Retention reviews closed on time",
+        definition="Reviews closed in the period no later than the last date their answers "
+        "were due.",
+        unit="count",
+        section="management",
+        group=_RETENTION,
+        audience=OVERSIGHT,
+        dims=("office", "kind"),
+    ),
+    _m(
+        key="retention.on_time_rate",
+        title="Retention reviews on time",
+        definition="Reviews closed on time in the period as a share of reviews closed in it.",
+        unit="percent",
+        section="management",
+        group=_RETENTION,
+        audience=OVERSIGHT,
+        kind=RATIO,
+        numerator="retention.closed_on_time",
+        denominator="retention.reviews_closed",
+        dims=("office", "kind"),
+        target=95,
+        amber=80,
+    ),
+    _m(
+        key="retention.actions_overdue",
+        title="Retention answers overdue",
+        definition="Answers asked for in a retention review and not given whose date has "
+        "passed, as things stand now.",
+        unit="count",
+        section="management",
+        group=_RETENTION,
+        audience=OVERSIGHT,
+        kind=SNAPSHOT,
+        dims=("office", "kind"),
+        target=0,
+        amber=3,
+        higher_is_better=False,
+    ),
+    _m(
+        key="retention.kept_with_reason",
+        title="Data kept past retention",
+        definition="Answers accepted in the period that kept data past its retention, each "
+        "with its reason and a date to look again.",
+        unit="count",
+        section="management",
+        group=_RETENTION,
+        audience=OVERSIGHT,
+        dims=("office",),
     ),
     # ============================================================== analytics
     _m(

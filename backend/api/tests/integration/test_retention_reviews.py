@@ -506,3 +506,78 @@ async def _review_id(conn: Any, review: dict[str, Any]) -> int:
     row = await repo.review_by_uuid(conn, str(review["review_uuid"]))
     assert row is not None
     return int(row["review_id"])
+
+
+async def test_the_figures_count_a_review_closed_on_time(
+    conn: Any, seeded: dict[str, Any], sent: list[Any]
+) -> None:
+    from cmp.db.repositories import analytics as figures
+
+    await _purpose(conn, validity="-1 day", retention="10 years")
+    await _consent(conn, seeded)
+    await service.daily(conn)
+    review = await _ours(conn, seeded, "validity")
+    (owner,) = (await service.detail(conn, str(review["review_uuid"])))["actions_list"]
+    await actions.mark_not_needed(
+        conn, str(review["review_uuid"]), str(owner["action_uuid"]), actor_id=_uid(seeded, "dpo")
+    )
+    await actions.close(conn, str(review["review_uuid"]), note=None, actor_id=_uid(seeded, "dpo"))
+
+    window = {
+        "start": datetime.now(UTC) - timedelta(days=1),
+        "end": datetime.now(UTC) + timedelta(days=1),
+        "office": None,
+        "grain": None,
+        "median": False,
+    }
+    for key in ("retention.reviews_opened", "retention.reviews_closed", "retention.closed_on_time"):
+        rows = await figures.series(conn, key, dim="kind", **window)
+        by_kind = {r["dim"]: r["value"] for r in rows}
+        assert by_kind.get("validity", 0) >= 1, (key, rows)
+
+
+async def test_a_closed_review_has_a_certificate_and_its_download_is_on_the_trail(
+    conn: Any, seeded: dict[str, Any], sent: list[Any]
+) -> None:
+    from cmp.domain.retention import certificate
+
+    await _purpose(conn, validity=None, retention="-1 day")
+    consent = await _consent(conn, seeded)
+    await _withdraw(conn, seeded, consent)
+    await service.daily(conn)
+    review = await _ours(conn, seeded, "retention")
+    with pytest.raises(Conflict):
+        await certificate.download(conn, str(review["review_uuid"]), "pdf", actor_id=1)
+    (owner,) = (await service.detail(conn, str(review["review_uuid"])))["actions_list"]
+    await actions.answer(
+        conn,
+        str(owner["action_uuid"]),
+        user_id=_uid(seeded, "dco_admin"),
+        outcome="anonymised",
+        reason="Blurred for the benchmark.",
+        keep_until=None,
+        reconsent=None,
+    )
+    dpo = _uid(seeded, "dpo")
+    await actions.accept(conn, str(review["review_uuid"]), str(owner["action_uuid"]), actor_id=dpo)
+    await actions.close(conn, str(review["review_uuid"]), note="Done.", actor_id=dpo)
+
+    pdf, name, mime = await certificate.download(
+        conn, str(review["review_uuid"]), "pdf", actor_id=dpo
+    )
+    assert pdf.startswith(b"%PDF") and mime == "application/pdf"
+    assert name == f"{review['reference']}-certificate.pdf"
+    csv_bytes, _, _ = await certificate.download(
+        conn, str(review["review_uuid"]), "csv", actor_id=dpo
+    )
+    text = csv_bytes.decode("utf-8-sig")
+    assert "Blurred for the benchmark." in text, text
+    assert "\nC-" in text, "the consents, by number"
+    assert "Test subject" not in text, "no person is named"
+    trail = await (
+        await conn.execute(
+            "SELECT count(*) AS n FROM audit_log WHERE event_type = %s",
+            ("retention.certificate_downloaded",),
+        )
+    ).fetchone()
+    assert trail["n"] >= 2

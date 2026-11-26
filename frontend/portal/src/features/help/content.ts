@@ -337,6 +337,36 @@ export const SECTIONS: HelpSection[] = [
     ],
   },
   {
+    id: "retention-link",
+    title: "If we sent you a link to a retention review",
+    summary:
+      "For a company or team outside our organisation that holds personal data for us, once the time we may keep it has passed: how to open the review and answer it.",
+    blocks: [
+      {
+        kind: "p",
+        text: "People gave consent for a purpose, and their consent has ended - withdrawn, or run out - and the time we may keep their data afterwards has passed. You hold some of that data for us, so we ask what you did with it. Our email carries a link, the review's reference, the project, the purpose, how many people, and the date to answer by. No person is named.",
+      },
+      {
+        kind: "steps",
+        title: "Opening the review",
+        items: [
+          "Open the link in our email. The page shows where the code will go - the address the link was sent to.",
+          "Click [[Send code]]. Type the code from your email in [[Six-digit code]] and click [[Open the review]].",
+          "The review stays open on that device for an hour. [[Close the review on this device]] closes it sooner.",
+        ],
+      },
+      {
+        kind: "steps",
+        title: "Answering",
+        items: [
+          "Choose what was done with the data, everywhere you hold it: [[Erased]], [[Anonymised]], [[Kept]] or [[Not held]].",
+          "Anonymising instead of erasing needs the reason it could not be erased. Keeping needs the reason - a law, or a claim - and the date it will be looked at again.",
+          "Click [[Send the answer]]. We accept it, or send it back saying what is missing; you are emailed either way.",
+        ],
+      },
+    ],
+  },
+  {
     id: "ticket-link",
     title: "If we sent you a link to a ticket",
     summary:

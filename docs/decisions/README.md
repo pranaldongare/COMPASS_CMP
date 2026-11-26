@@ -52,6 +52,7 @@ one stays and points forward.
 | [0044](0044-an-employee-link-takes-the-code-route-until-the-sign-in-is-connected.md) | An employee link takes the code route until the organisation's sign-in is connected | accepted |
 | [0045](0045-analytics-are-figures-counted-from-the-record.md) | Analytics are figures counted from the record, for the roles that answer for them | accepted |
 | [0046](0046-an-employee-is-checked-with-verifyemail-at-sign-in.md) | An employee is checked with VerifyEmail at sign-in | accepted |
+| [0047](0047-a-retention-review-asks-the-ones-responsible-and-proves-the-answer.md) | A retention review asks the ones responsible, and proves the answer | accepted |
 
 ## Writing one
 
